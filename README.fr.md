@@ -54,6 +54,15 @@ Le Makefile est le point d'entrée pour toutes les opérations.
 | make mycnf | 🔑 | Génère \~/.my.cnf pour une connexion client sans mot de passe. |
 | make client | 💻 | Lance un client MySQL connecté à la BDD active. |
 
+### Gestion des données
+
+Ces commandes vous permettent d'injecter des bases de données exemples dans un service en cours d'exécution ou de lancer une suite de tests complète sur tous les services.
+
+| Commande                           | Icône | Description                                                                                                                                | Exemple d'utilisation                             |
+| :--------------------------------- | :---- | :----------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------ |
+| `make inject-data`                 | 💉    | Injecte une base de données exemple (`employees` ou `sakila`) dans un service spécifié en cours d'exécution.                                 | `make inject-data service=mysql84 db=employees`   |
+| `make test-all`                    | 🧪    | Lance une suite de tests complète : démarre chaque service de BD, injecte les deux bases de données exemples, vérifie les données, puis arrête le service. | `make test-all`                                   |
+
 ### **Démarrage d'une Instance de Base de Données**
 
 Utilisez make \<version\_bdd\> pour démarrer une base de données. Le Makefile gère automatiquement l'arrêt de l'instance précédente.

@@ -50,6 +50,15 @@ These commands help you manage and interact with the overall environment.
 | `make mycnf`    | 🔑   | Generates a `~/.my.cnf` file for password-less `mysql` client connections.  | `make mycnf`          |
 | `make client`   | 💻   | Starts a MySQL client connected to the active database.                     | `make client`         |
 
+### Data Management
+
+These commands allow you to inject sample databases into a running service or run a comprehensive test suite across all services.
+
+| Command                            | Icon | Description                                                                                                                              | Example Usage                                    |
+| :--------------------------------- | :--- | :--------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
+| `make inject-data`                 | 💉   | Injects a sample database (`employees` or `sakila`) into a specified running service.                                                      | `make inject-data service=mysql84 db=employees`  |
+| `make test-all`                    | 🧪   | Runs a full test suite: starts each DB service, injects both sample databases, verifies the data, and then stops the service.             | `make test-all`                                  |
+
 ### Starting a Database Instance
 
 To start a specific database instance, use the `make <database_version>` command. The Makefile will automatically stop any currently running database instance before launching the new one, ensuring only one database (plus Traefik) runs at a time.

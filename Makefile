@@ -107,6 +107,99 @@ client:
 		printf "❌ No database service is running to start the client.\n"; \
 	fi
 
+# --- Data Injection ---
+.PHONY: inject-data
+
+inject-data:
+	@# Ensure service and db are provided
+	@if [ -z "$(service)" ] || [ -z "$(db)" ]; then \
+		printf "\033[1;31m❌ Error: 'service' and 'db' parameters are required.\033[0m\n"; \
+		printf "Usage: make inject-data service=<service_name> db=<db_name>\n"; \
+		printf "Available db_names: employees, sakila\n"; \
+		exit 1; \
+	fi
+
+	@# Check if the service is running
+	@if [ -z "$$(docker compose ps --services --filter "status=running" | grep $(service))" ]; then \
+		printf "\033[1;31m❌ Error: Service '%s' is not running.\033[0m\n" "$(service)"; \
+		exit 1; \
+	fi
+	@export DB_ROOT_PASSWORD=$$(sed 's/#.*//g' .env|grep DB_ROOT_PASSWORD| xargs|cut -d= -f2); \
+
+	@# Clone test_db repo if it doesn't exist
+	@if [ ! -d "test_db" ]; then \
+		printf "Cloning 'test_db' repository...\n"; \
+		git clone https://github.com/datacharmer/test_db.git; \
+	fi
+
+	@# Get container name
+	@DB_CONTAINER=$$(docker compose ps $(service) --format "{{.Names}}"); \
+	printf "Injecting data into %s...\n" "$${DB_CONTAINER}"; \
+	if [ "$(db)" = "employees" ]; then \
+		docker exec -i "$${DB_CONTAINER}" mysql -uroot -p"$(DB_ROOT_PASSWORD)" < test_db/employees.sql; \
+		printf "✅ 'employees' database injected.\n"; \
+	elif [ "$(db)" = "sakila" ]; then \
+		docker exec -i "$${DB_CONTAINER}" mysql -uroot -p"$(DB_ROOT_PASSWORD)" < test_db/sakila/sakila-schema.sql; \
+		docker exec -i "$${DB_CONTAINER}" mysql -uroot -p"$(DB_ROOT_PASSWORD)" < test_db/sakila/sakila-data.sql; \
+		printf "✅ 'sakila' database injected.\n"; \
+	else \
+		printf "\033[1;31m❌ Error: Invalid database name '%s'.\033[0m\n" "$(db)"; \
+		exit 1; \
+	fi
+
+# --- Full Test Suite ---
+.PHONY: test-all
+
+test-all:
+	@# List of all database services to test
+	@SERVICES_TO_TEST="mysql84 mariadb114 percona84"; \
+	for service in $${SERVICES_TO_TEST}; do \
+		printf "\n\033[1;34m--- Testing service: %s ---\033[0m\n" "$$service"; \
+		\
+		printf "🚀 Starting service %s...\n" "$$service"; \
+		make $$service; \
+		\
+		printf "⏳ Waiting for DB to be ready...\n"; \
+		timeout 60s bash -c 'until docker exec $$(docker compose ps $$service --format "{{.Names}}") mysqladmin ping -h"127.0.0.1" --silent; do sleep 1; done' \
+		\
+		printf "💉 Injecting 'employees' database...\n"; \
+		make inject-data service=$$service db=employees; \
+		\
+		printf "💉 Injecting 'sakila' database...\n"; \
+		make inject-data service=$$service db=sakila; \
+		\
+		printf "🔍 Verifying data injection...\n"; \
+		DB_CONTAINER=$$(docker compose ps $$service --format "{{.Names}}"); \
+		docker exec "$${DB_CONTAINER}" mysql -uroot -p"$(DB_ROOT_PASSWORD)" -e "SHOW DATABASES;" | grep -q "employees"; \
+		if [ $$? -eq 0 ]; then \
+			printf "✅ 'employees' database found.\n"; \
+		else \
+			printf "\033[1;31m❌ 'employees' database not found.\033[0m\n"; \
+			exit 1; \
+		fi; \
+		docker exec "$${DB_CONTAINER}" mysql -uroot -p"$(DB_ROOT_PASSWORD)" -e "SHOW DATABASES;" | grep -q "sakila"; \
+		if [ $$? -eq 0 ]; then \
+			printf "✅ 'sakila' database found.\n"; \
+		else \
+			printf "\033[1;31m❌ 'sakila' database not found.\033[0m\n"; \
+			exit 1; \
+		fi; \
+		\
+		printf "🔍 Verifying Traefik proxy...\n"; \
+		docker exec "$${DB_CONTAINER}" mysql -uroot -p"$(DB_ROOT_PASSWORD)" -h traefik -e "SHOW DATABASES;" | grep -q "employees"; \
+		if [ $$? -eq 0 ]; then \
+			printf "✅ Connection via Traefik successful.\n"; \
+		else \
+			printf "\033[1;31m❌ Connection via Traefik failed.\033[0m\n"; \
+			exit 1; \
+		fi; \
+		\
+		printf "🛑 Stopping service %s...\n" "$$service"; \
+		make stop; \
+	done
+	@printf "\n\033[1;32m✅ All services tested successfully!\033[0m\n"
+
+
 # --- Start-up Targets by Profile ---
 traefik: stop
 	@echo "🚀 Starting Traefik..."
