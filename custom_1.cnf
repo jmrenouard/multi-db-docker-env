@@ -1,0 +1,62 @@
+[mariadb]
+
+# --- Core Settings ---
+# Unique server identification (Master=1)
+server-id=1
+# Enable binary logging for replication
+log-bin=mariadb-bin
+# Set binary log format to ROW (Required for Galera compatibility or modern replication)
+binlog-format=row
+# Allow connections from any IP
+bind-address=0.0.0.0
+
+# --- Advanced Replication & Networking ---
+# Enforce GTID consistency
+gtid_strict_mode=1
+# Trusted networks for PROXY protocol
+proxy_protocol_networks=10.5.0.0/24,10.6.0.0/24
+# Binary log expiration period (2 days)
+binlog_expire_logs_seconds=172800
+
+# --- InnoDB Settings ---
+# Redo log flush frequency (1=ACID, 2=Better performance)
+#innodb_flush_log_at_trx_commit = 1
+# Use O_DIRECT to bypass OS cache for InnoDB data files
+#innodb_flush_method = O_DIRECT
+# InnoDB buffer pool size (Target: 70-80% of RAM)
+#innodb_buffer_pool_size = 1G
+# Redo log file size
+#innodb_log_file_size = 256M
+
+# --- Performance Schema (PFS) ---
+# Enable Performance Schema monitoring
+performance_schema = ON
+# Enable statement history consumers
+performance-schema-consumer-events-statements-history-long = ON
+performance-schema-consumer-events-statements-history = ON
+performance-schema-consumer-events-statements-current = ON
+# Enable stage monitoring
+performance-schema-consumer-events-stages-current = ON
+performance-schema-consumer-events-stages-history = ON
+performance-schema-consumer-events-stages-history-long = ON
+# Enable transaction monitoring
+performance-schema-consumer-events-transactions-current = ON
+performance-schema-consumer-events-transactions-history = ON
+performance-schema-consumer-events-transactions-history-long = ON
+# Enable wait monitoring
+performance-schema-consumer-events-waits-current = ON
+performance-schema-consumer-events-waits-history = ON
+performance-schema-consumer-events-waits-history-long = ON
+# Enable all instrumentation by default
+performance-schema-instrument = '%=ON'
+# Maximum digest length for statement tracking
+max-digest-length = 2048
+performance-schema-max-digest-length = 2048
+
+# --- Slow Query Logging ---
+# Enable the slow query log
+slow_query_log = 1
+# Log queries slower than 2 seconds
+long_query_time = 2.0
+# Only log 1 out of every 5 slow queries (sampling)
+log_slow_rate_limit = 5

@@ -1,0 +1,97 @@
+# 🌐 Définition du Réseau Privé
+networks:
+  backend_galera:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.6.0.0/24
+
+x-template: &template
+  image: mariadb_ssh:004
+  restart: unless-stopped
+  privileged: true
+  environment:
+    - MARIADB_ROOT_PASSWORD=rootpass
+    # Astuce Expert : Définit le DNS interne pour la résolution de noms
+    - MARIADB_ROOT_HOST=%
+    - MARIADB_GALERA_BOOTSTRAP=${MARIADB_GALERA_BOOTSTRAP:-0}
+  networks:
+    backend_galera:
+
+services:
+  # 🟢 Serveur 1
+  galera_01:
+    <<: *template
+    hostname: galera01
+    ports:
+      - "22001:22"
+      - "3511:3306"
+    volumes:
+      - "./gdatadir_01:/var/lib/mysql"
+      - "./gbackups_01:/backups"
+      - "./gcustom_1.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
+      - "./init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
+      - "./ssl:/etc/mysql/ssl:ro"
+      - "./ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
+    tmpfs:
+      - /tmp:size=1G
+    networks:
+      backend_galera:
+        ipv4_address: 10.6.0.11
+
+  # 🟢 Serveur 2
+  galera_02:
+    <<: *template
+    hostname: galera02
+    ports:
+      - "24002:22"
+      - "3512:3306"
+    volumes:
+      - "./gdatadir_02:/var/lib/mysql"
+      - "./gbackups_02:/backups"
+      - "./gcustom_2.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
+      - "./init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
+      - "./ssl:/etc/mysql/ssl:ro"
+      - "./ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
+    tmpfs:
+      - /tmp:size=1G
+    networks:
+      backend_galera:
+        ipv4_address: 10.6.0.12
+
+  # 🟢 Serveur 3
+  galera_03:
+    <<: *template
+    hostname: galera03
+    ports:
+      - "24003:22" # Correction du port SSH pour suivre la logique (22003 ou 2322 selon votre choix, ici 2322 pour varier)
+      - "3513:3306"
+    volumes:
+      - "./gdatadir_03:/var/lib/mysql"
+      - "./gbackups_03:/backups"
+      - "./gcustom_3.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
+      - "./init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
+      - "./ssl:/etc/mysql/ssl:ro"
+      - "./ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
+    tmpfs:
+      - /tmp:size=1G
+    networks:
+      backend_galera:
+        ipv4_address: 10.6.0.13
+  # 🔵 Load Balancer (HAProxy)
+  haproxy_galera:
+    image: haproxy:latest
+    container_name: haproxy_galera
+    restart: unless-stopped
+    volumes:
+      - ./haproxy-galera.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "3306:3306"
+      - "8404:8404"
+    networks:
+      backend_galera:
+        ipv4_address: 10.6.0.100
+    depends_on:
+      - galera_01
+      - galera_02
+      - galera_03

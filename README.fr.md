@@ -80,10 +80,22 @@ Utilisez make \<version\_bdd\> pour démarrer une base de données. Le Makefile 
 * 🐧 make mariadb1011  
 * 🐧 make mariadb106
 
-#### **Percona Server**
-
 * ⚡ make percona84  
 * ⚡ make percona80
+
+#### **Clusters MariaDB (Galera & Réplication)**
+
+Architectures avancées avec clustering synchrone ou réplication maître/esclave.
+
+| Commande           | Icône | Description                                      |
+| :----------------- | :---- | :----------------------------------------------- |
+| `make up-galera`   | 🌐    | Démarre le cluster MariaDB Galera (3 nœuds)      |
+| `make up-repli`    | 🔄    | Démarre le cluster de réplication (3 nœuds)      |
+| `make test-galera` | 🧪    | Lance les tests fonctionnels sur Galera          |
+| `make test-repli`  | 🧪    | Lance les tests fonctionnels sur la réplication  |
+
+> [!NOTE]
+> Les clusters MariaDB utilisent une image personnalisée `mariadb_ssh` et des ports dédiés (ex: 3511-3513 pour Galera, 3411-3413 pour la Réplication).
 
 **Exemple : Changer de Base de Données**
 
@@ -123,9 +135,14 @@ graph TD
 
 .  
 ├── 📜 .env               \# Fichier des secrets (à créer)  
-├── 🐳 docker-compose.yml  \# Définit les services Docker  
-├── 🛠️ Makefile             \# Commandes de gestion  
-└── 📖 README.md           \# Documentation
+├── 🐳 docker-compose.yml  \# Définit les services Docker mono-instance
+├── 🐳 docker-compose-galera.yml \# Définition du cluster Galera
+├── 🐳 docker-compose-repli.yml  \# Définition du cluster de réplication
+├── 🛠️ Makefile             \# Commandes de gestion unifiées (BDD & Clusters)
+├── 📂 documentation/      \# Guides détaillés pour les clusters et scripts
+├── 📂 reports/            \# Rapports de performance et de test
+├── 📖 README.md           \# Documentation (Anglais)
+└── 📖 README.fr.md        \# Ce fichier (Documentation Française)
 
 ## **💡 Workflow Typique**
 

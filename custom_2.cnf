@@ -1,0 +1,31 @@
+[mariadb]
+
+# --- Core Settings ---
+# Unique server identification (Slave 1)
+server-id=2
+# Enable binary logging
+log-bin=mariadb-bin
+# Set binary log format to ROW
+binlog-format=row
+# Allow connections from any IP
+bind-address=0.0.0.0
+
+# --- Advanced Replication & Networking ---
+# Enforce GTID consistency
+gtid_strict_mode=1
+# Trusted networks for PROXY protocol
+proxy_protocol_networks=10.5.0.0/24,10.6.0.0/24
+# Binary log expiration period (2 days)
+binlog_expire_logs_seconds=172800
+
+# --- Performance Schema (PFS) ---
+# Enable Performance Schema monitoring
+performance_schema = ON
+
+# --- Slow Query Logging ---
+# Enable the slow query log
+slow_query_log = 1
+# Log queries slower than 2 seconds
+long_query_time = 2.0
+# Only log 1 out of every 5 slow queries (sampling)
+log_slow_rate_limit = 5

@@ -1,0 +1,91 @@
+# 🌐 Définition du Réseau Privé
+networks:
+  backend_db:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/24
+
+x-template: &template
+  image: mariadb_ssh:004
+  restart: unless-stopped
+  privileged: true
+  environment:
+    - MARIADB_ROOT_PASSWORD=rootpass
+    # Astuce Expert : Définit le DNS interne pour la résolution de noms
+    - MARIADB_ROOT_HOST=%
+  networks:
+    backend_db:
+
+services:
+  # 🟢 Serveur 1
+  mariadb_01:
+    <<: *template
+    hostname: frm01
+    ports:
+      - "23001:22"
+      - "3411:3306"
+    volumes:
+      - "./datadir_01:/var/lib/mysql"
+      - "./backups_01:/backups"
+      - "./custom_1.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
+      - "./init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
+      - "./ssl:/etc/mysql/ssl:ro"
+      - "./ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
+    networks:
+      backend_db:
+        ipv4_address: 10.5.0.11
+
+  # 🟢 Serveur 2
+  mariadb_02:
+    <<: *template
+    hostname: frm02
+    ports:
+      - "23002:22"
+      - "3412:3306"
+    volumes:
+      - "./datadir_02:/var/lib/mysql"
+      - "./backups_02:/backups"
+      - "./custom_2.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
+      - "./init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
+      - "./ssl:/etc/mysql/ssl:ro"
+      - "./ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
+    networks:
+      backend_db:
+        ipv4_address: 10.5.0.12
+
+  # 🟢 Serveur 3
+  mariadb_03:
+    <<: *template
+    hostname: frm03
+    ports:
+      - "23003:22" # Correction du port SSH pour suivre la logique (22003 ou 2322 selon votre choix, ici 2322 pour varier)
+      - "3413:3306"
+    volumes:
+      - "./datadir_03:/var/lib/mysql"
+      - "./backups_03:/backups"
+      - "./custom_3.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
+      - "./init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
+      - "./ssl:/etc/mysql/ssl:ro"
+      - "./ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
+    networks:
+      backend_db:
+        ipv4_address: 10.5.0.13
+  # 🔵 Load Balancer (HAProxy)
+  haproxy_repli:
+    image: haproxy:latest
+    container_name: haproxy_repli
+    restart: unless-stopped
+    volumes:
+      - ./haproxy-repli.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "3406:3306" # Writes (Master)
+      - "3407:3307" # Reads (Slaves)
+      - "8405:8404" # Stats on 8405 to avoid conflict with Galera HAProxy
+    networks:
+      backend_db:
+        ipv4_address: 10.5.0.100
+    depends_on:
+      - mariadb_01
+      - mariadb_02
+      - mariadb_03

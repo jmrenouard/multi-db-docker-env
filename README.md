@@ -14,16 +14,16 @@ A key feature is the **Traefik reverse proxy**, which ensures all database insta
 
 Before you begin, ensure you have the following tools installed:
 
-*   [Docker](https://docs.docker.com/get-docker/)
-*   [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
-*   `make` (available on most Linux/macOS systems. For Windows, you can use Chocolatey: `choco install make`)
+* [Docker](https://docs.docker.com/get-docker/)
+* [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
+* `make` (available on most Linux/macOS systems. For Windows, you can use Chocolatey: `choco install make`)
 
 ## ⚙️ Initial Setup
 
 The only required configuration step is to set the root password for your databases.
 
-1.  Create a file named `.env` in the project's root directory.
-2.  Add the following line, replacing `your_super_secret_password` with a strong password of your choice (do not use quotes around the password):
+1. Create a file named `.env` in the project's root directory.
+2. Add the following line, replacing `your_super_secret_password` with a strong password of your choice (do not use quotes around the password):
 
     ```env
     # File: .env
@@ -80,12 +80,21 @@ To start a specific database instance, use the `make <database_version>` command
 | `make mariadb1011`| 🐧   | Starts MariaDB 10.11   |
 | `make mariadb106` | 🐧   | Starts MariaDB 10.6    |
 
-**Percona Server**
-
-| Command          | Icon | Description               |
-| :--------------- | :--- | :------------------------ |
-| `make percona84` | ⚡   | Starts Percona Server 8.4 |
 | `make percona80` | ⚡   | Starts Percona Server 8.0 |
+
+**MariaDB Clusters (Galera & Replication)**
+
+Advanced MariaDB architectures with synchronous clustering or master/slave replication.
+
+| Command            | Icon | Description                                   |
+| :----------------- | :--- | :-------------------------------------------- |
+| `make up-galera`   | 🌐   | Starts MariaDB Galera Cluster (3 nodes)       |
+| `make up-repli`    | 🔄   | Starts MariaDB Replication Cluster (3 nodes)  |
+| `make test-galera` | 🧪   | Runs functional tests on Galera               |
+| `make test-repli`  | 🧪   | Runs functional tests on Replication          |
+
+> [!NOTE]
+> MariaDB clusters use a custom `mariadb_ssh` image and have dedicated ports (e.g., 3511-3513 for Galera, 3411-3413 for Replication).
 
 **Example: Switching Databases**
 
@@ -129,8 +138,12 @@ graph TD
 ```
 .
 ├── 📜 .env                 # Secrets file (password), to be created by you
-├── 🐳 docker-compose.yml  # Defines all services (Traefik, DBs) and their profiles
-├── 🛠️ Makefile             # Simplified commands to manage the environment
+├── 🐳 docker-compose.yml  # Defines single-instance services (Traefik, DBs)
+├── 🐳 docker-compose-galera.yml # MariaDB Galera Cluster definition
+├── 🐳 docker-compose-repli.yml  # MariaDB Replication Cluster definition
+├── 🛠️ Makefile             # Unified management of single DBs and clusters
+├── 📂 documentation/      # Detailed guides for clusters and scripts
+├── 📂 reports/            # Performance and test reports
 ├── 📖 README.md           # This file (English documentation)
 └── 📖 README.fr.md        # French version of this file
 ```
@@ -157,28 +170,39 @@ graph TD
     J --> K[End];
 ```
 
-1.  **Choose and start a database version**:
+1. **Choose and start a database version**:
+
     ```bash
     make mysql84
     ```
-2.  **(Optional but Recommended)** Generate your `~/.my.cnf` for easy client access:
+
+2. **(Optional but Recommended)** Generate your `~/.my.cnf` for easy client access:
+
     ```bash
     make mycnf
     ```
-3.  **Connect using your preferred SQL client** to `localhost:3306` or use the provided Make command:
+
+3. **Connect using your preferred SQL client** to `localhost:3306` or use the provided Make command:
+
     ```bash
     make client
     ```
-4.  **Develop and test** against the database.
-5.  **Check logs** if needed:
+
+4. **Develop and test** against the database.
+5. **Check logs** if needed:
+
     ```bash
     make logs
     ```
-6.  **Switch to another database version** if required:
+
+6. **Switch to another database version** if required:
+
     ```bash
     make mariadb114
     ```
-7.  When done, **stop the environment**:
+
+7. When done, **stop the environment**:
+
     ```bash
     make stop
     ```

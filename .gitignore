@@ -1,0 +1,17 @@
+.agent/
+.env
+datadir_*
+gdatadir_*
+backups_*
+gbackups_*
+reports/
+ssl/
+test_db/
+profile_galera
+profile_repli
+id_rsa
+id_rsa.pub
+*.log
+*.err
+*.swp
+.DS_Store
