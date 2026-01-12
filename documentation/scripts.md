@@ -1,6 +1,6 @@
 # Utility Scripts Documentation 📜
 
-This document describes the various shell scripts available in the `docker/mariadb` directory for managing the MariaDB environment.
+This document describes the various shell scripts available in the root directory for managing the MariaDB environment.
 
 ## 💾 Backup & Restore
 

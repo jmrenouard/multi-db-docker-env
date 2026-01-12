@@ -144,9 +144,22 @@ graph TD
 ├── 🛠️ Makefile             # Unified management of single DBs and clusters
 ├── 📂 documentation/      # Detailed guides for clusters and scripts
 ├── 📂 reports/            # Performance and test reports
+├── 📚 [INDEX.md](documentation/INDEX.md) # Documentation Index
 ├── 📖 README.md           # This file (English documentation)
 └── 📖 README.fr.md        # French version of this file
 ```
+
+## 📚 Documentation
+
+For detailed information on specific components, please refer to the following guides:
+
+* **[Documentation Index](documentation/INDEX.md)**: Main entry point for all documentation.
+* **[Architecture](documentation/architecture.md)**: Network layout and topology.
+* **[Makefile Reference](documentation/makefile.md)**: Comprehensive list of all available commands.
+* **[Utility Scripts](documentation/scripts.md)**: Backup, restore, and setup script details.
+* **[Test Scenarios](documentation/tests.md)**: Specific test cases and reporting instructions.
+* **[Galera Bootstrap](documentation/galera_bootstrap.md)**: Detailed steps for Galera clustering.
+* **[Replication Setup](documentation/replication_setup.md)**: Master/Slave configuration guide.
 
 ## 💡 Typical Workflow
 

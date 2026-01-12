@@ -16,6 +16,7 @@ Une fonctionnalité clé est le **reverse proxy Traefik**, qui assure que toutes
   * [Commandes Générales](#bookmark=id.9jsqvztd4p5d)  
   * [Démarrage d'une Instance](#bookmark=id.5wrtn8p3xnm)  
 * [🏛️ Architecture](#bookmark=id.9kf7euwlqyob)  
+* [📚 Documentation](#-documentation)
 * [📁 Structure du Projet](#bookmark=id.eajaatmiia0v)  
 * [💡 Workflow Typique](#bookmark=id.p5xz4f5ga536)
 

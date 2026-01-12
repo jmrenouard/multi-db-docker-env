@@ -6,6 +6,12 @@ The `Makefile` is the main entry point for managing both Galera and Replication 
 
 | Command | Description |
 | :--- | :--- |
+| `make stop` | 🛑 Stop and remove all containers and networks. |
+| `make status` | 📊 Display the status of active containers. |
+| `make info` | ℹ️ Provide information about the active DB service. |
+| `make logs` | 📄 Display logs for the active database service. |
+| `make mycnf` | 🔑 Generate the `.my.cnf` file for password-less connections. |
+| `make client` | 💻 Start a MySQL client on the active database. |
 | `make help` | Show help message for all available tasks. |
 | `make build-image` | Build the base `mariadb_ssh:004` image. |
 | `make install-client` | Install MariaDB client on the host (Ubuntu/Debian). |
@@ -17,6 +23,8 @@ The `Makefile` is the main entry point for managing both Galera and Replication 
 | `make gen-profiles` | Generate shell profiles for quick container access. |
 | `make clean-galera` | Stop Galera and remove all its data/backups. |
 | `make clean-repli` | Stop Replication and remove all its data/backups. |
+| `make check-galera` | 📊 Check Galera cluster status (WSREP, Buffer Pool, etc.). |
+| `make check-repli` | 📊 Check Replication status (Slave Status, Read Only, etc.). |
 | `make full-repli` | Full orchestration for Replication: Clean, Start, Setup, and Test. |
 | `make full-galera` | Full orchestration for Galera: Clean, Start (Bootstrap), and Test. |
 | `make clean-data` | **DANGER**: Remove ALL data, backup, and SSL directories. |
@@ -27,6 +35,7 @@ The `Makefile` is the main entry point for managing both Galera and Replication 
 | :--- | :--- |
 | `make up-galera` | Start the Galera cluster nodes and HAProxy. |
 | `make bootstrap-galera`| Sequentially bootstrap a new cluster (ensures node 1 is primary). |
+| `make emergency-galera`| Emergency start of a single Galera node (Usage: `make emergency-galera NODE=1`). |
 | `make down-galera` | Stop and remove the Galera cluster. |
 | `make logs-galera` | View real-time logs for the Galera cluster. |
 | `make test-galera` | Run the advanced Galera test suite (Replication, DDL, Audit, SSL). |
@@ -43,7 +52,9 @@ These commands automate the deployment of a clean Galera cluster followed by the
 
 | Command | Description |
 | :--- | :--- |
-| `make clone-test-db` | Clone or update the `test_db` repository from GitHub. |
+| `make inject-data` | 💉 Inject a sample database (`employees` or `sakila`) into a single-instance service. |
+| `make test-all` | 🧪 Run full test suite across multiple DB versions. |
+| `make clone-test-db-cluster` | Clone or update the `test_db` repository for cluster injection. |
 | `make inject-employee-galera`| **Full Cycle**: Reset Galera and inject the `employees` database. |
 | `make inject-sakila-galera`  | **Full Cycle**: Reset Galera and inject the `sakila` (MV) database. |
 | `make inject-employee-repli` | **Full Cycle**: Reset Replication and inject `employees` database. |
@@ -55,6 +66,7 @@ These commands automate the deployment of a clean Galera cluster followed by the
 | :--- | :--- |
 | `make up-repli` | Start the Replication cluster nodes and HAProxy. |
 | `make setup-repli` | Configure Master/Slave relationship and initial sync. |
+| `make emergency-repli`| Emergency start of a single Replication node (Usage: `make emergency-repli NODE=1`). |
 | `make down-repli` | Stop and remove the Replication cluster. |
 | `make logs-repli` | View real-time logs for the Replication cluster. |
 | `make test-repli` | Run the Replication functional test suite. |
