@@ -1,4 +1,3 @@
-.agent/
 .env
 datadir_*
 gdatadir_*
