@@ -1,3 +1,5 @@
+* [2026-01-16] Synchronized documentation for scripts and Makefile; updated `Changelog` and identified `test_lb_galera.sh`.
+* [2026-01-12] Merged `mariadb` subdirectory into root and optimized Makefile for reliability and cross-version compatibility.
 * [2026-01-10] Relocated `test_db` cloning directory to `/var/tmp/test_db` in Makefile to optimize I/O and keep repo clean.
 * [2026-01-10] Added `check-galera` and `check-repli` targets to Makefile for cluster health monitoring.
 * [2026-01-10] Applied `innodb_flush_method = O_DSYNC` optimization to all Galera nodes to fix `ERROR 14` on WSL2 filesystems.

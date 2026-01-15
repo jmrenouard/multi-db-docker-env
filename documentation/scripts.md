@@ -47,4 +47,7 @@ This document describes the various shell scripts available in the root director
 - **[test_haproxy_galera.sh](../test_haproxy_galera.sh)**: Advanced validation suite for HAProxy.
   - Features: Latency benchmarking (LB vs Direct), persistence detection (Sticky/RR), real failover simulation, and HTML report generation.
   - Usage: `./test_haproxy_galera.sh`
+- **[test_lb_galera.sh](../test_lb_galera.sh)**: Lightweight load balancing distribution test.
+  - Features: Connection distribution analysis, SSL verification, and sleek HTML report.
+  - Usage: `./test_lb_galera.sh`
 - **[test_perf_galera.sh](../test_perf_galera.sh)** / **[test_perf_repli.sh](../test_perf_repli.sh)**: Performance benchmarks using Sysbench.

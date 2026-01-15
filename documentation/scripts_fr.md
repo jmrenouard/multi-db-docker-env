@@ -47,4 +47,7 @@ Ce document décrit les différents scripts shell disponibles dans le répertoir
 - **[test_haproxy_galera.sh](../test_haproxy_galera.sh)** : Suite de validation avancée pour HAProxy.
   - Caractéristiques : Benchmarking de latence (LB vs Direct), détection du mode de répartition (Sticky/RR), simulation de panne réelle (failover) et génération de rapports HTML.
   - Utilisation : `./test_haproxy_galera.sh`
+- **[test_lb_galera.sh](../test_lb_galera.sh)** : Test léger de répartition de charge.
+  - Caractéristiques : Analyse de la distribution des connexions, vérification SSL et rapport HTML élégant.
+  - Utilisation : `./test_lb_galera.sh`
 - **[test_perf_galera.sh](../test_perf_galera.sh)** / **[test_perf_repli.sh](../test_perf_repli.sh)** : Benchmarks de performance utilisant Sysbench.

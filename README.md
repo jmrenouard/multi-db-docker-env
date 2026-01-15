@@ -80,6 +80,7 @@ To start a specific database instance, use the `make <database_version>` command
 | `make mariadb1011`| 🐧   | Starts MariaDB 10.11   |
 | `make mariadb106` | 🐧   | Starts MariaDB 10.6    |
 
+| `make percona84` | ⚡   | Starts Percona Server 8.4 |
 | `make percona80` | ⚡   | Starts Percona Server 8.0 |
 
 **MariaDB Clusters (Galera & Replication)**

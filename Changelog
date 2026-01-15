@@ -1,0 +1,12 @@
+1.0.8 2026-01-16
+ - doc: sync documentation with recent Makefile and script changes.
+ - feat: add test_lb_galera.sh for lightweight load balancing distribution tests.
+ - feat: merge mariadb subdirectory into root and optimize Makefile for reliability.
+ - feat: add check-galera and check-repli targets to Makefile.
+ - fix: apply innodb_flush_method = O_DSYNC for WSL2 compatibility.
+ - feat: add tmpfs mount for /tmp in Galera nodes.
+ - feat: implement make renew-ssl-repli for zero-downtime SSL rotation.
+ - feat: centralization of test reports in reports/ directory.
+
+1.0.0 2025-06-13
+ - Initial release with basic Docker Compose and Makefile orchestration.
