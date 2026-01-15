@@ -10,7 +10,7 @@ PASS="rootpass"
 NODE3_NAME="mariadb-galera_03-1"
 
 # Create reports directory if it doesn't exist
-REPORT_DIR="reports"
+REPORT_DIR="./reports"
 mkdir -p "$REPORT_DIR"
 
 # Report filename with timestamp

@@ -96,3 +96,18 @@ Configured with an aggressive sampling to minimize overhead while capturing outl
 - **Threshold**: 2.0 seconds (`long_query_time`).
 - **Sampling**: 1 out of every 5 queries (`log_slow_rate_limit`).
 - **Storage**: Logs are stored in `/var/lib/mysql/*.slow` and accessible via `make logs-slow-*`.
+
+## 📁 4. Project Structure
+
+The project follows a modular organization:
+
+| Directory | Content |
+| :--- | :--- |
+| `scripts/` | Core maintenance, backup, and setup scripts. |
+| `conf/` | Configuration files for MariaDB, HAProxy, and Supervisor. |
+| `tests/` | Functional and performance test suites. |
+| `documentation/` | Technical guides and architectural references. |
+| `reports/` | Generated test reports (Markdown and HTML). |
+| `ssl/` | Generated SSL certificates (CA, Server, Client). |
+| `datadir_*/` | Persistent data for Replication nodes (local only). |
+| `gdatadir_*/` | Persistent data for Galera nodes (local only). |

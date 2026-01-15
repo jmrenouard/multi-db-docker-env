@@ -39,11 +39,11 @@ RUN echo 'root:rootpass' | chpasswd && \
 
 # ⚙️ Configuration
 # On copie le script de démarrage conditionnel de MariaDB
-COPY start-mariadb.sh /usr/local/bin/start-mariadb.sh
+COPY scripts/start-mariadb.sh /usr/local/bin/start-mariadb.sh
 RUN chmod +x /usr/local/bin/start-mariadb.sh
 
 # Copie de la configuration Supervisor
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Ports exposés
 EXPOSE 22 3306

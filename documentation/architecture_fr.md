@@ -96,3 +96,18 @@ Configuré avec un échantillonnage agressif pour minimiser l'impact CPU tout en
 - **Seuil** : 2.0 secondes (`long_query_time`).
 - **Échantillonnage** : 1 requête sur 5 (`log_slow_rate_limit`).
 - **Stockage** : Les journaux sont stockés dans `/var/lib/mysql/*.slow` et accessibles via `make logs-slow-*`.
+
+## 📁 4. Structure du Projet
+
+Le projet respecte une organisation modulaire :
+
+| Dossier | Contenu |
+| :--- | :--- |
+| `scripts/` | Scripts de maintenance, sauvegarde et déploiement. |
+| `conf/` | Fichiers de configuration MariaDB, HAProxy et Supervisor. |
+| `tests/` | Suites de tests fonctionnels et de performance. |
+| `documentation/` | Guides techniques et références d'architecture. |
+| `reports/` | Rapports de tests générés (Markdown et HTML). |
+| `ssl/` | Certificats SSL générés (CA, Serveur, Client). |
+| `datadir_*/` | Données persistantes des nœuds de réplication. |
+| `gdatadir_*/` | Données persistantes des nœuds Galera. |

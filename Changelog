@@ -1,12 +1,58 @@
+1.0.10 2026-01-16
+ - refactor: reorganize project structure (move scripts to scripts/, configs to conf/, and tests to tests/).
+ - update: fix Makefile and Dockerfile to reflect new directory structure.
+ - update: adjust documentation and test scripts for relative path changes.
+ - feat: add new configuration and security test suites (test_config.sh, test_env.sh, test_security_ssl.sh, test_profiles.sh).
+ - feat: integrate test-config target into Makefile for environment validation.
+
+1.0.9 2026-01-16
+ - chore: migrate HISTORY.md into Changelog and remove HISTORY.md.
+
 1.0.8 2026-01-16
  - doc: sync documentation with recent Makefile and script changes.
  - feat: add test_lb_galera.sh for lightweight load balancing distribution tests.
- - feat: merge mariadb subdirectory into root and optimize Makefile for reliability.
- - feat: add check-galera and check-repli targets to Makefile.
- - fix: apply innodb_flush_method = O_DSYNC for WSL2 compatibility.
- - feat: add tmpfs mount for /tmp in Galera nodes.
+
+1.0.7 2026-01-12
+ - feat: merge mariadb subdirectory into root and optimize Makefile for reliability and cross-version compatibility.
+
+1.0.6 2026-01-10
+ - feat: relocate test_db cloning directory to /var/tmp/test_db in Makefile to optimize I/O.
+ - feat: add check-galera and check-repli targets to Makefile for cluster health monitoring.
+ - fix: apply innodb_flush_method = O_DSYNC to fix ERROR 14 on WSL2.
+ - feat: add tmpfs mount for /tmp to all Galera nodes.
+ - feat: standardize Makefile commands to use mariadb host client instead of docker exec.
+
+1.0.5 2026-01-09
+ - fix: corrected emergency startup targets and replaced docker exec with mariadb host client.
+ - feat: improve Galera cluster resilience with wsrep_slave_threads=1 and Flow Control tuning.
  - feat: implement make renew-ssl-repli for zero-downtime SSL rotation.
- - feat: centralization of test reports in reports/ directory.
+ - feat: optimize MariaDB configuration in gcustom_*.cnf with recommended parameters.
+ - feat: add make inject-*-galera and make inject-*-repli for automated deployment and data injection.
+ - docs: full translation of CONTEXT.md into English.
+
+1.0.4 2026-01-08
+ - feat: centralization of ALL test reports (Galera, Replication, Sysbench, HAProxy) in reports/ directory.
+ - feat: integration of SSL expiration monitoring and "Best Practices" Galera audit.
+ - feat: implementation of hot SSL rotation (make renew-ssl) with FLUSH SSL.
+ - feat: redesign of Galera Provider Options display in reports.
+ - feat: optimization of gen_ssl.sh script with validity check.
+ - fix: resolve "Aborted connection" errors by switching HAProxy check to mysql-check.
+ - feat: integration of formatted validation of wsrep_provider_options in reports.
+
+1.0.3 2026-01-07
+ - feat: integration of dynamic architecture diagrams (Mermaid.js) in HTML reports.
+ - fix: correction of log commands in Makefile (logs-* vs follow-*).
+ - feat: addition of logs-error-* and logs-slow-* targets in Makefile.
+ - refactor: restructuring gcustom_*.cnf and custom_*.cnf by themes and English documentation.
+ - fix: automatic correction of id_rsa permissions (600) in gen_profiles.sh.
+ - feat: addition of SSH aliases (ssh-g*, ssh-m*) in shell profiles.
+ - chore: transition to "Single Branch" approach on main.
+ - chore: integration of "Conventional Commits" and "Feature Branch" rules.
+ - chore: validation of immediate commit rule and Git archiving of changes.
+ - chore: addition of test update rule in CONTEXT.md.
+ - feat: verification and application of Galera configuration (PFS and Slow Query Log).
+ - feat: reinforcement of Bash robustness rules.
 
 1.0.0 2025-06-13
  - Initial release with basic Docker Compose and Makefile orchestration.
+ - Initialization of AI context for MariaDB Docker environment (2025-01-01).

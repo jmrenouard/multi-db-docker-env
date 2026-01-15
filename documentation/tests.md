@@ -17,6 +17,25 @@ Filenames follow the pattern: `test_<type>_<timestamp>.[md|html]`.
 
 For more details on the cluster topology, refer to the **[Architecture Documentation](architecture.md)**.
 
+---
+
+## ⚙️ 0. Configuration & Security (`make test-config`)
+
+This suite validates the environment's integrity before starting any containers.
+
+### Test Cases
+
+1. **Environment Consistency**: Ensures `.env` exists and contains critical secrets (e.g., `DB_ROOT_PASSWORD`).
+2. **Directory Structure**: Verifies the presence of key directories: `scripts/`, `conf/`, `tests/`, `documentation/`.
+3. **Docker Compose Validation**: Runs `docker compose config` on all orchestration files to prevent syntax regressions.
+4. **Configuration Inventory**: Ensures all `.cnf`, `.cfg`, and `.sql` files are present in the `conf/` directory.
+5. **Script Permissions**: Audits `scripts/` and `tests/` directories for correct execution bits.
+6. **SSL Security Audit**:
+   - Validates that the SSL certificate chain is correctly signed by the local CA.
+   - Checks certificate expiry dates.
+   - **Key Consistency**: Cryptographically verifies that the `server-key.pem` matches the `server-cert.pem`.
+7. **Profile Integrity**: Ensures `profile_galera` and `profile_repli` are correctly generated with functional aliases.
+
 ## 🌐 1. Galera Test Suite (`test_galera.sh`)
 
 ### Test Cases

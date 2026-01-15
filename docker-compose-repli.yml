@@ -28,10 +28,10 @@ services:
     volumes:
       - "./datadir_01:/var/lib/mysql"
       - "./backups_01:/backups"
-      - "./custom_1.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
-      - "./init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
+      - "./conf/custom_1.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
+      - "./conf/init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
       - "./ssl:/etc/mysql/ssl:ro"
-      - "./ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
+      - "./conf/ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
     networks:
       backend_db:
         ipv4_address: 10.5.0.11
@@ -46,10 +46,10 @@ services:
     volumes:
       - "./datadir_02:/var/lib/mysql"
       - "./backups_02:/backups"
-      - "./custom_2.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
-      - "./init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
+      - "./conf/custom_2.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
+      - "./conf/init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
       - "./ssl:/etc/mysql/ssl:ro"
-      - "./ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
+      - "./conf/ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
     networks:
       backend_db:
         ipv4_address: 10.5.0.12
@@ -64,10 +64,10 @@ services:
     volumes:
       - "./datadir_03:/var/lib/mysql"
       - "./backups_03:/backups"
-      - "./custom_3.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
-      - "./init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
+      - "./conf/custom_3.cnf:/etc/mysql/mariadb.conf.d/999_custom.cnf:ro"
+      - "./conf/init-permissions.sql:/docker-entrypoint-initdb.d/init-permissions.sql:ro"
       - "./ssl:/etc/mysql/ssl:ro"
-      - "./ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
+      - "./conf/ssl.cnf:/etc/mysql/conf.d/ssl.cnf:ro"
     networks:
       backend_db:
         ipv4_address: 10.5.0.13
@@ -77,7 +77,7 @@ services:
     container_name: haproxy_repli
     restart: unless-stopped
     volumes:
-      - ./haproxy-repli.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./conf/haproxy-repli.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
       - "3406:3306" # Writes (Master)
       - "3407:3307" # Reads (Slaves)

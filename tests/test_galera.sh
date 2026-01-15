@@ -9,7 +9,7 @@ PASS="rootpass"
 DB="test_galera_db"
 
 # Create reports directory if it doesn't exist
-REPORT_DIR="reports"
+REPORT_DIR="./reports"
 mkdir -p "$REPORT_DIR"
 
 # Report filename with timestamp

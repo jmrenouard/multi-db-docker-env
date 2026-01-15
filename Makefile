@@ -9,7 +9,8 @@ SHELL := /bin/bash
         build-image up-galera down-galera logs-galera up-repli down-repli logs-repli test-repli test-galera \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employee inject-sakila \
-        gen-ssl clean-ssl renew-ssl renew-ssl-galera renew-ssl-repli emergency-galera emergency-repli check-galera check-repli
+        gen-ssl clean-ssl renew-ssl renew-ssl-galera renew-ssl-repli emergency-galera emergency-repli check-galera check-repli \
+        test-config
 
 # Default target, displays help
 help:
@@ -45,6 +46,7 @@ help:
 	@printf "    \033[1mcheck-repli\033[0m   - 📊 Checks Replication status\n"
 	@printf "    \033[1mtest-galera\033[0m   - 🧪 Runs Galera tests\n"
 	@printf "    \033[1mtest-repli\033[0m    - 🧪 Runs Replication tests\n"
+	@printf "    \033[1mtest-config\033[0m   - 🧪 Validates orchestration and configuration\n"
 	@printf "\n"
 	@printf "  \033[1;32mPercona Server:\033[0m\n"
 	@printf "    \033[1mpercona84\033[0m     - Starts Percona Server 8.4\n"
@@ -220,6 +222,13 @@ test-all:
 		make stop; \
 	done
 	@printf "\n\033[1;32m✅ All services tested successfully!\033[0m\n"
+	
+test-config: ## Validate the current orchestration configuration, directory structure, SSL and profiles
+	@echo "🚀 Running Configuration Validation..."
+	bash ./tests/test_env.sh
+	bash ./tests/test_config.sh
+	bash ./tests/test_security_ssl.sh
+	bash ./tests/test_profiles.sh
 
 
 # --- Start-up Targets by Profile ---
@@ -353,48 +362,48 @@ logs-repli: ## Follow Replication cluster logs
 	docker compose -f $(COMPOSE_REPLI) logs -f
 
 test-repli: ## Run replication tests on the active cluster
-	bash ./test_repli.sh
+	bash ./tests/test_repli.sh
 
 setup-repli: ## Configure Master/Slave relationship
-	bash ./setup_repli.sh
+	bash ./scripts/setup_repli.sh
 
 test-lb-galera: ## Specifically test the HAProxy load balancer for Galera
-	bash ./test_haproxy_galera.sh
+	bash ./tests/test_haproxy_galera.sh
 
 test-galera: ## Run the Galera functional test suite
-	bash ./test_galera.sh
+	bash ./tests/test_galera.sh
 
 test-perf-repli: ## Run performance tests on Replication (Usage: make test-perf-repli PROFILE=light ACTION=run)
-	bash ./test_perf_repli.sh $(PROFILE) $(ACTION)
+	bash ./tests/test_perf_repli.sh $(PROFILE) $(ACTION)
 
 test-perf-galera: ## Run performance tests on Galera (Usage: make test-perf-galera PROFILE=light ACTION=run)
-	bash ./test_perf_galera.sh $(PROFILE) $(ACTION)
+	bash ./tests/test_perf_galera.sh $(PROFILE) $(ACTION)
 
 ## Backup & Restore (Logical)
 backup-galera: ## Backup Galera cluster (Usage: make backup-galera [DB=name])
-	bash ./backup_logical.sh galera $(DB)
+	bash ./scripts/backup_logical.sh galera $(DB)
 
 restore-galera: ## Restore Galera cluster (Usage: make restore-galera FILE=filename.sql.gz)
-	bash ./restore_logical.sh galera $(FILE)
+	bash ./scripts/restore_logical.sh galera $(FILE)
 
 backup-repli: ## Backup Replication cluster (Usage: make backup-repli [DB=name])
-	bash ./backup_logical.sh repli $(DB)
+	bash ./scripts/backup_logical.sh repli $(DB)
 
 restore-repli: ## Restore Replication cluster (Usage: make restore-repli FILE=filename.sql.gz)
-	bash ./restore_logical.sh repli $(FILE)
+	bash ./scripts/restore_logical.sh repli $(FILE)
 
 ## Backup & Restore (Physical - MariaBackup)
 backup-phys-galera: ## Physical backup Galera (Usage: make backup-phys-galera)
-	bash ./backup_physical.sh galera
+	bash ./scripts/backup_physical.sh galera
 
 restore-phys-galera: ## Physical restore Galera (Usage: make restore-phys-galera FILE=filename.tar.gz)
-	bash ./restore_physical.sh galera $(FILE)
+	bash ./scripts/restore_physical.sh galera $(FILE)
 
 backup-phys-repli: ## Physical backup Replication (Usage: make backup-phys-repli)
-	./backup_physical.sh repli
+	./scripts/backup_physical.sh repli
 
 restore-phys-repli: ## Physical restore Replication (Usage: make restore-phys-repli FILE=filename.tar.gz)
-	./restore_physical.sh repli $(FILE)
+	./scripts/restore_physical.sh repli $(FILE)
 
 ## Data Injection
 TEST_DB_REPO_CLUSTER = https://github.com/jmrenouard/test_db
@@ -449,10 +458,10 @@ clean-repli: down-repli ## Stop Replication and remove all data/backups (CAUTION
 	rm -rf datadir_* backups_*
 
 gen-profiles: ## Generate shell profile files with aliases
-	bash ./gen_profiles.sh
+	bash ./scripts/gen_profiles.sh
 
 gen-ssl: ## Generate SSL certificates for MariaDB
-	bash ./gen_ssl.sh
+	bash ./scripts/gen_ssl.sh
 
 clean-ssl: ## Remove SSL certificates (REVERSIBLE)
 	rm -rf ssl/
@@ -460,7 +469,7 @@ clean-ssl: ## Remove SSL certificates (REVERSIBLE)
 renew-ssl-galera: ## Force SSL certificate regeneration and reload on active Galera nodes
 	@echo ">> 🔄 Regenerating SSL certificates..."
 	rm -rf ssl/
-	bash ./gen_ssl.sh
+	bash ./scripts/gen_ssl.sh
 	@echo ">> 🚀 Reloading SSL on Galera nodes..."
 	@mariadb -h 127.0.0.1 -P 3511 -u root -prootpass -e "FLUSH SSL;" && echo "✅ Node 1 reloaded"
 	@mariadb -h 127.0.0.1 -P 3512 -u root -prootpass -e "FLUSH SSL;" && echo "✅ Node 2 reloaded"
@@ -470,7 +479,7 @@ renew-ssl-galera: ## Force SSL certificate regeneration and reload on active Gal
 renew-ssl-repli: ## Force SSL certificate regeneration and reload on active Replication nodes
 	@echo ">> 🔄 Regenerating SSL certificates..."
 	rm -rf ssl/
-	bash ./gen_ssl.sh
+	bash ./scripts/gen_ssl.sh
 	@echo ">> 🚀 Reloading SSL on Replication nodes..."
 	@mariadb -h 127.0.0.1 -P 3411 -u root -prootpass -e "FLUSH SSL;" && echo "✅ Node 1 reloaded"
 	@mariadb -h 127.0.0.1 -P 3412 -u root -prootpass -e "FLUSH SSL;" && echo "✅ Node 2 reloaded"

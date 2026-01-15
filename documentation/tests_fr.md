@@ -17,6 +17,25 @@ Les fichiers sont nommés selon le format : `test_<type>_<timestamp>.[md|html]`.
 
 Pour plus de détails sur la topologie du cluster, consultez la **[Documentation de l'Architecture](architecture_fr.md)**.
 
+---
+
+## ⚙️ 0. Configuration & Sécurité (`make test-config`)
+
+Cette suite valide l'intégrité de l'environnement avant même le démarrage des conteneurs.
+
+### Cas de Tests
+
+1. **Cohérence de l'Environnement** : Garantit que le fichier `.env` existe et contient les secrets critiques (ex: `DB_ROOT_PASSWORD`).
+2. **Structure des Répertoires** : Vérifie la présence des dossiers clés : `scripts/`, `conf/`, `tests/`, `documentation/`.
+3. **Validation Docker Compose** : Exécute `docker compose config` sur tous les fichiers d'orchestration pour éviter les régressions de syntaxe.
+4. **Inventaire des Configurations** : S'assure que tous les fichiers `.cnf`, `.cfg` et `.sql` sont présents dans le dossier `conf/`.
+5. **Permissions des Scripts** : Audit des répertoires `scripts/` et `tests/` pour vérifier les droits d'exécution (`+x`).
+6. **Audit de Sécurité SSL** :
+   - Valide que la chaîne de certificats SSL est correctement signée par l'autorité locale (CA).
+   - Vérifie les dates d'expiration des certificats.
+   - **Cohérence des Clés** : Vérifie cryptographiquement que la clé `server-key.pem` correspond bien au certificat `server-cert.pem`.
+7. **Intégrité des Profils** : S'assure que `profile_galera` et `profile_repli` sont correctement générés avec des alias fonctionnels.
+
 ## 🌐 1. Suite de Tests Galera (`test_galera.sh`)
 
 ### Cas de Tests
