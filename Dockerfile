@@ -39,8 +39,8 @@ RUN echo 'root:rootpass' | chpasswd && \
 
 # ⚙️ Configuration
 # On copie le script de démarrage conditionnel de MariaDB
-COPY scripts/start-mariadb.sh /usr/local/bin/start-mariadb.sh
-RUN chmod +x /usr/local/bin/start-mariadb.sh
+COPY scripts/start_mariadb.sh /usr/local/bin/start_mariadb.sh
+RUN chmod +x /usr/local/bin/start_mariadb.sh
 
 # Copie de la configuration Supervisor
 COPY conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf

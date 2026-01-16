@@ -81,7 +81,7 @@ SCRIPTS_TO_CHECK=(
     "scripts/backup_logical.sh" "scripts/backup_physical.sh"
     "scripts/gen_profiles.sh" "scripts/gen_ssl.sh"
     "scripts/restore_logical.sh" "scripts/restore_physical.sh"
-    "scripts/setup_repli.sh" "scripts/start-mariadb.sh"
+    "scripts/setup_repli.sh" "scripts/start_mariadb.sh"
 )
 
 for s in "${SCRIPTS_TO_CHECK[@]}"; do

@@ -1,0 +1,10 @@
+# System Level Dependencies (Mandatory for Lab Environment)
+# Install via: sudo apt-get update && sudo apt-get install -y mariadb-client sysbench docker.io docker-compose-v2
+
+bash>=5.0
+docker>=20.10.0
+docker-compose-plugin>=2.0.0
+mariadb-client>=10.6
+sysbench>=1.0.20
+git>=2.25
+python>=3.10

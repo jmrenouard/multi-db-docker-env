@@ -48,12 +48,14 @@ Le Makefile est le point d'entrée pour toutes les opérations.
 | Commande | Icône | Description |
 | :---- | :---- | :---- |
 | make help | 📜 | Affiche la liste complète des commandes. |
+| make start | 🚀 | Démarre le service de base de données par défaut (MariaDB 11.8). |
 | make stop | 🛑 | Arrête et supprime tous les conteneurs et réseaux. |
 | make status | 📊 | Affiche le statut des conteneurs actifs (Traefik \+ BDD). |
 | make info | ℹ️ | Fournit des infos sur le service de BDD actif. |
 | make logs | 📄 | Affiche les logs du service de BDD actif. |
 | make mycnf | 🔑 | Génère \~/.my.cnf pour une connexion client sans mot de passe. |
 | make client | 💻 | Lance un client MySQL connecté à la BDD active. |
+| make verify | ✅ | Exécute la validation complète de l'environnement et de la configuration (test-config). |
 
 ### Gestion des données
 
@@ -61,6 +63,9 @@ Ces commandes vous permettent d'injecter des bases de données exemples dans un 
 
 | Commande                           | Icône | Description                                                                                                                                | Exemple d'utilisation                             |
 | :--------------------------------- | :---- | :----------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------ |
+| `make inject`                      | 💉    | Alias pour `inject-employees` sur l'environnement actif (détecte Galera ou Réplication).                                                       | `make inject`                                     |
+| `make inject-employees`            | 💉    | Injecte la base `employees` avec auto-détection de l'environnement.                                                                        | `make inject-employees`                           |
+| `make inject-sakila`               | 💉    | Injecte la base `sakila` avec auto-détection de l'environnement.                                                                           | `make inject-sakila`                              |
 | `make inject-data`                 | 💉    | Injecte une base de données exemple (`employees` ou `sakila`) dans un service spécifié en cours d'exécution.                                 | `make inject-data service=mysql84 db=employees`   |
 | `make test-all`                    | 🧪    | Lance une suite de tests complète : démarre chaque service de BD, injecte les deux bases de données exemples, vérifie les données, puis arrête le service. | `make test-all`                                   |
 

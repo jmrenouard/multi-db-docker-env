@@ -1,4 +1,6 @@
 #!/bin/bash
+set -euo pipefail
+
 
 # Configuration
 MASTER_IP="10.5.0.11"

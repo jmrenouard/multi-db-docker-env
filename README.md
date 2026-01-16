@@ -43,12 +43,14 @@ These commands help you manage and interact with the overall environment.
 | Command         | Icon | Description                                                                 | Example Usage         |
 | :-------------- | :--- | :-------------------------------------------------------------------------- | :-------------------- |
 | `make help`     | 📜   | Displays the full list of all available commands.                           | `make help`           |
+| `make start`    | 🚀   | Starts the default database service (MariaDB 11.8).                         | `make start`          |
 | `make stop`     | 🛑   | Stops and properly removes all containers and networks for this project.    | `make stop`           |
 | `make status`   | 📊   | Shows the status of the project's active containers (Traefik + DB).         | `make status`         |
 | `make info`     | ℹ️   | Provides information about the active DB service and recent logs.           | `make info`           |
 | `make logs`     | 📄   | Displays logs for the currently active database service (or all if none).   | `make logs`           |
 | `make mycnf`    | 🔑   | Generates a `~/.my.cnf` file for password-less `mysql` client connections.  | `make mycnf`          |
 | `make client`   | 💻   | Starts a MySQL client connected to the active database.                     | `make client`         |
+| `make verify`   | ✅   | Runs complete environment and configuration validation (test-config).       | `make verify`         |
 
 ### Data Management
 
@@ -56,6 +58,9 @@ These commands allow you to inject sample databases into a running service or ru
 
 | Command                            | Icon | Description                                                                                                                              | Example Usage                                    |
 | :--------------------------------- | :--- | :--------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
+| `make inject`                      | 💉   | Alias for `inject-employees` on the active environment. detect correctly Galera or Replication.                                            | `make inject`                                    |
+| `make inject-employees`            | 💉   | Injects `employees` database with auto-detection of environment.                                                                         | `make inject-employees`                          |
+| `make inject-sakila`               | 💉   | Injects `sakila` database with auto-detection of environment.                                                                            | `make inject-sakila`                             |
 | `make inject-data`                 | 💉   | Injects a sample database (`employees` or `sakila`) into a specified running service.                                                      | `make inject-data service=mysql84 db=employees`  |
 | `make test-all`                    | 🧪   | Runs a full test suite: starts each DB service, injects both sample databases, verifies the data, and then stops the service.             | `make test-all`                                  |
 
@@ -80,6 +85,10 @@ To start a specific database instance, use the `make <database_version>` command
 | `make mariadb1011`| 🐧   | Starts MariaDB 10.11   |
 | `make mariadb106` | 🐧   | Starts MariaDB 10.6    |
 
+**Percona Server**
+
+| Command           | Icon | Description            |
+| :---------------- | :--- | :--------------------- |
 | `make percona84` | ⚡   | Starts Percona Server 8.4 |
 | `make percona80` | ⚡   | Starts Percona Server 8.0 |
 
@@ -106,6 +115,9 @@ make mysql80
 # 2. You want to switch to Percona 8.4. No need to stop manually.
 make percona84
 # This will stop mysql80 and then start percona84.
+
+# 3. Verify environment
+make verify
 ```
 
 ## 🏛️ Architecture

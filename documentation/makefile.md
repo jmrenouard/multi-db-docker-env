@@ -7,11 +7,13 @@ The `Makefile` is the main entry point for managing both Galera and Replication 
 | Command | Description |
 | :--- | :--- |
 | `make stop` | 🛑 Stop and remove all containers and networks. |
+| `make start` | 🚀 Start the default database service (MariaDB 11.8). |
 | `make status` | 📊 Display the status of active containers. |
 | `make info` | ℹ️ Provide information about the active DB service. |
 | `make logs` | 📄 Display logs for the active database service. |
 | `make mycnf` | 🔑 Generate the `.my.cnf` file for password-less connections. |
 | `make client` | 💻 Start a MySQL client on the active database. |
+| `make verify` | ✅ Alias for `test-config`. |
 | `make help` | Show help message for all available tasks. |
 | `make build-image` | Build the base `mariadb_ssh:004` image. |
 | `make install-client` | Install MariaDB client on the host (Ubuntu/Debian). |
@@ -25,9 +27,13 @@ The `Makefile` is the main entry point for managing both Galera and Replication 
 | `make clean-repli` | Stop Replication and remove all its data/backups. |
 | `make check-galera` | 📊 Check Galera cluster status (WSREP, Buffer Pool, etc.). |
 | `make check-repli` | 📊 Check Replication status (Slave Status, Read Only, etc.). |
+| `make test-config` | 🧪 Validate orchestration configuration, SSL, and profiles. |
 | `make full-repli` | Full orchestration for Replication: Clean, Start, Setup, and Test. |
 | `make full-galera` | Full orchestration for Galera: Clean, Start (Bootstrap), and Test. |
 | `make clean-data` | **DANGER**: Remove ALL data, backup, and SSL directories. |
+| `make inject` | 💉 Alias for `inject-employees` with auto-detection. |
+| `make inject-employees` | 💉 Inject `employees` database with auto-detection. |
+| `make inject-sakila` | 💉 Inject `sakila` database with auto-detection. |
 
 ## 🌐 Galera Cluster Commands
 

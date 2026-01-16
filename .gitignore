@@ -14,3 +14,4 @@ id_rsa.pub
 *.err
 *.swp
 .DS_Store
+multi-db-docker-env.code-workspace

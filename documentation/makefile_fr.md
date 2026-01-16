@@ -6,6 +6,14 @@ Le `Makefile` est le point d'entrée principal pour la gestion des clusters Gale
 
 | Commande | Description |
 | :--- | :--- |
+| `make stop` | 🛑 Arrête et supprime tous les conteneurs et réseaux. |
+| `make start` | 🚀 Démarre le service de base de données par défaut (MariaDB 11.8). |
+| `make status` | 📊 Affiche le statut des conteneurs actifs. |
+| `make info` | ℹ️ Fournit des infos sur le service de BDD actif. |
+| `make logs` | 📄 Affiche les logs du service de BDD actif. |
+| `make mycnf` | 🔑 Génère ~/.my.cnf pour une connexion client sans mot de passe. |
+| `make client` | 💻 Lance un client MySQL connecté à la BDD active. |
+| `make verify` | ✅ Alias pour `test-config`. |
 | `make help` | Affiche le message d'aide pour toutes les tâches disponibles. |
 | `make build-image` | Construit l'image de base `mariadb_ssh:004`. |
 | `make install-client` | Installe le client MariaDB sur l'hôte (Ubuntu/Debian). |
@@ -17,9 +25,13 @@ Le `Makefile` est le point d'entrée principal pour la gestion des clusters Gale
 | `make gen-profiles` | Générer des profils shell pour un accès rapide aux conteneurs. |
 | `make clean-galera` | Arrêter Galera et supprimer toutes ses données/sauvegardes. |
 | `make clean-repli` | Arrêter la Réplication et supprimer toutes ses données/sauvegardes. |
+| `make test-config` | 🧪 Valide la configuration d'orchestration, SSL et les profils. |
 | `make full-repli` | Orchestration complète pour la Réplication : Nettoyage, Lancement, Configuration et Test. |
 | `make full-galera` | Orchestration complète pour Galera : Nettoyage, Lancement (Bootstrap) et Test. |
 | `make clean-data` | **DANGER** : Supprimer TOUTES les données, sauvegardes et répertoires SSL. |
+| `make inject` | 💉 Alias pour `inject-employees` avec auto-détection. |
+| `make inject-employees` | 💉 Injecte la base `employees` avec auto-détection. |
+| `make inject-sakila` | 💉 Injecte la base `sakila` avec auto-détection. |
 
 ## 🌐 Commandes pour le Cluster Galera
 

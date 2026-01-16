@@ -8,12 +8,15 @@ SHELL := /bin/bash
 .PHONY: help mycnf client info mysql93 mysql84 mysql80 mariadb114 mariadb1011 mariadb106 percona84 percona80 stop status logs \
         build-image up-galera down-galera logs-galera up-repli down-repli logs-repli test-repli test-galera \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
-        inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employee inject-sakila \
+        inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
         gen-ssl clean-ssl renew-ssl renew-ssl-galera renew-ssl-repli emergency-galera emergency-repli check-galera check-repli \
         test-config start verify inject
 
 # --- Default Service ---
 DEFAULT_SERVICE ?= mariadb114
+# Detects the running database service reliably
+GET_ACTIVE_SERVICE = docker compose ps --services --filter "status=running" | grep -v traefik | head -n 1
+GET_CONTAINER_NAME = docker compose ps $$( $(GET_ACTIVE_SERVICE) ) --format "{{.Names}}"
 
 # Default target, displays help
 help:
@@ -51,6 +54,11 @@ help:
 	@printf "    \033[1mtest-repli\033[0m    - 🧪 Runs Replication tests\n"
 	@printf "    \033[1mtest-config\033[0m   - 🧪 Validates orchestration and configuration\n"
 	@printf "\n"
+	@printf "  \033[1;32mData Injection:\033[0m\n"
+	@printf "    \033[1minject-employees\033[0m - 💉 Injects employees database (Auto-detect environment)\n"
+	@printf "    \033[1minject-sakila\033[0m    - 💉 Injects sakila database (Auto-detect environment)\n"
+	@printf "    \033[1minject\033[0m           - 💉 Alias for inject-employees on default service\n"
+	@printf "\n"
 	@printf "  \033[1;32mPercona Server:\033[0m\n"
 	@printf "    \033[1mpercona84\033[0m     - Starts Percona Server 8.4\n"
 	@printf "    \033[1mpercona80\033[0m     - Starts Percona Server 8.0\n"
@@ -62,9 +70,43 @@ start: $(DEFAULT_SERVICE)
 # 🧪 Runs configuration and environment validation
 verify: test-config
 
-# 💉 Injects employees data into the default service
-inject:
-	@make inject-data service=$(DEFAULT_SERVICE) db=employees
+# 💉 Injects employees database into the active environment (Alias)
+inject: inject-employees
+
+# 💉 Injects employees database into the active environment
+inject-employees: ## Inject employees database into the detected running environment
+	@if [ -n "$$(docker compose -f $(COMPOSE_GALERA) ps -q galera_01 2>/dev/null)" ] && [ -n "$$(docker compose -f $(COMPOSE_GALERA) ps --services --filter "status=running" | grep galera_01)" ]; then \
+		make inject-employee-galera; \
+	elif [ -n "$$(docker compose -f $(COMPOSE_REPLI) ps -q mariadb_01 2>/dev/null)" ] && [ -n "$$(docker compose -f $(COMPOSE_REPLI) ps --services --filter "status=running" | grep mariadb_01)" ]; then \
+		make inject-employee-repli; \
+	else \
+		DB_SERVICE=$$(docker compose ps --services --filter "status=running" | grep -v traefik | head -n 1); \
+		if [ -n "$$DB_SERVICE" ]; then \
+			make inject-data service=$$DB_SERVICE db=employees; \
+		else \
+			printf "\033[1;31m❌ Error: No running environment detected for injection.\033[0m\n"; \
+			exit 1; \
+		fi; \
+	fi
+
+# 💉 Injects sakila database into the active environment
+inject-sakila: ## Inject sakila database into the detected running environment
+	@if [ -n "$$(docker compose -f $(COMPOSE_GALERA) ps -q galera_01 2>/dev/null)" ] && [ -n "$$(docker compose -f $(COMPOSE_GALERA) ps --services --filter "status=running" | grep galera_01)" ]; then \
+		make inject-sakila-galera; \
+	elif [ -n "$$(docker compose -f $(COMPOSE_REPLI) ps -q mariadb_01 2>/dev/null)" ] && [ -n "$$(docker compose -f $(COMPOSE_REPLI) ps --services --filter "status=running" | grep mariadb_01)" ]; then \
+		make inject-sakila-repli; \
+	else \
+		DB_SERVICE=$$(docker compose ps --services --filter "status=running" | grep -v traefik | head -n 1); \
+		if [ -n "$$DB_SERVICE" ]; then \
+			make inject-data service=$$DB_SERVICE db=sakila; \
+		else \
+			printf "\033[1;31m❌ Error: No running environment detected for injection.\033[0m\n"; \
+			exit 1; \
+		fi; \
+	fi
+
+# 💉 Alias for inject-employees
+inject-employee: inject-employees
 
 # --- Management Commands ---
 
@@ -81,7 +123,7 @@ status:
 
 # ℹ️ Provides information about the active DB service and displays status/logs
 info:
-	@DB_SERVICE=$$(docker compose ps --services --filter "status=running" | grep -v traefik); \
+	@DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
 	if [ -n "$${DB_SERVICE}" ]; then \
 		printf "✅ Active database service: \033[1;32m%s\033[0m\n" "$${DB_SERVICE}"; \
 	else \
@@ -100,7 +142,7 @@ info:
 # Usage: make logs or make logs service=<service_name>
 logs:
 	@echo "📄 Displaying logs..."
-	@DB_SERVICE=$$(docker compose ps --services --filter "status=running" | grep -v traefik); \
+	@DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
 	docker compose logs -f $$DB_SERVICE
 	
 # 🔑 Generates the .my.cnf file
@@ -129,9 +171,8 @@ client:
 		exit 1; \
 	fi
 	@export DB_ROOT_PASSWORD=$$(sed 's/#.*//g' .env|grep DB_ROOT_PASSWORD| xargs|cut -d= -f2); \
-	#echo "DB_ROOT_PASSWORD is set to: $${DB_ROOT_PASSWORD}"; \
-	DB_SERVICE=$$(docker compose ps --services --filter "status=running" | grep -v traefik); \
-	DB_CONTAINER=$$(docker compose ps $${DB_SERVICE} --format "{{.Names}}"); \
+	DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
+	DB_CONTAINER=$$($(GET_CONTAINER_NAME)); \
 	if [ -n "$${DB_SERVICE}" ]; then \
 		printf "💻 Connecting MySQL client to \033[1;32m%s\033[0m...\n" "$${DB_SERVICE}"; \
 		docker exec -it "$${DB_CONTAINER}" mysql -uroot -p"$${DB_ROOT_PASSWORD}"; \
@@ -174,8 +215,8 @@ inject-data:
 		printf "✅ 'employees' database injected.\n"; \
 	elif [ "$(db)" = "sakila" ]; then \
 		docker cp test_db/sakila "$${DB_CONTAINER}:/tmp/"; \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p$${DB_ROOT_PASSWORD} < sakila-schema.sql"; \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p$${DB_ROOT_PASSWORD} < sakila-data.sql"; \
+		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p$${DB_ROOT_PASSWORD} < sakila-mv-schema.sql"; \
+		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p$${DB_ROOT_PASSWORD} < sakila-mv-data.sql"; \
 		printf "✅ 'sakila' database injected.\n"; \
 	else \
 		printf "\033[1;31m❌ Error: Invalid database name '%s'.\033[0m\n" "$(db)"; \
@@ -188,6 +229,7 @@ inject-data:
 test-all:
 	@# List of all database services to test
 	@SERVICES_TO_TEST="mysql84 mariadb114 percona84"; \
+	export DB_ROOT_PASSWORD=$$(sed 's/#.*//g' .env|grep DB_ROOT_PASSWORD| xargs|cut -d= -f2); \
 	for service in $${SERVICES_TO_TEST}; do \
 		printf "\n\033[1;34m--- Testing service: %s ---\033[0m\n" "$$service"; \
 		\
@@ -207,14 +249,14 @@ test-all:
 		make inject-data service=$$service db=sakila; \
 		\
 		printf "🔍 Verifying data injection...\n"; \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -e "SHOW DATABASES;" | grep -q "employees"; \
+		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$${DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" | grep -q "employees"; \
 		if [ $$? -eq 0 ]; then \
 			printf "✅ 'employees' database found.\n"; \
 		else \
 			printf "\033[1;31m❌ 'employees' database not found.\033[0m\n"; \
 			exit 1; \
 		fi; \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -e "SHOW DATABASES;" | grep -q "sakila"; \
+		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$${DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" | grep -q "sakila"; \
 		if [ $$? -eq 0 ]; then \
 			printf "✅ 'sakila' database found.\n"; \
 		else \
@@ -223,7 +265,7 @@ test-all:
 		fi; \
 		\
 		printf "🔍 Verifying Traefik proxy...\n"; \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -h traefik -e "SHOW DATABASES;" | grep -q "employees"; \
+		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$${DB_ROOT_PASSWORD}" -h traefik -e "SHOW DATABASES;" | grep -q "employees"; \
 		if [ $$? -eq 0 ]; then \
 			printf "✅ Connection via Traefik successful.\n"; \
 		else \

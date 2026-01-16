@@ -35,15 +35,19 @@ Ce document décrit les différents scripts shell disponibles dans le répertoir
   - Configure la réplication basée sur le GTID.
 - **[gen_profiles.sh](../scripts/gen_profiles.sh)** : Génère `profile_galera` et `profile_repli`.
   - Fournit des alias shell (ex : `mariadb-m1`, `mariadb-g1`) pour un accès rapide aux conteneurs.
-- **[start-mariadb.sh](../scripts/start-mariadb.sh)** : Script d'entrée (entrypoint) personnalisé pour les conteneurs Docker MariaDB.
+- **[start_mariadb.sh](../scripts/start_mariadb.sh)** : Script d'entrée (entrypoint) personnalisé pour les conteneurs Docker MariaDB.
   - Gère l'initialisation de la base de données (`mariadb-install-db`).
   - Exécute les scripts présents dans `/docker-entrypoint-initdb.d/`.
   - Gère le "bootstrapping" Galera via la variable d'environnement `MARIADB_GALERA_BOOTSTRAP`.
 
 ## 🧪 Tests
 
-- **[test_galera.sh](../tests/test_galera.sh)** : Suite complète pour Galera (synchronisation, DDL, conflits).
+- **[interactive_runner.py](../interactive_runner.py)** : Tableau de bord interactif et automatisé pour l'orchestration des tests.
+  - **Caractéristiques** : Choix du type d'installation (Standalone, Galera, Réplication), progression en temps réel, et superbe rapport HTML auto-actualisé avec Tailwind CSS.
+  - **Utilisation** : `python3 interactive_runner.py [-i|--interactive] [-a|--auto]`
+- **[test_galera.sh](../tests/test_galera.sh)** : Suite complète pour Galera (synchronisation, DDL, conflits, Audit, SSL).
 - **[test_repli.sh](../tests/test_repli.sh)** : Vérification pour la réplication Maître/Esclave.
+- **[test_config.sh](../tests/test_config.sh)** : Script central de validation déclenchant `test_env.sh`, `test_security_ssl.sh`, et `test_profiles.sh`.
 - **[test_haproxy_galera.sh](../tests/test_haproxy_galera.sh)** : Suite de validation avancée pour HAProxy.
   - Caractéristiques : Benchmarking de latence (LB vs Direct), détection du mode de répartition (Sticky/RR), simulation de panne réelle (failover) et génération de rapports HTML.
   - Utilisation : `./test_haproxy_galera.sh`

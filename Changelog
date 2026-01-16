@@ -1,3 +1,15 @@
+1.0.13 2026-01-16
+ - refactor: implement architecture audit recommendations (Naming & Robustness).
+ - chore: rename scripts/start-mariadb.sh to scripts/start_mariadb.sh for underscore consistency.
+ - update: add set -euo pipefail to start_mariadb.sh and setup_repli.sh.
+ - update: centralize container detection logic in Makefile using GET_ACTIVE_SERVICE macro.
+ - doc: generate Structural Health Report in documentation/audit_report.md.
+
+1.0.12 2026-01-16
+ - feat: add smart inject-employees and inject-sakila targets with automatic environment detection.
+ - feat: add help section for Data Injection.
+ - update: unified injection logic for Standalone, Galera, and Replication.
+
 1.0.11 2026-01-16
  - feat: adapt interactive_runner.py with interactive installation type selection (Standalone, Galera, Replication).
  - feat: add HTML report generation to test_config.sh under reports/ directory.

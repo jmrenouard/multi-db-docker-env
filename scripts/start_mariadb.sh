@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 DATA_DIR="/var/lib/mysql"
 

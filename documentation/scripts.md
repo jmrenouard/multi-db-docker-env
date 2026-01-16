@@ -35,15 +35,19 @@ This document describes the various shell scripts available in the root director
   - Sets up GTID-based replication.
 - **[gen_profiles.sh](../scripts/gen_profiles.sh)**: Generates `profile_galera` and `profile_repli`.
   - Provides shell aliases (e.g., `mariadb-m1`, `mariadb-g1`) for quick access to containers.
-- **[start-mariadb.sh](../scripts/start-mariadb.sh)**: Custom entrypoint script for the MariaDB Docker containers.
+- **[start_mariadb.sh](../scripts/start_mariadb.sh)**: Custom entrypoint script for the MariaDB Docker containers.
   - Handles database initialization (`mariadb-install-db`).
   - Executes scripts in `/docker-entrypoint-initdb.d/`.
   - Manages Galera bootstrapping via `MARIADB_GALERA_BOOTSTRAP` environment variable.
 
 ## 🧪 Testing
 
+- **[interactive_runner.py](../interactive_runner.py)**: Interactive and automated test orchestration dashboard.
+  - **Features**: Choice of installation type (Standalone, Galera, Replication), real-time progress, and beautiful auto-refreshing HTML report with Tailwind CSS.
+  - **Usage**: `python3 interactive_runner.py [-i|--interactive] [-a|--auto]`
 - **[test_galera.sh](../tests/test_galera.sh)**: Full suite for Galera (sync, DDL, conflicts, Audit, SSL).
 - **[test_repli.sh](../tests/test_repli.sh)**: Verification for Master/Slave replication.
+- **[test_config.sh](../tests/test_config.sh)**: Central validation script that triggers `test_env.sh`, `test_security_ssl.sh`, and `test_profiles.sh`.
 - **[test_haproxy_galera.sh](../tests/test_haproxy_galera.sh)**: Advanced validation suite for HAProxy.
   - Features: Latency benchmarking (LB vs Direct), persistence detection (Sticky/RR), real failover simulation, and HTML report generation.
   - Usage: `./test_haproxy_galera.sh`

@@ -28,7 +28,7 @@ Cette commande effectue les étapes suivantes :
 
 ### Variable d'Environnement
 
-À l'intérieur du conteneur, le script `start-mariadb.sh` vérifie la présence de `MARIADB_GALERA_BOOTSTRAP`. Si elle est définie à `1`, il ajoute `--wsrep-new-cluster` à la commande de démarrage de MariaDB.
+À l'intérieur du conteneur, le script `start_mariadb.sh` vérifie la présence de `MARIADB_GALERA_BOOTSTRAP`. Si elle est définie à `1`, il ajoute `--wsrep-new-cluster` à la commande de démarrage de MariaDB.
 
 ### Configuration (`gcustom_X.cnf`)
 
