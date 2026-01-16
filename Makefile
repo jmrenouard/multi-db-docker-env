@@ -10,7 +10,10 @@ SHELL := /bin/bash
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employee inject-sakila \
         gen-ssl clean-ssl renew-ssl renew-ssl-galera renew-ssl-repli emergency-galera emergency-repli check-galera check-repli \
-        test-config
+        test-config start verify inject
+
+# --- Default Service ---
+DEFAULT_SERVICE ?= mariadb114
 
 # Default target, displays help
 help:
@@ -52,6 +55,16 @@ help:
 	@printf "    \033[1mpercona84\033[0m     - Starts Percona Server 8.4\n"
 	@printf "    \033[1mpercona80\033[0m     - Starts Percona Server 8.0\n"
 	@printf "\n"
+
+# 🚀 Starts the default database service
+start: $(DEFAULT_SERVICE)
+
+# 🧪 Runs configuration and environment validation
+verify: test-config
+
+# 💉 Injects employees data into the default service
+inject:
+	@make inject-data service=$(DEFAULT_SERVICE) db=employees
 
 # --- Management Commands ---
 

@@ -1,3 +1,9 @@
+1.0.11 2026-01-16
+ - feat: adapt interactive_runner.py with interactive installation type selection (Standalone, Galera, Replication).
+ - feat: add HTML report generation to test_config.sh under reports/ directory.
+ - feat: add collective start, verify, and inject targets to Makefile for better runner integration.
+ - update: enhance interactive runner HTML report to display installation type.
+
 1.0.10 2026-01-16
  - refactor: reorganize project structure (move scripts to scripts/, configs to conf/, and tests to tests/).
  - update: fix Makefile and Dockerfile to reflect new directory structure.
