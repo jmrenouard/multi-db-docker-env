@@ -90,7 +90,6 @@ Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefil
 
 | Command           | Icon | Description            |
 | :---------------- | :--- | :--------------------- |
-| `make percona84` | ⚡   | Démarre Percona 8.4    |
 | `make percona80` | ⚡   | Démarre Percona 8.0    |
 
 ## 🏗️ Environnement Technique

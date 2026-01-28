@@ -2,6 +2,7 @@
 - feat: add README_fr.md for bilingual documentation support.
 - doc: synchronize project structure links in README.md.
 - doc: update README and README_fr.md to include MariaDB 11.8 support.
+- chore: remove all references to non-existent Percona 8.4.
 
 1.1.2 2026-01-28
 - feat: standardize cluster naming convention to galera-* and repli-*.

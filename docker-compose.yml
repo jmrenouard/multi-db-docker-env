@@ -27,7 +27,7 @@ services:
   # ----------------------------------------------------------------
   # SERVICE 2: The Database Services
   # ----------------------------------------------------------------
-  
+
   # --- MySQL ---
   mysql93:
     image: mysql:9.3
@@ -93,7 +93,7 @@ services:
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.db-router.entrypoints=mysql"
       - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
-      
+
   mariadb118:
     image: mariadb:11.8
     container_name: mariadb-11.8
@@ -109,7 +109,7 @@ services:
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.db-router.entrypoints=mysql"
       - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
-      
+
   mariadb1011:
     image: mariadb:10.11
     container_name: mariadb-10.11
@@ -136,23 +136,6 @@ services:
       - mariadb_10_6_data:/var/lib/mysql
     profiles:
       - "mariadb106"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
-      - "traefik.tcp.routers.db-router.entrypoints=mysql"
-      - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
-
-  # --- Percona Server ---
-  percona84:
-    image: percona/percona-server:8.4
-    container_name: percona-server-8.4
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-    volumes:
-      - percona_8_4_data:/var/lib/mysql
-    profiles:
-      - "percona84"
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
@@ -186,5 +169,4 @@ volumes:
   mariadb_11_4_data:
   mariadb_10_11_data:
   mariadb_10_6_data:
-  percona_8_4_data:
   percona_8_0_data:

@@ -90,7 +90,6 @@ To start a specific database instance, use the `make <database_version>` command
 
 | Command           | Icon | Description            |
 | :---------------- | :--- | :--------------------- |
-| `make percona84` | ⚡   | Starts Percona Server 8.4 |
 | `make percona80` | ⚡   | Starts Percona Server 8.0 |
 
 ## 🏗️ Technical Environment

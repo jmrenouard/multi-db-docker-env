@@ -14,7 +14,7 @@ endif
 DB_ROOT_PASSWORD ?= rootpass
 
 # --- Main Targets ---
-.PHONY: help mycnf client info mysql93 mysql84 mysql80 mariadb118 mariadb114 mariadb1011 mariadb106 percona84 percona80 stop status logs \
+.PHONY: help mycnf client info mysql93 mysql84 mysql80 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 stop status logs \
         build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
@@ -86,7 +86,7 @@ inject-data:
 
 test-all:
 	@# List of all database services to test
-	@SERVICES_TO_TEST="mysql84 mariadb114 percona84"; \
+	@SERVICES_TO_TEST="mysql84 mariadb114 percona80"; \
 	for service in $${SERVICES_TO_TEST}; do \
 		printf "\n\033[1;34m--- Testing service: %s ---\033[0m\n" "$$service"; \
 		\
@@ -334,7 +334,6 @@ help:
 	@printf "    \033[1minject\033[0m           - 💉 Alias for inject-employees on default service\n"
 	@printf "\n"
 	@printf "  \033[1;32mPercona Server:\033[0m\n"
-	@printf "    \033[1mpercona84\033[0m     - Starts Percona Server 8.4\n"
 	@printf "    \033[1mpercona80\033[0m     - Starts Percona Server 8.0\n"
 	@printf "\n"
 
@@ -502,7 +501,7 @@ inject-data:
 
 test-all:
 	@# List of all database services to test
-	@SERVICES_TO_TEST="mysql84 mariadb114 percona84"; \
+	@SERVICES_TO_TEST="mysql84 mariadb114 percona80"; \
 	export DB_ROOT_PASSWORD=$$(sed 's/#.*//g' .env|grep DB_ROOT_PASSWORD| xargs|cut -d= -f2); \
 	for service in $${SERVICES_TO_TEST}; do \
 		printf "\n\033[1;34m--- Testing service: %s ---\033[0m\n" "$$service"; \
@@ -596,10 +595,6 @@ mariadb106: stop traefik
 	@docker compose --profile mariadb106 up -d
 
 # ⚡ Percona Server
-percona84: stop traefik
-	@echo "🚀 Starting Percona Server 8.4..."
-	@docker compose --profile percona84 up -d
-
 percona80: stop traefik
 	@echo "🚀 Starting Percona Server 8.0..."
 	@docker compose --profile percona80 up -d
