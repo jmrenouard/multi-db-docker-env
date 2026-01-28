@@ -1,10 +1,14 @@
 #!/bin/bash
 
 # Configuration
+if [ -f .env ]; then
+    export "$(grep -v '^#' .env | xargs)"
+fi
+
 REPLI_PROFILE="profile_repli"
 GALERA_PROFILE="profile_galera"
 USER="root"
-PASS="rootpass"
+PASS="${DB_ROOT_PASSWORD:-rootpass}"
 
 echo "=========================================================="
 echo "🐚 Generating Shell Profiles and Aliases"

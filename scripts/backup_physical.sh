@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# Configuration defaults
+# Configuration
+if [ -f .env ]; then
+    export "$(grep -v '^#' .env | xargs)"
+fi
+
 DB_USER="root"
-DB_PASS="rootpass"
+DB_PASS="${DB_ROOT_PASSWORD:-rootpass}"
 BACKUP_BASE_DIR="/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 

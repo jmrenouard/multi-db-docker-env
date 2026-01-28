@@ -13,8 +13,8 @@ SLAVE1_PORT=3412
 SLAVE2_PORT=3413
 USER="root"
 PASS="${DB_ROOT_PASSWORD:-rootpass}"
-REPLI_USER="repli_user"
-REPLI_PASS="replipass"
+REPLI_USER="${REPLI_USER:-repli_user}"
+REPLI_PASS="${REPLI_PASS:-replipass}"
 
 echo "=========================================================="
 echo "⚙️  MariaDB Replication Setup (using mariadb-dump)"
