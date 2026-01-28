@@ -22,11 +22,11 @@ Avant de commencer, assurez-vous d'avoir installé les outils suivants :
 La seule étape de configuration requise est de définir le mot de passe root pour vos bases de données.
 
 1. Créez un fichier nommé `.env` dans le répertoire racine du projet.
-2. Ajoutez la ligne suivante, en remplaçant `votre_mot_de_passe_super_secret` par un mot de passe fort de votre choix (ne mettez pas de guillemets autour du mot de passe) :
+2. Ajoutez la ligne suivante, en remplaçant `your_super_secret_password` par un mot de passe fort de votre choix (ne mettez pas de guillemets autour du mot de passe) :
 
     ```env
     # Fichier : .env
-    DB_ROOT_PASSWORD=votre_mot_de_passe_super_secret
+    DB_ROOT_PASSWORD=your_super_secret_password
     ```
 
 ⚠️ **Important** : Ce `DB_ROOT_PASSWORD` est crucial pour le bon fonctionnement des commandes `make mycnf` et `make client`.
@@ -39,7 +39,7 @@ Le `Makefile` est le point d'entrée principal pour la gestion de l'environnemen
 
 Ces commandes vous aident à gérer et à interagir avec l'ensemble de l'environnement.
 
-| Commande        | Icône | Description                                                                 | Exemple d'utilisation |
+| Command         | Icon | Description                                                                 | Exemple d'utilisation |
 | :-------------- | :--- | :-------------------------------------------------------------------------- | :-------------------- |
 | `make help`     | 📜   | Affiche la liste complète de toutes les commandes disponibles.              | `make help`           |
 | `make start`    | 🚀   | Démarre le service de base de données par défaut (MariaDB 11.8).           | `make start`          |
@@ -56,7 +56,7 @@ Ces commandes vous aident à gérer et à interagir avec l'ensemble de l'environ
 
 Ces commandes permettent d'injecter des exemples de bases de données ou d'exécuter une suite de tests complète.
 
-| Commande                           | Icône | Description                                                                                                                              | Exemple d'utilisation                             |
+| Command                            | Icon | Description                                                                                                                              | Exemple d'utilisation                             |
 | :--------------------------------- | :--- | :--------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
 | `make inject`                      | 💉   | Alias pour `inject-employees` sur l'environnement actif. Détecte Galera ou Réplication.                                                   | `make inject`                                    |
 | `make inject-employees`            | 💉   | Injecte la base `employees` avec auto-détection de l'environnement.                                                                     | `make inject-employees`                          |
@@ -71,7 +71,7 @@ Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefil
 
 **MySQL**
 
-| Commande        | Icône | Description          |
+| Command         | Icon | Description          |
 | :-------------- | :--- | :------------------- |
 | `make mysql93`  | 🐬   | Démarre MySQL 9.3    |
 | `make mysql84`  | 🐬   | Démarre MySQL 8.4    |
@@ -79,7 +79,7 @@ Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefil
 
 **MariaDB**
 
-| Commande          | Icône | Description            |
+| Command           | Icon | Description            |
 | :---------------- | :--- | :--------------------- |
 | `make mariadb114` | 🐧   | Démarre MariaDB 11.4   |
 | `make mariadb1011`| 🐧   | Démarre MariaDB 10.11  |
@@ -87,7 +87,7 @@ Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefil
 
 **Percona Server**
 
-| Commande          | Icône | Description            |
+| Command           | Icon | Description            |
 | :---------------- | :--- | :--------------------- |
 | `make percona84` | ⚡   | Démarre Percona 8.4    |
 | `make percona80` | ⚡   | Démarre Percona 8.0    |
@@ -114,7 +114,7 @@ Les identifiants par défaut sont centralisés dans le fichier `.env` via `DB_RO
 
 Architectures MariaDB avancées avec clustering synchrone ou réplication maître/esclave.
 
-| Commande           | Icône | Description                                   |
+| Command            | Icon | Description                                   |
 | :----------------- | :--- | :-------------------------------------------- |
 | `make up-galera`   | 🌐   | Démarre le cluster Galera (3 nœuds)           |
 | `make up-repli`    | 🔄   | Démarre le cluster de Réplication (3 nœuds)   |
@@ -168,7 +168,7 @@ graph TD
 
 ```
 .
-├── 📜 .env                 # Fichier des secrets (mot de passe), à créer
+├── 📜 .env                 # Fichier des secrets (mot de passe), à créer par vous
 ├── 🐳 docker-compose.yml  # Définit les services mono-instance (Traefik, DBs)
 ├── 🐳 docker-compose-galera.yml # Définition du Cluster MariaDB Galera
 ├── 🐳 docker-compose-repli.yml  # Définition du Cluster MariaDB Réplication
@@ -212,10 +212,39 @@ graph TD
     J --> K[Fin];
 ```
 
-1. **Choisissez et démarrez une version** : `make mysql84`
-2. **(Optionnel)** Générez votre `~/.my.cnf` : `make mycnf`
-3. **Connectez-vous** via `localhost:3306` ou : `make client`
+1. **Choisissez et démarrez une version** :
+
+    ```bash
+    make mysql84
+    ```
+
+2. **(Optionnel mais recommandé)** Générez votre `~/.my.cnf` :
+
+    ```bash
+    make mycnf
+    ```
+
+3. **Connectez-vous** via `localhost:3306` ou via la commande Make :
+
+    ```bash
+    make client
+    ```
+
 4. **Développez et testez** contre la base de données.
-5. **Vérifiez les logs** si nécessaire : `make logs`
-6. **Changez de version** si besoin : `make mariadb114`
-7. Une fois terminé, **arrêtez tout** : `make stop`
+5. **Vérifiez les logs** si nécessaire :
+
+    ```bash
+    make logs
+    ```
+
+6. **Changez de version** si besoin :
+
+    ```bash
+    make mariadb114
+    ```
+
+7. Une fois terminé, **arrêtez tout** :
+
+    ```bash
+    make stop
+    ```
