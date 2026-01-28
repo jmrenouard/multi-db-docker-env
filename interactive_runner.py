@@ -8,153 +8,228 @@ from datetime import datetime
 # Configuration
 def get_steps():
     print("\n🏗️  Select Installation Type:")
-    print("1. Standalone (Select version)")
-    print("2. Galera Cluster")
-    print("3. Replication Cluster")
+# Localized Strings
+STRINGS = {
+    'en': {
+        'select_type': "🏗️  Select Installation Type:",
+        'standalone': "1. Standalone (Select version)",
+        'galera': "2. Galera Cluster",
+        'repli': "3. Replication Cluster",
+        'choice': "Choice",
+        'interrupt': "\n👋 Runner interrupted.",
+        'select_sys': "\n🗄️  Select Database System:",
+        'select_ver': "\n🔢 Select {} Version:",
+        'invalid': "\n❌ Invalid choice or interrupted. Falling back to default.",
+        'run_step': "   Run this step? (Y/n) ",
+        'continue': "   Continue to next step? (y/N) ",
+        'failed': "❌ Step failed with return code {}",
+        'executing': "\n📦 Executing: {}",
+        'report_updated': "\n✨ Report updated: {}",
+        'final_report': "\n✅ All steps completed. Final report: {}",
+        'mode_prompt': "Run mode ([a]uto / [i]nteractive - default: i)? ",
+        'mode_label': "Mode: {}",
+        'automan': "Automated (no prompts)",
+        'interactive': "Interactive",
+        'dashboard': "\n🚀 Test Runner Dashboard",
+        'logs': "Logs",
+        'stdout': "Standard Output",
+        'stderr': "Error / Stderr",
+        'no_output': "(no output)",
+        'no_error': "(no error output)",
+        'lang_choice': "Select Language / Sélectionnez la langue ([e]n / [f]r - default: e): "
+    },
+    'fr': {
+        'select_type': "🏗️  Sélectionnez le type d'installation :",
+        'standalone': "1. Autonome (Sélectionner la version)",
+        'galera': "2. Cluster Galera",
+        'repli': "3. Cluster de Réplication",
+        'choice': "Choix",
+        'interrupt': "\n👋 Exécution interrompue.",
+        'select_sys': "\n🗄️  Sélectionnez le système de base de données :",
+        'select_ver': "\n🔢 Sélectionnez la version de {} :",
+        'invalid': "\n❌ Choix invalide ou interrompu. Retour à la version par défaut.",
+        'run_step': "   Exécuter cette étape ? (O/n) ",
+        'continue': "   Continuer vers l'étape suivante ? (o/N) ",
+        'failed': "❌ Étape échouée avec le code de sortie {}",
+        'executing': "\n📦 Exécution de : {}",
+        'report_updated': "\n✨ Rapport mis à jour : {}",
+        'final_report': "\n✅ Toutes les étapes sont terminées. Rapport final : {}",
+        'mode_prompt': "Mode d'exécution ([a]uto / [i]nteractive - défaut : i) ? ",
+        'mode_label': "Mode : {}",
+        'automan': "Automatisé (pas de confirmations)",
+        'interactive': "Interactif",
+        'dashboard': "\n🚀 Tableau de Bord de Test",
+        'logs': "Journaux",
+        'stdout': "Sortie Standard",
+        'stderr': "Erreurs / Stderr",
+        'no_output': "(pas de sortie)",
+        'no_error': "(pas de sortie d'erreur)",
+        'lang_choice': "Select Language / Sélectionnez la langue ([e]n / [f]r - default: e) : "
+    }
+}
+
+L = 'en' # Default language
+
+def select_language():
+    global L
+    try:
+        lang_input = input(STRINGS['en']['lang_choice']).lower().strip()
+        if lang_input == 'f':
+            L = 'fr'
+    except (EOFError, KeyboardInterrupt):
+        pass
+
+# Configuration
+def get_steps():
+    print(f"\n{STRINGS[L]['select_type']}")
+    print(STRINGS[L]['standalone'])
+    print(STRINGS[L]['galera'])
+    print(STRINGS[L]['repli'])
     
     try:
-        choice = input("\nChoice [1-3] (default: 1): ").strip()
+        choice = input(f"\n{STRINGS[L]['choice']} [1-3] (default: 1): ").strip()
     except EOFError:
         choice = '1'
     except KeyboardInterrupt:
-        print("\n👋 Runner interrupted.")
+        print(STRINGS[L]['interrupt'])
         sys.exit(0)
     
     if choice == '2':
-        return "Galera Cluster", [
+        return STRINGS[L]['galera'], [
             {
                 "id": "config",
-                "name": "Test Configuration",
-                "description": "Validates environment and SSL configuration.",
+                "name": "Test Configuration" if L == 'en' else "Test de Configuration",
+                "description": "Validates environment and SSL configuration." if L == 'en' else "Valide l'environnement et la configuration SSL.",
                 "command": "make test-config"
             },
             {
                 "id": "start",
-                "name": "Start Galera",
-                "description": "Starts the Galera cluster nodes and load balancer.",
+                "name": "Start Galera" if L == 'en' else "Démarrer Galera",
+                "description": "Starts the Galera cluster nodes and load balancer." if L == 'en' else "Démarre les nœuds du cluster Galera et le répartiteur de charge.",
                 "command": "make up-galera"
             },
             {
                 "id": "inject",
-                "name": "Inject Data",
-                "description": "Injects the employees dataset into the cluster.",
+                "name": "Inject Data" if L == 'en' else "Injecter les Données",
+                "description": "Injects the employees dataset into the cluster." if L == 'en' else "Injecte le jeu de données des employés dans le cluster.",
                 "command": "make inject-employee-galera"
             },
             {
                 "id": "verify",
-                "name": "Verify Galera",
-                "description": "Runs functional tests on the Galera cluster.",
+                "name": "Verify Galera" if L == 'en' else "Vérifier Galera",
+                "description": "Runs functional tests on the Galera cluster." if L == 'en' else "Exécute des tests fonctionnels sur le cluster Galera.",
                 "command": "make test-galera"
             },
             {
                 "id": "perf",
-                "name": "Performance Test",
-                "description": "Runs sysbench performance tests on Galera.",
+                "name": "Performance Test" if L == 'en' else "Test de Performance",
+                "description": "Runs sysbench performance tests on Galera." if L == 'en' else "Exécute des tests de performance sysbench sur Galera.",
                 "command": "make test-perf-galera PROFILE=light ACTION=run"
             }
         ]
     elif choice == '3':
-        return "Replication Cluster", [
+        return STRINGS[L]['repli'], [
             {
                 "id": "config",
-                "name": "Test Configuration",
-                "description": "Validates environment and SSL configuration.",
+                "name": "Test Configuration" if L == 'en' else "Test de Configuration",
+                "description": "Validates environment and SSL configuration." if L == 'en' else "Valide l'environnement et la configuration SSL.",
                 "command": "make test-config"
             },
             {
                 "id": "start",
-                "name": "Start Replication",
-                "description": "Starts the Replication cluster nodes.",
+                "name": "Start Replication" if L == 'en' else "Démarrer la Réplication",
+                "description": "Starts the Replication cluster nodes." if L == 'en' else "Démarre les nœuds du cluster de réplication.",
                 "command": "make up-repli"
             },
             {
                 "id": "setup",
-                "name": "Setup Replication",
-                "description": "Configures Master/Slave relationship.",
+                "name": "Setup Replication" if L == 'en' else "Configurer la Réplication",
+                "description": "Configures Master/Slave relationship." if L == 'en' else "Configure la relation Maître/Esclave.",
                 "command": "make setup-repli"
             },
             {
                 "id": "inject",
-                "name": "Inject Data",
-                "description": "Injects the employees dataset into the master node.",
+                "name": "Inject Data" if L == 'en' else "Injecter les Données",
+                "description": "Injects the employees dataset into the master node." if L == 'en' else "Injecte le jeu de données des employés dans le nœud maître.",
                 "command": "make inject-employee-repli"
             },
             {
                 "id": "verify",
-                "name": "Verify Replication",
-                "description": "Runs functional tests on the replication setup.",
+                "name": "Verify Replication" if L == 'en' else "Vérifier la Réplication",
+                "description": "Runs functional tests on the replication setup." if L == 'en' else "Exécute des tests fonctionnels sur la configuration de réplication.",
                 "command": "make test-repli"
             },
             {
                 "id": "perf",
-                "name": "Performance Test",
-                "description": "Runs sysbench performance tests on Replication.",
+                "name": "Performance Test" if L == 'en' else "Test de Performance",
+                "description": "Runs sysbench performance tests on Replication." if L == 'en' else "Exécute des tests de performance sysbench sur la réplication.",
                 "command": "make test-perf-repli PROFILE=light ACTION=run"
             }
         ]
     else:
         versions = {
             "MariaDB": ["11.8", "11.4", "10.11", "10.6"],
-            "MySQL": ["9.3", "8.4", "8.0", "5.7"],
-            "Percona": ["8.4", "8.0"]
+            "MySQL": ["9.3", "8.4", "8.0"],
+            "Percona": ["8.0"]
         }
         
-        print("\n🗄️  Select Database System:")
+        print(STRINGS[L]['select_sys'])
         for i, system in enumerate(versions.keys(), 1):
             print(f"{i}. {system}")
         
         try:
-            sys_choice = input(f"\nChoice [1-{len(versions)}] (default: 1): ").strip() or '1'
+            sys_choice = input(f"\n{STRINGS[L]['choice']} [1-{len(versions)}] (default: 1): ").strip() or '1'
             system_name = list(versions.keys())[int(sys_choice)-1]
             
-            print(f"\n🔢 Select {system_name} Version:")
+            print(STRINGS[L]['select_ver'].format(system_name))
             available_versions = versions[system_name]
             for i, ver in enumerate(available_versions, 1):
                 print(f"{i}. {system_name} {ver}")
             
-            ver_choice = input(f"\nChoice [1-{len(available_versions)}] (default: 1): ").strip() or '1'
+            ver_choice = input(f"\n{STRINGS[L]['choice']} [1-{len(available_versions)}] (default: 1): ").strip() or '1'
             version = available_versions[int(ver_choice)-1]
             target = f"{system_name.lower()}{version.replace('.', '')}"
             pretty_name = f"{system_name} {version}"
             
         except (ValueError, IndexError, KeyboardInterrupt):
-            print("\n❌ Invalid choice or interrupted. Falling back to default.")
+            print(STRINGS[L]['invalid'])
             pretty_name = "MariaDB 11.4"
             target = "mariadb114"
 
-        return f"Standalone ({pretty_name})", [
+        return f"{'Standalone' if L == 'en' else 'Autonome'} ({pretty_name})", [
             {
                 "id": "config",
-                "name": "Test Configuration",
-                "description": "Validates environment and SSL configuration.",
+                "name": "Test Configuration" if L == 'en' else "Test de Configuration",
+                "description": "Validates environment and SSL configuration." if L == 'en' else "Valide l'environnement et la configuration SSL.",
                 "command": "make test-config"
             },
             {
                 "id": "start",
-                "name": f"Start {pretty_name}",
-                "description": f"Starts the {pretty_name} container.",
+                "name": f"{'Start' if L == 'en' else 'Démarrer'} {pretty_name}",
+                "description": f"{'Starts the' if L == 'en' else 'Démarre le conteneur'} {pretty_name} {'container.' if L == 'en' else ''}",
                 "command": f"make {target}"
             },
             {
                 "id": "status",
-                "name": "Check Status",
-                "description": f"Shows the current status of the {pretty_name} container.",
+                "name": "Check Status" if L == 'en' else "Vérifier l'État",
+                "description": f"{'Shows the current status of the' if L == 'en' else 'Affiche l\'état actuel du conteneur'} {pretty_name} {'container.' if L == 'en' else ''}",
                 "command": "make status"
             },
             {
                 "id": "inject",
-                "name": "Inject Data",
-                "description": "Injects the employees dataset.",
+                "name": "Inject Data" if L == 'en' else "Injecter les Données",
+                "description": "Injects the employees dataset." if L == 'en' else "Injecte le jeu de données des employés.",
                 "command": f"make inject-data service={target} db=employees"
             },
             {
                 "id": "verify",
-                "name": "Verify Integrity",
-                "description": "Runs data integrity checks.",
+                "name": "Verify Integrity" if L == 'en' else "Vérifier l'Intégrité",
+                "description": "Runs data integrity checks." if L == 'en' else "Exécute des contrôles d'intégrité des données.",
                 "command": "make test-config"
             }
         ]
 
+select_language()
 INSTALL_TYPE, STEPS = get_steps()
 
 REPORT_FILE = "reports/run_report.html"
@@ -165,7 +240,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Runner Report - {timestamp}</title>
+    <title>{dashboard_title} - {timestamp}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <style>
@@ -287,7 +362,7 @@ HTML_TEMPLATE = """
             
             <div class="relative text-center">
                 <h1 class="text-4xl font-black tracking-tight mb-3 gradient-text">
-                    Test execution
+                    {dashboard_title}
                 </h1>
                 <p class="text-slate-400 text-sm font-light">
                     Real-time dashboard for <span class="text-slate-200 font-medium">test_db</span>
@@ -357,7 +432,7 @@ STEP_TEMPLATE = """
     <details class="group/details" {open_state}>
         <summary class="flex items-center gap-2 cursor-pointer list-none text-slate-500 hover:text-blue-400 transition-colors mb-2">
             <svg class="w-3 h-3 transition-transform group-open/details:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            <span class="text-[10px] font-bold uppercase tracking-widest">Logs</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest">{logs_label}</span>
         </summary>
         <div class="space-y-4 pt-3 border-t border-white/5 relative z-10">
             <div>
@@ -377,7 +452,7 @@ OUTPUT_TEMPLATE = """
             <div class="space-y-3">
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Standard Output</h3>
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">{stdout_label}</h3>
                 </div>
                 <div class="code-block p-5 rounded-xl border border-white/5 h-[32rem] overflow-y-auto text-emerald-300 text-sm scrollbar-thin">
                     <pre class="leading-relaxed">{stdout}</pre>
@@ -386,7 +461,7 @@ OUTPUT_TEMPLATE = """
             <div class="space-y-3">
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-rose-500"></div>
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Error / Stderr</h3>
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">{stderr_label}</h3>
                 </div>
                 <div class="code-block p-5 rounded-xl border border-white/5 h-[32rem] overflow-y-auto text-rose-300 text-sm scrollbar-thin">
                     <pre class="leading-relaxed">{stderr}</pre>
@@ -396,7 +471,7 @@ OUTPUT_TEMPLATE = """
 """
 
 def run_command(command, update_func=None):
-    print(f"\n📦 Executing: {command}")
+    print(f"\n{STRINGS[L]['executing'].format(command)}")
     print("-" * 40)
     process = subprocess.Popen(
         command,
@@ -469,8 +544,10 @@ def generate_report(results, finished=False):
         output_section = ""
         if res['status'] not in ["SKIPPED", "PENDING", "RUNNING"]:
             output_section = OUTPUT_TEMPLATE.format(
-                stdout=res['stdout'] if res['stdout'] else "(no output)",
-                stderr=res['stderr'] if res['stderr'] else "(no error output)"
+                stdout_label=STRINGS[L]['stdout'],
+                stderr_label=STRINGS[L]['stderr'],
+                stdout=res['stdout'] if res['stdout'] else STRINGS[L]['no_output'],
+                stderr=res['stderr'] if res['stderr'] else STRINGS[L]['no_error']
             )
 
         open_state = "open" if res['status'] == "RUNNING" else ""
@@ -486,7 +563,8 @@ def generate_report(results, finished=False):
             status_bg=status_bg,
             status_icon=status_icon,
             output_section=output_section,
-            open_state=open_state
+            open_state=open_state,
+            logs_label=STRINGS[L]['logs']
         )
 
     html = HTML_TEMPLATE.format(
@@ -496,23 +574,29 @@ def generate_report(results, finished=False):
         passed_steps=passed,
         failed_steps=failed,
         steps_content=steps_content,
-        data_finished=data_finished
+        data_finished=data_finished,
+        dashboard_title=STRINGS[L]['dashboard'].strip()
     )
 
     os.makedirs(os.path.dirname(REPORT_FILE), exist_ok=True)
     with open(REPORT_FILE, "w") as f:
         f.write(html)
     
-    print(f"\n✨ Report updated: {REPORT_FILE}")
+    print(STRINGS[L]['report_updated'].format(REPORT_FILE))
 
 def main():
-    parser = argparse.ArgumentParser(description="Interactive and Automated Test Runner for test_db")
+    parser = argparse.ArgumentParser(description="Interactive and Automated Test Runner")
     parser.add_argument("-a", "--auto", action="store_true", help="Run in automated mode (no prompts)")
     parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode (prompts for each step)")
+    parser.add_argument("-l", "--lang", choices=['en', 'fr'], help="Force language (en/fr)")
     args = parser.parse_args()
 
-    print("\n🚀 Test Runner Dashboard")
-    print("========================")
+    if args.lang:
+        global L
+        L = args.lang
+
+    print(STRINGS[L]['dashboard'])
+    print("=" * 40)
     
     if args.auto:
         mode = 'a'
@@ -520,10 +604,11 @@ def main():
         mode = 'i'
     else:
         # Fallback to interactive prompt if no flag provided
-        mode_input = input("Run mode ([a]uto / [i]nteractive - default: i)? ").lower().strip()
+        mode_input = input(STRINGS[L]['mode_prompt']).lower().strip()
         mode = 'a' if mode_input == 'a' else 'i'
     
-    print(f"Mode: {'Automated (no prompts)' if mode == 'a' else 'Interactive'}")
+    mode_label = STRINGS[L]['automan'] if mode == 'a' else STRINGS[L]['interactive']
+    print(STRINGS[L]['mode_label'].format(mode_label))
     
     results = []
     
@@ -538,63 +623,77 @@ def main():
         print(f"\n[{i+1}/{len(STEPS)}] Step: {step['name']}")
         print(f"Description: {step['description']}")
         
-        should_run = True
-        if mode == 'i':
-            confirm = input(f"   Run this step? (Y/n) ").lower().strip()
-            if confirm == 'n':
-                should_run = False
-        
-        if should_run:
-            # Mark current as RUNNING in report
-            def on_update(curr_stdout, curr_stderr):
-                curr_report = results + [{**step, "status": "RUNNING", "stdout": curr_stdout, "stderr": curr_stderr}] + [
+        while True:
+            should_run = True
+            if mode == 'i':
+                confirm = input(f"{STRINGS[L]['run_step']}").lower().strip()
+                if confirm == 'n':
+                    should_run = False
+            
+            if should_run:
+                # Mark current as RUNNING in report
+                def on_update(curr_stdout, curr_stderr):
+                    curr_report = results + [{**step, "status": "RUNNING", "stdout": curr_stdout, "stderr": curr_stderr}] + [
+                        {**s, "status": "PENDING", "stdout": "", "stderr": ""}
+                        for s in STEPS[len(results)+1:]
+                    ]
+                    generate_report(curr_report)
+
+                on_update("", "") # Initial running status
+                returncode, stdout, stderr = run_command(step['command'], update_func=on_update)
+                status = "SUCCESS" if returncode == 0 else "FAILED"
+                
+                if status == "FAILED" and mode == 'i':
+                    print(STRINGS[L]['failed'].format(returncode))
+                    retry = input(f"   Retry this step? [r]etry / [c]ontinue / [s]top (default: r): ").lower().strip() or 'r'
+                    if retry == 'r':
+                        continue
+                    elif retry == 's':
+                        results.append({**step, "status": "FAILED", "stdout": stdout, "stderr": stderr})
+                        generate_report(results + [{**s, "status": "PENDING", "stdout": "", "stderr": ""} for s in STEPS[len(results):]], finished=True)
+                        sys.exit(1)
+                
+                results.append({
+                    **step,
+                    "status": status,
+                    "stdout": stdout,
+                    "stderr": stderr
+                })
+                # Update report after finishing
+                current_report = results + [
                     {**s, "status": "PENDING", "stdout": "", "stderr": ""}
-                    for s in STEPS[len(results)+1:]
+                    for s in STEPS[len(results):]
                 ]
-                generate_report(curr_report)
+                generate_report(current_report)
 
-            on_update("", "") # Initial running status
-            returncode, stdout, stderr = run_command(step['command'], update_func=on_update)
-            status = "SUCCESS" if returncode == 0 else "FAILED"
-            results.append({
-                **step,
-                "status": status,
-                "stdout": stdout,
-                "stderr": stderr
-            })
-            # Update report after finishing
-            current_report = results + [
-                {**s, "status": "PENDING", "stdout": "", "stderr": ""}
-                for s in STEPS[len(results):]
-            ]
-            generate_report(current_report)
-
-            if status == "FAILED":
-                print(f"❌ Step failed with return code {returncode}")
-                if mode == 'i':
-                    cont = input("   Continue to next step? (y/N) ").lower().strip()
-                    if cont != 'y':
-                        break
-        else:
-            results.append({
-                **step,
-                "status": "SKIPPED",
-                "stdout": "",
-                "stderr": ""
-            })
-            current_report = results + [
-                {**s, "status": "PENDING", "stdout": "", "stderr": ""}
-                for s in STEPS[len(results):]
-            ]
-            generate_report(current_report)
+                if status == "FAILED":
+                    print(STRINGS[L]['failed'].format(returncode))
+                    if mode == 'i':
+                        cont = input(STRINGS[L]['continue']).lower().strip()
+                        if cont != 'o' if L == 'fr' else 'y':
+                            break
+                break # Exit the while True loop for this step
+            else:
+                results.append({
+                    **step,
+                    "status": "SKIPPED",
+                    "stdout": "",
+                    "stderr": ""
+                })
+                current_report = results + [
+                    {**s, "status": "PENDING", "stdout": "", "stderr": ""}
+                    for s in STEPS[len(results):]
+                ]
+                generate_report(current_report)
+                break
     
     # Final update after all tasks
     generate_report(results, finished=True)
-    print(f"\n✅ All steps completed. Final report: {REPORT_FILE}")
+    print(STRINGS[L]['final_report'].format(REPORT_FILE))
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n👋 Runner interrupted by user.")
+        print(STRINGS[L]['interrupt'])
         sys.exit(0)
