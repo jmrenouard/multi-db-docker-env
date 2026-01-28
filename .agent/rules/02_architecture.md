@@ -1,17 +1,32 @@
-## **3\. 🏗️ TECHNICAL ENVIRONMENT & ARCHITECTURE**
+---
+trigger: always_on
+description: Technical environment and infrastructure architecture
+category: governance
+---
+# 02 Architecture: High-Performance Laboratory
 
-$$IMMUTABLE$$  
-Component Map:  
-Modification prohibited without explicit request.  
-| File/Folder | Functionality | Criticality |  
-| Makefile | Main command orchestrator (Up, Down, Test, Backup) | 🔴 HIGH |  
-| docker-compose.yaml | Infrastructure definition (Networks, Volumes, Services) | 🔴 HIGH |  
-| scripts/ | Maintenance scripts (Backup, Restore, Setup, Healthcheck) | 🟡 MEDIUM |  
-| config/ | MariaDB configuration files (my.cnf, galera.cnf) | 🟡 MEDIUM |  
-| documentation/ | Technical Markdown documentation | 🟢 LOW |  
-**Technology Stack:**
+## 🧠 Rationale
 
-* **Language:** Bash (Shell Scripts), Makefile  
-* **DBMS:** MariaDB 11.8 (Custom Docker Images)  
-* **Orchestration:** Docker, Docker Compose  
-* **Proxy:** HAProxy (Load Balancing Galera/Replication)
+A well-defined architecture ensures infrastructure stability and reproducibility. This project relies on a custom MariaDB 11.8 stack orchestrated via Docker Compose and controlled by a robust Makefile.
+
+## 🛠️ Implementation
+
+### Technology Stack
+
+- **Language**: Bash (Shell Scripts), Python, Makefile.
+- **DBMS**: MariaDB 11.8 (Custom Docker Images).
+- **Orchestration**: Docker, Docker Compose.
+
+### Component Map ($$IMMUTABLE$$)
+
+| File/Folder | Functionality | Criticality |
+| :--- | :--- | :--- |
+| `scripts/` | Performance and tuning scripts (EXPLAIN and sysbench) | 🔴 HIGH |
+| `Makefile` | Main command orchestrator (Up, Down, Test, ...) | 🟡 MEDIUM |
+| `documentation/` | Technical Markdown documentation | 🟢 MEDIUM |
+
+## ✅ Verification
+
+- Validate `Makefile` entry points.
+- Verify `scripts/` directory existence and permissions.
+- Run `make check-env` (if available) to validate runtime requirements.

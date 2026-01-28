@@ -3,12 +3,16 @@ set -euo pipefail
 
 
 # Configuration
+if [ -f .env ]; then
+    export "$(grep -v '^#' .env | xargs)"
+fi
+
 MASTER_IP="10.5.0.11"
 MASTER_PORT=3411
 SLAVE1_PORT=3412
 SLAVE2_PORT=3413
 USER="root"
-PASS="rootpass"
+PASS="${DB_ROOT_PASSWORD:-rootpass}"
 REPLI_USER="repli_user"
 REPLI_PASS="replipass"
 

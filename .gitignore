@@ -5,7 +5,6 @@ backups_*
 gbackups_*
 reports/
 ssl/
-test_db/
 profile_galera
 profile_repli
 id_rsa

@@ -1,5 +1,7 @@
 ---
-description: Run MySQLTuner tests against multiple database configurations
+trigger: explicit_call
+description: Run MySQLTuner tests across multiple DBs
+category: tool
 ---
 
 # 🧪 Run Multi-DB Tests
@@ -10,8 +12,8 @@ This workflow automates the execution of `mysqltuner.pl` against various databas
 
 - Docker and Docker Compose installed
 - `make` installed
-- https://github.com/jmrenouard/multi-db-docker-env
-- https://github.com/jmrenouard/test_db
+- <https://github.com/jmrenouard/multi-db-docker-env>
+- <https://github.com/jmrenouard/test_db>
 
 ## Steps
 

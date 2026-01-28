@@ -1,4 +1,4 @@
-# 🌐 Définition du Réseau Privé
+# 🌐 Private Network Definition
 networks:
   backend_galera:
     driver: bridge
@@ -11,15 +11,15 @@ x-template: &template
   restart: unless-stopped
   privileged: true
   environment:
-    - MARIADB_ROOT_PASSWORD=rootpass
-    # Astuce Expert : Définit le DNS interne pour la résolution de noms
+    - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    # Expert Tip: Sets internal DNS for name resolution
     - MARIADB_ROOT_HOST=%
     - MARIADB_GALERA_BOOTSTRAP=${MARIADB_GALERA_BOOTSTRAP:-0}
   networks:
     backend_galera:
 
 services:
-  # 🟢 Serveur 1
+  # 🟢 Server 1
   galera_01:
     <<: *template
     hostname: galera01
@@ -39,7 +39,7 @@ services:
       backend_galera:
         ipv4_address: 10.6.0.11
 
-  # 🟢 Serveur 2
+  # 🟢 Server 2
   galera_02:
     <<: *template
     hostname: galera02
@@ -59,12 +59,12 @@ services:
       backend_galera:
         ipv4_address: 10.6.0.12
 
-  # 🟢 Serveur 3
+  # 🟢 Server 3
   galera_03:
     <<: *template
     hostname: galera03
     ports:
-      - "24003:22" # Correction du port SSH pour suivre la logique (22003 ou 2322 selon votre choix, ici 2322 pour varier)
+      - "24003:22" # SSH port correction to follow logic (22003 or 2322 depending on choice, here 2313 for variety)
       - "3513:3306"
     volumes:
       - "./gdatadir_03:/var/lib/mysql"

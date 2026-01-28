@@ -1,5 +1,7 @@
 ---
-description: doc-sync
+trigger: explicit_call
+description: Synchronize documentation with code changes
+category: tool
 ---
 
 # Doc Sync
@@ -13,28 +15,30 @@ You are a specialized agent for synchronizing documentation with code.
 
 ## Context
 
-- The project uses Markdown documentation in the root folder.
-- List of documentation files:
-  - [mariadb_support.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/mariadb_support.md)
-  - [mysql_support.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/mysql_support.md)
-  - [README.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/README.md)
-  - [README.fr.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/README.fr.md)
-  - [README.it.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/README.it.md)
-  - [README.ru.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/README.ru.md)
-  - [ROADMAP.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/ROADMAP.md)
-  - [CONTRIBUTING.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/CONTRIBUTING.md)
-  - [FEATURES.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/FEATURES.md)
-  - [USAGE.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/USAGE.md)
-  - [INTERNALS.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/INTERNALS.md)
-  - [CODE_OF_CONDUCT.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/CODE_OF_CONDUCT.md)
-  - [SECURITY.md](file:///home/jmren/GIT_REPOS/MySQLTuner-perl/SECURITY.md)
+- The project uses Markdown documentation in the root folder and the `documentation/` directory.
+- List of documentation files (English):
+  - [README.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/README.md)
+  - [documentation/architecture.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/architecture.md)
+  - [documentation/galera_bootstrap.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/galera_bootstrap.md)
+  - [documentation/makefile.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/makefile.md)
+  - [documentation/scripts.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/scripts.md)
+  - [documentation/tests.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/tests.md)
+  - [documentation/replication_setup.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/replication_setup.md)
+- List of documentation files (French):
+  - [README.fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/README.fr.md)
+  - [documentation/architecture_fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/architecture_fr.md)
+  - [documentation/galera_bootstrap_fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/galera_bootstrap_fr.md)
+  - [documentation/makefile_fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/makefile_fr.md)
+  - [documentation/scripts_fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/scripts_fr.md)
+  - [documentation/tests_fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/tests_fr.md)
 
 ## Task
 
 1. Identify recently modified files (via git diff or IDE history).
-2. For each file, spot public functions / classes.
+2. For each file, spot configuration changes, new features, or rule updates.
 3. Update the corresponding sections in the relevant documentation files or `README.md`.
-4. Propose a clear diff and wait for validation before writing.
+4. Synchronize translations if English/French files exist for the same component.
+5. Propose a clear diff and wait for validation before writing.
 
 ## Constraints
 

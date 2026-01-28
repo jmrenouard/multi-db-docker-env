@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_haproxy_galera.sh - Validation du Load Balancer HAProxy pour Galera
+# test_haproxy_galera.sh - HAProxy Load Balancer Validation for Galera
 
 # Configuration
 LB_IP="127.0.0.1"
@@ -37,14 +37,14 @@ echo "=========================================================="
 echo "🎯 HAProxy Galera Advanced Validation Suite"
 echo "=========================================================="
 
-# 1. 🏥 État de santé initial du Backend
-echo "1. 🏥 État de santé initial du Backend..."
+# 1. 🏥 Initial Backend Health Status
+echo "1. 🏥 Initial Backend Health Status..."
 write_report "## 1. Backend Health Check"
 write_report "| Nœud | Statut |"
 write_report "| --- | --- |"
 
 if ! curl -s "http://$LB_IP:$STATS_PORT/stats" > /dev/null; then
-    echo "❌ Erreur: Interface stats inaccessible."
+    echo ">> ❌ Error: Stats interface unreachable."
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Stats Access\",\"status\":\"FAIL\",\"details\":\"Stats port $STATS_PORT unreachable\"},"
     exit 1
 fi
@@ -62,8 +62,8 @@ TEST_RESULTS="$TEST_RESULTS{\"test\":\"Backend Health\",\"nature\":\"Initial Nod
 
 echo ""
 
-# 2. 🏎️ Benchmarking de Performance (LB vs Direct)
-echo "2. 🏎️ Test de Performance (Latence Moyenne)..."
+# 2. 🏎️ Performance Benchmark (Average Latency)
+echo "2. 🏎️ Performance Benchmark (Average Latency)..."
 write_report "\n## 2. Performance Benchmark"
 function get_latency() {
     local host=$1; local port=$2
@@ -144,10 +144,10 @@ docker start $NODE3_NAME > /dev/null
 # Generate HTML Report
 cat <<EOF > "$REPORT_HTML"
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Rapport de Test HAProxy Load Balancer</title>
+    <title>HAProxy Load Balancer Test Report</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
@@ -164,7 +164,7 @@ cat <<EOF > "$REPORT_HTML"
         <header class="flex justify-between items-center mb-12">
             <div>
                 <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">HAProxy Validation</h1>
-                <p class="text-slate-400 mt-2 font-light">Rapport de santé et performance du Load Balancer Galera</p>
+                <p class="text-slate-400 mt-2 font-light">Galera Load Balancer health and performance report</p>
             </div>
             <div class="text-right">
                 <div class="text-slate-500 text-xs uppercase tracking-widest mb-1">Date du test</div>
@@ -234,7 +234,7 @@ cat <<EOF > "$REPORT_HTML"
 EOF
 
 echo ""
-echo "🏁 Fin de la suite de validation avancée."
+echo "🏁 Advanced validation suite finished."
 echo "Markdown Report : $REPORT_MD"
 echo "HTML Report     : $REPORT_HTML"
 echo "=========================================================="

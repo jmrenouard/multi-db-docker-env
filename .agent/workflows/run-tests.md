@@ -1,5 +1,7 @@
 ---
-description: run-tests
+trigger: explicit_call
+description: Execute performance and functional test suites
+category: tool
 ---
 
 # Run Tests Workflow

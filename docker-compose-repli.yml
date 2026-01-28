@@ -1,4 +1,4 @@
-# 🌐 Définition du Réseau Privé
+# 🌐 Private Network Definition
 networks:
   backend_db:
     driver: bridge
@@ -11,14 +11,14 @@ x-template: &template
   restart: unless-stopped
   privileged: true
   environment:
-    - MARIADB_ROOT_PASSWORD=rootpass
-    # Astuce Expert : Définit le DNS interne pour la résolution de noms
+    - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    # Expert Tip: Sets internal DNS for name resolution
     - MARIADB_ROOT_HOST=%
   networks:
     backend_db:
 
 services:
-  # 🟢 Serveur 1
+  # 🟢 Server 1
   mariadb_01:
     <<: *template
     hostname: frm01
@@ -36,7 +36,7 @@ services:
       backend_db:
         ipv4_address: 10.5.0.11
 
-  # 🟢 Serveur 2
+  # 🟢 Server 2
   mariadb_02:
     <<: *template
     hostname: frm02
@@ -54,12 +54,12 @@ services:
       backend_db:
         ipv4_address: 10.5.0.12
 
-  # 🟢 Serveur 3
+  # 🟢 Server 3
   mariadb_03:
     <<: *template
     hostname: frm03
     ports:
-      - "23003:22" # Correction du port SSH pour suivre la logique (22003 ou 2322 selon votre choix, ici 2322 pour varier)
+      - "23003:22" # SSH port correction to follow logic (22003 or 2322 depending on choice, here 2322 for variety)
       - "3413:3306"
     volumes:
       - "./datadir_03:/var/lib/mysql"

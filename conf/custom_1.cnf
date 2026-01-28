@@ -29,8 +29,16 @@ binlog_expire_logs_seconds=172800
 #innodb_log_file_size = 256M
 
 # --- Performance Schema (PFS) ---
-# Enable Performance Schema monitoring
+# Enable the engine
 performance_schema = ON
+
+# History size per thread (Default is often 10)
+# Allows viewing the last N transactions for a specific connection
+performance_schema_events_transactions_history_size = 2000
+
+# Global history size (Default is often 10000)
+# Increasing this value is crucial for capturing transient events on a busy server
+performance_schema_events_transactions_history_long_size = 50000
 # Enable statement history consumers
 performance-schema-consumer-events-statements-history-long = ON
 performance-schema-consumer-events-statements-history = ON
@@ -41,6 +49,7 @@ performance-schema-consumer-events-stages-history = ON
 performance-schema-consumer-events-stages-history-long = ON
 # Enable transaction monitoring
 performance-schema-consumer-events-transactions-current = ON
+# Force activation of transaction consumers at startup
 performance-schema-consumer-events-transactions-history = ON
 performance-schema-consumer-events-transactions-history-long = ON
 # Enable wait monitoring

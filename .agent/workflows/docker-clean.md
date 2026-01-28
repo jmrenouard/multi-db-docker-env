@@ -1,7 +1,7 @@
 ---
-description: /docker-clean
----
-
+trigger: explicit_call
+description: Clean up Docker containers, networks, and volumes
+category: tool
 ---
 
 description: Reclaim disk space by removing unused containers and images

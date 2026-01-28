@@ -1,5 +1,7 @@
 ---
-description: maintenance
+trigger: explicit_call
+description: Project maintenance and housekeeping tasks
+category: tool
 ---
 
 # Maintenance Workflow

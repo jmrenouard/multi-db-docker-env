@@ -1,5 +1,7 @@
 ---
-description: archi
+trigger: explicit_call
+description: Comprehensive architecture and infrastructure audit
+category: tool
 ---
 
 # Architecture Audit Workflow

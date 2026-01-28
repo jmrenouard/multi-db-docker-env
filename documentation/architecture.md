@@ -17,7 +17,7 @@ The Galera cluster provides synchronous multi-master replication.
 graph TD
     Client[Client / App] -->|Port 3306| LB[HAProxy LB<br/>10.6.0.100]
     
-    subgraph Galera_Cluster [Galera Cluster: 10.6.0.100/24]
+    subgraph Galera_Cluster [Galera Cluster: 10.6.0.0/24]
         LB -->|LB / Health Check| G1["mariadb-g1 (Node 1)<br/>10.6.0.11:3306"]
         LB -->|LB / Health Check| G2["mariadb-g2 (Node 2)<br/>10.6.0.12:3306"]
         LB -->|LB / Health Check| G3["mariadb-g3 (Node 3)<br/>10.6.0.13:3306"]

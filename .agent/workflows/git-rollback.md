@@ -1,5 +1,7 @@
 ---
-description: Rollback a failed release (delete tags and revert commits)
+trigger: explicit_call
+description: Rollback a failed release
+category: tool
 ---
 
 1. **Delete Local and Remote Tag**

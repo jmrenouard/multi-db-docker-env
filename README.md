@@ -4,11 +4,10 @@
 
 [!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
 
-A modular Docker-based lab for running and testing multiple versions of MySQL, PostgreSQL, MongoDB, Redis, and Cassandra.
-
-This project provides a flexible development environment to quickly launch and manage different versions of MySQL, MariaDB, and Percona Server using Docker, Docker Compose, and a `Makefile` for streamlined operations.
-
 A key feature is the **Traefik reverse proxy**, which ensures all database instances are accessible through a single, stable port on your host machine (`localhost:3306`), regardless of which specific database version you choose to run.
+
+> [!IMPORTANT]
+> **English-Only Policy**: All technical comments within code, configuration files, and documentation in this project MUST be in English ONLY.
 
 ## 📋 Prerequisites
 
@@ -51,6 +50,7 @@ These commands help you manage and interact with the overall environment.
 | `make mycnf`    | 🔑   | Generates a `~/.my.cnf` file for password-less `mysql` client connections.  | `make mycnf`          |
 | `make client`   | 💻   | Starts a MySQL client connected to the active database.                     | `make client`         |
 | `make verify`   | ✅   | Runs complete environment and configuration validation (test-config).       | `make verify`         |
+| `python3 interactive_runner.py` | 🚀 | Starts the interactive test runner for guided setup and testing. | `python3 interactive_runner.py` |
 
 ### Data Management
 
@@ -62,6 +62,7 @@ These commands allow you to inject sample databases into a running service or ru
 | `make inject-employees`            | 💉   | Injects `employees` database with auto-detection of environment.                                                                         | `make inject-employees`                          |
 | `make inject-sakila`               | 💉   | Injects `sakila` database with auto-detection of environment.                                                                            | `make inject-sakila`                             |
 | `make inject-data`                 | 💉   | Injects a sample database (`employees` or `sakila`) into a specified running service.                                                      | `make inject-data service=mysql84 db=employees`  |
+| `make sync-test-db`               | 🔄   | Synchronizes the `test_db` submodule with the remote master branch.                                                                       | `make sync-test-db`                             |
 | `make test-all`                    | 🧪   | Runs a full test suite: starts each DB service, injects both sample databases, verifies the data, and then stops the service.             | `make test-all`                                  |
 
 ### Starting a Database Instance
@@ -75,7 +76,6 @@ To start a specific database instance, use the `make <database_version>` command
 | `make mysql93`  | 🐬   | Starts MySQL 9.3     |
 | `make mysql84`  | 🐬   | Starts MySQL 8.4     |
 | `make mysql80`  | 🐬   | Starts MySQL 8.0     |
-| `make mysql57`  | 🐬   | Starts MySQL 5.7     |
 
 **MariaDB**
 
@@ -91,6 +91,22 @@ To start a specific database instance, use the `make <database_version>` command
 | :---------------- | :--- | :--------------------- |
 | `make percona84` | ⚡   | Starts Percona Server 8.4 |
 | `make percona80` | ⚡   | Starts Percona Server 8.0 |
+
+## 🏗️ Technical Environment
+
+### 🌐 Networking
+
+The project uses standardized private subnets for cluster isolation:
+* **Galera Cluster**: `10.6.0.0/24`
+* **Replication Cluster**: `10.5.0.0/24`
+
+These ranges are consistent across `docker-compose` configurations and internal orchestration scripts.
+
+### 🔐 Credentials
+
+Default credentials are centralized in the `.env` file via `DB_ROOT_PASSWORD`.
+* **Default User**: `root`
+* **Default Database**: `employees` (after injection)
 
 **MariaDB Clusters (Galera & Replication)**
 

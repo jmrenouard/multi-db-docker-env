@@ -1,5 +1,7 @@
 ---
+trigger: always_on
 description: Automated audit to enforce project constitution rules
+category: governance
 ---
 
 # Compliance Sentinel

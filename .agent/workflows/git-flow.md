@@ -1,5 +1,7 @@
 ---
+trigger: explicit_call
 description: Automate git-flow release process
+category: tool
 ---
 
 1. **Ensure clean working tree and Pre-flight Consistency Check**

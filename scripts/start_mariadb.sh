@@ -3,25 +3,25 @@ set -euo pipefail
 
 DATA_DIR="/var/lib/mysql"
 
-echo ">> Vérification de l'état de la base de données dans $DATA_DIR..."
+echo ">> Checking database state in $DATA_DIR..."
 
-# 1. Vérifie si l'initialisation a déjà été faite via un fichier sentinelle
+# 1. Check if initialization has already been done via a sentinel file
 if [ ! -f "$DATA_DIR/.initialized" ]; then
-    echo ">> ⚠️ Initialisation de la base de données requise..."
+    echo ">> ⚠️ Database initialization required..."
     
-    # Si le répertoire mysql existe déjà (init partielle), on le nettoie pour repartir propre
+    # If the mysql directory already exists (partial init), we clean it to start fresh
     if [ -d "$DATA_DIR/mysql" ]; then
-        echo ">> 🧹 Nettoyage d'une initialisation partielle précédente..."
+        echo ">> 🧹 Cleaning up previous partial initialization..."
         rm -rf "$DATA_DIR"/*
     fi
 
     # Initialisation de la DB system
-    echo ">> 🏗️ Exécution de mariadb-install-db..."
+    echo ">> 🏗️ Running mariadb-install-db..."
     mariadb-install-db --user=mysql --datadir="$DATA_DIR" --skip-test-db
     
     # Execute initialization scripts
     if [ -d "/docker-entrypoint-initdb.d" ]; then
-        echo ">> 📜 Exécution des scripts d'initialisation..."
+        echo ">> 📜 Running initialization scripts..."
         mkdir -p /run/mysqld && chown mysql:mysql /run/mysqld || true
         
         SOCKET="/run/mysqld/mysqld_init.sock"
@@ -32,50 +32,50 @@ if [ ! -f "$DATA_DIR/.initialized" ]; then
         # Wait for MariaDB to be ready
         COUNTER=0
         until mariadb --socket="$SOCKET" -u root -e "SELECT 1" >/dev/null 2>&1 || [ $COUNTER -eq 30 ]; do
-            echo ">> ⏳ Attente de MariaDB pour init ($COUNTER/30)..."
+            echo ">> ⏳ Waiting for MariaDB for init ($COUNTER/30)..."
             sleep 1
             let COUNTER=COUNTER+1
         done
         
         if [ $COUNTER -eq 30 ]; then
-            echo ">> ❌ Timeout initialisation."
+            echo ">> ❌ Initialization timeout."
             kill -s TERM "$pid" || true
             exit 1
         fi
 
         for f in /docker-entrypoint-initdb.d/*; do
             case "$f" in
-                *.sql)    echo ">> 🚀 Exécution de $f..."; mariadb --socket="$SOCKET" -u root < "$f"; echo ;;
-                *)        echo ">> ⏭️ Ignoré: $f" ;;
+                *.sql)    echo ">> 🚀 Executing $f..."; mariadb --socket="$SOCKET" -u root < "$f"; echo ;;
+                *)        echo ">> ⏭️ Ignored: $f" ;;
             esac
         done
         
         # Shutdown temporary MariaDB
-        echo ">> 🛑 Arrêt de la MariaDB temporaire..."
+        echo ">> 🛑 Stopping temporary MariaDB..."
         mariadb-admin --socket="$SOCKET" -u root shutdown || kill -s TERM "$pid" || true
         wait "$pid" || true
     fi
     
-    # Création du fichier sentinelle
+    # Creation of the sentinel file
     touch "$DATA_DIR/.initialized"
-    echo ">> ✅ Initialisation terminée avec succès."
+    echo ">> ✅ Initialization completed successfully."
 else
-    echo ">> ✅ Données existantes et initialisées détectées. Démarrage normal."
+    echo ">> ✅ Existing and initialized data detected. Normal startup."
 fi
 
-# 2. Démarrage du démon en mode 'safe'
-# Note: On laisse mysqld_safe gérer le processus. 
+# 2. Starting daemon in 'safe' mode
+# Note: We let mysqld_safe manage the process.
 # Supervisor s'attend à ce que le script ne rende pas la main (foreground),
-# mais mysqld_safe lance un background process par défaut.
-# Pour Supervisor, il vaut mieux lancer mariadbd directement ou utiliser exec.
+# mysqld_safe launches a background process by default.
+# For Supervisor, it's better to launch mariadbd directly or use exec.
 
-echo ">> 🚀 Démarrage de MariaDB Safe..."
-if [ "$MARIADB_GALERA_BOOTSTRAP" = "1" ]; then
+EXTRA_ARGS=""
+if [ "${MARIADB_GALERA_BOOTSTRAP:-}" = "1" ]; then
     echo ">> 🌟 Bootstrapping request detected..."
     
     # Force safe_to_bootstrap=1 in grastate.dat if it exists
     if [ -f "$DATA_DIR/grastate.dat" ]; then
-        echo ">> 🛠️ Forçage de safe_to_bootstrap=1 dans grastate.dat"
+        echo ">> 🛠️ Forcing safe_to_bootstrap=1 in grastate.dat"
         sed -i 's/safe_to_bootstrap: 0/safe_to_bootstrap: 1/' "$DATA_DIR/grastate.dat"
     fi
 

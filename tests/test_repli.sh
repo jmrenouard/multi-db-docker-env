@@ -88,7 +88,7 @@ fi
 
 echo "✅ Environment is ready. Starting tests..."
 
-write_report "| Nom du Nœud | Port | Statut | SSL Cipher |"
+write_report "| Node Name | Port | Status | SSL Cipher |"
 write_report "| --- | --- | --- | --- |"
 for role in "Master:$MASTER_PORT" "Slave1:$SLAVE1_PORT" "Slave2:$SLAVE2_PORT"; do
     IFS=":" read -r name port <<< "$role"
@@ -120,7 +120,7 @@ for port in $SLAVE1_PORT $SLAVE2_PORT; do
     REPL_INFO="$REPL_INFO{\"port\":\"$port\",\"status\":\"$(echo "$REPL_STATUS" | tr '\n' ' ')\"},"
 done
 
-write_report "\n## Sections pour la réplication (master & slave)"
+write_report "\n## Sections for replication (master & slave)"
 write_report "### Detailed Master Status\n\`\`\`sql\n$(mariadb -h 127.0.0.1 -P $MASTER_PORT -u$USER -p$PASS -e "SHOW MASTER STATUS\G")\n\`\`\`"
 SLAVE1_FULL=$(mariadb -h 127.0.0.1 -P $SLAVE1_PORT -u$USER -p$PASS -e "SHOW SLAVE STATUS\G")
 write_report "### Detailed Slave 1 Status\n\`\`\`sql\n$SLAVE1_FULL\n\`\`\`"
@@ -128,7 +128,7 @@ SLAVE2_FULL=$(mariadb -h 127.0.0.1 -P $SLAVE2_PORT -u$USER -p$PASS -e "SHOW SLAV
 write_report "### Detailed Slave 2 Status\n\`\`\`sql\n$SLAVE2_FULL\n\`\`\`"
 
 echo -e "\n5. 🧪 Performing Data Replication Test..."
-write_report "\n## Résultats des tests de réplication"
+write_report "\n## Replication test results"
 write_report "| Nature du Test | Attendu | Statut | Résultat Réel / Détails |"
 write_report "| --- | --- | --- | --- |"
 echo ">> Creating database '$DB' and table on Master..."
@@ -206,10 +206,10 @@ fi
 # Generate HTML Report
 cat <<EOF > "$REPORT_HTML"
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Rapport de Test de Réplication MariaDB</title>
+    <title>MariaDB Replication Test Report</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="module">
@@ -230,7 +230,7 @@ cat <<EOF > "$REPORT_HTML"
                 <h1 class="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent italic">
                     <i class="fa-solid fa-sync mr-3"></i>Replication Test
                 </h1>
-                <p class="text-slate-400 mt-2 font-light italic">Rapport de vérification du cluster de réplication</p>
+                <p class="text-slate-400 mt-2 font-light italic">Replication cluster verification report</p>
             </div>
             <div class="text-right">
                 <span class="text-slate-500 text-xs font-mono">$(date)</span>

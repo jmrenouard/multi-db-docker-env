@@ -8,7 +8,7 @@ from datetime import datetime
 # Configuration
 def get_steps():
     print("\n🏗️  Select Installation Type:")
-    print("1. Standalone (MariaDB 11.4)")
+    print("1. Standalone (Select version)")
     print("2. Galera Cluster")
     print("3. Replication Cluster")
     
@@ -19,7 +19,7 @@ def get_steps():
     except KeyboardInterrupt:
         print("\n👋 Runner interrupted.")
         sys.exit(0)
-        
+    
     if choice == '2':
         return "Galera Cluster", [
             {
@@ -93,7 +93,36 @@ def get_steps():
             }
         ]
     else:
-        return "Standalone", [
+        versions = {
+            "MariaDB": ["11.8", "11.4", "10.11", "10.6"],
+            "MySQL": ["9.3", "8.4", "8.0", "5.7"],
+            "Percona": ["8.4", "8.0"]
+        }
+        
+        print("\n🗄️  Select Database System:")
+        for i, system in enumerate(versions.keys(), 1):
+            print(f"{i}. {system}")
+        
+        try:
+            sys_choice = input(f"\nChoice [1-{len(versions)}] (default: 1): ").strip() or '1'
+            system_name = list(versions.keys())[int(sys_choice)-1]
+            
+            print(f"\n🔢 Select {system_name} Version:")
+            available_versions = versions[system_name]
+            for i, ver in enumerate(available_versions, 1):
+                print(f"{i}. {system_name} {ver}")
+            
+            ver_choice = input(f"\nChoice [1-{len(available_versions)}] (default: 1): ").strip() or '1'
+            version = available_versions[int(ver_choice)-1]
+            target = f"{system_name.lower()}{version.replace('.', '')}"
+            pretty_name = f"{system_name} {version}"
+            
+        except (ValueError, IndexError, KeyboardInterrupt):
+            print("\n❌ Invalid choice or interrupted. Falling back to default.")
+            pretty_name = "MariaDB 11.4"
+            target = "mariadb114"
+
+        return f"Standalone ({pretty_name})", [
             {
                 "id": "config",
                 "name": "Test Configuration",
@@ -102,21 +131,21 @@ def get_steps():
             },
             {
                 "id": "start",
-                "name": "Start MariaDB",
-                "description": "Starts the MariaDB 11.4 container.",
-                "command": "make mariadb114"
+                "name": f"Start {pretty_name}",
+                "description": f"Starts the {pretty_name} container.",
+                "command": f"make {target}"
             },
             {
                 "id": "status",
                 "name": "Check Status",
-                "description": "Shows the current status of the MariaDB container.",
+                "description": f"Shows the current status of the {pretty_name} container.",
                 "command": "make status"
             },
             {
                 "id": "inject",
                 "name": "Inject Data",
                 "description": "Injects the employees dataset.",
-                "command": "make inject-data service=mariadb114 db=employees"
+                "command": f"make inject-data service={target} db=employees"
             },
             {
                 "id": "verify",

@@ -1,5 +1,7 @@
 ---
-description: Pre-flight checks before triggering a git-flow release
+trigger: explicit_call
+description: Pre-flight checks before releasing
+category: tool
 ---
 
 # Release Preflight Workflow

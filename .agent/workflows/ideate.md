@@ -1,5 +1,7 @@
 ---
-description: ideate
+trigger: explicit_call
+description: Systematic problem analysis and ideation
+category: tool
 ---
 
 # Ideation Workflow

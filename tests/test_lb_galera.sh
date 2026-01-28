@@ -62,7 +62,7 @@ echo ""
 echo "📊 Distribution Summary:"
 echo "--------------------------------------------------------"
 write_report "## Distribution Summary"
-write_report "| Nom de l'hôte | Connexions | Pourcentage |"
+write_report "| Hostname | Connections | Percentage |"
 write_report "| --- | --- | --- |"
 
 DIST_DATA=""
@@ -89,7 +89,7 @@ else
     echo "⚠️  WARNING: Connections only hit $UNIQUE_HOSTS node(s). Check HAProxy status."
 fi
 
-write_report "\n## Résultats du Test"
+write_report "\n## Test Results"
 write_report "| Nature du Test | Attendu | Statut | Résultat Réel / Détails |"
 write_report "| --- | --- | --- | --- |"
 write_report "| $LB_NATURE | $LB_EXPECTED | $LB_STATUS | $LB_DETAILS |"
@@ -99,7 +99,7 @@ TEST_RESULTS="{\"test\":\"$LB_NATURE\",\"nature\":\"$LB_NATURE\",\"expected\":\"
 # Generate HTML Report
 cat <<'EOF' > "$REPORT_HTML"
 <!DOCTYPE html>
-<html lang="fr" class="scroll-smooth">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

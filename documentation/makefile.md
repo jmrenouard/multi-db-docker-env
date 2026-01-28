@@ -60,7 +60,7 @@ These commands automate the deployment of a clean Galera cluster followed by the
 | :--- | :--- |
 | `make inject-data` | 💉 Inject a sample database (`employees` or `sakila`) into a single-instance service. |
 | `make test-all` | 🧪 Run full test suite across multiple DB versions. |
-| `make clone-test-db-cluster` | Clone or update the `test_db` repository for cluster injection. |
+| `make sync-test-db` | 🔄 Synchronize the `test_db` submodule from remote master. |
 | `make inject-employee-galera`| **Full Cycle**: Reset Galera and inject the `employees` database. |
 | `make inject-sakila-galera`  | **Full Cycle**: Reset Galera and inject the `sakila` (MV) database. |
 | `make inject-employee-repli` | **Full Cycle**: Reset Replication and inject `employees` database. |

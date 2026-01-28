@@ -1,11 +1,15 @@
 #!/bin/bash
 
 # Configuration
+if [ -f .env ]; then
+    export "$(grep -v '^#' .env | xargs)"
+fi
+
 NODE1_PORT=3511
 NODE2_PORT=3512
 NODE3_PORT=3513
 USER="root"
-PASS="rootpass"
+PASS="${DB_ROOT_PASSWORD:-rootpass}"
 DB="test_galera_db"
 
 # Create reports directory if it doesn't exist
@@ -85,7 +89,7 @@ fi
 
 echo "✅ Cluster is ready. Starting tests..."
 
-write_report "## Informations sur la connexion"
+write_report "## Connection Information"
 for i in 1 2 3; do
     port_var="NODE${i}_PORT"
     port=${!port_var}
@@ -112,10 +116,10 @@ for i in 1 2 3; do
 done
 
 WSREP_STATUS=$(run_sql $NODE1_PORT "SHOW STATUS LIKE 'wsrep%';")
-write_report "\n## Informations sur l'état de la réplication (Galera)"
+write_report "\n## Galera Replication State Information"
 write_report "\`\`\`sql\n$WSREP_STATUS\n\`\`\`"
 
-write_report "\n## Résultats des tests Galera"
+write_report "\n## Galera Test Results"
 write_report "| Nature du Test | Attendu | Statut | Résultat Réel / Détails |"
 write_report "| --- | --- | --- | --- |"
 
@@ -176,7 +180,6 @@ run_sql $NODE2_PORT "INSERT INTO $DB.sync_test (node_id, msg) VALUES (2, 'Multi-
 run_sql $NODE3_PORT "INSERT INTO $DB.sync_test (node_id, msg) VALUES (3, 'Multi-node test 3');"
 
 echo ">> Checking IDs and distribution:"
-INC_DATA=""
 write_report "\n| Row ID | Node ID | Message |"
 write_report "| --- | --- | --- |"
 run_sql $NODE1_PORT "SELECT id, node_id, msg FROM $DB.sync_test WHERE msg LIKE 'Multi-node test %' ORDER BY id;" | while read id node_id msg; do
@@ -315,7 +318,7 @@ for i in 1 2 3; do
         VARS_JS=$(echo "$VARS" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $0}' | tr -d '\r\n')
         STATS_JS=$(echo "$STATS" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $0}' | tr -d '\r\n')
         
-        NODE_DATA+="\"node$i\": { \"opts\": \"$OPTS_JS\", \"vars\": \"$VARS_JS\", \"stats\": \"$STATS_JS\", \"name\": \"Serveur $i\", \"port\": \"$port\" },"
+        NODE_DATA+="\"node$i\": { \"opts\": \"$OPTS_JS\", \"vars\": \"$VARS_JS\", \"stats\": \"$STATS_JS\", \"name\": \"Server $i\", \"port\": \"$port\" },"
     fi
 done
 NODE_DATA="${NODE_DATA%,}}"
@@ -330,10 +333,10 @@ write_report "\`\`\`sql\n$SUMMARY_CONFIG\nwsrep_provider_options     $PROVIDER_O
 # Generate HTML Report
 cat <<EOF > "$REPORT_HTML"
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Rapport de Test Galera Cluster</title>
+    <title>Galera Cluster Test Report</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script type="module">
@@ -358,7 +361,7 @@ cat <<EOF > "$REPORT_HTML"
                 <h1 class="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent italic">
                     <i class="fa-solid fa-network-wired mr-3"></i>Galera Cluster Test
                 </h1>
-                <p class="text-slate-400 mt-2 font-light italic">Rapport de vérification du cluster Galera</p>
+                <p class="text-slate-400 mt-2 font-light italic">Galera cluster verification report</p>
             </div>
             <div class="text-right">
                 <span class="text-slate-500 text-xs font-mono">$(date)</span>
