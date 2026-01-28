@@ -1,11 +1,15 @@
 #!/bin/bash
 
 # Configuration
+if [ -f .env ]; then
+    export "$(grep -v '^#' .env | xargs)"
+fi
+
 MASTER_PORT=3411
 SLAVE1_PORT=3412
 SLAVE2_PORT=3413
 USER="root"
-PASS="rootpass"
+PASS="${DB_ROOT_PASSWORD:-rootpass}"
 DB="test_repli_db"
 
 # Create reports directory if it doesn't exist

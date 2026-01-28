@@ -9,6 +9,8 @@ echo "=========================================================="
 if [ ! -f .env ]; then
     echo "⚠️  .env file not found. Creating a default one for test..."
     echo "DB_ROOT_PASSWORD=rootpass" > .env
+    echo "# REPLI_USER=repli_user" >> .env
+    echo "# REPLI_PASS=replipass" >> .env
     echo "✅ Created default .env"
 fi
 

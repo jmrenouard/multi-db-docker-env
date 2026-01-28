@@ -1,10 +1,14 @@
 #!/bin/bash
 
 # Configuration
+if [ -f .env ]; then
+    export "$(grep -v '^#' .env | xargs)"
+fi
+
 LB_HOST="127.0.0.1"
 LB_PORT="3306"
 USER="root"
-PASS="rootpass"
+PASS="${DB_ROOT_PASSWORD:-rootpass}"
 ITERATIONS=40
 
 # Create reports directory if it doesn't exist

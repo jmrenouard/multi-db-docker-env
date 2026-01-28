@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# Configuration defaults
+# Configuration
+if [ -f .env ]; then
+    export "$(grep -v '^#' .env | xargs)"
+fi
+
 DB_USER="root"
-DB_PASS="rootpass"
+DB_PASS="${DB_ROOT_PASSWORD:-rootpass}"
 DB_NAME="sbtest"
 THREADS=4
 REPORT_INTERVAL=10
