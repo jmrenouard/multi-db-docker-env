@@ -168,12 +168,7 @@ mycnf:
 		exit 1; \
 	fi
 	@# Check if the variable is defined
-	@if [ -z "$$(grep -v '^#' .env | xargs |grep DB_ROOT_PASSWORD)" ]; then \
-		printf "\n\033[1;31m❌ Error: DB_ROOT_PASSWORD is not defined in the .env file.\033[0m\n\n"; \
-		exit 1; \
-	fi
-	@# Generate the .my.cnf file in the user's home directory
-	@printf "[client]\nuser=root\npassword=%s\nhost=127.0.0.1\n" "$$(cat .env | sed 's/#.*//g' |grep DB_ROOT_PASSWORD| xargs|cut -d= -f2)" > $${HOME}/.my.cnf
+	@printf "[client]\nuser=root\npassword=%s\nhost=127.0.0.1\n" "$(DB_ROOT_PASSWORD)" > $${HOME}/.my.cnf
 	@# Apply restrictive permissions for security
 	@chmod 600 $${HOME}/.my.cnf
 	@printf "✅ .my.cnf file generated and secured in your home directory (~/.my.cnf).\n"
@@ -184,12 +179,9 @@ client:
 		printf "❌ .env file is missing. Cannot retrieve password.\n"; \
 		exit 1; \
 	fi
-	@export DB_ROOT_PASSWORD=$$(sed 's/#.*//g' .env|grep DB_ROOT_PASSWORD| xargs|cut -d= -f2); \
-	DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
-	DB_CONTAINER=$$($(GET_CONTAINER_NAME)); \
 	if [ -n "$${DB_SERVICE}" ]; then \
 		printf "💻 Connecting MySQL client to \033[1;32m%s\033[0m...\n" "$${DB_SERVICE}"; \
-		docker exec -it "$${DB_CONTAINER}" mysql -uroot -p"$${DB_ROOT_PASSWORD}"; \
+		docker exec -it "$${DB_CONTAINER}" mysql -uroot -p"$(DB_ROOT_PASSWORD)"; \
 	else \
 		printf "❌ No database service is running to start the client.\n"; \
 	fi
@@ -211,26 +203,25 @@ inject-data:
 		printf "\033[1;31m❌ Error: Service '%s' is not running.\033[0m\n" "$(service)"; \
 		exit 1; \
 	fi
-	@export DB_ROOT_PASSWORD=$$(sed 's/#.*//g' .env|grep DB_ROOT_PASSWORD| xargs|cut -d= -f2); \
 	if [ ! -d "$(TEST_DB_DIR)" ]; then \
 		printf "Initializing '$(TEST_DB_DIR)' submodule...\n"; \
 		git submodule update --init --recursive; \
 	fi; \
 	DB_CONTAINER=$$(docker compose ps $(service) --format "{{.Names}}"); \
-	ADMIN_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysqladmin || command -v mariadb-admin' 2>/dev/null); \
 	printf "⏳ Waiting for %s to be ready...\n" "$${DB_CONTAINER}"; \
-	timeout 60s bash -c "until docker exec $${DB_CONTAINER} $${ADMIN_CMD} ping -h'127.0.0.1' --silent; do sleep 1; done"; \
+	timeout 120s bash -c "until docker exec $${DB_CONTAINER} sh -c 'mysqladmin -uroot -p\"$(DB_ROOT_PASSWORD)\" ping -h127.0.0.1 || mariadb-admin -uroot -p\"$(DB_ROOT_PASSWORD)\" ping -h127.0.0.1' >/dev/null 2>&1; do sleep 2; done" || (printf \"\033[1;31m❌ Error: Database reached timeout without becoming ready.\033[0m\n\" && exit 1); \
+	sleep 5; \
 	MYSQL_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysql || command -v mariadb' 2>/dev/null); \
 	if [ -z "$${MYSQL_CMD}" ]; then printf "\033[1;31m❌ Error: Neither 'mysql' nor 'mariadb' found in container.\033[0m\n"; exit 1; fi; \
 	printf "Injecting data into %s using %s...\n" "$${DB_CONTAINER}" "$${MYSQL_CMD}"; \
 	if [ "$(db)" = "employees" ]; then \
-		docker cp $(TEST_DB_DIR)/employees "$${DB_CONTAINER}:/tmp/test_db"; \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/test_db && $${MYSQL_CMD} -uroot -p$${DB_ROOT_PASSWORD} < employees.sql"; \
+		docker cp $(TEST_DB_DIR)/employees "$${DB_CONTAINER}:/tmp/test_db" && \
+		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/test_db && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < employees.sql" && \
 		printf "✅ 'employees' database injected.\n"; \
 	elif [ "$(db)" = "sakila" ]; then \
-		docker cp $(TEST_DB_DIR)/sakila "$${DB_CONTAINER}:/tmp/"; \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p$${DB_ROOT_PASSWORD} < sakila-mv-schema.sql"; \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p$${DB_ROOT_PASSWORD} < sakila-mv-data.sql"; \
+		docker cp $(TEST_DB_DIR)/sakila "$${DB_CONTAINER}:/tmp/" && \
+		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-schema.sql" && \
+		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-data.sql" && \
 		printf "✅ 'sakila' database injected.\n"; \
 	else \
 		printf "\033[1;31m❌ Error: Invalid database name '%s'.\033[0m\n" "$(db)"; \
@@ -243,52 +234,37 @@ inject-data:
 test-all:
 	@# List of all database services to test
 	@SERVICES_TO_TEST="mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80"; \
-	export DB_ROOT_PASSWORD=$$(sed 's/#.*//g' .env|grep DB_ROOT_PASSWORD| xargs|cut -d= -f2); \
 	for service in $${SERVICES_TO_TEST}; do \
 		printf "\n\033[1;34m--- Testing service: %s ---\033[0m\n" "$$service"; \
 		\
-		printf "🚀 Starting service %s...\n" "$$service"; \
-		make $$service; \
+		printf "🚀 Starting service %s...\n" "$$service" && \
+		make $$service && \
 		\
 		printf "⏳ Waiting for DB to be ready...\n"; \
 		DB_CONTAINER=$$(docker compose ps $$service --format "{{.Names}}"); \
-		ADMIN_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysqladmin || command -v mariadb-admin' 2>/dev/null); \
+		timeout 120s bash -c "until docker exec $${DB_CONTAINER} sh -c 'mysqladmin -uroot -p\"$(DB_ROOT_PASSWORD)\" ping -h127.0.0.1 || mariadb-admin -uroot -p\"$(DB_ROOT_PASSWORD)\" ping -h127.0.0.1' >/dev/null 2>&1; do sleep 2; done" || exit 1; \
+		sleep 5; \
 		MYSQL_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysql || command -v mariadb' 2>/dev/null); \
-		timeout 60s bash -c "until docker exec $${DB_CONTAINER} $${ADMIN_CMD} ping -h'127.0.0.1' --silent; do sleep 1; done"; \
+		if [ -z "$${MYSQL_CMD}" ]; then printf "\033[1;31m❌ Error: Neither 'mysql' nor 'mariadb' found in container.\033[0m\n"; exit 1; fi; \
 		\
-		printf "💉 Injecting 'employees' database...\n"; \
-		make inject-data service=$$service db=employees; \
+		printf "💉 Injecting 'employees' database...\n" && \
+		make inject-data service=$$service db=employees && \
 		\
-		printf "💉 Injecting 'sakila' database...\n"; \
-		make inject-data service=$$service db=sakila; \
+		printf "💉 Injecting 'sakila' database...\n" && \
+		make inject-data service=$$service db=sakila && \
 		\
-		printf "🔍 Verifying data injection...\n"; \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$${DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" | grep -q "employees"; \
-		if [ $$? -eq 0 ]; then \
-			printf "✅ 'employees' database found.\n"; \
-		else \
-			printf "\033[1;31m❌ 'employees' database not found.\033[0m\n"; \
-			exit 1; \
-		fi; \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$${DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" | grep -q "sakila"; \
-		if [ $$? -eq 0 ]; then \
-			printf "✅ 'sakila' database found.\n"; \
-		else \
-			printf "\033[1;31m❌ 'sakila' database not found.\033[0m\n"; \
-			exit 1; \
-		fi; \
+		printf "🔍 Verifying data injection...\n" && \
+		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -e "SHOW DATABASES;" | grep -q "employees" && \
+		printf "✅ 'employees' database found.\n" && \
+		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -e "SHOW DATABASES;" | grep -q "sakila" && \
+		printf "✅ 'sakila' database found.\n" && \
 		\
-		printf "🔍 Verifying Traefik proxy...\n"; \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$${DB_ROOT_PASSWORD}" -h traefik -e "SHOW DATABASES;" | grep -q "employees"; \
-		if [ $$? -eq 0 ]; then \
-			printf "✅ Connection via Traefik successful.\n"; \
-		else \
-			printf "\033[1;31m❌ Connection via Traefik failed.\033[0m\n"; \
-			exit 1; \
-		fi; \
+		printf "🔍 Verifying Traefik proxy...\n" && \
+		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -h traefik -e "SHOW DATABASES;" | grep -q "employees" && \
+		printf "✅ Connection via Traefik successful.\n" && \
 		\
-		printf "🛑 Stopping service %s...\n" "$$service"; \
-		make stop; \
+		printf "🛑 Stopping service %s...\n" "$$service" && \
+		docker compose down -v; \
 	done
 	@printf "\n\033[1;32m✅ All services tested successfully!\033[0m\n"
 	

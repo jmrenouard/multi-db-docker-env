@@ -1,6 +1,8 @@
-1.1.5 2026-01-28
-- feat: add lifecycle, data injection, and benchmarking skills to .agent/skills/ for automated project usage using AFF format.
-- doc: define and document the integral test plan covering all platforms and versions in documentation/INTEGRAL_TEST_PLAN.md.
+1.1.6 2026-01-29
+- test: completed integral standalone matrix verification (T2) for all 9 engines.
+- fix: hardened Makefile readiness checks with authenticated ping and 120s timeouts.
+- refactor: standardized Makefile variable usage for DB_ROOT_PASSWORD, removing legacy shell parsing.
+- fix: resolved MySQL 8.4/9.x authentication failures by standardizing on caching_sha2_password and removing problematic auth.xml scripts.
 - fix: remove hardcoded root passwords from scripts/ and tests/ (backup, restore, setup, profiles, performance tests) and replace with .env/environment variable support.
 - test: verify MariaDB 11.8 integration and data injection after resolving volume staleness issues.
 
