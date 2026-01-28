@@ -1,6 +1,6 @@
-![multi-db-docker-env](logo.png)
-
 # 🚀 Multi-Version Database Manager with Docker & Make (multi-db-docker-env)
+
+![multi-db-docker-env](logo.png)
 
 [!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
 
@@ -97,6 +97,7 @@ To start a specific database instance, use the `make <database_version>` command
 ### 🌐 Networking
 
 The project uses standardized private subnets for cluster isolation:
+
 * **Galera Cluster**: `10.6.0.0/24`
 * **Replication Cluster**: `10.5.0.0/24`
 
@@ -105,6 +106,7 @@ These ranges are consistent across `docker-compose` configurations and internal 
 ### 🔐 Credentials
 
 Default credentials are centralized in the `.env` file via `DB_ROOT_PASSWORD`.
+
 * **Default User**: `root`
 * **Default Database**: `employees` (after injection)
 
@@ -175,7 +177,7 @@ graph TD
 ├── 📂 reports/            # Performance and test reports
 ├── 📚 [INDEX.md](documentation/INDEX.md) # Documentation Index
 ├── 📖 README.md           # This file (English documentation)
-└── 📖 README.fr.md        # French version of this file
+└── 📖 README_fr.md        # French version of this file
 ```
 
 ## 📚 Documentation
