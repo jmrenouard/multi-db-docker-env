@@ -14,3 +14,6 @@ id_rsa.pub
 *.swp
 .DS_Store
 multi-db-docker-env.code-workspace
+__pycache__/** 
+datadir_*/**
+gbackups_*/**

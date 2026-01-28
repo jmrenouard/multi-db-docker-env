@@ -29,16 +29,33 @@ services:
   # ----------------------------------------------------------------
 
   # --- MySQL ---
-  mysql93:
-    image: mysql:9.3
-    container_name: mysql-9.3
+  mysql96:
+    image: mysql:9.6
+    container_name: mysql-9.6
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
-      - mysql_9_3_data:/var/lib/mysql
+      - ./initdb/auth.sql:/docker-entrypoint-initdb.d/auth.sql
+      - mysql_9_6_data:/var/lib/mysql
     profiles:
-      - "mysql93"
+      - "mysql96"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.db-router.entrypoints=mysql"
+      - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
+
+  mysql57:
+    image: mysql:5.7
+    container_name: mysql-5.7
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mysql_5_7_data:/var/lib/mysql
+    profiles:
+      - "mysql57"
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
@@ -52,6 +69,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
+      - ./initdb/auth.sql:/docker-entrypoint-initdb.d/auth.sql
       - mysql_8_4_data:/var/lib/mysql
     profiles:
       - "mysql84"
@@ -68,6 +86,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
+      - ./initdb/auth.sql:/docker-entrypoint-initdb.d/auth.sql
+      - ./conf/native_auth_old.cnf:/etc/mysql/conf.d/native_auth.cnf
       - mysql_8_0_data:/var/lib/mysql
     profiles:
       - "mysql80"
@@ -149,6 +169,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
+      - ./initdb/auth.sql:/docker-entrypoint-initdb.d/auth.sql
+      - ./conf/native_auth_old.cnf:/etc/mysql/conf.d/native_auth.cnf
       - percona_8_0_data:/var/lib/mysql
     profiles:
       - "percona80"
@@ -162,9 +184,10 @@ services:
 # Defines the named volumes for persistent data storage.
 # ----------------------------------------------------------------
 volumes:
-  mysql_9_3_data:
+  mysql_9_6_data:
   mysql_8_4_data:
   mysql_8_0_data:
+  mysql_5_7_data:
   mariadb_11_8_data:
   mariadb_11_4_data:
   mariadb_10_11_data:

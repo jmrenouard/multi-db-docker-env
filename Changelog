@@ -1,3 +1,14 @@
+1.1.5 2026-01-28
+- feat: add lifecycle, data injection, and benchmarking skills to .agent/skills/ for automated project usage using AFF format.
+- test: verify MariaDB 11.8 integration and data injection after resolving volume staleness issues.
+
+1.1.4 2026-01-28
+- feat: update MySQL 9.3 to 9.6 and re-add MySQL 5.7 support.
+- fix: deduplicate Makefile targets to resolve "overriding recipe" warnings.
+- fix: correct authentication in Makefile targets to use ${DB_ROOT_PASSWORD} instead of hardcoded rootpass.
+- fix: add '-r' to xargs in stop target to prevent errors when no containers are running.
+- update: synchronize README.md, README_fr.md, and interactive_runner.py with latest DB versions.
+
 1.1.3 2026-01-28
 - feat: add README_fr.md for bilingual documentation support.
 - doc: synchronize project structure links in README.md.

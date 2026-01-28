@@ -14,273 +14,13 @@ endif
 DB_ROOT_PASSWORD ?= rootpass
 
 # --- Main Targets ---
-.PHONY: help mycnf client info mysql93 mysql84 mysql80 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 stop status logs \
+.PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 stop status logs \
         build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
         gen-ssl clean-ssl renew-ssl renew-ssl-galera renew-ssl-repli emergency-galera emergency-repli check-galera check-repli \
         test-config start verify inject sync-test-db
-
-# ... (lines 15-151) ...
-
-# 💻 Starts a MySQL client on the active DB
-client:
-	@if [ ! -f .env ]; then \
-		printf "❌ .env file is missing. Cannot retrieve password.\n"; \
-		exit 1; \
-	fi
-	@DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
-	DB_CONTAINER=$$($(GET_CONTAINER_NAME)); \
-	if [ -n "$${DB_SERVICE}" ]; then \
-		printf "💻 Connecting MySQL client to \033[1;32m%s\033[0m...\n" "$${DB_SERVICE}"; \
-		docker exec -it "$${DB_CONTAINER}" mysql -uroot -p"${DB_ROOT_PASSWORD}"; \
-	else \
-		printf "❌ No database service is running to start the client.\n"; \
-	fi
-
-# --- Data Injection ---
-.PHONY: inject-data
-
-inject-data:
-	@# Ensure service and db are provided
-	@if [ -z "$(service)" ] || [ -z "$(db)" ]; then \
-		printf "\033[1;31m❌ Error: 'service' and 'db' parameters are required.\033[0m\n"; \
-		printf "Usage: make inject-data service=<service_name> db=<db_name>\n"; \
-		printf "Available db_names: employees, sakila\n"; \
-		exit 1; \
-	fi
-
-	@# Check if the service is running
-	@if [ -z "$$(docker compose ps --services --filter "status=running" | grep $(service))" ]; then \
-		printf "\033[1;31m❌ Error: Service '%s' is not running.\033[0m\n" "$(service)"; \
-		exit 1; \
-	fi
-	@if [ ! -d "$(TEST_DB_DIR)" ]; then \
-		printf "Initializing '$(TEST_DB_DIR)' submodule...\n"; \
-		git submodule update --init --recursive; \
-	fi; \
-	DB_CONTAINER=$$(docker compose ps $(service) --format "{{.Names}}"); \
-	ADMIN_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysqladmin || command -v mariadb-admin' 2>/dev/null); \
-	printf "⏳ Waiting for %s to be ready...\n" "$${DB_CONTAINER}"; \
-	timeout 60s bash -c "until docker exec $${DB_CONTAINER} $${ADMIN_CMD} ping -h'127.0.0.1' --silent; do sleep 1; done"; \
-	MYSQL_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysql || command -v mariadb' 2>/dev/null); \
-	if [ -z "$${MYSQL_CMD}" ]; then printf "\033[1;31m❌ Error: Neither 'mysql' nor 'mariadb' found in container.\033[0m\n"; exit 1; fi; \
-	printf "Injecting data into %s using %s...\n" "$${DB_CONTAINER}" "$${MYSQL_CMD}"; \
-	if [ "$(db)" = "employees" ]; then \
-		docker cp $(TEST_DB_DIR)/employees "$${DB_CONTAINER}:/tmp/test_db"; \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/test_db && $${MYSQL_CMD} -uroot -p${DB_ROOT_PASSWORD} < employees.sql"; \
-		printf "✅ 'employees' database injected.\n"; \
-	elif [ "$(db)" = "sakila" ]; then \
-		docker cp $(TEST_DB_DIR)/sakila "$${DB_CONTAINER}:/tmp/"; \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p${DB_ROOT_PASSWORD} < sakila-mv-schema.sql"; \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p${DB_ROOT_PASSWORD} < sakila-mv-data.sql"; \
-		printf "✅ 'sakila' database injected.\n"; \
-	else \
-		printf "\033[1;31m❌ Error: Invalid database name '%s'.\033[0m\n" "$(db)"; \
-		exit 1; \
-	fi
-
-# --- Full Test Suite ---
-.PHONY: test-all
-
-test-all:
-	@# List of all database services to test
-	@SERVICES_TO_TEST="mysql84 mariadb114 percona80"; \
-	for service in $${SERVICES_TO_TEST}; do \
-		printf "\n\033[1;34m--- Testing service: %s ---\033[0m\n" "$$service"; \
-		\
-		printf "🚀 Starting service %s...\n" "$$service"; \
-		make $$service; \
-		\
-		printf "⏳ Waiting for DB to be ready...\n"; \
-		DB_CONTAINER=$$(docker compose ps $$service --format "{{.Names}}"); \
-		ADMIN_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysqladmin || command -v mariadb-admin' 2>/dev/null); \
-		MYSQL_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysql || command -v mariadb' 2>/dev/null); \
-		timeout 60s bash -c "until docker exec $${DB_CONTAINER} $${ADMIN_CMD} ping -h'127.0.0.1' --silent; do sleep 1; done"; \
-		\
-		printf "💉 Injecting 'employees' database...\n"; \
-		make inject-data service=$$service db=employees; \
-		\
-		printf "💉 Injecting 'sakila' database...\n"; \
-		make inject-data service=$$service db=sakila; \
-		\
-		printf "🔍 Verifying data injection...\n"; \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"${DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" | grep -q "employees"; \
-		if [ $$? -eq 0 ]; then \
-			printf "✅ 'employees' database found.\n"; \
-		else \
-			printf "\033[1;31m❌ 'employees' database not found.\033[0m\n"; \
-			exit 1; \
-		fi; \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"${DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" | grep -q "sakila"; \
-		if [ $$? -eq 0 ]; then \
-			printf "✅ 'sakila' database found.\n"; \
-		else \
-			printf "\033[1;31m❌ 'sakila' database not found.\033[0m\n"; \
-			exit 1; \
-		fi; \
-		\
-		printf "🔍 Verifying Traefik proxy...\n"; \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"${DB_ROOT_PASSWORD}" -h traefik -e "SHOW DATABASES;" | grep -q "employees"; \
-		if [ $$? -eq 0 ]; then \
-			printf "✅ Connection via Traefik successful.\n"; \
-		else \
-			printf "\033[1;31m❌ Connection via Traefik failed.\033[0m\n"; \
-			exit 1; \
-		fi; \
-		\
-		printf "🛑 Stopping service %s...\n" "$$service"; \
-		make stop; \
-	done
-	@printf "\n\033[1;32m✅ All services tested successfully!\033[0m\n"
-
-# ... (lines 285-350) ...
-
-## Galera Cluster
-galera-up: stop build-image gen-ssl repli-down ## Start Galera cluster
-	@echo ">> 🚀 Starting Node 1 (Primary)..."
-	MARIADB_GALERA_BOOTSTRAP=1 docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_01
-	@echo ">> ⏳ Waiting for Node 1 to start..."
-	@until mariadb -h 127.0.0.1 -P 3511 -u root -p"${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 1; done
-	@echo "✅ Node 1 is Synced."
-	@echo ">> 🚀 Joining Node 2..."
-	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_02
-	@echo ">> ⏳ Waiting for Node 2 to join..."
-	@until mariadb -h 127.0.0.1 -P 3512 -u root -p"${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
-	@echo "✅ Node 2 is Synced."
-	@echo ">> 🚀 Joining Node 3..."
-	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_03
-	@echo ">> ⏳ Waiting for Node 3 to join..."
-	@until mariadb -h 127.0.0.1 -P 3513 -u root -p"${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
-	@echo "✅ Node 3 is Synced."
-	@echo ">> 🚀 Starting Load Balancer..."
-	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate haproxy_galera
-	@echo "✅ Cluster is fully SEQUENTIALLY BOOTSTRAPPED and ready."
-
-up-galera: galera-up
-
-bootstrap-galera: stop build-image gen-ssl repli-down ## Bootstrap a NEW Galera cluster (Sequential)
-	@echo ">> 🚀 Bootstrapping Node 1 (Primary)..."
-	MARIADB_GALERA_BOOTSTRAP=1 docker compose -f $(COMPOSE_GALERA) up -d galera_01
-	@echo ">> ⏳ Waiting for Node 1 to bootstrap..."
-	@until mariadb -h 127.0.0.1 -P 3511 -u root -p"${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 1; done
-	@echo "✅ Node 1 is Synced."
-	@echo ">> 🚀 Joining Node 2..."
-	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_02
-	@echo ">> ⏳ Waiting for Node 2 to join..."
-	@until mariadb -h 127.0.0.1 -P 3512 -u root -p"${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
-	@echo "✅ Node 2 is Synced."
-	@echo ">> 🚀 Joining Node 3..."
-	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_03
-	@echo ">> ⏳ Waiting for Node 3 to join..."
-	@until mariadb -h 127.0.0.1 -P 3513 -u root -p"${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
-	@echo "✅ Node 3 is Synced."
-	@echo ">> 🚀 Starting Load Balancer..."
-	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate haproxy_galera
-	@echo "✅ Cluster is fully SEQUENTIALLY BOOTSTRAPPED and ready."
-
-# ... (lines 391-398) ...
-
-galera-down: ## Stop Galera cluster
-	docker compose -f $(COMPOSE_GALERA) down
-
-down-galera: galera-down
-
-galera-logs: ## Follow Galera cluster logs
-	docker compose -f $(COMPOSE_GALERA) logs -f
-
-logs-galera: galera-logs
-
-## Replication Cluster
-repli-up: stop build-image gen-ssl galera-down ## Start Replication cluster
-	docker compose -f $(COMPOSE_REPLI) up -d
-
-up-repli: repli-up
-
-# ... (lines 409-416) ...
-
-repli-down: ## Stop Replication cluster
-	docker compose -f $(COMPOSE_REPLI) down
-
-down-repli: repli-down
-
-repli-logs: ## Follow Replication cluster logs
-	docker compose -f $(COMPOSE_REPLI) logs -f
-
-logs-repli: repli-logs
-
-# ... (lines 423-472) ...
-
-inject-employee-galera: ## Sequential: Full Galera bootstrap and inject employees.sql
-	@echo ">> 💉 Injecting employees database into Galera..."
-	@cd $(TEST_DB_DIR)/employees && mariadb -h 127.0.0.1 -P 3511 -u root -p"${DB_ROOT_PASSWORD}" < employees.sql
-	@echo "✅ employees.sql injected into Galera cluster."
-
-inject-sakila-galera: ## Sequential: Full Galera bootstrap and inject sakila database
-	@echo ">> 💉 Injecting sakila schema into Galera..."
-	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3511 -u root -p"${DB_ROOT_PASSWORD}" < sakila-mv-schema.sql
-	@echo ">> 💉 Injecting sakila data into Galera..."
-	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3511 -u root -p"${DB_ROOT_PASSWORD}" < sakila-mv-data.sql
-	@echo "✅ sakila database injected into Galera cluster."
-
-inject-employee-repli: ## Sequential: Full Replication bootstrap and inject employees.sql
-	@echo ">> 💉 Injecting employees database into Replication (Master)..."
-	@cd $(TEST_DB_DIR)/employees && mariadb -h 127.0.0.1 -P 3411 -u root -p"${DB_ROOT_PASSWORD}" < employees.sql
-	@echo "✅ employees.sql injected into Replication cluster."
-
-inject-sakila-repli: ## Sequential: Full Replication bootstrap and inject sakila database
-	@echo ">> 💉 Injecting sakila schema into Replication (Master)..."
-	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3411 -u root -p"${DB_ROOT_PASSWORD}" < sakila-mv-schema.sql
-	@echo ">> 💉 Injecting sakila data into Replication (Master)..."
-	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3411 -u root -p"${DB_ROOT_PASSWORD}" < sakila-mv-data.sql
-	@echo "✅ sakila database injected into Replication cluster."
-
-# ... (lines 497-520) ...
-
-renew-ssl-galera: ## Force SSL certificate regeneration and reload on active Galera nodes
-	@echo ">> 🔄 Regenerating SSL certificates..."
-	rm -rf ssl/
-	bash ./scripts/gen_ssl.sh
-	@echo ">> 🚀 Reloading SSL on Galera nodes..."
-	@mariadb -h 127.0.0.1 -P 3511 -u root -p"${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 1 reloaded"
-	@mariadb -h 127.0.0.1 -P 3512 -u root -p"${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 2 reloaded"
-	@mariadb -h 127.0.0.1 -P 3513 -u root -p"${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 3 reloaded"
-	@echo "✨ Galera zero-downtime SSL rotation completed."
-
-renew-ssl-repli: ## Force SSL certificate regeneration and reload on active Replication nodes
-	@echo ">> 🔄 Regenerating SSL certificates..."
-	rm -rf ssl/
-	bash ./scripts/gen_ssl.sh
-	@echo ">> 🚀 Reloading SSL on Replication nodes..."
-	@mariadb -h 127.0.0.1 -P 3411 -u root -p"${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 1 reloaded"
-	@mariadb -h 127.0.0.1 -P 3412 -u root -p"${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 2 reloaded"
-	@mariadb -h 127.0.0.1 -P 3413 -u root -p"${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 3 reloaded"
-	@echo "✨ Replication zero-downtime SSL rotation completed."
-
-# ... (lines 541-588) ...
-
-check-galera: ## Check Galera cluster status and key variables (Usage: make check-galera [NODE=1|2|3])
-	@NODE_PORT=$$(case "$(NODE)" in 2) echo "3512";; 3) echo "3513";; *) echo "3511";; esac); \
-	echo ">> 📊 Galera Status (Node $(NODE:-1) @ port $$NODE_PORT)..."; \
-	mariadb -h 127.0.0.1 -P $$NODE_PORT -u root -p"${DB_ROOT_PASSWORD}" -e "\
-		SELECT VARIABLE_NAME, VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME IN ('WSREP_CLUSTER_SIZE', 'WSREP_LOCAL_STATE_COMMENT', 'WSREP_CONNECTED', 'WSREP_READY'); \
-		SHOW VARIABLES LIKE 'innodb_buffer_pool_size'; \
-		SHOW VARIABLES LIKE 'wsrep_slave_threads'; \
-		SHOW VARIABLES LIKE 'wsrep_provider_options';"
-
-check-repli: ## Check Replication cluster status and key variables (Usage: make check-repli [NODE=1|2|3])
-	@NODE_PORT=$$(case "$(NODE)" in 2) echo "3412";; 3) echo "3413";; *) echo "3411";; esac); \
-	echo ">> 📊 Replication Status (Node $(NODE:-1) @ port $$NODE_PORT)..."; \
-	mariadb -h 127.0.0.1 -P $$NODE_PORT -u root -p"${DB_ROOT_PASSWORD}" -e "\
-		SHOW SLAVE STATUS\G \
-		SHOW VARIABLES LIKE 'innodb_buffer_pool_size'; \
-		SHOW VARIABLES LIKE 'read_only';" ; \
-	if [ "$$NODE_PORT" = "3411" ]; then \
-		echo ">> 🛡️ Master Status:"; \
-		mariadb -h 127.0.0.1 -P 3411 -u root -p"${DB_ROOT_PASSWORD}" -e "SHOW MASTER STATUS\G"; \
-	fi
-
 
 # --- Paths ---
 TEST_DB_DIR = test_db
@@ -309,9 +49,10 @@ help:
 	@printf "    \033[1mclient\033[0m        - 💻 Starts a MySQL client on the active database.\n"
 	@printf "\n"
 	@printf "  \033[1;32mMySQL:\033[0m\n"
-	@printf "    \033[1mmysql93\033[0m       - Starts MySQL 9.3\n"
+	@printf "    \033[1mmysql96\033[0m       - Starts MySQL 9.6\n"
 	@printf "    \033[1mmysql84\033[0m       - Starts MySQL 8.4\n"
 	@printf "    \033[1mmysql80\033[0m       - Starts MySQL 8.0\n"
+	@printf "    \033[1mmysql57\033[0m       - Starts MySQL 5.7\n"
 	@printf "\n"
 	@printf "  \033[1;32mMariaDB:\033[0m\n"
 	@printf "    \033[1mmariadb118\033[0m    - Starts MariaDB 11.8\n"
@@ -387,7 +128,7 @@ inject-employee: inject-employees
 stop:
 	@echo "🔥 Stopping and cleaning up containers..."
 	@docker compose down --remove-orphans
-	@docker ps | grep -v CONTAINER | grep -E '(traefik|mysql|percona|mariadb)-' | awk '{print $$1}' | xargs -n1 docker stop || true
+	@docker ps | grep -v CONTAINER | grep -E '(traefik|mysql|percona|mariadb)-' | awk '{print $$1}' | xargs -r docker stop || true
 
 # 📊 Displays the status of active containers
 status:
@@ -501,7 +242,7 @@ inject-data:
 
 test-all:
 	@# List of all database services to test
-	@SERVICES_TO_TEST="mysql84 mariadb114 percona80"; \
+	@SERVICES_TO_TEST="mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80"; \
 	export DB_ROOT_PASSWORD=$$(sed 's/#.*//g' .env|grep DB_ROOT_PASSWORD| xargs|cut -d= -f2); \
 	for service in $${SERVICES_TO_TEST}; do \
 		printf "\n\033[1;34m--- Testing service: %s ---\033[0m\n" "$$service"; \
@@ -565,9 +306,9 @@ traefik: stop
 	@docker compose --profile traefik up -d
 
 # 🐬 MySQL
-mysql93: stop traefik
-	@echo "🚀 Starting MySQL 9.3..."
-	@docker compose --profile mysql93 up -d
+mysql96: stop traefik
+	@echo "🚀 Starting MySQL 9.6..."
+	@docker compose --profile mysql96 up -d
 
 mysql84: stop traefik
 	@echo "🚀 Starting MySQL 8.4..."
@@ -576,6 +317,10 @@ mysql84: stop traefik
 mysql80: stop traefik
 	@echo "🚀 Starting MySQL 8.0..."
 	@docker compose --profile mysql80 up -d
+
+mysql57: stop traefik
+	@echo "🚀 Starting MySQL 5.7..."
+	@docker compose --profile mysql57 up -d
 
 # 🐧 MariaDB
 mariadb118: stop traefik
@@ -617,17 +362,17 @@ up-galera: stop build-image gen-ssl down-repli ## Start Galera cluster
 	@echo ">> 🚀 Starting Node 1 (Primary)..."
 	MARIADB_GALERA_BOOTSTRAP=1 docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_01
 	@echo ">> ⏳ Waiting for Node 1 to start..."
-	@until mariadb -h 127.0.0.1 -P 3511 -u root -prootpass -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 1; done
+	@until mariadb -h 127.0.0.1 -P 3511 -u root -p"$${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 1; done
 	@echo "✅ Node 1 is Synced."
 	@echo ">> 🚀 Joining Node 2..."
 	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_02
 	@echo ">> ⏳ Waiting for Node 2 to join..."
-	@until mariadb -h 127.0.0.1 -P 3512 -u root -prootpass -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
+	@until mariadb -h 127.0.0.1 -P 3512 -u root -p"$${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
 	@echo "✅ Node 2 is Synced."
 	@echo ">> 🚀 Joining Node 3..."
 	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_03
 	@echo ">> ⏳ Waiting for Node 3 to join..."
-	@until mariadb -h 127.0.0.1 -P 3513 -u root -prootpass -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
+	@until mariadb -h 127.0.0.1 -P 3513 -u root -p"$${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
 	@echo "✅ Node 3 is Synced."
 	@echo ">> 🚀 Starting Load Balancer..."
 	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate haproxy_galera
@@ -637,17 +382,17 @@ bootstrap-galera: stop build-image gen-ssl down-repli ## Bootstrap a NEW Galera 
 	@echo ">> 🚀 Bootstrapping Node 1 (Primary)..."
 	MARIADB_GALERA_BOOTSTRAP=1 docker compose -f $(COMPOSE_GALERA) up -d galera_01
 	@echo ">> ⏳ Waiting for Node 1 to bootstrap..."
-	@until mariadb -h 127.0.0.1 -P 3511 -u root -prootpass -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 1; done
+	@until mariadb -h 127.0.0.1 -P 3511 -u root -p"$${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 1; done
 	@echo "✅ Node 1 is Synced."
 	@echo ">> 🚀 Joining Node 2..."
 	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_02
 	@echo ">> ⏳ Waiting for Node 2 to join..."
-	@until mariadb -h 127.0.0.1 -P 3512 -u root -prootpass -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
+	@until mariadb -h 127.0.0.1 -P 3512 -u root -p"$${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
 	@echo "✅ Node 2 is Synced."
 	@echo ">> 🚀 Joining Node 3..."
 	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_03
 	@echo ">> ⏳ Waiting for Node 3 to join..."
-	@until mariadb -h 127.0.0.1 -P 3513 -u root -prootpass -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
+	@until mariadb -h 127.0.0.1 -P 3513 -u root -p"$${DB_ROOT_PASSWORD}" -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
 	@echo "✅ Node 3 is Synced."
 	@echo ">> 🚀 Starting Load Balancer..."
 	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate haproxy_galera
@@ -737,26 +482,26 @@ sync-test-db: ## Synchronize the test database submodule from remote master
 
 inject-employee-galera: ## Sequential: Full Galera bootstrap and inject employees.sql
 	@echo ">> 💉 Injecting employees database into Galera..."
-	@cd $(TEST_DB_DIR)/employees && mariadb -h 127.0.0.1 -P 3511 -u root -prootpass < employees.sql
+	@cd $(TEST_DB_DIR)/employees && mariadb -h 127.0.0.1 -P 3511 -u root -p"$${DB_ROOT_PASSWORD}" < employees.sql
 	@echo "✅ employees.sql injected into Galera cluster."
 
 inject-sakila-galera: ## Sequential: Full Galera bootstrap and inject sakila database
 	@echo ">> 💉 Injecting sakila schema into Galera..."
-	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3511 -u root -prootpass < sakila-mv-schema.sql
+	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3511 -u root -p"$${DB_ROOT_PASSWORD}" < sakila-mv-schema.sql
 	@echo ">> 💉 Injecting sakila data into Galera..."
-	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3511 -u root -prootpass < sakila-mv-data.sql
+	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3511 -u root -p"$${DB_ROOT_PASSWORD}" < sakila-mv-data.sql
 	@echo "✅ sakila database injected into Galera cluster."
 
 inject-employee-repli: ## Sequential: Full Replication bootstrap and inject employees.sql
 	@echo ">> 💉 Injecting employees database into Replication (Master)..."
-	@cd $(TEST_DB_DIR)/employees && mariadb -h 127.0.0.1 -P 3411 -u root -prootpass < employees.sql
+	@cd $(TEST_DB_DIR)/employees && mariadb -h 127.0.0.1 -P 3411 -u root -p"$${DB_ROOT_PASSWORD}" < employees.sql
 	@echo "✅ employees.sql injected into Replication cluster."
 
 inject-sakila-repli: ## Sequential: Full Replication bootstrap and inject sakila database
 	@echo ">> 💉 Injecting sakila schema into Replication (Master)..."
-	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3411 -u root -prootpass < sakila-mv-schema.sql
+	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3411 -u root -p"$${DB_ROOT_PASSWORD}" < sakila-mv-schema.sql
 	@echo ">> 💉 Injecting sakila data into Replication (Master)..."
-	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3411 -u root -prootpass < sakila-mv-data.sql
+	@cd $(TEST_DB_DIR)/sakila && mariadb -h 127.0.0.1 -P 3411 -u root -p"$${DB_ROOT_PASSWORD}" < sakila-mv-data.sql
 	@echo "✅ sakila database injected into Replication cluster."
 
 ## Full Cycle Targets (CI/CD style)
@@ -788,9 +533,9 @@ renew-ssl-galera: ## Force SSL certificate regeneration and reload on active Gal
 	rm -rf ssl/
 	bash ./scripts/gen_ssl.sh
 	@echo ">> 🚀 Reloading SSL on Galera nodes..."
-	@mariadb -h 127.0.0.1 -P 3511 -u root -prootpass -e "FLUSH SSL;" && echo "✅ Node 1 reloaded"
-	@mariadb -h 127.0.0.1 -P 3512 -u root -prootpass -e "FLUSH SSL;" && echo "✅ Node 2 reloaded"
-	@mariadb -h 127.0.0.1 -P 3513 -u root -prootpass -e "FLUSH SSL;" && echo "✅ Node 3 reloaded"
+	@mariadb -h 127.0.0.1 -P 3511 -u root -p"$${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 1 reloaded"
+	@mariadb -h 127.0.0.1 -P 3512 -u root -p"$${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 2 reloaded"
+	@mariadb -h 127.0.0.1 -P 3513 -u root -p"$${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 3 reloaded"
 	@echo "✨ Galera zero-downtime SSL rotation completed."
 
 renew-ssl-repli: ## Force SSL certificate regeneration and reload on active Replication nodes
@@ -798,9 +543,9 @@ renew-ssl-repli: ## Force SSL certificate regeneration and reload on active Repl
 	rm -rf ssl/
 	bash ./scripts/gen_ssl.sh
 	@echo ">> 🚀 Reloading SSL on Replication nodes..."
-	@mariadb -h 127.0.0.1 -P 3411 -u root -prootpass -e "FLUSH SSL;" && echo "✅ Node 1 reloaded"
-	@mariadb -h 127.0.0.1 -P 3412 -u root -prootpass -e "FLUSH SSL;" && echo "✅ Node 2 reloaded"
-	@mariadb -h 127.0.0.1 -P 3413 -u root -prootpass -e "FLUSH SSL;" && echo "✅ Node 3 reloaded"
+	@mariadb -h 127.0.0.1 -P 3411 -u root -p"$${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 1 reloaded"
+	@mariadb -h 127.0.0.1 -P 3412 -u root -p"$${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 2 reloaded"
+	@mariadb -h 127.0.0.1 -P 3413 -u root -p"$${DB_ROOT_PASSWORD}" -e "FLUSH SSL;" && echo "✅ Node 3 reloaded"
 	@echo "✨ Replication zero-downtime SSL rotation completed."
 
 renew-ssl: renew-ssl-galera ## [DEPRECATED] Use renew-ssl-galera or renew-ssl-repli
@@ -850,8 +595,8 @@ follow-slow-repli: ## Stream slow query logs for Replication (Usage: make follow
 
 check-galera: ## Check Galera cluster status and key variables (Usage: make check-galera [NODE=1|2|3])
 	@NODE_PORT=$$(case "$(NODE)" in 2) echo "3512";; 3) echo "3513";; *) echo "3511";; esac); \
-	echo ">> 📊 Galera Status (Node $(NODE:-1) @ port $$NODE_PORT)..."; \
-	mariadb -h 127.0.0.1 -P $$NODE_PORT -u root -prootpass -e "\
+	echo ">> 📊 Galera Status (Node $$( (NODE:-1) ) @ port $$NODE_PORT)..."; \
+	mariadb -h 127.0.0.1 -P $$NODE_PORT -u root -p"$${DB_ROOT_PASSWORD}" -e "\
 		SELECT VARIABLE_NAME, VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME IN ('WSREP_CLUSTER_SIZE', 'WSREP_LOCAL_STATE_COMMENT', 'WSREP_CONNECTED', 'WSREP_READY'); \
 		SHOW VARIABLES LIKE 'innodb_buffer_pool_size'; \
 		SHOW VARIABLES LIKE 'wsrep_slave_threads'; \
@@ -859,12 +604,12 @@ check-galera: ## Check Galera cluster status and key variables (Usage: make chec
 
 check-repli: ## Check Replication cluster status and key variables (Usage: make check-repli [NODE=1|2|3])
 	@NODE_PORT=$$(case "$(NODE)" in 2) echo "3412";; 3) echo "3413";; *) echo "3411";; esac); \
-	echo ">> 📊 Replication Status (Node $(NODE:-1) @ port $$NODE_PORT)..."; \
-	mariadb -h 127.0.0.1 -P $$NODE_PORT -u root -prootpass -e "\
+	echo ">> 📊 Replication Status (Node $$( (NODE:-1) ) @ port $$NODE_PORT)..."; \
+	mariadb -h 127.0.0.1 -P $$NODE_PORT -u root -p"$${DB_ROOT_PASSWORD}" -e "\
 		SHOW SLAVE STATUS\G \
 		SHOW VARIABLES LIKE 'innodb_buffer_pool_size'; \
 		SHOW VARIABLES LIKE 'read_only';" ; \
 	if [ "$$NODE_PORT" = "3411" ]; then \
 		echo ">> 🛡️ Master Status:"; \
-		mariadb -h 127.0.0.1 -P 3411 -u root -prootpass -e "SHOW MASTER STATUS\G"; \
+		mariadb -h 127.0.0.1 -P 3411 -u root -p"$${DB_ROOT_PASSWORD}" -e "SHOW MASTER STATUS\G"; \
 	fi

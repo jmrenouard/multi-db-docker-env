@@ -73,9 +73,10 @@ Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefil
 
 | Command         | Icon | Description          |
 | :-------------- | :--- | :------------------- |
-| `make mysql93`  | 🐬   | Démarre MySQL 9.3    |
+| `make mysql96`  | 🐬   | Démarre MySQL 9.6    |
 | `make mysql84`  | 🐬   | Démarre MySQL 8.4    |
 | `make mysql80`  | 🐬   | Démarre MySQL 8.0    |
+| `make mysql57`  | 🐬   | Démarre MySQL 5.7    |
 
 **MariaDB**
 
