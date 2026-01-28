@@ -81,6 +81,7 @@ Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefil
 
 | Command           | Icon | Description            |
 | :---------------- | :--- | :--------------------- |
+| `make mariadb118` | 🐧   | Démarre MariaDB 11.8   |
 | `make mariadb114` | 🐧   | Démarre MariaDB 11.4   |
 | `make mariadb1011`| 🐧   | Démarre MariaDB 10.11  |
 | `make mariadb106` | 🐧   | Démarre MariaDB 10.6   |

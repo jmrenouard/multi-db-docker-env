@@ -81,6 +81,7 @@ To start a specific database instance, use the `make <database_version>` command
 
 | Command           | Icon | Description            |
 | :---------------- | :--- | :--------------------- |
+| `make mariadb118` | 🐧   | Starts MariaDB 11.8    |
 | `make mariadb114` | 🐧   | Starts MariaDB 11.4    |
 | `make mariadb1011`| 🐧   | Starts MariaDB 10.11   |
 | `make mariadb106` | 🐧   | Starts MariaDB 10.6    |
