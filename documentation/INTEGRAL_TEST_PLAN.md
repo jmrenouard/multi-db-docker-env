@@ -10,15 +10,15 @@ The objective of this plan is to guarantee architectural reliability, functional
 
 | DB System | Version | Standalone | Galera | Replication |
 | :--- | :--- | :---: | :---: | :---: |
-| **MariaDB** | 10.6 | ✅ | ❌ | ❌ |
-| **MariaDB** | 10.11 | ✅ | ❌ | ❌ |
-| **MariaDB** | 11.4 | ✅ | ❌ | ❌ |
-| **MariaDB** | 11.8 (LTS) | ✅ | ✅ | ✅ |
-| **MySQL** | 5.7 (Legacy) | ✅ | ❌ | ❌ |
-| **MySQL** | 8.0 | ✅ | ❌ | ❌ |
-| **MySQL** | 8.4 | ✅ | ❌ | ❌ |
-| **MySQL** | 9.6 | ✅ | ❌ | ❌ |
-| **Percona Server** | 8.0 | ✅ | ❌ | ❌ |
+| **MariaDB** | 10.6 | ✅ (2026-01-29) | ❌ | ❌ |
+| **MariaDB** | 10.11 | ✅ (2026-01-29) | ❌ | ❌ |
+| **MariaDB** | 11.4 | ✅ (2026-01-29) | ❌ | ❌ |
+| **MariaDB** | 11.8 (LTS) | ✅ (2026-01-29) | ✅ | ✅ |
+| **MySQL** | 5.7 (Legacy) | ✅ (2026-01-29) | ❌ | ❌ |
+| **MySQL** | 8.0 | ✅ (2026-01-29) | ❌ | ❌ |
+| **MySQL** | 8.4 | ✅ (2026-01-29) | ❌ | ❌ |
+| **MySQL** | 9.6 | ✅ (2026-01-29) | ❌ | ❌ |
+| **Percona Server** | 8.0 | ✅ (2026-01-29) | ❌ | ❌ |
 
 ---
 
