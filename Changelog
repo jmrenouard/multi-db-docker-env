@@ -1,6 +1,6 @@
-1.1.6 2026-01-29
-- test: completed integral standalone matrix verification (T2) for all 9 engines.
-- fix: hardened Makefile readiness checks with authenticated ping and 120s timeouts.
+1.1.7 2026-01-29
+- ci: executed /compliance-sentinel audit and verified project-wide constitutional compliance.
+- doc: translated INTEGRAL_TEST_PLAN.md to English to ensure linguistic alignment with technical policy.
 - refactor: standardized Makefile variable usage for DB_ROOT_PASSWORD, removing legacy shell parsing.
 - fix: resolved MySQL 8.4/9.x authentication failures by standardizing on caching_sha2_password and removing problematic auth.xml scripts.
 - fix: remove hardcoded root passwords from scripts/ and tests/ (backup, restore, setup, profiles, performance tests) and replace with .env/environment variable support.

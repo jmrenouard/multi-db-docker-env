@@ -1,14 +1,14 @@
-# Plan de Test Intégral: Multi-DB Docker Environment
+# Integral Test Plan: Multi-DB Docker Environment
 
 ## 🧠 Rationale
 
-L'objectif de ce plan est de garantir la fiabilité architecturale, la cohérence fonctionnelle et les performances de l'ensemble des plateformes et versions supportées par le laboratoire.
+The objective of this plan is to guarantee architectural reliability, functional consistency, and performance of all platforms and versions supported by the laboratory.
 
 ---
 
-## 📅 Matrice de Test
+## 📅 Test Matrix
 
-| Système DB | Version | Standalone | Galera | Réplication |
+| DB System | Version | Standalone | Galera | Replication |
 | :--- | :--- | :---: | :---: | :---: |
 | **MariaDB** | 10.6 | ✅ | ❌ | ❌ |
 | **MariaDB** | 10.11 | ✅ | ❌ | ❌ |
@@ -22,86 +22,87 @@ L'objectif de ce plan est de garantir la fiabilité architecturale, la cohérenc
 
 ---
 
-## 🛠️ Suites de Tests (Niveaux de Vérification)
+## 🛠️ Test Suites (Verification Levels)
 
-### T1 : Audit d'Orchestration & Gouvernance
+### T1: Orchestration & Governance Audit
 
-* **Commande** : `make test-config`
-* **Vérifications** : Structure des répertoires, syntaxe Docker Compose, présence des certificats SSL, génération des profils Shell, cohérence des métadonnées.
+* **Command**: `make test-config`
+* **Checks**: Directory structure, Docker Compose syntax, SSL certificate presence, Shell profile generation, metadata consistency.
 
-### T2 : Cycle de Vie Standalone & Intégrité des Données
+### T2: Standalone Lifecycle & Data Integrity
 
-* **Commande** : `make test-all`
-* **Workflow** :
-    1. Provisionnement du conteneur via Traefik.
-    2. Injection des jeux de données `employees` et `sakila`.
-    3. Vérification du nombre d'enregistrements et de l'intégrité du schéma.
-    4. Validation de la connectivité via le proxy inverse Traefik (port 3306).
-    5. Nettoyage atomique.
+* **Command**: `make test-all`
+* **Workflow**:
+    1. Container provisioning via Traefik.
+    2. Data injection of `employees` and `sakila` sets.
+    3. Row count and schema integrity check.
+    4. Connectivity validation via Traefik reverse proxy (port 3306).
+    5. Atomic cleanup.
 
-### T3 : Topologie Cluster & Convergence
+### T3: Cluster Topology & Convergence
 
-* **Commandes** : `make test-galera`, `make test-repli`
-* **Spécificités Galera** :
-  * Synchronisation des nœuds (`Synced`).
-  * Validation du quorum (Cluster de 3 nœuds).
-  * Cohérence de la séquence globale entre les nœuds.
-* **Spécificités Réplication** :
-  * Santé des threads IO et SQL (Master/Slave).
-  * Cohérence GTID.
-  * Respect du mode `read-only` sur les esclaves pour les utilisateurs non-SUPER.
+* **Commands**: `make test-galera`, `make test-repli`
+* **Galera Specifics**:
+  * Node synchronization (`Synced`).
+  * Quorum validation (3-node cluster).
+  * Global sequence consistency across nodes.
+* **Replication Specifics**:
+  * IO and SQL thread health (Master/Slave).
+  * GTID consistency.
+  * `read-only` enforcement on slaves for non-SUPER users.
 
-### T4 : Haute Disponibilité & Répartition de Charge
+### T4: High Availability & Load Balancing
 
-* **Commande** : `make test-lb-galera`
-* **Workflow** :
-    1. Test de stress de la distribution HAProxy (vérification Round-Robin).
-    2. Simulation de panne : Arrêt d'un nœud et vérification de la continuité de service.
-    3. Vérification de la terminaison SSL au niveau du proxy.
+* **Command**: `make test-lb-galera`
+* **Workflow**:
+    1. HAProxy distribution stress test (Round-Robin verification).
+    2. Failure simulation: Node shutdown and service continuity verification.
+    3. SSL termination check at the proxy level.
 
-### T5 : Analyse de Performance (Sysbench)
+### T5: Performance Analysis (Sysbench)
 
-* **Commandes** : `make test-perf-galera`, `make test-perf-repli`
-* **Profils** : `light`, `standard`, `read-only`, `write-only`.
-* **Métriques** : TPS (Transactions/sec), Latence P95, Deltas de conflits (WSREP Aborts pour Galera).
+* **Commands**: `make test-perf-galera`, `make test-perf-repli`
+* **Profiles**: `light`, `standard`, `read-only`, `write-only`.
+* **Metrics**: TPS (Transactions/sec), P95 Latency, Conflict deltas (WSREP Aborts for Galera).
 
 ---
 
-## 🚀 Stratégie d'Exécution
+## 🚀 Execution Strategy
 
-### 1. Test Rapide (Smoke Test) - Quotidien
+### 1. Daily Smoke Test
 
 ```bash
 make test-config
-make mariadb118  # Cible LTS par excellence
+make mariadb118  # Prime LTS target
 make inject
 make info
 make stop
 ```
 
-### 2. Validation Pré-Release (Exhaustif)
+### 2. Pre-Release Validation (Exhaustive)
 
 ```bash
-# 1. Gouvernance
+# 1. Governance
 make test-config
 
-# 2. Matrice Standalone
+# 2. Standalone Matrix
 make test-all
 
 # 3. Clusters
 make full-galera
 make full-repli
 
-# 4. Baselines de Performance
+# 4. Performance Baselines
 make test-perf-galera PROFILE=standard ACTION=run
 make test-perf-repli PROFILE=standard ACTION=run
 ```
 
 ---
 
-## 📊 Rapports
+## 📊 Reporting
 
-Tous les tests génèrent des rapports dans le répertoire `reports/` :
+All tests generate reports in the `reports/` directory:
+
 * `reports/config_report.html` (T1)
 * `reports/test_galera_*.html` (T3)
 * `reports/test_repli_*.html` (T3)
