@@ -64,16 +64,19 @@ git push origin v$CURRENT_VER --force
 
 // turbo
 
-## 5. Post-Push: Increment Version
+## 5. Post-Verification: Initialize Next Cycle
+
+> [!WARNING]
+> This phase MUST be executed ONLY AFTER verifying the remote release state.
 
 Calculate the next patch version and update files for the next development cycle.
 
 ```bash
 NEW_VER=$(echo $CURRENT_VER | awk -F. '{print $1"."$2"."($3+1)}')
-echo $NEW_VER > VERSION
+echo $NEW_VER >| VERSION
 
 DATE=$(date +%Y-%m-%d)
-echo -e "$NEW_VER $DATE\n\n- \n" > tmp_changelog && cat Changelog >> tmp_changelog && mv tmp_changelog Changelog
+echo -e "$NEW_VER $DATE\n\n- \n" >| tmp_changelog && cat Changelog >> tmp_changelog && mv tmp_changelog Changelog
 ```
 
 // turbo

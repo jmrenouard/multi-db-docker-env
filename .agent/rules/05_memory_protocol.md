@@ -28,6 +28,7 @@ Maintaining a clear, versioned history of changes allows for consistent context 
 - Use `X.X.Y` format.
 - Increment `Y` for minor actions.
 - Increment `Z` (X.Z.X) for major functions and missing features.
+- **Sequential Release Protocol**: The `Changelog` header for the next development cycle and the `VERSION` file update MUST be discrete steps occurring ONLY AFTER the previous release tag has been successfully pushed and verified on the remote repository.
 
 ### 3. Context & Git Sync
 
