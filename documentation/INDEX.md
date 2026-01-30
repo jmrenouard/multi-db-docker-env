@@ -9,8 +9,9 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 1. [Core Documentation](#-core-documentation)
 2. [Management & Automation](#-management--automation)
 3. [Replication & Galera](#-replication--galera)
-4. [Testing & Performance](#-testing--performance)
-5. [MariaDB Replication Overview](#-mariadb-replication-overview)
+4. [Standalone Matrix](#-standalone-matrix)
+5. [Testing & Performance](#-testing--performance)
+6. [MariaDB Replication Overview](#-mariadb-replication-overview)
 
 ---
 
@@ -35,6 +36,12 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 | **[Galera Bootstrap](galera_bootstrap.md)** | Step-by-step guide for initializing and growing Galera clusters. |
 | **[Replication Setup](replication_setup.md)** | How to configure and automate Master/Slave replication. |
 | **[SSL & Security](replication_ssl.md)** | Configuring SSL for encrypted connections and secure replication. |
+
+## 🐬 Standalone Matrix
+
+| Document | Description |
+| --- | --- |
+| **[Standalone Environments](tests.md#-00-standalone-matrix-t2-tier)** | Overview of supported standalone engines (MySQL, MariaDB, Percona). |
 
 ## 🧪 Testing & Performance
 

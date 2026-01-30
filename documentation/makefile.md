@@ -1,6 +1,6 @@
 # Makefile Reference 🛠️
 
-The `Makefile` is the main entry point for managing both Galera and Replication clusters.
+The `Makefile` is the main entry point for managing database environments (Standalone, Galera, and Replication).
 
 ## 🛠️ Global Commands
 
@@ -13,7 +13,8 @@ The `Makefile` is the main entry point for managing both Galera and Replication 
 | `make logs` | 📄 Display logs for the active database service. |
 | `make mycnf` | 🔑 Generate the `.my.cnf` file for password-less connections. |
 | `make client` | 💻 Start a MySQL client on the active database. |
-| `make verify` | ✅ Alias for `test-config`. |
+| `make verify` | ✅ Runs complete environment validation (`test-config`). |
+| `make start` | 🚀 Starts the default service (`mariadb114`). |
 | `make help` | Show help message for all available tasks. |
 | `make build-image` | Build the base `mariadb_ssh:004` image. |
 | `make install-client` | Install MariaDB client on the host (Ubuntu/Debian). |
@@ -34,6 +35,21 @@ The `Makefile` is the main entry point for managing both Galera and Replication 
 | `make inject` | 💉 Alias for `inject-employees` with auto-detection. |
 | `make inject-employees` | 💉 Inject `employees` database with auto-detection. |
 | `make inject-sakila` | 💉 Inject `sakila` database with auto-detection. |
+| `make sync-test-db` | 🔄 Synchronize the `test_db` submodule. |
+
+## 🐬 Standalone Database Commands
+
+| Command | Description |
+| :--- | :--- |
+| `make mysql96` | Starts MySQL 9.6 |
+| `make mysql84` | Starts MySQL 8.4 |
+| `make mysql80` | Starts MySQL 8.0 |
+| `make mysql57` | Starts MySQL 5.7 |
+| `make mariadb118` | Starts MariaDB 11.8 |
+| `make mariadb114` | Starts MariaDB 11.4 |
+| `make mariadb1011`| Starts MariaDB 10.11 |
+| `make mariadb106` | Starts MariaDB 10.6 |
+| `make percona80` | Starts Percona Server 8.0 |
 
 ## 🌐 Galera Cluster Commands
 
