@@ -21,6 +21,7 @@ This document constitutes the unique and absolute source of truth for the projec
 ### 2. Operational Authority
 
 - The Agent must strictly adhere to the rules defined in `.agent/rules/`.
+- The `go-agent` workflow acts as the super manager orchestrator for all structural and strategic changes.
 - Contradictions must be resolved by prioritizing these rules over any other documentation.
 
 ## ✅ Verification
