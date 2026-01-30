@@ -1,6 +1,5 @@
 1.1.11 2026-01-30
-
-- 
+- chore: restored .agent/ tracking at user request to maintain governance rules in remote repository.
 
 1.1.10 2026-01-30
 - chore: excluded .agent/ and __pycache__/ from Git index to preserve local governance rules and clean environment.

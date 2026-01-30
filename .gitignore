@@ -21,7 +21,6 @@ tmp_changelog
 .DS_Store
 
 # Development Tools
-.agent/
 multi-db-docker-env.code-workspace
 __pycache__/
 .pytest_cache/
