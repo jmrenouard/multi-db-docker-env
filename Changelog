@@ -1,6 +1,6 @@
 1.1.10 2026-01-30
-
-- 
+- chore: excluded .agent/ and __pycache__/ from Git index to preserve local governance rules and clean environment.
+- chore: updated .gitignore to explicitly ignore .agent/ directory.
 
 1.1.9 2026-01-30
 - chore: strengthened .gitignore with comprehensive patterns for laboratory artifacts, SSL, and secrets.
