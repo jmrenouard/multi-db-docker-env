@@ -6,12 +6,15 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 
 ## 📋 Table of Contents
 
-1. [Core Documentation](#-core-documentation)
-2. [Management & Automation](#-management--automation)
-3. [Replication & Galera](#-replication--galera)
-4. [Standalone Matrix](#-standalone-matrix)
-5. [Testing & Performance](#-testing--performance)
-6. [MariaDB Replication Overview](#-mariadb-replication-overview)
+- [MariaDB Documentation Index 📚](#mariadb-documentation-index-)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [🚀 Core Documentation](#-core-documentation)
+  - [🏛️ Governance \& Orchestration](#️-governance--orchestration)
+  - [🛠️ Management \& Automation](#️-management--automation)
+  - [🔄 Replication \& Galera](#-replication--galera)
+  - [🐬 Standalone Matrix](#-standalone-matrix)
+  - [🧪 Testing \& Performance](#-testing--performance)
+  - [🔗 MariaDB Replication Overview](#-mariadb-replication-overview)
 
 ---
 
@@ -21,6 +24,13 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 | --- | --- |
 | **[Main README](../README.md)** | Overview, quick start, build instructions, and basic usage. |
 | **[Architecture](architecture.md)** | Global topology, network layout, and detailed Mermaid diagrams. |
+
+## 🏛️ Governance & Orchestration
+
+| Document | Description |
+| --- | --- |
+| **[Constitution](../.agent/rules/00_constitution.md)** | Absolute source of truth for project principles and Operational Authority. |
+| **[Super Manager](../.agent/workflows/go-agent.md)** | Orchestration protocol for coordinating skills, rules, and workflows. |
 
 ## 🛠️ Management & Automation
 

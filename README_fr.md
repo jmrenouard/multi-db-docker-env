@@ -46,59 +46,61 @@ Le `Makefile` est le point d'entrée principal pour la gestion de l'environnemen
 
 Ces commandes vous aident à gérer et à interagir avec l'ensemble de l'environnement.
 
-| Command         | Icon | Description                                                                 | Exemple d'utilisation |
-| :-------------- | :--- | :-------------------------------------------------------------------------- | :-------------------- |
-| `make help`     | 📜   | Affiche la liste complète de toutes les commandes disponibles.              | `make help`           |
-| `make start`    | 🚀   | Démarre le service de base de données par défaut (MariaDB 11.8).           | `make start`          |
-| `make stop`     | 🛑   | Arrête et supprime correctement tous les conteneurs et réseaux du projet.   | `make stop`           |
-| `make status`   | 📊   | Affiche l'état des conteneurs actifs du projet (Traefik + DB).              | `make status`         |
-| `make info`     | ℹ️   | Fournit des informations sur le service DB actif et les logs récents.       | `make info`           |
-| `make logs`     | 📄   | Affiche les logs du service de base de données actuellement actif.          | `make logs`           |
-| `make mycnf`    | 🔑   | Génère un fichier `~/.my.cnf` pour des connexions client sans mot de passe. | `make mycnf`          |
-| `make client`   | 💻   | Démarre un client MySQL connecté à la base de données active.               | `make client`         |
-| `make verify`   | ✅   | Exécute une validation complète de l'environnement (test-config).           | `make verify`         |
-| `python3 interactive_runner.py` | 🚀 | Lance le coureur de tests interactif pour une configuration guidée. | `python3 interactive_runner.py` |
+| Command                         | Icon | Description                                                                 | Exemple d'utilisation           |
+| :------------------------------ | :--- | :-------------------------------------------------------------------------- | :------------------------------ |
+| `make help`                     | 📜   | Affiche la liste complète de toutes les commandes disponibles.              | `make help`                     |
+| `make start`                    | 🚀   | Démarre le service de base de données par défaut (MariaDB 11.8).            | `make start`                    |
+| `make stop`                     | 🛑   | Arrête et supprime correctement tous les conteneurs et réseaux du projet.   | `make stop`                     |
+| `make status`                   | 📊   | Affiche l'état des conteneurs actifs du projet (Traefik + DB).              | `make status`                   |
+| `make info`                     | ℹ️   | Fournit des informations sur le service DB actif et les logs récents.       | `make info`                     |
+| `make logs`                     | 📄   | Affiche les logs du service de base de données actuellement actif.          | `make logs`                     |
+| `make mycnf`                    | 🔑   | Génère un fichier `~/.my.cnf` pour des connexions client sans mot de passe. | `make mycnf`                    |
+| `make client`                   | 💻   | Démarre un client MySQL connecté à la base de données active.               | `make client`                   |
+| `make verify`                   | ✅   | Exécute une validation complète de l'environnement (test-config).           | `make verify`                   |
+| `python3 interactive_runner.py` | 🚀   | Lance le coureur de tests interactif pour une configuration guidée.         | `python3 interactive_runner.py` |
 
 ### Gestion des Données
 
 Ces commandes permettent d'injecter des exemples de bases de données ou d'exécuter une suite de tests complète.
 
-| Command                            | Icon | Description                                                                                                                              | Exemple d'utilisation                             |
-| :--------------------------------- | :--- | :--------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
-| `make inject`                      | 💉   | Alias pour `inject-employees` sur l'environnement actif. Détecte Galera ou Réplication.                                                   | `make inject`                                    |
-| `make inject-employees`            | 💉   | Injecte la base `employees` avec auto-détection de l'environnement.                                                                     | `make inject-employees`                          |
-| `make inject-sakila`               | 💉   | Injecte la base `sakila` avec auto-détection de l'environnement.                                                                        | `make inject-sakila`                             |
-| `make inject-data`                 | 💉   | Injecte une base (`employees` ou `sakila`) dans un service spécifique en cours d'exécution.                                              | `make inject-data service=mysql84 db=employees`  |
-| `make sync-test-db`               | 🔄   | Synchronise le sous-module `test_db` avec la branche master distante.                                                                    | `make sync-test-db`                             |
-| `make test-all`                    | 🧪   | Exécute une suite de tests complète : démarre chaque service, injecte les bases, vérifie les données, puis s'arrête.                     | `make test-all`                                  |
+| Command                 | Icon | Description                                                                                                          | Exemple d'utilisation                            |
+| :---------------------- | :--- | :------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
+| `make inject`           | 💉   | Alias pour `inject-employees` sur l'environnement actif. Détecte Galera ou Réplication.                              | `make inject`                                   |
+| `make inject-employees` | 💉   | Injecte la base `employees` avec auto-détection de l'environnement.                                                 | `make inject-employees`                         |
+| `make inject-sakila`    | 💉   | Injecte la base `sakila` avec auto-détection de l'environnement.                                                    | `make inject-sakila`                            |
+| `make inject-data`      | 💉   | Injecte une base (`employees` ou `sakila`) dans un service spécifique en cours d'exécution.                         | `make inject-data service=mysql84 db=employees` |
+| `make sync-test-db`     | 🔄   | Synchronise le sous-module `test_db` avec la branche master distante.                                               | `make sync-test-db`                             |
+| `make test-all`         | 🧪   | Exécute une suite de tests complète : démarre chaque service, injecte les bases, vérifie les données, puis s'arrête. | `make test-all`                                 |
 
 ### Démarrage d'une Instance de Base de Données
 
 Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefile arrêtera automatiquement toute instance en cours avant de lancer la nouvelle.
 
-**MySQL**
+### MySQL
 
-| Command         | Icon | Description          |
-| :-------------- | :--- | :------------------- |
-| `make mysql96`  | 🐬   | Démarre MySQL 9.6    |
-| `make mysql84`  | 🐬   | Démarre MySQL 8.4    |
-| `make mysql80`  | 🐬   | Démarre MySQL 8.0    |
-| `make mysql57`  | 🐬   | Démarre MySQL 5.7    |
+| Command        | Icon | Description       |
+| :------------- | :--- | :---------------- |
+| `make mysql96` | 🐬   | Démarre MySQL 9.6 |
+| `make mysql84` | 🐬   | Démarre MySQL 8.4 |
+| `make mysql80` | 🐬   | Démarre MySQL 8.0 |
+| `make mysql57` | 🐬   | Démarre MySQL 5.7 |
 
-**MariaDB**
+### MariaDB
 
-| Command           | Icon | Description            |
-| :---------------- | :--- | :--------------------- |
-| `make mariadb118` | 🐧   | Démarre MariaDB 11.8   |
-| `make mariadb114` | 🐧   | Démarre MariaDB 11.4   |
-| `make mariadb1011`| 🐧   | Démarre MariaDB 10.11  |
-| `make mariadb106` | 🐧   | Démarre MariaDB 10.6   |
+| Command            | Icon | Description           |
+| :----------------- | :--- | :-------------------- |
+| `make mariadb118`  | 🐧   | Démarre MariaDB 11.8  |
+| `make mariadb114`  | 🐧   | Démarre MariaDB 11.4  |
+| `make mariadb1011` | 🐧   | Démarre MariaDB 10.11 |
+| `make mariadb106`  | 🐧   | Démarre MariaDB 10.6  |
 
-**Percona Server**
+### Percona Server
 
-| Command           | Icon | Description            |
-| :---------------- | :--- | :--------------------- |
-| `make percona80` | ⚡   | Démarre Percona 8.0    |
+| Command          | Icon | Description         |
+| :--------------- | :--- | :------------------ |
+| `make percona84` | 🐾   | Démarre Percona 8.4 |
+| `make percona80` | ⚡   | Démarre Percona 8.0 |
+| `make percona57` | 🐾   | Démarre Percona 5.7 |
 
 ## 🏗️ Environnement Technique
 
@@ -118,16 +120,16 @@ Les identifiants par défaut sont centralisés dans le fichier `.env` via `DB_RO
 * **Utilisateur par défaut** : `root`
 * **Base de données par défaut** : `employees` (après injection)
 
-**Clusters MariaDB (Galera & Réplication)**
+### Clusters MariaDB (Galera & Réplication)
 
 Architectures MariaDB avancées avec clustering synchrone ou réplication maître/esclave.
 
-| Command            | Icon | Description                                   |
-| :----------------- | :--- | :-------------------------------------------- |
-| `make up-galera`   | 🌐   | Démarre le cluster Galera (3 nœuds)           |
-| `make up-repli`    | 🔄   | Démarre le cluster de Réplication (3 nœuds)   |
-| `make test-galera` | 🧪   | Exécute les tests fonctionnels sur Galera     |
-| `make test-repli`  | 🧪   | Exécute les tests fonctionnels sur Réplication|
+| Command            | Icon | Description                                    |
+| :----------------- | :--- | :--------------------------------------------- |
+| `make up-galera`   | 🌐   | Démarre le cluster Galera (3 nœuds)            |
+| `make up-repli`    | 🔄   | Démarre le cluster de Réplication (3 nœuds)    |
+| `make test-galera` | 🧪   | Exécute les tests fonctionnels sur Galera      |
+| `make test-repli`  | 🧪   | Exécute les tests fonctionnels sur Réplication |
 
 > [!NOTE]
 > Les clusters MariaDB utilisent une image personnalisée `mariadb_ssh` et ont des ports dédiés (ex: 3511-3513 pour Galera).

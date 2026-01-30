@@ -1,6 +1,6 @@
 1.1.13 2026-01-30
-
-- 
+- chore: resolved persistent lints in Changelog and README_fr.md.
+- chore: synchronized technical documentation with orchestrator state.
 
 1.1.12 2026-01-30
 - feat: introduced go-agent super manager workflow to coordinate skills, rules, and sub-workflows.

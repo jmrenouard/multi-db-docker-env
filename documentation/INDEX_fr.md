@@ -7,10 +7,11 @@ Bienvenue dans la documentation de l'environnement Docker MariaDB. Cet index fou
 ## 📋 Table des Matières
 
 1. [Documentation Centrale](#-documentation-centrale)
-2. [Matrice Standalone](#-matrice-standalone)
-3. [Gestion & Automatisation](#-gestion--automatisation)
-4. [Réplication & Galera](#-réplication--galera)
-5. [Tests & Performance](#-tests--performance)
+2. [Gouvernance & Orchestration](#-gouvernance--orchestration)
+3. [Matrice Standalone](#-matrice-standalone)
+4. [Gestion & Automatisation](#-gestion--automatisation)
+5. [Réplication & Galera](#-réplication--galera)
+6. [Tests & Performance](#-tests--performance)
 
 ---
 
@@ -20,6 +21,13 @@ Bienvenue dans la documentation de l'environnement Docker MariaDB. Cet index fou
 | --- | --- |
 | **[README Principal](../README_fr.md)** | Présentation, démarrage rapide, instructions de build et utilisation de base. |
 | **[Architecture](architecture.md)** | Topologie globale, schéma réseau et schémas Mermaid détaillés. |
+
+## 🏛️ Gouvernance & Orchestration
+
+| Document | Description |
+| --- | ---|
+| **[Constitution](../.agent/rules/00_constitution.md)** | Source unique de vérité pour les principes du projet et l'autorité opérationnelle. |
+| **[Super Manager](../.agent/workflows/go-agent.md)** | Protocole d'orchestration pour coordonner les compétences, règles et workflows. |
 
 ## 🐬 Matrice Standalone
 
