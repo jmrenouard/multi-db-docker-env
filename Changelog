@@ -1,6 +1,7 @@
 1.1.14 2026-01-30
-
-- 
+- chore: formalized Sequential Release Protocol in memory governance and git-flow workflow.
+- chore: enforced strict separation between release tagging and next cycle initialization.
+- chore: refined documentation indexes and bilingual parity.
 
 1.1.13 2026-01-30
 - chore: resolved persistent lints in Changelog and README_fr.md.
