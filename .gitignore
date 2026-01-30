@@ -1,19 +1,28 @@
+# Environment & Secrets
 .env
+id_rsa
+id_rsa.pub
+
+# Laboratory Artifacts
 datadir_*
 gdatadir_*
 backups_*
 gbackups_*
 reports/
 ssl/
-profile_galera
-profile_repli
-id_rsa
-id_rsa.pub
+profile_*
+
+# Temporary & Release Files
+tmp_*
+tmp_changelog
 *.log
 *.err
 *.swp
 .DS_Store
+
+# Development Tools
 multi-db-docker-env.code-workspace
-__pycache__/** 
-datadir_*/**
-gbackups_*/**
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
