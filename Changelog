@@ -1,3 +1,8 @@
+1.1.9 2026-01-30
+
+- 
+
+
 1.1.8 2026-01-30
 - doc: synchronized project documentation (README, README_fr, tests.md) with the standalone database verification milestone (2026-01-29).
 - doc: added "Verification Status" section to global READMEs to track tier-based QA progress.
