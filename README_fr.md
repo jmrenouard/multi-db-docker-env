@@ -9,6 +9,13 @@ Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que tout
 > [!IMPORTANT]
 > **Politique d'Anglais Uniquement** : Tous les commentaires techniques dans le code, les fichiers de configuration et la documentation de ce projet DOIVENT être en anglais UNIQUEMENT.
 
+## 🛰️ État de Vérification
+
+| Niveau | Nom du Niveau | Dernière Vérification | État |
+| :--- | :--- | :--- | :--- |
+| **T2** | **Matrice Standalone** | 2026-01-29 | ✅ 100% Réussi |
+| **T3** | **Cluster & HA** | - | 🏗️ En cours |
+
 ## 📋 Prérequis
 
 Avant de commencer, assurez-vous d'avoir installé les outils suivants :

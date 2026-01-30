@@ -9,6 +9,13 @@ A key feature is the **Traefik reverse proxy**, which ensures all database insta
 > [!IMPORTANT]
 > **English-Only Policy**: All technical comments within code, configuration files, and documentation in this project MUST be in English ONLY.
 
+## 🛰️ Verification Status
+
+| Tier | Tier Name | Last Verified | Status |
+| :--- | :--- | :--- | :--- |
+| **T2** | **Standalone Matrix** | 2026-01-29 | ✅ 100% Passed |
+| **T3** | **Cluster & HA** | - | 🏗️ In Progress |
+
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following tools installed:

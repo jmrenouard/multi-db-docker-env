@@ -1,3 +1,7 @@
+1.1.8 2026-01-30
+- doc: synchronized project documentation (README, README_fr, tests.md) with the standalone database verification milestone (2026-01-29).
+- doc: added "Verification Status" section to global READMEs to track tier-based QA progress.
+
 1.1.7 2026-01-29
 - ci: executed /compliance-sentinel audit and verified project-wide constitutional compliance.
 - doc: translated INTEGRAL_TEST_PLAN.md to English to ensure linguistic alignment with technical policy.
