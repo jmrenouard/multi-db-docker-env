@@ -13,6 +13,8 @@ Le `Makefile` est le point d'entrée principal pour la gestion des environnement
 | `make logs` | 📄 Affiche les logs du service actif. |
 | `make mycnf` | 🔑 Génère le fichier `.my.cnf` pour les connexions sans mot de passe. |
 | `make client` | 💻 Lance un client MySQL sur la base active. |
+| `make pgpass` | 🔑 Génère le fichier `.pgpass` pour des connexions PostgreSQL sans mot de passe. |
+| `make pgclient` | 💻 Démarre un client PostgreSQL sur la base active. |
 | `make verify` | ✅ Valide l'intégrité de l'environnement (`test-config`). |
 | `make help` | Affiche l'aide pour toutes les tâches disponibles. |
 | `make build-image` | Construit l'image de base `mariadb_ssh:004`. |
@@ -33,6 +35,8 @@ Le `Makefile` est le point d'entrée principal pour la gestion des environnement
 | `make mariadb1011`| Démarre MariaDB 10.11 |
 | `make mariadb106` | Démarre MariaDB 10.6 |
 | `make percona80` | Démarre Percona 8.0 |
+| `make postgres17` | Démarre PostgreSQL 17 |
+| `make postgres16` | Démarre PostgreSQL 16 |
 
 ## 🌐 Commandes Cluster Galera
 

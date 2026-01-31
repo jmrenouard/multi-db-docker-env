@@ -4,7 +4,7 @@ Ce document décrit les suites de tests automatisées disponibles pour valider l
 
 ---
 
-## 🐬 00. Matrice Standalone (Niveau T2)
+## <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="25" height="25"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="25" height="25"> <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/percona.svg" alt="Percona" width="25" height="25"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="25" height="25"> 00. Matrice Standalone (Niveau T2)
 
 Vérifiée le **29-01-2026**, cette suite garantit que tous les moteurs de base de données standalone sont pleinement fonctionnels.
 
@@ -13,7 +13,7 @@ Vérifiée le **29-01-2026**, cette suite garantit que tous les moteurs de base 
 1. **Cycle de Vie du Service** : Démarre chaque service et vérifie la santé des processus.
 2. **Intégrité des Données** : Injecte les bases d'exemple `employees` et `sakila`.
 3. **Audit d'Authentification** : Vérifie l'application du `DB_ROOT_PASSWORD`.
-4. **Connectivité** : S'assure que Traefik route correctement vers l'instance active sur le port `3306`.
+4. **Connectivité** : S'assure que Traefik route correctement vers l'instance active sur le port `3306` (MySQL/MariaDB) ou `5432` (PostgreSQL).
 
 ---
 

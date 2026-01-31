@@ -51,7 +51,8 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 
 | Document | Description |
 | --- | --- |
-| **[Standalone Environments](tests.md#-00-standalone-matrix-t2-tier)** | Overview of supported standalone engines (MySQL, MariaDB, Percona). |
+| **[Standalone Engines](tests.md#-00-standalone-matrix-t2-tier)** | Overview of supported standalone engines (MySQL, MariaDB, Percona, PostgreSQL). |
+| **[PostgreSQL Support](postgresql_support.md)** | Detailed guide for PostgreSQL 16 and 17 integration. |
 
 ## 🧪 Testing & Performance
 

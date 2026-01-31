@@ -110,4 +110,13 @@ The project follows a modular organization:
 | `reports/` | Generated test reports (Markdown and HTML). |
 | `ssl/` | Generated SSL certificates (CA, Server, Client). |
 | `datadir_*/` | Persistent data for Replication nodes (local only). |
-| `gdatadir_*/` | Persistent data for Galera nodes (local only). |
+
+---
+
+## 🐘 5. PostgreSQL Standalone
+
+Similar to the MySQL standalone instances, PostgreSQL is orchestrated via Docker and proxied by Traefik.
+
+- **Port**: `5432` (Exposed via Traefik)
+- **Data Persistence**: Named volumes (`postgres_17_data`, `postgres_16_data`).
+- **Access**: Standard `psql` client or `make pgclient`.

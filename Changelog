@@ -1,3 +1,11 @@
+1.2.0 2026-01-30
+- feat: added PostgreSQL 16 and 17 support to the standalone database laboratory.
+- feat: implemented Traefik TCP proxy routing for PostgreSQL on port 5432.
+- feat: added Makefile targets for PostgreSQL startup (make postgres16/17) and client (make pgclient/pgpass).
+- feat: integrated PostgreSQL into the interactive test runner.
+- doc: added documentation/postgresql_support.md with usage instructions.
+- fix: corrected PGPASSWORD propagation in Makefile Traefik verification.
+
 1.1.14 2026-01-30
 - chore: formalized Sequential Release Protocol in memory governance and git-flow workflow.
 - chore: enforced strict separation between release tagging and next cycle initialization.

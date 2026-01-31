@@ -1,182 +1,259 @@
-# This Docker Compose file sets up a reverse proxy using Traefik
-# and multiple MySQL/MariaDB/Percona database services.
 services:
-  # ----------------------------------------------------------------
-  # SERVICE 1: The Reverse Proxy that listens on port 3306
-  # ----------------------------------------------------------------
+  # --- Reverse Proxy (Traefik) ---
   traefik:
-    image: traefik:latest
-    restart: unless-stopped
+    image: traefik:v2.11
     container_name: traefik-db-proxy
+    profiles:
+      [
+        "traefik",
+        "mysql96",
+        "mysql84",
+        "mysql80",
+        "mariadb118",
+        "mariadb114",
+        "mariadb1011",
+        "mariadb106",
+        "percona80",
+        "postgres17",
+        "postgres16",
+      ]
     command:
+      - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.mysql.address=:3306/tcp"
-      - "--api.insecure=true"
+      - "--entrypoints.mysql.address=:3306"
+      - "--entrypoints.postgres.address=:5432"
     ports:
       - "3306:3306"
+      - "5432:5432"
       - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    # The "*" profile means this service will be included
-    # whenever ANY profile is activated.
-    profiles:
-      - "*"
-      - "traefik"
+    networks:
+      - db-network
 
-  # ----------------------------------------------------------------
-  # SERVICE 2: The Database Services
-  # ----------------------------------------------------------------
-
-  # --- MySQL ---
+  # --- Standalone MySQL Matrix (Innovation & LTS) ---
   mysql96:
     image: mysql:9.6
     container_name: mysql-9.6
+    profiles: ["mysql96"]
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: "%"
     volumes:
       - mysql_9_6_data:/var/lib/mysql
-    profiles:
-      - "mysql96"
+      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
+      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.db-router.entrypoints=mysql"
+      - "traefik.tcp.routers.db-router.service=db-service"
       - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
+    networks:
+      - db-network
+
+  mysql84:
+    image: mysql:8.4
+    container_name: mysql-8.4
+    profiles: ["mysql84"]
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: "%"
+    volumes:
+      - mysql_8_4_data:/var/lib/mysql
+      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
+      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.db-router.entrypoints=mysql"
+      - "traefik.tcp.routers.db-router.service=db-service"
+      - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
+    networks:
+      - db-network
+
+  mysql80:
+    image: mysql:8.0
+    container_name: mysql-8.0
+    profiles: ["mysql80"]
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: "%"
+    volumes:
+      - mysql_8_0_data:/var/lib/mysql
+      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
+      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.db-router.entrypoints=mysql"
+      - "traefik.tcp.routers.db-router.service=db-service"
+      - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
+    networks:
+      - db-network
 
   mysql57:
     image: mysql:5.7
     container_name: mysql-5.7
+    profiles: ["mysql57"]
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mysql_5_7_data:/var/lib/mysql
-    profiles:
-      - "mysql57"
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.db-router.entrypoints=mysql"
+      - "traefik.tcp.routers.db-router.service=db-service"
       - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
+    networks:
+      - db-network
 
-  mysql84:
-    image: mysql:8.4
-    container_name: mysql-8.4
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-    volumes:
-      - mysql_8_4_data:/var/lib/mysql
-    profiles:
-      - "mysql84"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
-      - "traefik.tcp.routers.db-router.entrypoints=mysql"
-      - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
-
-  mysql80:
-    image: mysql:8.0
-    container_name: mysql-8.0
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-    volumes:
-      - mysql_8_0_data:/var/lib/mysql
-    profiles:
-      - "mysql80"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
-      - "traefik.tcp.routers.db-router.entrypoints=mysql"
-      - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
-
-  # --- MariaDB ---
-  mariadb114:
-    image: mariadb:11.4
-    container_name: mariadb-11.4
-    restart: unless-stopped
-    environment:
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-    volumes:
-      - mariadb_11_4_data:/var/lib/mysql
-    profiles:
-      - "mariadb114"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
-      - "traefik.tcp.routers.db-router.entrypoints=mysql"
-      - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
-
+  # --- MariaDB Matrix (LTS) ---
   mariadb118:
     image: mariadb:11.8
     container_name: mariadb-11.8
+    profiles: ["mariadb118"]
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mariadb_11_8_data:/var/lib/mysql
-    profiles:
-      - "mariadb118"
+      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
+      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.db-router.entrypoints=mysql"
+      - "traefik.tcp.routers.db-router.service=db-service"
       - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
+    networks:
+      - db-network
+
+  mariadb114:
+    image: mariadb:11.4
+    container_name: mariadb-11.4
+    profiles: ["mariadb114"]
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mariadb_11_4_data:/var/lib/mysql
+      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
+      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.db-router.entrypoints=mysql"
+      - "traefik.tcp.routers.db-router.service=db-service"
+      - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
+    networks:
+      - db-network
 
   mariadb1011:
     image: mariadb:10.11
     container_name: mariadb-10.11
+    profiles: ["mariadb1011"]
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mariadb_10_11_data:/var/lib/mysql
-    profiles:
-      - "mariadb1011"
+      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
+      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.db-router.entrypoints=mysql"
+      - "traefik.tcp.routers.db-router.service=db-service"
       - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
+    networks:
+      - db-network
 
   mariadb106:
     image: mariadb:10.6
     container_name: mariadb-10.6
+    profiles: ["mariadb106"]
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mariadb_10_6_data:/var/lib/mysql
-    profiles:
-      - "mariadb106"
+      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
+      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.db-router.entrypoints=mysql"
+      - "traefik.tcp.routers.db-router.service=db-service"
       - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
+    networks:
+      - db-network
 
+  # --- Percona Server Matrix ---
   percona80:
     image: percona/percona-server:8.0
     container_name: percona-server-8.0
+    profiles: ["percona80"]
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: "%"
     volumes:
       - percona_8_0_data:/var/lib/mysql
-    profiles:
-      - "percona80"
+      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
+      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.db-router.entrypoints=mysql"
+      - "traefik.tcp.routers.db-router.service=db-service"
       - "traefik.tcp.services.db-service.loadbalancer.server.port=3306"
+    networks:
+      - db-network
 
-# ----------------------------------------------------------------
-# Defines the named volumes for persistent data storage.
-# ----------------------------------------------------------------
+  # --- PostgreSQL Matrix ---
+  postgres17:
+    image: postgres:17
+    container_name: postgres-17
+    profiles: ["postgres17"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - postgres_17_data:/var/lib/postgresql/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.postgres-router.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.postgres-router.entrypoints=postgres"
+    networks:
+      - db-network
+
+  postgres16:
+    image: postgres:16
+    container_name: postgres-16
+    profiles: ["postgres16"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - postgres_16_data:/var/lib/postgresql/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.postgres-router.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.postgres-router.entrypoints=postgres"
+    networks:
+      - db-network
+
+networks:
+  db-network:
+    driver: bridge
+
 volumes:
   mysql_9_6_data:
   mysql_8_4_data:
@@ -187,3 +264,5 @@ volumes:
   mariadb_10_11_data:
   mariadb_10_6_data:
   percona_8_0_data:
+  postgres_17_data:
+  postgres_16_data:

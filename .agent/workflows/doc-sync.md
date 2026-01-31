@@ -24,6 +24,7 @@ You are a specialized agent for synchronizing documentation with code.
   - [documentation/scripts.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/scripts.md)
   - [documentation/tests.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/tests.md)
   - [documentation/replication_setup.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/replication_setup.md)
+  - [documentation/postgresql_support.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/postgresql_support.md)
 - List of documentation files (French):
   - [README.fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/README.fr.md)
   - [documentation/architecture_fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/architecture_fr.md)
@@ -31,6 +32,7 @@ You are a specialized agent for synchronizing documentation with code.
   - [documentation/makefile_fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/makefile_fr.md)
   - [documentation/scripts_fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/scripts_fr.md)
   - [documentation/tests_fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/tests_fr.md)
+  - [documentation/postgresql_support_fr.md](file:///home/jmren/GIT_REPOS/multi-db-docker-env/documentation/postgresql_support_fr.md)
 
 ## Task
 

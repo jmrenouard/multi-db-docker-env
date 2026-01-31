@@ -4,7 +4,7 @@
 
 [!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
 
-A key feature is the **Traefik reverse proxy**, which ensures all database instances are accessible through a single, stable port on your host machine (`localhost:3306`), regardless of which specific database version you choose to run.
+A key feature is the **Traefik reverse proxy**, which ensures all database instances are accessible through stable ports on your host machine (`localhost:3306` for MySQL/MariaDB and `localhost:5432` for PostgreSQL), regardless of which specific database version you choose to run.
 
 > [!IMPORTANT]
 > **English-Only Policy**: All technical comments within code, configuration files, and documentation in this project MUST be in English ONLY.
@@ -54,8 +54,10 @@ These commands help you manage and interact with the overall environment.
 | `make status`   | 📊   | Shows the status of the project's active containers (Traefik + DB).         | `make status`         |
 | `make info`     | ℹ️   | Provides information about the active DB service and recent logs.           | `make info`           |
 | `make logs`     | 📄   | Displays logs for the currently active database service (or all if none).   | `make logs`           |
-| `make mycnf`    | 🔑   | Generates a `~/.my.cnf` file for password-less `mysql` client connections.  | `make mycnf`          |
+| `make mycnf`    | 🔑   | Generates a `~/.my.cnf` file for password-less MySQL connections.          | `make mycnf`          |
 | `make client`   | 💻   | Starts a MySQL client connected to the active database.                     | `make client`         |
+| `make pgpass`   | 🔑   | Generates a `~/.pgpass` file for password-less PostgreSQL connections.     | `make pgpass`         |
+| `make pgclient` | 💻   | Starts a PostgreSQL client connected to the active database.                | `make pgclient`       |
 | `make verify`   | ✅   | Runs complete environment and configuration validation (test-config).       | `make verify`         |
 | `python3 interactive_runner.py` | 🚀 | Starts the interactive test runner for guided setup and testing. | `python3 interactive_runner.py` |
 
@@ -70,13 +72,13 @@ These commands allow you to inject sample databases into a running service or ru
 | `make inject-sakila`               | 💉   | Injects `sakila` database with auto-detection of environment.                                                                            | `make inject-sakila`                             |
 | `make inject-data`                 | 💉   | Injects a sample database (`employees` or `sakila`) into a specified running service.                                                      | `make inject-data service=mysql84 db=employees`  |
 | `make sync-test-db`               | 🔄   | Synchronizes the `test_db` submodule with the remote master branch.                                                                       | `make sync-test-db`                             |
-| `make test-all`                    | 🧪   | Runs a full test suite: starts each DB service, injects both sample databases, verifies the data, and then stops the service.             | `make test-all`                                  |
+| `make test-all`                    | 🧪   | Runs a full test suite: starts each DB service (MySQL, MariaDB, Percona, PostgreSQL), identifies readiness, and verifies connectivity. | `make test-all`                                  |
 
 ### Starting a Database Instance
 
 To start a specific database instance, use the `make <database_version>` command. The Makefile will automatically stop any currently running database instance before launching the new one, ensuring only one database (plus Traefik) runs at a time.
 
-**MySQL**
+### <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="25" height="25"> MySQL
 
 | Command         | Icon | Description          |
 | :-------------- | :--- | :------------------- |
@@ -85,7 +87,7 @@ To start a specific database instance, use the `make <database_version>` command
 | `make mysql80`  | 🐬   | Starts MySQL 8.0     |
 | `make mysql57`  | 🐬   | Starts MySQL 5.7     |
 
-**MariaDB**
+### <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="25" height="25"> MariaDB
 
 | Command           | Icon | Description            |
 | :---------------- | :--- | :--------------------- |
@@ -94,11 +96,18 @@ To start a specific database instance, use the `make <database_version>` command
 | `make mariadb1011`| 🐧   | Starts MariaDB 10.11   |
 | `make mariadb106` | 🐧   | Starts MariaDB 10.6    |
 
-**Percona Server**
+### <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/percona.svg" alt="Percona" width="25" height="25"> Percona Server
 
 | Command           | Icon | Description            |
 | :---------------- | :--- | :--------------------- |
 | `make percona80` | ⚡   | Starts Percona Server 8.0 |
+
+### <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="25" height="25"> PostgreSQL
+
+| Command           | Icon | Description            |
+| :---------------- | :--- | :--------------------- |
+| `make postgres17` | 🐘   | Starts PostgreSQL 17   |
+| `make postgres16` | 🐘   | Starts PostgreSQL 16   |
 
 ## 🏗️ Technical Environment
 
@@ -158,15 +167,15 @@ graph TD
 
     subgraph "🐳 Docker Engine"
         direction LR
-        subgraph "🚪 Single Entrypoint"
-            Traefik[traefik-db-proxy<br/>proxy-for-db<br/>Listens on localhost:3306]
+        subgraph "🚪 Entrypoints (Proxy)"
+            Traefik[traefik-db-proxy<br/>Listens on localhost:3306 & 5432]
         end
         subgraph "🚀 On-Demand Database Container"
-            ActiveDB["Active Database Instance<br/>e.g., mysql80, percona84<br/>Internal Docker Port"]
+            ActiveDB["Active Database Instance<br/>Internal Docker Port"]
         end
     end
 
-    App -- "Connects to localhost:3306" --> Traefik
+    App -- "Connects to 3306 (MySQL) or 5432 (PostgreSQL)" --> Traefik
     Traefik -- "Dynamically routes traffic to" --> ActiveDB
 ```
 
@@ -196,6 +205,7 @@ For detailed information on specific components, please refer to the following g
 * **[Architecture](documentation/architecture.md)**: Network layout and topology.
 * **[Makefile Reference](documentation/makefile.md)**: Comprehensive list of all available commands.
 * **[Utility Scripts](documentation/scripts.md)**: Backup, restore, and setup script details.
+* **[PostgreSQL Support](documentation/postgresql_support.md)**: Detailed guide for PostgreSQL usage.
 * **[Test Scenarios](documentation/tests.md)**: Specific test cases and reporting instructions.
 * **[Galera Bootstrap](documentation/galera_bootstrap.md)**: Detailed steps for Galera clustering.
 * **[Replication Setup](documentation/replication_setup.md)**: Master/Slave configuration guide.

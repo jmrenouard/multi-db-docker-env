@@ -13,6 +13,8 @@ The `Makefile` is the main entry point for managing database environments (Stand
 | `make logs` | 📄 Display logs for the active database service. |
 | `make mycnf` | 🔑 Generate the `.my.cnf` file for password-less connections. |
 | `make client` | 💻 Start a MySQL client on the active database. |
+| `make pgpass` | 🔑 Generate the `.pgpass` file for password-less PostgreSQL connections. |
+| `make pgclient` | 💻 Start a PostgreSQL client on the active database. |
 | `make verify` | ✅ Runs complete environment validation (`test-config`). |
 | `make start` | 🚀 Starts the default service (`mariadb114`). |
 | `make help` | Show help message for all available tasks. |
@@ -50,6 +52,8 @@ The `Makefile` is the main entry point for managing database environments (Stand
 | `make mariadb1011`| Starts MariaDB 10.11 |
 | `make mariadb106` | Starts MariaDB 10.6 |
 | `make percona80` | Starts Percona Server 8.0 |
+| `make postgres17` | Starts PostgreSQL 17 |
+| `make postgres16` | Starts PostgreSQL 16 |
 
 ## 🌐 Galera Cluster Commands
 

@@ -4,7 +4,7 @@
 
 [!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
 
-Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que toutes les instances de base de données sont accessibles via un port unique et stable sur votre machine hôte (`localhost:3306`), quelle que soit la version spécifique de la base de données que vous choisissez d'exécuter.
+Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que toutes les instances de base de données sont accessibles via des ports stables sur votre machine hôte (`localhost:3306` pour MySQL/MariaDB et `localhost:5432` pour PostgreSQL), quelle que soit la version spécifique de la base de données que vous choisissez d'exécuter.
 
 > [!IMPORTANT]
 > **Politique d'Anglais Uniquement** : Tous les commentaires techniques dans le code, les fichiers de configuration et la documentation de ce projet DOIVENT être en anglais UNIQUEMENT.
@@ -54,8 +54,10 @@ Ces commandes vous aident à gérer et à interagir avec l'ensemble de l'environ
 | `make status`                   | 📊   | Affiche l'état des conteneurs actifs du projet (Traefik + DB).              | `make status`                   |
 | `make info`                     | ℹ️   | Fournit des informations sur le service DB actif et les logs récents.       | `make info`                     |
 | `make logs`                     | 📄   | Affiche les logs du service de base de données actuellement actif.          | `make logs`                     |
-| `make mycnf`                    | 🔑   | Génère un fichier `~/.my.cnf` pour des connexions client sans mot de passe. | `make mycnf`                    |
+| `make mycnf`                    | 🔑   | Génère un fichier `~/.my.cnf` pour des connexions MySQL sans mot de passe.  | `make mycnf`                    |
 | `make client`                   | 💻   | Démarre un client MySQL connecté à la base de données active.               | `make client`                   |
+| `make pgpass`                   | 🔑   | Génère un fichier `~/.pgpass` pour des connexions PostgreSQL sans mot de passe. | `make pgpass`                 |
+| `make pgclient`                 | 💻   | Démarre un client PostgreSQL connecté à la base de données active.           | `make pgclient`                 |
 | `make verify`                   | ✅   | Exécute une validation complète de l'environnement (test-config).           | `make verify`                   |
 | `python3 interactive_runner.py` | 🚀   | Lance le coureur de tests interactif pour une configuration guidée.         | `python3 interactive_runner.py` |
 
@@ -70,13 +72,13 @@ Ces commandes permettent d'injecter des exemples de bases de données ou d'exéc
 | `make inject-sakila`    | 💉   | Injecte la base `sakila` avec auto-détection de l'environnement.                                                    | `make inject-sakila`                            |
 | `make inject-data`      | 💉   | Injecte une base (`employees` ou `sakila`) dans un service spécifique en cours d'exécution.                         | `make inject-data service=mysql84 db=employees` |
 | `make sync-test-db`     | 🔄   | Synchronise le sous-module `test_db` avec la branche master distante.                                               | `make sync-test-db`                             |
-| `make test-all`         | 🧪   | Exécute une suite de tests complète : démarre chaque service, injecte les bases, vérifie les données, puis s'arrête. | `make test-all`                                 |
+| `make test-all`         | 🧪   | Exécute une suite de tests complète : démarre chaque service (MySQL, MariaDB, Percona, PostgreSQL), vérifie la disponibilité et la connectivité. | `make test-all`                                 |
 
 ### Démarrage d'une Instance de Base de Données
 
 Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefile arrêtera automatiquement toute instance en cours avant de lancer la nouvelle.
 
-### MySQL
+### <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="25" height="25"> MySQL
 
 | Command        | Icon | Description       |
 | :------------- | :--- | :---------------- |
@@ -85,7 +87,7 @@ Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefil
 | `make mysql80` | 🐬   | Démarre MySQL 8.0 |
 | `make mysql57` | 🐬   | Démarre MySQL 5.7 |
 
-### MariaDB
+### <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="25" height="25"> MariaDB
 
 | Command            | Icon | Description           |
 | :----------------- | :--- | :-------------------- |
@@ -94,13 +96,18 @@ Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefil
 | `make mariadb1011` | 🐧   | Démarre MariaDB 10.11 |
 | `make mariadb106`  | 🐧   | Démarre MariaDB 10.6  |
 
-### Percona Server
+### <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/percona.svg" alt="Percona" width="25" height="25"> Percona Server
 
 | Command          | Icon | Description         |
 | :--------------- | :--- | :------------------ |
-| `make percona84` | 🐾   | Démarre Percona 8.4 |
 | `make percona80` | ⚡   | Démarre Percona 8.0 |
-| `make percona57` | 🐾   | Démarre Percona 5.7 |
+
+### <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="25" height="25"> PostgreSQL
+
+| Command            | Icon | Description             |
+| :----------------- | :--- | :---------------------- |
+| `make postgres17`  | 🐘   | Démarre PostgreSQL 17   |
+| `make postgres16`  | 🐘   | Démarre PostgreSQL 16   |
 
 ## 🏗️ Environnement Technique
 
@@ -160,15 +167,15 @@ graph TD
 
     subgraph "🐳 Moteur Docker"
         direction LR
-        subgraph "🚪 Point d'Entrée Unique"
-            Traefik[traefik-db-proxy<br/>proxy-for-db<br/>Écoute sur localhost:3306]
+        subgraph "🚪 Points d'Entrée (Proxy)"
+            Traefik[traefik-db-proxy<br/>Écoute sur localhost:3306 et 5432]
         end
         subgraph "🚀 Conteneur DB à la Demande"
-            ActiveDB["Instance Active<br/>ex: mysql80, percona84<br/>Port Docker Interne"]
+            ActiveDB["Instance Active<br/>Port Docker Interne"]
         end
     end
 
-    App -- "Connexion à localhost:3306" --> Traefik
+    App -- "Connexion à 3306 (MySQL) ou 5432 (PostgreSQL)" --> Traefik
     Traefik -- "Route dynamiquement vers" --> ActiveDB
 ```
 
@@ -198,6 +205,7 @@ Pour des informations détaillées, veuillez vous référer aux guides suivants 
 * **[Architecture](documentation/architecture.md)** : Schéma réseau et topologie.
 * **[Référence Makefile](documentation/makefile.md)** : Liste exhaustive des commandes.
 * **[Scripts Utilitaires](documentation/scripts.md)** : Détails sur les scripts de backup, restauration et setup.
+* **[Support PostgreSQL](documentation/postgresql_support.md)** : Guide détaillé de l'utilisation de PostgreSQL.
 * **[Scénarios de Test](documentation/tests.md)** : Cas de test spécifiques et rapports.
 * **[Bootstrap Galera](documentation/galera_bootstrap.md)** : Étapes détaillées pour Galera.
 * **[Setup Réplication](documentation/replication_setup.md)** : Guide de configuration Maître/Esclave.

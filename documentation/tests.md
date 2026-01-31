@@ -19,16 +19,16 @@ For more details on the cluster topology, refer to the **[Architecture Documenta
 
 ---
 
-## 🐬 00. Standalone Matrix (T2 tier)
+## <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="25" height="25"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="25" height="25"> <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/percona.svg" alt="Percona" width="25" height="25"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="25" height="25"> 00. Standalone Matrix (T2 tier)
 
 Verified on **2026-01-29**, this suite ensures that all standalone database engines are fully functional.
 
 ### Test Cases
 
-1. **Service Lifecycle**: Starts each DB service (MySQL, MariaDB, Percona) and verifies process health.
+1. **Service Lifecycle**: Starts each DB service (MySQL, MariaDB, Percona, PostgreSQL) and verifies process health.
 2. **Data Integrity**: Injects `employees` and `sakila` sample databases.
 3. **Authentication Audit**: Verifies that the `DB_ROOT_PASSWORD` is correctly applied across all versions.
-4. **Connectivity**: Ensures Traefik correctly routes to the active instance on port `3306`.
+4. **Connectivity**: Ensures Traefik correctly routes to the active instance on port `3306` (MySQL/MariaDB) or `5432` (PostgreSQL).
 
 ## ⚙️ 0. Configuration & Security (`make test-config`)
 

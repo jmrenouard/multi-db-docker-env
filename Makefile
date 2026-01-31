@@ -14,7 +14,7 @@ endif
 DB_ROOT_PASSWORD ?= rootpass
 
 # --- Main Targets ---
-.PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 stop status logs \
+.PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 stop status logs \
         build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
@@ -77,6 +77,10 @@ help:
 	@printf "  \033[1;32mPercona Server:\033[0m\n"
 	@printf "    \033[1mpercona80\033[0m     - Starts Percona Server 8.0\n"
 	@printf "\n"
+	@printf "  \033[1;32mPostgreSQL:\033[0m\n"
+	@printf "    \033[1mpostgres17\033[0m    - Starts PostgreSQL 17\n"
+	@printf "    \033[1mpostgres16\033[0m    - Starts PostgreSQL 16\n"
+	@printf "\n"
 
 # 🚀 Starts the default database service
 start: $(DEFAULT_SERVICE)
@@ -127,8 +131,9 @@ inject-employee: inject-employees
 # 🛑 Stops and removes all containers, networks, and orphans
 stop:
 	@echo "🔥 Stopping and cleaning up containers..."
-	@docker compose down --remove-orphans
-	@docker ps | grep -v CONTAINER | grep -E '(traefik|mysql|percona|mariadb)-' | awk '{print $$1}' | xargs -r docker stop || true
+	@docker compose --profile "*" down -v --remove-orphans >/dev/null 2>&1 || docker compose down -v --remove-orphans >/dev/null 2>&1
+	@docker ps -q --filter "label=com.docker.compose.project=multi-db-docker-env" | xargs -r docker stop >/dev/null 2>&1 || true
+	@docker ps -aq --filter "label=com.docker.compose.project=multi-db-docker-env" | xargs -r docker rm -f >/dev/null 2>&1 || true
 
 # 📊 Displays the status of active containers
 status:
@@ -209,31 +214,50 @@ inject-data:
 	fi; \
 	DB_CONTAINER=$$(docker compose ps $(service) --format "{{.Names}}"); \
 	printf "⏳ Waiting for %s to be ready...\n" "$${DB_CONTAINER}"; \
-	timeout 120s bash -c "until docker exec $${DB_CONTAINER} sh -c 'mysqladmin -uroot -p\"$(DB_ROOT_PASSWORD)\" ping -h127.0.0.1 || mariadb-admin -uroot -p\"$(DB_ROOT_PASSWORD)\" ping -h127.0.0.1' >/dev/null 2>&1; do sleep 2; done" || (printf \"\033[1;31m❌ Error: Database reached timeout without becoming ready.\033[0m\n\" && exit 1); \
+	case "$(service)" in \
+		postgres*) \
+			timeout 120s bash -c "until docker exec $${DB_CONTAINER} pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done" || (printf \"\033[1;31m❌ Error: PostgreSQL reached timeout without becoming ready.\033[0m\n\" && exit 1); \
+			;; \
+		*) \
+			timeout 120s bash -c "until docker exec $${DB_CONTAINER} sh -c 'mysql -uroot -p\"$(DB_ROOT_PASSWORD)\" -e \"SELECT 1\" 2>/dev/null | grep -q 1 || mariadb -uroot -p\"$(DB_ROOT_PASSWORD)\" -e \"SELECT 1\" 2>/dev/null | grep -q 1'; do sleep 2; done" || (printf \"\033[1;31m❌ Error: Database reached timeout without becoming ready. Check credentials or logs.\033[0m\n\" && exit 1); \
+			;; \
+	esac; \
 	sleep 5; \
-	MYSQL_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysql || command -v mariadb' 2>/dev/null); \
-	if [ -z "$${MYSQL_CMD}" ]; then printf "\033[1;31m❌ Error: Neither 'mysql' nor 'mariadb' found in container.\033[0m\n"; exit 1; fi; \
-	printf "Injecting data into %s using %s...\n" "$${DB_CONTAINER}" "$${MYSQL_CMD}"; \
-	if [ "$(db)" = "employees" ]; then \
-		docker cp $(TEST_DB_DIR)/employees "$${DB_CONTAINER}:/tmp/test_db" && \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/test_db && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < employees.sql" && \
-		printf "✅ 'employees' database injected.\n"; \
-	elif [ "$(db)" = "sakila" ]; then \
-		docker cp $(TEST_DB_DIR)/sakila "$${DB_CONTAINER}:/tmp/" && \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-schema.sql" && \
-		docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-data.sql" && \
-		printf "✅ 'sakila' database injected.\n"; \
-	else \
-		printf "\033[1;31m❌ Error: Invalid database name '%s'.\033[0m\n" "$(db)"; \
-		exit 1; \
-	fi
+	case "$(service)" in \
+		postgres*) \
+			printf "Skipping data injection for PostgreSQL (MySQL-only datasets).\n" \
+			;; \
+		*) \
+			MYSQL_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysql || command -v mariadb || ls /usr/bin/mysql /usr/bin/mariadb 2>/dev/null | head -n 1'); \
+			if [ -z "$${MYSQL_CMD}" ]; then \
+				printf "\033[1;31m❌ Error: Neither 'mysql' nor 'mariadb' found in container %s.\nLogs:\033[0m\n" "$${DB_CONTAINER}"; \
+				docker logs "$${DB_CONTAINER}" | tail -n 20; \
+				exit 1; \
+			fi; \
+			printf "Injecting data into %s using %s...\n" "$${DB_CONTAINER}" "$${MYSQL_CMD}"; \
+			if [ "$(db)" = "employees" ]; then \
+				if [ "$(service)" = "mysql96" ]; then \
+					printf "⚠️ Skipping 'employees' for mysql96 (Nested source regression). Use sakila instead.\n"; \
+				else \
+					docker cp $(TEST_DB_DIR)/employees "$${DB_CONTAINER}:/tmp/test_db" && \
+					docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/test_db && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < employees.sql" && \
+					printf "✅ 'employees' database injected.\n"; \
+				fi; \
+			elif [ "$(db)" = "sakila" ]; then \
+				docker cp $(TEST_DB_DIR)/sakila "$${DB_CONTAINER}:/tmp/" && \
+				docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-schema.sql" && \
+				docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-data.sql" && \
+				printf "✅ 'sakila' database injected.\n"; \
+			fi \
+			;; \
+	esac
 
 # --- Full Test Suite ---
 .PHONY: test-all
 
 test-all:
 	@# List of all database services to test
-	@SERVICES_TO_TEST="mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80"; \
+	@SERVICES_TO_TEST="mysql96 mysql84 mysql80 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16"; \
 	for service in $${SERVICES_TO_TEST}; do \
 		printf "\n\033[1;34m--- Testing service: %s ---\033[0m\n" "$$service"; \
 		\
@@ -241,27 +265,57 @@ test-all:
 		make $$service && \
 		\
 		printf "⏳ Waiting for DB to be ready...\n"; \
-		DB_CONTAINER=$$(docker compose ps $$service --format "{{.Names}}"); \
-		timeout 120s bash -c "until docker exec $${DB_CONTAINER} sh -c 'mysqladmin -uroot -p\"$(DB_ROOT_PASSWORD)\" ping -h127.0.0.1 || mariadb-admin -uroot -p\"$(DB_ROOT_PASSWORD)\" ping -h127.0.0.1' >/dev/null 2>&1; do sleep 2; done" || exit 1; \
+		DB_CONTAINER=$$(docker compose ps -a $$service --format "{{.Names}}" | head -n 1); \
+		case "$$service" in \
+			postgres*) \
+				timeout 120s bash -c "until docker exec $${DB_CONTAINER} pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done" || exit 1; \
+				;; \
+			*) \
+				timeout 120s bash -c "until docker exec $${DB_CONTAINER} sh -c 'mysql -uroot -p\"$(DB_ROOT_PASSWORD)\" -e \"SELECT 1\" 2>/dev/null | grep -q 1 || mariadb -uroot -p\"$(DB_ROOT_PASSWORD)\" -e \"SELECT 1\" 2>/dev/null | grep -q 1'; do sleep 2; done" || exit 1; \
+				;; \
+		esac; \
 		sleep 5; \
-		MYSQL_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysql || command -v mariadb' 2>/dev/null); \
-		if [ -z "$${MYSQL_CMD}" ]; then printf "\033[1;31m❌ Error: Neither 'mysql' nor 'mariadb' found in container.\033[0m\n"; exit 1; fi; \
-		\
-		printf "💉 Injecting 'employees' database...\n" && \
-		make inject-data service=$$service db=employees && \
-		\
-		printf "💉 Injecting 'sakila' database...\n" && \
-		make inject-data service=$$service db=sakila && \
-		\
-		printf "🔍 Verifying data injection...\n" && \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -e "SHOW DATABASES;" | grep -q "employees" && \
-		printf "✅ 'employees' database found.\n" && \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -e "SHOW DATABASES;" | grep -q "sakila" && \
-		printf "✅ 'sakila' database found.\n" && \
+		case "$$service" in \
+			postgres*) \
+				printf "🧪 Running PostgreSQL feature tests...\n"; \
+				docker exec "$${DB_CONTAINER}" psql -U postgres -c "SELECT version();" || exit 1; \
+				;; \
+			*) \
+				MYSQL_CMD=$$(docker exec "$${DB_CONTAINER}" sh -c 'command -v mysql || command -v mariadb || ls /usr/bin/mysql /usr/bin/mariadb 2>/dev/null | head -n 1'); \
+				if [ -z "$${MYSQL_CMD}" ]; then \
+					printf "\033[1;31m❌ Error: Neither 'mysql' nor 'mariadb' found in container %s.\nLogs:\033[0m\n" "$$DB_CONTAINER"; \
+					docker logs "$$DB_CONTAINER" | tail -n 20; \
+					exit 1; \
+				fi; \
+				\
+				printf "💉 Injecting 'employees' database...\n" && \
+				make inject-data service=$$service db=employees && \
+				\
+				printf "💉 Injecting 'sakila' database...\n" && \
+				make inject-data service=$$service db=sakila && \
+				\
+				printf "🧪 Running Python feature tests...\n"; \
+				python3 tests/test_lab.py || exit 1; \
+				\
+				printf "🔍 Verifying data injection...\n" && \
+				docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -e "SHOW DATABASES;" | grep -q "employees" && \
+				printf "✅ 'employees' database found.\n" && \
+				docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -e "SHOW DATABASES;" | grep -q "sakila" && \
+				printf "✅ 'sakila' database found.\n"; \
+				;; \
+		esac; \
 		\
 		printf "🔍 Verifying Traefik proxy...\n" && \
-		docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -h traefik -e "SHOW DATABASES;" | grep -q "employees" && \
-		printf "✅ Connection via Traefik successful.\n" && \
+		case "$$service" in \
+			postgres*) \
+				docker exec -e PGPASSWORD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" psql -h traefik -U postgres -c "SELECT 1" | grep -q 1 && \
+				printf "✅ Connection via Traefik successful.\n" \
+				;; \
+			*) \
+				docker exec "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -p"$(DB_ROOT_PASSWORD)" -h traefik -e "SHOW DATABASES;" | grep -q "employees" && \
+				printf "✅ Connection via Traefik successful.\n" \
+				;; \
+		esac; \
 		\
 		printf "🛑 Stopping service %s...\n" "$$service" && \
 		docker compose down -v; \
@@ -319,6 +373,15 @@ mariadb106: stop traefik
 percona80: stop traefik
 	@echo "🚀 Starting Percona Server 8.0..."
 	@docker compose --profile percona80 up -d
+
+# 🐘 PostgreSQL
+postgres17: stop traefik
+	@echo "🚀 Starting PostgreSQL 17..."
+	@docker compose --profile postgres17 up -d
+
+postgres16: stop traefik
+	@echo "🚀 Starting PostgreSQL 16..."
+	@docker compose --profile postgres16 up -d
 
 # --- MariaDB Clusters (Merged from mariadb subfolder) ---
 

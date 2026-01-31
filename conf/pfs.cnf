@@ -1,0 +1,33 @@
+[mysqld]
+# --- Performance Schema (PFS) ---
+# Enable the engine
+performance_schema = ON
+
+# History size per thread (Default is often 10)
+# Allows viewing the last N transactions for a specific connection
+performance_schema_events_transactions_history_size = 2000
+
+# Global history size (Default is often 10000)
+# Increasing this value is crucial for capturing transient events on a busy server
+performance_schema_events_transactions_history_long_size = 50000
+
+# Force activation of transaction consumers at startup
+performance-schema-consumer-events-transactions-history = ON
+performance-schema-consumer-events-transactions-history-long = ON
+
+[mariadb]
+# --- Performance Schema (PFS) ---
+# Enable the engine
+performance_schema = ON
+
+# History size per thread (Default is often 10)
+# Allows viewing the last N transactions for a specific connection
+performance_schema_events_transactions_history_size = 2000
+
+# Global history size (Default is often 10000)
+# Increasing this value is crucial for capturing transient events on a busy server
+performance_schema_events_transactions_history_long_size = 50000
+
+# Force activation of transaction consumers at startup
+performance-schema-consumer-events-transactions-history = ON
+performance-schema-consumer-events-transactions-history-long = ON
