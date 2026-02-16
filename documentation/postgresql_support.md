@@ -6,6 +6,7 @@ PostgreSQL is now supported in the multi-db-docker-env project as a standalone d
 
 - PostgreSQL 17
 - PostgreSQL 16
+- PostgreSQL 15
 
 ## Quick Start
 
@@ -19,6 +20,12 @@ To start PostgreSQL 16:
 
 ```bash
 make postgres16
+```
+
+To start PostgreSQL 15:
+
+```bash
+make postgres15
 ```
 
 ## Connection Details

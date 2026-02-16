@@ -1,5 +1,13 @@
 # Index de la Documentation MariaDB 📚
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="50" height="50">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="50" height="50">
+  <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/percona.svg" alt="Percona" width="50" height="50">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="50" height="50">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefik/traefik-original.svg" alt="Traefik" width="50" height="50">
+</p>
+
 Bienvenue dans la documentation de l'environnement Docker MariaDB. Cet index fournit une vue d'ensemble structurée de tous les guides et références techniques disponibles.
 
 ---

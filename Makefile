@@ -13,9 +13,38 @@ endif
 # Default root password if not set in .env
 DB_ROOT_PASSWORD ?= rootpass
 
+# --- PATRONI CLUSTER ---
+PATRONI_COMPOSE = docker-compose-patroni.yml
+
+patroni-gen-certs:
+	@echo "🔐 Génération des certificats pour le cluster Patroni..."
+	@CERT_DIR=certs_patroni ./scripts/patroni/generate_certs.sh
+
+patroni-up: patroni-gen-certs
+	@echo "🚀 Démarrage du cluster Patroni..."
+	docker compose -f $(PATRONI_COMPOSE) up -d
+
+patroni-down:
+	@echo "🛑 Arrêt du cluster Patroni..."
+	docker compose -f $(PATRONI_COMPOSE) down -v
+
+patroni-status:
+	@echo "📊 Statut du cluster Patroni..."
+	docker exec node1 patronictl -c /etc/patroni/patroni.yml list
+
+patroni-logs:
+	docker compose -f $(PATRONI_COMPOSE) logs -f
+
+patroni-ps:
+	docker compose -f $(PATRONI_COMPOSE) ps
+
+test-patroni: ## Run functional tests on the Patroni cluster
+	@bash ./tests/test_patroni.sh
+
+
 # --- Main Targets ---
-.PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 stop status logs \
-        build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera \
+.PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 postgres15 stop status logs \
+        build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera test-patroni \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
@@ -77,9 +106,13 @@ help:
 	@printf "  \033[1;32mPercona Server:\033[0m\n"
 	@printf "    \033[1mpercona80\033[0m     - Starts Percona Server 8.0\n"
 	@printf "\n"
-	@printf "  \033[1;32mPostgreSQL:\033[0m\n"
+	@printf "  \033[1;32mPostgreSQL & Patroni:\033[0m\n"
+	@printf "    \033[1mpatroni-up\033[0m    - 🚀 Starts Patroni PostgreSQL 17 cluster\n"
+	@printf "    \033[1mpatroni-status\033[0m - 📊 Checks Patroni cluster status\n"
+	@printf "    \033[1mtest-patroni\033[0m   - 🧪 Runs Patroni functional tests\n"
 	@printf "    \033[1mpostgres17\033[0m    - Starts PostgreSQL 17\n"
 	@printf "    \033[1mpostgres16\033[0m    - Starts PostgreSQL 16\n"
+	@printf "    \033[1mpostgres15\033[0m    - Starts PostgreSQL 15\n"
 	@printf "\n"
 
 # 🚀 Starts the default database service
@@ -257,7 +290,7 @@ inject-data:
 
 test-all:
 	@# List of all database services to test
-	@SERVICES_TO_TEST="mysql96 mysql84 mysql80 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16"; \
+	@SERVICES_TO_TEST="mysql96 mysql84 mysql80 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 postgres15"; \
 	for service in $${SERVICES_TO_TEST}; do \
 		printf "\n\033[1;34m--- Testing service: %s ---\033[0m\n" "$$service"; \
 		\
@@ -382,6 +415,10 @@ postgres17: stop traefik
 postgres16: stop traefik
 	@echo "🚀 Starting PostgreSQL 16..."
 	@docker compose --profile postgres16 up -d
+
+postgres15: stop traefik
+	@echo "🚀 Starting PostgreSQL 15..."
+	@docker compose --profile postgres15 up -d
 
 # --- MariaDB Clusters (Merged from mariadb subfolder) ---
 

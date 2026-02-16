@@ -1,8 +1,14 @@
-# 🚀 Multi-Version Database Manager with Docker & Make (multi-db-docker-env)
-
 ![multi-db-docker-env](logo.png)
-
-[!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
+6: 
+7: <p align="center">
+8:   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="60" height="60">
+9:   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="60" height="60">
+10:   <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/percona.svg" alt="Percona" width="60" height="60">
+11:   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="60" height="60">
+12:   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefik/traefik-original.svg" alt="Traefik" width="60" height="60">
+13: </p>
+14: 
+15: [!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
 
 A key feature is the **Traefik reverse proxy**, which ensures all database instances are accessible through stable ports on your host machine (`localhost:3306` for MySQL/MariaDB and `localhost:5432` for PostgreSQL), regardless of which specific database version you choose to run.
 
@@ -108,6 +114,7 @@ To start a specific database instance, use the `make <database_version>` command
 | :---------------- | :--- | :--------------------- |
 | `make postgres17` | 🐘   | Starts PostgreSQL 17   |
 | `make postgres16` | 🐘   | Starts PostgreSQL 16   |
+| `make postgres15` | 🐘   | Starts PostgreSQL 15   |
 
 ## 🏗️ Technical Environment
 
@@ -158,6 +165,10 @@ make verify
 ## 🏛️ Architecture
 
 The system uses a **Traefik reverse proxy** as a smart router. It is the only service exposed on your host machine's port `3306` and automatically forwards traffic to the currently active database instance.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefik/traefik-original.svg" alt="Traefik" width="100">
+</p>
 
 ```mermaid
 graph TD

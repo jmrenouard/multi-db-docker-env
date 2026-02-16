@@ -1,0 +1,147 @@
+services:
+  etcd1:
+    image: patroni-rhel8-etcd:latest
+    container_name: etcd1
+    hostname: etcd1
+    entrypoint: /bin/bash /scripts/patroni/entrypoint_etcd.sh
+    environment:
+      - ETCD_NAME=etcd1
+      - ETCD_DATA_DIR=/etcd-data
+      - INT_ETCD_CLIENT_PORT=2379
+      - INT_ETCD_PEER_PORT=2380
+      - VERIFY_CLIENT_CERT=true
+    ports:
+      - "2379:2379"
+    volumes:
+      - ./certs_patroni:/certs:ro
+      - ./scripts:/scripts:ro
+      - etcd1_data:/etcd-data
+    networks:
+      - patroni_net
+
+  etcd2:
+    image: patroni-rhel8-etcd:latest
+    container_name: etcd2
+    hostname: etcd2
+    entrypoint: /bin/bash /scripts/patroni/entrypoint_etcd.sh
+    environment:
+      - ETCD_NAME=etcd2
+      - ETCD_DATA_DIR=/etcd-data
+      - INT_ETCD_CLIENT_PORT=2379
+      - INT_ETCD_PEER_PORT=2380
+      - VERIFY_CLIENT_CERT=true
+    volumes:
+      - ./certs_patroni:/certs:ro
+      - ./scripts:/scripts:ro
+      - etcd2_data:/etcd-data
+    networks:
+      - patroni_net
+
+  etcd3:
+    image: patroni-rhel8-etcd:latest
+    container_name: etcd3
+    hostname: etcd3
+    entrypoint: /bin/bash /scripts/patroni/entrypoint_etcd.sh
+    environment:
+      - ETCD_NAME=etcd3
+      - ETCD_DATA_DIR=/etcd-data
+      - INT_ETCD_CLIENT_PORT=2379
+      - INT_ETCD_PEER_PORT=2380
+      - VERIFY_CLIENT_CERT=true
+    volumes:
+      - ./certs_patroni:/certs:ro
+      - ./scripts:/scripts:ro
+      - etcd3_data:/etcd-data
+    networks:
+      - patroni_net
+
+  node1:
+    image: patroni-rhel8-postgresql:latest
+    container_name: node1
+    hostname: node1
+    entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/bin/supervisord -c /etc/supervisord.conf
+    environment:
+      - PATRONI_NAME=node1
+      - PATRONI_ETCD3_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
+      - PATRONI_RESTAPI_CONNECT_ADDRESS=node1:8008
+      - PATRONI_POSTGRESQL_CONNECT_ADDRESS=node1:5432
+    volumes:
+      - node1_data:/datas
+      - ./certs_patroni:/certs:ro
+      - ./scripts:/scripts:ro
+    depends_on:
+      - etcd1
+      - etcd2
+      - etcd3
+    networks:
+      - patroni_net
+
+  node2:
+    image: patroni-rhel8-postgresql:latest
+    container_name: node2
+    hostname: node2
+    entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/bin/supervisord -c /etc/supervisord.conf
+    environment:
+      - PATRONI_NAME=node2
+      - PATRONI_ETCD3_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
+      - PATRONI_RESTAPI_CONNECT_ADDRESS=node2:8008
+      - PATRONI_POSTGRESQL_CONNECT_ADDRESS=node2:5432
+    volumes:
+      - node2_data:/datas
+      - ./certs_patroni:/certs:ro
+      - ./scripts:/scripts:ro
+    depends_on:
+      - etcd1
+      - etcd2
+      - etcd3
+    networks:
+      - patroni_net
+
+  node3:
+    image: patroni-rhel8-postgresql:latest
+    container_name: node3
+    hostname: node3
+    entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/bin/supervisord -c /etc/supervisord.conf
+    environment:
+      - PATRONI_NAME=node3
+      - PATRONI_ETCD3_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
+      - PATRONI_RESTAPI_CONNECT_ADDRESS=node3:8008
+      - PATRONI_POSTGRESQL_CONNECT_ADDRESS=node3:5432
+    volumes:
+      - node3_data:/datas
+      - ./certs_patroni:/certs:ro
+      - ./scripts:/scripts:ro
+    depends_on:
+      - etcd1
+      - etcd2
+      - etcd3
+    networks:
+      - patroni_net
+
+  haproxy:
+    image: patroni-rhel8-haproxy:latest
+    container_name: haproxy-patroni
+    networks:
+      - patroni_net
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+      - "7000:7000"
+    volumes:
+      - ./certs_patroni:/certs:ro
+    depends_on:
+      - node1
+      - node2
+      - node3
+
+networks:
+  patroni_net:
+    driver: bridge
+
+volumes:
+  etcd1_data:
+  etcd2_data:
+  etcd3_data:
+  node1_data:
+  node2_data:
+  node3_data:

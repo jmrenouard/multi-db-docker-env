@@ -1,3 +1,17 @@
+1.2.3 2026-02-16
+- feat: integrate Patroni functional tests (`test-patroni`).
+- doc: update `patroni_cluster.md` with testing instructions.
+
+1.2.2 2026-02-16
+- feat: added product logos (MariaDB, MySQL, Percona, PostgreSQL, Traefik) to README and documentation indexes.
+- update: included Traefik logo in the Architecture section of READMEs.
+
+1.2.1 2026-02-16
+- feat: added PostgreSQL 15 support to the standalone database laboratory.
+- feat: expanded Traefik TCP proxy routing for PostgreSQL 15.
+- feat: added Makefile target for PostgreSQL 15 startup (make postgres15).
+- update: synchronized README and PostgreSQL support documentation with version 15.
+
 1.2.0 2026-01-30
 - feat: added PostgreSQL 16 and 17 support to the standalone database laboratory.
 - feat: implemented Traefik TCP proxy routing for PostgreSQL on port 5432.

@@ -1,8 +1,14 @@
-# 🚀 Gestionnaire de Bases de Données Multi-Versions avec Docker & Make (multi-db-docker-env)
-
 ![multi-db-docker-env](logo.png)
-
-[!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
+6: 
+7: <p align="center">
+8:   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="60" height="60">
+9:   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="60" height="60">
+10:   <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/percona.svg" alt="Percona" width="60" height="60">
+11:   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="60" height="60">
+12:   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefik/traefik-original.svg" alt="Traefik" width="60" height="60">
+13: </p>
+14: 
+15: [!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
 
 Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que toutes les instances de base de données sont accessibles via des ports stables sur votre machine hôte (`localhost:3306` pour MySQL/MariaDB et `localhost:5432` pour PostgreSQL), quelle que soit la version spécifique de la base de données que vous choisissez d'exécuter.
 
@@ -108,6 +114,7 @@ Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefil
 | :----------------- | :--- | :---------------------- |
 | `make postgres17`  | 🐘   | Démarre PostgreSQL 17   |
 | `make postgres16`  | 🐘   | Démarre PostgreSQL 16   |
+| `make postgres15`  | 🐘   | Démarre PostgreSQL 15   |
 
 ## 🏗️ Environnement Technique
 
@@ -158,6 +165,10 @@ make verify
 ## 🏛️ Architecture
 
 Le système utilise un **proxy inverse Traefik** comme routeur intelligent. C'est le seul service exposé sur le port `3306` de votre hôte et il redirige automatiquement le trafic vers l'instance de base de données active.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefik/traefik-original.svg" alt="Traefik" width="100">
+</p>
 
 ```mermaid
 graph TD

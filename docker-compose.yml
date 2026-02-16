@@ -16,6 +16,7 @@ services:
         "percona80",
         "postgres17",
         "postgres16",
+        "postgres15",
       ]
     command:
       - "--api.insecure=true"
@@ -250,6 +251,22 @@ services:
     networks:
       - db-network
 
+  postgres15:
+    image: postgres:15
+    container_name: postgres-15
+    profiles: ["postgres15"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - postgres_15_data:/var/lib/postgresql/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.postgres-router.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.postgres-router.entrypoints=postgres"
+    networks:
+      - db-network
+
 networks:
   db-network:
     driver: bridge
@@ -266,3 +283,4 @@ volumes:
   percona_8_0_data:
   postgres_17_data:
   postgres_16_data:
+  postgres_15_data:
