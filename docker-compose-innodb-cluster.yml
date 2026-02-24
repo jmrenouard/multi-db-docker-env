@@ -1,0 +1,91 @@
+# 🌐 Private Network Definition
+networks:
+  backend_innodb:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.9.0.0/24
+
+services:
+  # 🟢 MySQL Node 1 (Primary)
+  mysql_node1:
+    image: mysql:8.0
+    hostname: mysql_node1
+    container_name: mysql_node1
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass}
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "4411:3306"
+    volumes:
+      - innodb_data1:/var/lib/mysql
+      - ./conf/innodb-cluster/node1.cnf:/etc/mysql/conf.d/group_replication.cnf:ro
+    networks:
+      backend_innodb:
+        ipv4_address: 10.9.0.11
+
+  # 🟡 MySQL Node 2 (Secondary)
+  mysql_node2:
+    image: mysql:8.0
+    hostname: mysql_node2
+    container_name: mysql_node2
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass}
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "4412:3306"
+    volumes:
+      - innodb_data2:/var/lib/mysql
+      - ./conf/innodb-cluster/node2.cnf:/etc/mysql/conf.d/group_replication.cnf:ro
+    depends_on:
+      - mysql_node1
+    networks:
+      backend_innodb:
+        ipv4_address: 10.9.0.12
+
+  # 🟡 MySQL Node 3 (Secondary)
+  mysql_node3:
+    image: mysql:8.0
+    hostname: mysql_node3
+    container_name: mysql_node3
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass}
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "4413:3306"
+    volumes:
+      - innodb_data3:/var/lib/mysql
+      - ./conf/innodb-cluster/node3.cnf:/etc/mysql/conf.d/group_replication.cnf:ro
+    depends_on:
+      - mysql_node1
+    networks:
+      backend_innodb:
+        ipv4_address: 10.9.0.13
+
+  # 🔵 HAProxy (Connection Routing)
+  haproxy_innodb:
+    image: haproxy:lts
+    hostname: haproxy_innodb
+    container_name: haproxy_innodb
+    restart: unless-stopped
+    ports:
+      - "6446:6446"
+      - "6447:6447"
+      - "8407:8407"
+    volumes:
+      - ./conf/haproxy-innodb.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - mysql_node1
+      - mysql_node2
+      - mysql_node3
+    networks:
+      backend_innodb:
+        ipv4_address: 10.9.0.20
+
+volumes:
+  innodb_data1:
+  innodb_data2:
+  innodb_data3:

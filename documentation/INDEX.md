@@ -20,6 +20,7 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
   - [🏛️ Governance \& Orchestration](#️-governance--orchestration)
   - [🛠️ Management \& Automation](#️-management--automation)
   - [🔄 Replication \& Galera](#-replication--galera)
+  - [🐘 PostgreSQL \& HA Architectures](#-postgresql--ha-architectures)
   - [🐬 Standalone Matrix](#-standalone-matrix)
   - [🧪 Testing \& Performance](#-testing--performance)
   - [🔗 MariaDB Replication Overview](#-mariadb-replication-overview)
@@ -55,12 +56,31 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 | **[Replication Setup](replication_setup.md)** | How to configure and automate Master/Slave replication. |
 | **[SSL & Security](replication_ssl.md)** | Configuring SSL for encrypted connections and secure replication. |
 
+## 🐘 PostgreSQL & HA Architectures
+
+| Document | Description |
+| --- | --- |
+| **[PostgreSQL Support](postgresql_support.md)** | Complete guide: standalone (15/16/17), Patroni HA, and PgPool-II clusters. |
+| **[Patroni Cluster](patroni_cluster.md)** | 3-node PostgreSQL 17 HA cluster with ETCD and automatic failover. |
+| **[PgPool-II Cluster](pgpool_cluster.md)** | Connection pooling + load balancing with streaming replication. |
+
+## 🐬 MySQL InnoDB Cluster
+
+| Document | Description |
+| --- | --- |
+| **[InnoDB Cluster](innodb_cluster.md)** | MySQL 8.0 Group Replication with HAProxy for transparent routing. |
+
+## 🍃 MongoDB ReplicaSet
+
+| Document | Description |
+| --- | --- |
+| **[MongoDB ReplicaSet](mongo_replicaset.md)** | MongoDB 7.0 ReplicaSet with HAProxy for connection routing. |
+
 ## 🐬 Standalone Matrix
 
 | Document | Description |
 | --- | --- |
 | **[Standalone Engines](tests.md#-00-standalone-matrix-t2-tier)** | Overview of supported standalone engines (MySQL, MariaDB, Percona, PostgreSQL). |
-| **[PostgreSQL Support](postgresql_support.md)** | Detailed guide for PostgreSQL 16 and 17 integration. |
 
 ## 🧪 Testing & Performance
 

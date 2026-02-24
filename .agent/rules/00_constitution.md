@@ -13,6 +13,7 @@ This document constitutes the unique and absolute source of truth for the projec
 
 ### 1. Fundamental Principles ($$SYSTEM_CRITICAL$$)
 
+- **Primary Goal**: Rapidly setup different types of databases to demonstrate proofs of concept (PoC) for database architectures and configure viable solutions for production environments.
 - **Modularity**: The environment must remain modular, allowing on-demand DB version switching.
 - **Orchestration**: `Makefile` is the EXCLUSIVE entry point for all operations.
 - **Transparency**: All routing must pass through the Traefik reverse proxy for single-port access (`3306`).

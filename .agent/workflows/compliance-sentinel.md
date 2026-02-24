@@ -8,36 +8,36 @@ category: governance
 
 This workflow acts as a static analysis guardrail to ensure "Constitution" compliance.
 
-## 1. Core Check: Single File Architecture
+## 1. Core Check: Makefile Architecture
 
-Ensure no additional Perl modules (.pm) have been added to the root or lib dirs intended for distribution.
+Ensure the `Makefile` remains the exclusive entry point and exists in the root directory.
 
 ```bash
-if [ $(find . -maxdepth 2 -name "*.pm" | wc -l) -gt 0 ]; then
-  echo "FAIL: No .pm files allowed. Architecture must remain Single File."
+if [ ! -f "Makefile" ]; then
+  echo "FAIL: Makefile is missing. Architecture must rely on a Makefile."
   exit 1
 fi
 ```
 
-## 2. Core Check: Zero Dependency (Standard Core Only)
+## 2. Core Check: Bash Robustness
 
-Scan for non-core CPAN modules.
+Verify that shell scripts use `set -euo pipefail`.
 
 ```bash
-# Allow-list (examples of standard modules)
-# strict, warnings, Getopt::Long, File::Basename, Data::Dumper, POSIX, etc.
-# Grep for 'use' and manually review or verify against `corelist`.
-grep "^use " mysqltuner.pl | sort | uniq
+# Check if scripts in the project use strict bash settings
+grep -rL "^set -euo pipefail" scripts/ tests/ build/ | grep "\.sh$" || true
+echo "Review the above scripts to ensure they use set -euo pipefail"
 ```
 
-## 3. Core Check: Syscall Protection
+## 3. Core Check: Docker Compose Presence
 
-Verify that system calls are safe.
+Ensure `docker-compose.yml` or `docker-compose.yaml` exists for orchestration.
 
 ```bash
-# Look for potential unsafe system calls (qx, ``, system)
-grep -nE "qx/|`|system\(" mysqltuner.pl
-# Manual Review: Ensure each is wrapped or checked.
+if [ ! -f "docker-compose.yml" ] && [ ! -f "docker-compose.yaml" ]; then
+  echo "FAIL: docker-compose configuration is missing."
+  exit 1
+fi
 ```
 
 ## 4. Changelog Compliance

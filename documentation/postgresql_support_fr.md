@@ -1,61 +1,128 @@
 # Support PostgreSQL 🐘
 
-Ce document décrit l'intégration de PostgreSQL dans l'environnement multi-db-docker-env.
+Ce document décrit l'intégration de PostgreSQL dans l'environnement multi-db-docker-env, incluant les instances standalone et les architectures haute disponibilité.
 
 ## Versions Supportées
 
 - **PostgreSQL 17** (Dernière version stable)
 - **PostgreSQL 16**
+- **PostgreSQL 15**
 
-## Démarrage Rapide
+## Vue d'Ensemble des Architectures
 
-Pour démarrer une instance PostgreSQL, utilisez les commandes Makefile suivantes :
-
-```bash
-# Démarrer PostgreSQL 17
-make postgres17
-
-# Démarrer PostgreSQL 16
-make postgres16
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   Architectures PostgreSQL                      │
+├──────────────────┬──────────────────────┬───────────────────────┤
+│   Standalone     │  Patroni + ETCD      │  PgPool-II + HAProxy  │
+│   (Noeud Unique) │  (Cluster HA)        │  (Pool + LB)          │
+├──────────────────┼──────────────────────┼───────────────────────┤
+│ postgres15       │ 3 noeuds ETCD        │ 3 noeuds PostgreSQL   │
+│ postgres16       │ 3 noeuds PostgreSQL  │ PgPool-II 4.4         │
+│ postgres17       │ HAProxy (RW/RO)      │ HAProxy (RW/RO)       │
+├──────────────────┼──────────────────────┼───────────────────────┤
+│ make postgres17  │ make patroni-up      │ make pgpool-up         │
+│ make test-all    │ make test-patroni    │ make test-pgpool       │
+└──────────────────┴──────────────────────┴───────────────────────┘
 ```
 
-## Accès et Connectivité
+---
 
-### Routage Traefik
+## 1. Instances Standalone
 
-Tout comme MySQL/MariaDB, PostgreSQL est accessible via le proxy inverse Traefik. Cependant, il utilise un port différent :
+### Démarrage Rapide
 
-- **Hôte** : `localhost`
-- **Port** : `5432`
-- **Utilisateur** : `postgres`
-- **Mot de passe** : Défini par `DB_ROOT_PASSWORD` dans votre fichier `.env`.
+```bash
+make postgres17    # PostgreSQL 17
+make postgres16    # PostgreSQL 16
+make postgres15    # PostgreSQL 15
+```
 
-### Commandes Makefile Dédiées
+### Détails de Connexion
+
+| Paramètre | Valeur |
+| :--- | :--- |
+| Hôte | `127.0.0.1` |
+| Port (Traefik) | `5432` |
+| Utilisateur | `postgres` |
+| Mot de passe | Défini par `DB_ROOT_PASSWORD` dans `.env` |
+
+### Commandes Makefile
 
 | Commande | Description |
 | :--- | :--- |
-| `make pgpass` | Génère automatiquement un fichier `~/.pgpass` local avec les informations d'identification appropriées pour permettre des connexions sans mot de passe depuis l'hôte. |
-| `make pgclient` | Ouvre une session `psql` interactive à l'intérieur du conteneur PostgreSQL actif. |
+| `make pgpass` | Génère `~/.pgpass` pour les connexions sans mot de passe. |
+| `make pgclient` | Ouvre une session `psql` interactive. |
+| `make status` | Vérifie l'état des conteneurs. |
 
-## Vérification
+---
 
-Vous pouvez vérifier la connectivité via le proxy en utilisant `psql` (si installé sur votre hôte) :
+## 2. Cluster Patroni (RHEL 8)
+
+Cluster PostgreSQL 17 haute disponibilité avec Patroni et ETCD (failover automatique).
+
+Voir [patroni_cluster.md](patroni_cluster.md) pour les détails complets.
+
+### Architecture
+
+- **ETCD** : 3 noeuds pour le consensus distribué.
+- **PostgreSQL** : 3 noeuds gérés par Patroni.
+- **HAProxy** : RW (port `5000`) / RO (port `5001`) / Stats (port `7000`).
+
+### Démarrage
 
 ```bash
-psql -h localhost -U postgres -p 5432
+make patroni-up        # Démarrer le cluster
+make patroni-status    # Vérifier le statut
+make test-patroni      # Exécuter les tests
+make patroni-down      # Arrêter le cluster
 ```
 
-Ou en utilisant la cible de test globale :
+---
+
+## 3. Cluster PgPool-II
+
+Pooling de connexions et répartition de charge avec PgPool-II et réplication streaming.
+
+Voir [pgpool_cluster.md](pgpool_cluster.md) pour les détails complets.
+
+### Architecture
+
+- **PostgreSQL** : 3 noeuds (1 primaire + 2 standbys) avec réplication streaming.
+- **PgPool-II 4.4** : Pooling de connexions, load balancing, séparation lecture/écriture.
+- **HAProxy** : RW (port `5100`) / RO (port `5101`) / Stats (port `8406`).
+
+### Démarrage
 
 ```bash
-make test-all
+make pgpool-up         # Démarrer le cluster (configure la réplication auto)
+make pgpool-status     # Afficher le statut PgPool
+make test-pgpool       # Exécuter les tests (20 tests)
+make pgpool-down       # Arrêter le cluster
 ```
+
+---
+
+## Matrice de Comparaison
+
+| Fonctionnalité | Standalone | Patroni | PgPool-II |
+| :--- | :--- | :--- | :--- |
+| **Noeuds** | 1 | 3 PG + 3 ETCD | 3 PG |
+| **Failover Auto** | ❌ | ✅ | ❌ |
+| **Pool Connexions** | ❌ | ❌ | ✅ |
+| **Load Balancing** | ❌ | ✅ (HAProxy) | ✅ (PgPool + HAProxy) |
+| **Réplication** | ❌ | Synchrone | Async Streaming |
+| **TLS/SSL** | ❌ | ✅ Mutual TLS | ❌ (trust en lab) |
+| **Cas d'usage** | Dev/Test | Production HA | Pool + Scale Lecture |
+
+---
 
 ## Persistence des Données
 
-Les données PostgreSQL sont stockées dans des volumes Docker nommés pour assurer la persistence entre les redémarrages :
+Les données PostgreSQL sont stockées dans des volumes Docker nommés :
 
-- `postgres_17_data`
-- `postgres_16_data`
+- Standalone : `postgres_17_data`, `postgres_16_data`, `postgres_15_data`
+- PgPool-II : `pg_pgpool_data1`, `pg_pgpool_data2`, `pg_pgpool_data3`
+- Patroni : `node1_data`, `node2_data`, `node3_data`
 
-Pour réinitialiser complètement les données, vous devez supprimer ces volumes (`docker volume rm ...`).
+Pour réinitialiser, supprimez ces volumes (`docker volume rm ...`) ou utilisez `make pgpool-down` / `make patroni-down` qui suppriment les volumes automatiquement.

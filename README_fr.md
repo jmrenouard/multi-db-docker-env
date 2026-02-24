@@ -124,6 +124,10 @@ Le projet utilise des sous-réseaux privés standardisés pour l'isolation des c
 
 * **Cluster Galera** : `10.6.0.0/24`
 * **Cluster de Réplication** : `10.5.0.0/24`
+* **Cluster PgPool-II** : `10.8.0.0/24`
+* **InnoDB Cluster** : `10.9.0.0/24`
+* **MongoDB ReplicaSet** : `10.10.0.0/24`
+* **Cluster Patroni** : Docker bridge (auto-assigné)
 
 Ces plages sont cohérentes entre les configurations `docker-compose` et les scripts d'orchestration internes.
 
@@ -147,6 +151,52 @@ Architectures MariaDB avancées avec clustering synchrone ou réplication maîtr
 
 > [!NOTE]
 > Les clusters MariaDB utilisent une image personnalisée `mariadb_ssh` et ont des ports dédiés (ex: 3511-3513 pour Galera).
+
+### Clusters PostgreSQL HA (Patroni & PgPool-II)
+
+Architectures PostgreSQL avancées avec failover automatique ou pooling de connexions.
+
+| Commande             | Icon | Description                                            |
+| :------------------- | :--- | :----------------------------------------------------- |
+| `make patroni-up`    | 🐘   | Démarre le cluster Patroni HA (3 PG + 3 ETCD + HAProxy) |
+| `make patroni-status`| 📊   | Affiche le statut du cluster Patroni                    |
+| `make test-patroni`  | 🧪   | Exécute les tests fonctionnels Patroni                  |
+| `make patroni-down`  | 🛑   | Arrête le cluster Patroni                               |
+| `make pgpool-up`     | 🐘   | Démarre le cluster PgPool-II (3 PG + PgPool + HAProxy)  |
+| `make pgpool-status` | 📊   | Affiche le statut des nœuds PgPool-II                   |
+| `make test-pgpool`   | 🧪   | Exécute les tests PgPool-II (20 tests)                  |
+| `make pgpool-down`   | 🛑   | Arrête le cluster PgPool-II                             |
+
+> [!NOTE]
+> Patroni utilise les ports 5000 (RW) / 5001 (RO) / 7000 (Stats). PgPool-II utilise les ports 5100 (RW) / 5101 (RO) / 8406 (Stats).
+
+### MySQL InnoDB Cluster (Group Replication & HAProxy)
+
+Architecture MySQL avancée avec Group Replication et routage transparent.
+
+| Commande             | Icon | Description                                            |
+| :------------------- | :--- | :----------------------------------------------------- |
+| `make innodb-up`     | 🐬   | Démarre InnoDB Cluster (3 MySQL + HAProxy)              |
+| `make innodb-status` | 📊   | Affiche le statut Group Replication                    |
+| `make test-innodb`   | 🧪   | Exécute les tests InnoDB Cluster                        |
+| `make innodb-down`   | 🛑   | Arrête InnoDB Cluster                                   |
+
+> [!NOTE]
+> InnoDB Cluster utilise les ports 6446 (RW) / 6447 (RO) via HAProxy. Stats : 8407. Accès direct : 4411-4413.
+
+### MongoDB ReplicaSet
+
+Architecture MongoDB avec ReplicaSet et routage HAProxy.
+
+| Commande             | Icon | Description                                            |
+| :------------------- | :--- | :----------------------------------------------------- |
+| `make mongo-up`      | 🍃   | Démarre MongoDB ReplicaSet (3 nœuds + HAProxy)         |
+| `make mongo-status`  | 📊   | Affiche le statut du ReplicaSet                        |
+| `make test-mongo`    | 🧪   | Exécute les tests MongoDB ReplicaSet                   |
+| `make mongo-down`    | 🛑   | Arrête MongoDB ReplicaSet                              |
+
+> [!NOTE]
+> MongoDB ReplicaSet utilise le port 27100 (RW) via HAProxy. Stats : 8408. Accès direct : 27411-27413.
 
 **Exemple : Changer de Base de Données**
 
@@ -200,6 +250,8 @@ graph TD
 ├── 🐳 docker-compose.yml  # Définit les services mono-instance (Traefik, DBs)
 ├── 🐳 docker-compose-galera.yml # Définition du Cluster MariaDB Galera
 ├── 🐳 docker-compose-repli.yml  # Définition du Cluster MariaDB Réplication
+├── 🐳 docker-compose-patroni.yml # Cluster PostgreSQL HA Patroni
+├── 🐳 docker-compose-pgpool.yml  # Cluster PostgreSQL PgPool-II
 ├── 🛠️ Makefile             # Gestion unifiée des instances et clusters
 ├── 📂 documentation/      # Guides détaillés pour les clusters et scripts
 ├── 📂 reports/            # Rapports de performance et de tests
@@ -216,7 +268,9 @@ Pour des informations détaillées, veuillez vous référer aux guides suivants 
 * **[Architecture](documentation/architecture.md)** : Schéma réseau et topologie.
 * **[Référence Makefile](documentation/makefile.md)** : Liste exhaustive des commandes.
 * **[Scripts Utilitaires](documentation/scripts.md)** : Détails sur les scripts de backup, restauration et setup.
-* **[Support PostgreSQL](documentation/postgresql_support.md)** : Guide détaillé de l'utilisation de PostgreSQL.
+* **[Support PostgreSQL](documentation/postgresql_support_fr.md)** : Standalone, Patroni HA, et clusters PgPool-II.
+* **[Cluster Patroni](documentation/patroni_cluster.md)** : PostgreSQL 17 HA avec ETCD et failover automatique.
+* **[Cluster PgPool-II](documentation/pgpool_cluster.md)** : Pooling de connexions + load balancing.
 * **[Scénarios de Test](documentation/tests.md)** : Cas de test spécifiques et rapports.
 * **[Bootstrap Galera](documentation/galera_bootstrap.md)** : Étapes détaillées pour Galera.
 * **[Setup Réplication](documentation/replication_setup.md)** : Guide de configuration Maître/Esclave.

@@ -16,10 +16,11 @@ Bienvenue dans la documentation de l'environnement Docker MariaDB. Cet index fou
 
 1. [Documentation Centrale](#-documentation-centrale)
 2. [Gouvernance & Orchestration](#-gouvernance--orchestration)
-3. [Matrice Standalone](#-matrice-standalone)
-4. [Gestion & Automatisation](#-gestion--automatisation)
-5. [Réplication & Galera](#-réplication--galera)
-6. [Tests & Performance](#-tests--performance)
+3. [PostgreSQL & Architectures HA](#-postgresql--architectures-ha)
+4. [Matrice Standalone](#-matrice-standalone)
+5. [Gestion & Automatisation](#-gestion--automatisation)
+6. [Réplication & Galera](#-réplication--galera)
+7. [Tests & Performance](#-tests--performance)
 
 ---
 
@@ -37,12 +38,31 @@ Bienvenue dans la documentation de l'environnement Docker MariaDB. Cet index fou
 | **[Constitution](../.agent/rules/00_constitution.md)** | Source unique de vérité pour les principes du projet et l'autorité opérationnelle. |
 | **[Super Manager](../.agent/workflows/go-agent.md)** | Protocole d'orchestration pour coordonner les compétences, règles et workflows. |
 
+## 🐘 PostgreSQL & Architectures HA
+
+| Document | Description |
+| --- | --- |
+| **[Support PostgreSQL](postgresql_support_fr.md)** | Guide complet : standalone (15/16/17), Patroni HA, et clusters PgPool-II. |
+| **[Cluster Patroni](patroni_cluster.md)** | Cluster PostgreSQL 17 HA à 3 noeuds avec ETCD et failover automatique. |
+| **[Cluster PgPool-II](pgpool_cluster.md)** | Pooling de connexions + load balancing avec réplication streaming. |
+
+## 🐬 MySQL InnoDB Cluster
+
+| Document | Description |
+| --- | --- |
+| **[InnoDB Cluster](innodb_cluster_fr.md)** | MySQL 8.0 Group Replication avec HAProxy pour le routage transparent. |
+
+## 🍃 MongoDB ReplicaSet
+
+| Document | Description |
+| --- | --- |
+| **[MongoDB ReplicaSet](mongo_replicaset_fr.md)** | MongoDB 7.0 ReplicaSet avec HAProxy pour le routage des connexions. |
+
 ## 🐬 Matrice Standalone
 
 | Document | Description |
 | --- | --- |
 | **[Environnements Standalone](tests_fr.md#-00-matrice-standalone-niveau-t2)** | Aperçu des moteurs standalone supportés (MySQL, MariaDB, Percona, PostgreSQL). |
-| **[Support PostgreSQL](postgresql_support_fr.md)** | Guide détaillé pour l'intégration de PostgreSQL 16 et 17. |
 
 ## 🛠️ Gestion & Automatisation
 

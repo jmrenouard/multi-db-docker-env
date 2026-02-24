@@ -1,0 +1,81 @@
+# MongoDB ReplicaSet Network
+networks:
+  backend_mongo:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
+
+services:
+  # 🟢 MongoDB Node 1 (Primary candidate)
+  mongo1:
+    image: mongo:7.0
+    hostname: mongo1
+    container_name: mongo1
+    restart: unless-stopped
+    command: mongod --replSet rs0 --bind_ip_all --port 27017
+    ports:
+      - "27411:27017"
+    volumes:
+      - mongo_data1:/data/db
+    networks:
+      backend_mongo:
+        ipv4_address: 10.10.0.11
+
+  # 🟡 MongoDB Node 2 (Secondary)
+  mongo2:
+    image: mongo:7.0
+    hostname: mongo2
+    container_name: mongo2
+    restart: unless-stopped
+    command: mongod --replSet rs0 --bind_ip_all --port 27017
+    ports:
+      - "27412:27017"
+    volumes:
+      - mongo_data2:/data/db
+    depends_on:
+      - mongo1
+    networks:
+      backend_mongo:
+        ipv4_address: 10.10.0.12
+
+  # 🟡 MongoDB Node 3 (Secondary)
+  mongo3:
+    image: mongo:7.0
+    hostname: mongo3
+    container_name: mongo3
+    restart: unless-stopped
+    command: mongod --replSet rs0 --bind_ip_all --port 27017
+    ports:
+      - "27413:27017"
+    volumes:
+      - mongo_data3:/data/db
+    depends_on:
+      - mongo1
+    networks:
+      backend_mongo:
+        ipv4_address: 10.10.0.13
+
+  # 🔵 HAProxy (Connection Routing)
+  haproxy_mongo:
+    image: haproxy:lts
+    hostname: haproxy_mongo
+    container_name: haproxy_mongo
+    restart: unless-stopped
+    ports:
+      - "27100:27100"
+      - "8408:8408"
+    volumes:
+      - ./conf/haproxy-mongo.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    networks:
+      backend_mongo:
+        ipv4_address: 10.10.0.20
+
+volumes:
+  mongo_data1:
+  mongo_data2:
+  mongo_data3:

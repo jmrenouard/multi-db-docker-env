@@ -41,10 +41,106 @@ patroni-ps:
 test-patroni: ## Run functional tests on the Patroni cluster
 	@bash ./tests/test_patroni.sh
 
+# --- PGPOOL-II CLUSTER ---
+PGPOOL_COMPOSE = docker-compose-pgpool.yml
+
+pgpool-up: ## Start PostgreSQL + PgPool-II + HAProxy cluster
+	@echo "🚀 Starting PgPool-II cluster..."
+	docker compose -f $(PGPOOL_COMPOSE) up -d
+	@echo "⏳ Waiting for primary to initialize (20s)..."
+	@sleep 20
+	@echo "⛓️  Setting up streaming replication..."
+	@bash ./scripts/pgpool/setup_replication.sh
+	@echo "⏳ Waiting for PgPool-II to detect backends (10s)..."
+	@sleep 10
+	@echo "✅ PgPool-II cluster is ready."
+
+pgpool-down: ## Stop PgPool-II cluster and remove volumes
+	@echo "🛑 Stopping PgPool-II cluster..."
+	docker compose -f $(PGPOOL_COMPOSE) down -v
+
+pgpool-status: ## Show PgPool-II node status
+	@echo "📊 PgPool-II Cluster Status..."
+	@PGPASSWORD=$${DB_ROOT_PASSWORD:-postgres} psql -h 127.0.0.1 -p 9999 -U postgres -c "SHOW pool_nodes;"
+
+pgpool-logs: ## Follow PgPool-II cluster logs
+	docker compose -f $(PGPOOL_COMPOSE) logs -f
+
+pgpool-ps: ## Show PgPool-II running containers
+	docker compose -f $(PGPOOL_COMPOSE) ps
+
+test-pgpool: ## Run functional tests on the PgPool-II cluster
+	@bash ./tests/test_pgpool.sh
+
+# --- MYSQL INNODB CLUSTER ---
+INNODB_COMPOSE = docker-compose-innodb-cluster.yml
+
+innodb-up: ## Start MySQL InnoDB Cluster (3 nodes + MySQL Router)
+	@echo "🚀 Starting MySQL InnoDB Cluster..."
+	docker compose -f $(INNODB_COMPOSE) up -d
+	@echo "⏳ Waiting for MySQL nodes to initialize (30s)..."
+	@sleep 30
+	@echo "⛓️  Setting up Group Replication..."
+	@bash ./conf/innodb-cluster/setup_cluster.sh
+	@echo "⏳ Waiting for MySQL Router to bootstrap (15s)..."
+	@sleep 15
+	@echo "✅ MySQL InnoDB Cluster is ready."
+
+innodb-down: ## Stop InnoDB Cluster and remove volumes
+	@echo "🛑 Stopping MySQL InnoDB Cluster..."
+	docker compose -f $(INNODB_COMPOSE) down -v
+
+innodb-status: ## Show InnoDB Cluster Group Replication status
+	@echo "📊 MySQL InnoDB Cluster Status..."
+	@docker exec mysql_node1 mysql -uroot -p"$${DB_ROOT_PASSWORD:-rootpass}" -e "SELECT MEMBER_HOST, MEMBER_STATE, MEMBER_ROLE FROM performance_schema.replication_group_members;" 2>/dev/null
+
+innodb-logs: ## Follow InnoDB Cluster logs
+	docker compose -f $(INNODB_COMPOSE) logs -f
+
+innodb-ps: ## Show InnoDB Cluster running containers
+	docker compose -f $(INNODB_COMPOSE) ps
+
+test-innodb: ## Run functional tests on the InnoDB Cluster
+	@bash ./tests/test_innodb_cluster.sh
+
+# --- MONGODB REPLICASET ---
+MONGO_COMPOSE = docker-compose-mongo-rs.yml
+
+mongo-up: ## Start MongoDB ReplicaSet (3 nodes + HAProxy)
+	@echo "🚀 Starting MongoDB ReplicaSet..."
+	docker compose -f $(MONGO_COMPOSE) up -d
+	@echo "⏳ Waiting for MongoDB nodes to initialize (15s)..."
+	@sleep 15
+	@echo "⛓️  Setting up ReplicaSet..."
+	@bash ./conf/mongo-rs/setup_rs.sh
+	@echo "⏳ Waiting for HAProxy to detect backends (5s)..."
+	@sleep 5
+	@echo "✅ MongoDB ReplicaSet is ready."
+
+mongo-down: ## Stop MongoDB ReplicaSet and remove volumes
+	@echo "🛑 Stopping MongoDB ReplicaSet..."
+	docker compose -f $(MONGO_COMPOSE) down -v
+
+mongo-status: ## Show MongoDB ReplicaSet status
+	@echo "📊 MongoDB ReplicaSet Status..."
+	@docker exec mongo1 mongosh --quiet --eval "var s=rs.status(); s.members.forEach(function(m){print(m.name+' | '+m.stateStr+' | health='+m.health);});" 2>/dev/null
+
+mongo-logs: ## Follow MongoDB ReplicaSet logs
+	docker compose -f $(MONGO_COMPOSE) logs -f
+
+mongo-ps: ## Show MongoDB ReplicaSet running containers
+	docker compose -f $(MONGO_COMPOSE) ps
+
+test-mongo: ## Run functional tests on the MongoDB ReplicaSet
+	@bash ./tests/test_mongo_rs.sh
+
 
 # --- Main Targets ---
 .PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 postgres15 stop status logs \
         build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera test-patroni \
+        pgpool-up pgpool-down pgpool-status pgpool-logs pgpool-ps test-pgpool \
+        innodb-up innodb-down innodb-status innodb-logs innodb-ps test-innodb \
+        mongo-up mongo-down mongo-status mongo-logs mongo-ps test-mongo \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
@@ -113,6 +209,18 @@ help:
 	@printf "    \033[1mpostgres17\033[0m    - Starts PostgreSQL 17\n"
 	@printf "    \033[1mpostgres16\033[0m    - Starts PostgreSQL 16\n"
 	@printf "    \033[1mpostgres15\033[0m    - Starts PostgreSQL 15\n"
+	@printf "\n"
+	@printf "  \033[1;32mPgPool-II Cluster:\033[0m\n"
+	@printf "    \033[1mpgpool-up\033[0m     - 🚀 Starts PgPool-II + PostgreSQL 17 cluster\n"
+	@printf "    \033[1mpgpool-down\033[0m   - 🛑 Stops PgPool-II cluster\n"
+	@printf "    \033[1mpgpool-status\033[0m - 📊 Shows PgPool-II node status\n"
+	@printf "    \033[1mtest-pgpool\033[0m   - 🧪 Runs PgPool-II functional tests\n"
+	@printf "\n"
+	@printf "  \033[1;32mMySQL InnoDB Cluster:\033[0m\n"
+	@printf "    \033[1minnodb-up\033[0m     - 🚀 Starts MySQL InnoDB Cluster (3 nodes + Router)\n"
+	@printf "    \033[1minnodb-down\033[0m   - 🛑 Stops InnoDB Cluster\n"
+	@printf "    \033[1minnodb-status\033[0m - 📊 Shows Group Replication status\n"
+	@printf "    \033[1mtest-innodb\033[0m   - 🧪 Runs InnoDB Cluster functional tests\n"
 	@printf "\n"
 
 # 🚀 Starts the default database service
@@ -590,10 +698,10 @@ full-galera: clean-galera clean-ssl clean-reports bootstrap-galera down-galera u
 
 ## Utility
 clean-galera: down-galera ## Stop Galera and remove all data/backups (CAUTION!)
-	rm -rf gdatadir_* gbackups_*
+	@docker run --rm -v "$(CURDIR):/workspace" alpine sh -c 'rm -rf /workspace/gdatadir_* /workspace/gbackups_*' 2>/dev/null || rm -rf gdatadir_* gbackups_*
 
 clean-repli: down-repli ## Stop Replication and remove all data/backups (CAUTION!)
-	rm -rf datadir_* backups_*
+	@docker run --rm -v "$(CURDIR):/workspace" alpine sh -c 'rm -rf /workspace/datadir_* /workspace/backups_*' 2>/dev/null || rm -rf datadir_* backups_*
 
 gen-profiles: ## Generate shell profile files with aliases
 	bash ./scripts/gen_profiles.sh

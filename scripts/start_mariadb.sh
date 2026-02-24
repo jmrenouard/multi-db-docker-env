@@ -50,9 +50,19 @@ if [ ! -f "$DATA_DIR/.initialized" ]; then
             esac
         done
         
+        # Set root password from environment variable
+        if [ -n "${MARIADB_ROOT_PASSWORD:-}" ]; then
+            echo ">> 🔐 Setting root password from environment..."
+            mariadb --socket="$SOCKET" -u root -e "
+                ALTER USER 'root'@'localhost' IDENTIFIED BY '${MARIADB_ROOT_PASSWORD}';
+                ALTER USER 'root'@'%' IDENTIFIED BY '${MARIADB_ROOT_PASSWORD}';
+                FLUSH PRIVILEGES;
+            "
+        fi
+        
         # Shutdown temporary MariaDB
         echo ">> 🛑 Stopping temporary MariaDB..."
-        mariadb-admin --socket="$SOCKET" -u root shutdown || kill -s TERM "$pid" || true
+        mariadb-admin --socket="$SOCKET" -u root ${MARIADB_ROOT_PASSWORD:+-p"$MARIADB_ROOT_PASSWORD"} shutdown || kill -s TERM "$pid" || true
         wait "$pid" || true
     fi
     

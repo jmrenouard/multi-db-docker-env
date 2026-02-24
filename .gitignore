@@ -27,3 +27,4 @@ __pycache__/
 .coverage
 htmlcov/
 *.code-workspace
+certs_patroni/**

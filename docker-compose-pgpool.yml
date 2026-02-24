@@ -1,0 +1,135 @@
+# 🌐 Private Network Definition
+networks:
+  backend_pgpool:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.8.0.0/24
+
+# 🐘 PostgreSQL Node Template
+x-pg-template: &pg-template
+  image: postgres:17
+  restart: unless-stopped
+  environment:
+    - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-postgres}
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=postgres
+  networks:
+    backend_pgpool:
+
+
+services:
+  # 🟢 PostgreSQL Node 1 (Primary)
+  pg_node1:
+    <<: *pg-template
+    hostname: pg_node1
+    container_name: pg_node1
+    ports:
+      - "5611:5432"
+    volumes:
+      - pg_pgpool_data1:/var/lib/postgresql/data
+      - ./conf/pgpool/pg_primary.conf:/docker-entrypoint-initdb.d/00-primary.sh:ro
+    networks:
+      backend_pgpool:
+        ipv4_address: 10.8.0.11
+
+  # 🟢 PostgreSQL Node 2 (Standby)
+  pg_node2:
+    <<: *pg-template
+    hostname: pg_node2
+    container_name: pg_node2
+    ports:
+      - "5612:5432"
+    volumes:
+      - pg_pgpool_data2:/var/lib/postgresql/data
+    depends_on:
+      - pg_node1
+    networks:
+      backend_pgpool:
+        ipv4_address: 10.8.0.12
+
+  # 🟢 PostgreSQL Node 3 (Standby)
+  pg_node3:
+    <<: *pg-template
+    hostname: pg_node3
+    container_name: pg_node3
+    ports:
+      - "5613:5432"
+    volumes:
+      - pg_pgpool_data3:/var/lib/postgresql/data
+    depends_on:
+      - pg_node1
+    networks:
+      backend_pgpool:
+        ipv4_address: 10.8.0.13
+
+  # 🔵 PgPool-II (Connection Pooling + Load Balancing)
+  pgpool:
+    image: pgpool/pgpool:latest
+    hostname: pgpool
+    container_name: pgpool
+    restart: unless-stopped
+    environment:
+      - PGPOOL_PARAMS_BACKEND_HOSTNAME0=pg_node1
+      - PGPOOL_PARAMS_BACKEND_PORT0=5432
+      - PGPOOL_PARAMS_BACKEND_WEIGHT0=1
+      - PGPOOL_PARAMS_BACKEND_FLAG0=ALLOW_TO_FAILOVER
+      - PGPOOL_PARAMS_BACKEND_HOSTNAME1=pg_node2
+      - PGPOOL_PARAMS_BACKEND_PORT1=5432
+      - PGPOOL_PARAMS_BACKEND_WEIGHT1=1
+      - PGPOOL_PARAMS_BACKEND_FLAG1=ALLOW_TO_FAILOVER
+      - PGPOOL_PARAMS_BACKEND_HOSTNAME2=pg_node3
+      - PGPOOL_PARAMS_BACKEND_PORT2=5432
+      - PGPOOL_PARAMS_BACKEND_WEIGHT2=1
+      - PGPOOL_PARAMS_BACKEND_FLAG2=ALLOW_TO_FAILOVER
+      - PGPOOL_PARAMS_LISTEN_ADDRESSES=*
+      - PGPOOL_PARAMS_PORT=9999
+      - PGPOOL_PARAMS_SR_CHECK_USER=repli_user
+      - PGPOOL_PARAMS_SR_CHECK_PASSWORD=replipass
+      - PGPOOL_PARAMS_SR_CHECK_PERIOD=5
+      - PGPOOL_PARAMS_HEALTH_CHECK_USER=postgres
+      - PGPOOL_PARAMS_HEALTH_CHECK_PASSWORD=${DB_ROOT_PASSWORD:-postgres}
+      - PGPOOL_PARAMS_HEALTH_CHECK_PERIOD=10
+      - PGPOOL_PARAMS_HEALTH_CHECK_MAX_RETRIES=3
+      - PGPOOL_PARAMS_LOAD_BALANCE_MODE=on
+      - PGPOOL_PARAMS_BACKEND_CLUSTERING_MODE=streaming_replication
+      - PGPOOL_PARAMS_NUM_INIT_CHILDREN=32
+      - PGPOOL_PARAMS_MAX_POOL=4
+      - PGPOOL_PARAMS_CONNECTION_CACHE=on
+      - PGPOOL_PARAMS_FAILOVER_ON_BACKEND_ERROR=off
+      - PGPOOL_PARAMS_LOG_STATEMENT=on
+      - PGPOOL_PARAMS_LOG_PER_NODE_STATEMENT=on
+      - PGPOOL_PARAMS_ENABLE_POOL_HBA=off
+      - PGPOOL_PARAMS_POOL_PASSWD=
+      - PGPOOL_PARAMS_ALLOW_CLEAR_TEXT_FRONTEND_AUTH=on
+    ports:
+      - "9999:9999"
+    depends_on:
+      - pg_node1
+      - pg_node2
+      - pg_node3
+    networks:
+      backend_pgpool:
+        ipv4_address: 10.8.0.20
+
+  # 🔴 HAProxy (External Access)
+  haproxy_pgpool:
+    image: haproxy:latest
+    container_name: haproxy_pgpool
+    restart: unless-stopped
+    volumes:
+      - ./conf/haproxy-pgpool.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "5100:5100"
+      - "5101:5101"
+      - "8406:8404"
+    depends_on:
+      - pgpool
+    networks:
+      backend_pgpool:
+        ipv4_address: 10.8.0.100
+
+volumes:
+  pg_pgpool_data1:
+  pg_pgpool_data2:
+  pg_pgpool_data3:
