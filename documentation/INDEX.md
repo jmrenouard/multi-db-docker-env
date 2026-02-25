@@ -3,9 +3,11 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="50" height="50">
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="50" height="50">
-  <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/percona.svg" alt="Percona" width="50" height="50">
+  <img src="https://static.cdnlogo.com/logos/p/6/percona.svg" alt="Percona" width="50" height="50">
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="50" height="50">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefik/traefik-original.svg" alt="Traefik" width="50" height="50">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mongodb/mongodb-original.svg" alt="MongoDB" width="50" height="50">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefikproxy/traefikproxy-original.svg" alt="Traefik" width="50" height="50">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" width="50" height="50">
 </p>
 
 Welcome to the MariaDB Docker environment documentation. This index provides a structured overview of all available guides and technical references.
@@ -87,6 +89,7 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 | Document | Description |
 | --- | --- |
 | **[Test Cases](tests.md)** | Automated functional test descriptions, expected results, and reporting details. |
+| **[Supported Products](supported_products.md)** | Comprehensive matrix of all supported DB engines, versions, ports, and HA modes. |
 
 ---
 

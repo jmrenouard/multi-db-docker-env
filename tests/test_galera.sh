@@ -44,6 +44,10 @@ run_sql() {
     mariadb -h 127.0.0.1 -P $port -uroot -p$PASS -sN -e "$query" 2>/dev/null
 }
 
+# PASS/FAIL counters
+PASS=0
+FAIL=0
+
 # Data for HTML report
 CONN_STATS=""
 TEST_RESULTS=""
@@ -107,9 +111,11 @@ for i in 1 2 3; do
         [ -z "$ssl" ] || [ "$ssl" == "NULL" ] && ssl="DISABLED"
         gtid=$(run_sql $port "SELECT @@gtid_strict_mode;")
         echo "✅ Node $i at port $port is UP (Ready: $ready, Cluster Size: $size, State: $state, SSL: $ssl, GTID: $gtid)"
+        PASS=$((PASS + 1))
         write_report "| Node $i | $port | UP | $ready | $size | $state | $ssl |"
     else
         echo "❌ Node $i at port $port is DOWN"
+        FAIL=$((FAIL + 1))
         write_report "| Node $i | $port | DOWN | - | - | - | - |"
     fi
     CONN_STATS="$CONN_STATS{\"name\":\"Node $i\",\"port\":\"$port\",\"status\":\"$status\",\"ready\":\"$ready\",\"size\":\"$size\",\"state\":\"$state\",\"ssl\":\"$ssl\"},"
@@ -140,10 +146,12 @@ echo ">> Verifying on Node 2 (Port $NODE2_PORT)..."
 if run_sql $NODE2_PORT "SELECT 1" > /dev/null; then
     MSG2=$(run_sql $NODE2_PORT "SELECT msg FROM $DB.sync_test WHERE node_id=1;" | tr -d '\n\r' | sed 's/"/\\"/g')
     if [ "$MSG2" == "Data from Node 1" ]; then
+        PASS=$((PASS + 1))
         echo "✅ Node 2 received data correctly"
         write_report "| Synchronous Sync (Node 2) | Node 2 should have Node 1 data | PASS | Data received correctly: $MSG2 |"
         TEST_RESULTS="$TEST_RESULTS{\"test\":\"Sync Replication Node 2\",\"nature\":\"Synchronous Sync (Node 2)\",\"expected\":\"Node 2 should have Node 1 data\",\"status\":\"PASS\",\"details\":\"Data received: $MSG2\"},"
     else
+        FAIL=$((FAIL + 1))
         echo "❌ Node 2 data mismatch: '$MSG2'"
         write_report "| Synchronous Sync (Node 2) | Node 2 should have Node 1 data | FAIL | Data mismatch: $MSG2 |"
         TEST_RESULTS="$TEST_RESULTS{\"test\":\"Sync Replication Node 2\",\"nature\":\"Synchronous Sync (Node 2)\",\"expected\":\"Node 2 should have Node 1 data\",\"status\":\"FAIL\",\"details\":\"Data mismatch: $MSG2\"},"
@@ -158,10 +166,12 @@ echo ">> Verifying on Node 3 (Port $NODE3_PORT)..."
 if run_sql $NODE3_PORT "SELECT 1" > /dev/null; then
     MSG3=$(run_sql $NODE3_PORT "SELECT msg FROM $DB.sync_test WHERE node_id=1;" | tr -d '\n\r' | sed 's/"/\\"/g')
     if [ "$MSG3" == "Data from Node 1" ]; then
+        PASS=$((PASS + 1))
         echo "✅ Node 3 received data correctly"
         write_report "| Synchronous Sync (Node 3) | Node 3 should have Node 1 data | PASS | Data received correctly: $MSG3 |"
         TEST_RESULTS="$TEST_RESULTS{\"test\":\"Sync Replication Node 3\",\"nature\":\"Synchronous Sync (Node 3)\",\"expected\":\"Node 3 should have Node 1 data\",\"status\":\"PASS\",\"details\":\"Data received: $MSG3\"},"
     else
+        FAIL=$((FAIL + 1))
         echo "❌ Node 3 data mismatch: '$MSG3'"
         write_report "| Synchronous Sync (Node 3) | Node 3 should have Node 1 data | FAIL | Data mismatch: $MSG3 |"
         TEST_RESULTS="$TEST_RESULTS{\"test\":\"Sync Replication Node 3\",\"nature\":\"Synchronous Sync (Node 3)\",\"expected\":\"Node 3 should have Node 1 data\",\"status\":\"FAIL\",\"details\":\"Data mismatch: $MSG3\"},"
@@ -213,10 +223,12 @@ echo ">> Adding column 'new_col' on Node 2..."
 run_sql $NODE2_PORT "ALTER TABLE $DB.sync_test ADD COLUMN new_col VARCHAR(50) DEFAULT 'success';"
 echo ">> Verifying column existence on Node 1 and 3..."
 if run_sql $NODE1_PORT "DESCRIBE $DB.sync_test;" | grep -q "new_col" && run_sql $NODE3_PORT "DESCRIBE $DB.sync_test;" | grep -q "new_col"; then
+    PASS=$((PASS + 1))
     echo "✅ DDL Replication successful"
     write_report "| DDL Replication | Column added on Node 2 should appear on Node 1/3 | PASS | Column 'new_col' exists on all nodes |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"DDL Replication\",\"nature\":\"DDL Replication\",\"expected\":\"DDL statements replicate synchronously\",\"status\":\"PASS\",\"details\":\"Column 'new_col' verified on Nodes 1 and 3\"},"
 else
+    FAIL=$((FAIL + 1))
     echo "❌ DDL Replication failed"
     write_report "| DDL Replication | Column added on Node 2 should appear on Node 1/3 | FAIL | Column 'new_col' missing on some nodes |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"DDL Replication\",\"nature\":\"DDL Replication\",\"expected\":\"DDL statements replicate synchronously\",\"status\":\"FAIL\",\"details\":\"Column verification failed\"},"
@@ -229,10 +241,12 @@ run_sql $NODE1_PORT "INSERT INTO $DB.sync_test (id, node_id, msg) VALUES (500, 1
 echo ">> Attempting to insert same ID 500 on Node 2 (Should fail)..."
 ERR_MSG=$(mariadb -h 127.0.0.1 -P $NODE2_PORT -uroot -p$PASS $DB -e "INSERT INTO sync_test (id, node_id, msg) VALUES (500, 2, 'Duplicate 500');" 2>&1)
 if echo "$ERR_MSG" | grep -q "Duplicate entry"; then
+    PASS=$((PASS + 1))
     echo "✅ Node 2 correctly rejected duplicate entry"
     write_report "| Unique Constraint | Inserting already used ID on Node 2 should fail | PASS | Duplicate rejected as expected |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Unique Constraint\",\"nature\":\"Verify cluster-wide enforcement of UNIQUE constraints\",\"expected\":\"Inserting already used ID on Node 2 should fail even if inserted first on Node 1\",\"status\":\"PASS\",\"details\":\"Duplicate rejected as expected\"},"
 else
+    FAIL=$((FAIL + 1))
     echo "❌ Node 2 failed to reject duplicate: $ERR_MSG"
     write_report "| Unique Constraint | Inserting already used ID on Node 2 should fail | FAIL | Duplicate NOT rejected: $ERR_MSG |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Unique Constraint\",\"nature\":\"Verify cluster-wide enforcement of UNIQUE constraints\",\"expected\":\"Inserting already used ID on Node 2 should fail even if inserted first on Node 1\",\"status\":\"FAIL\",\"details\":\"Duplicate NOT rejected: $ERR_MSG\"},"
@@ -246,10 +260,12 @@ LONG_QUERY_TIME=$(run_sql $NODE1_PORT "SELECT @@long_query_time;")
 SLOW_RATE_LIMIT=$(run_sql $NODE1_PORT "SELECT @@log_slow_rate_limit;")
 
 if [ "$PFS_STATE" == "1" ] && [ "$SLOW_LOG_STATE" == "1" ]; then
+    PASS=$((PASS + 1))
     echo "✅ Performance Schema and Slow Query Log are ACTIVE"
     write_report "| Config Check | PFS and Slow Query Log should be ON | PASS | PFS=ON, SlowLog=ON (Time: ${LONG_QUERY_TIME}s, Rate: ${SLOW_RATE_LIMIT}) |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Config Check\",\"nature\":\"Verify PFS and Slow Query Log activation\",\"expected\":\"PFS=ON, SlowQueryLog=ON\",\"status\":\"PASS\",\"details\":\"PFS is ON, Slow Query Log is ON (${LONG_QUERY_TIME}s, Rate: ${SLOW_RATE_LIMIT})\"},"
 else
+    FAIL=$((FAIL + 1))
     echo "❌ Configuration mismatch: PFS=$PFS_STATE, SlowLog=$SLOW_LOG_STATE"
     write_report "| Config Check | PFS and Slow Query Log should be ON | FAIL | PFS=$PFS_STATE, SlowLog=$SLOW_LOG_STATE |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Config Check\",\"nature\":\"Verify PFS and Slow Query Log activation\",\"expected\":\"PFS=ON, SlowQueryLog=ON\",\"status\":\"FAIL\",\"details\":\"PFS=$PFS_STATE, SlowLog=$SLOW_LOG_STATE\"},"
@@ -272,10 +288,12 @@ for key in "${!RECOM[@]}"; do
 done
 
 if [ -n "$PROVIDER_OPTS" ]; then
+    PASS=$((PASS + 1))
     echo "✅ Galera Provider Options audited"
     write_report "| Provider Options Audit | Best practices check | PASS | Audit completed (see details) |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Provider Options Audit\",\"nature\":\"Galera Provider Options Audit\",\"expected\":\"Configured vs Best Practices\",\"status\":\"PASS\",\"details\":\"$AUDIT_LOG\"},"
 else
+    FAIL=$((FAIL + 1))
     echo "❌ Galera Provider Options are empty"
     write_report "| Provider Options Audit | Best practices check | FAIL | Options are empty |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Provider Options Audit\",\"nature\":\"Galera Provider Options Audit\",\"expected\":\"Configured vs Best Practices\",\"status\":\"FAIL\",\"details\":\"Empty\"},"
@@ -301,6 +319,46 @@ else
     echo "❌ SSL certificates missing for check"
     write_report "| SSL Expiry | Should be > $EXP_DAYS days | FAIL | Missing |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"SSL Expiry\",\"nature\":\"SSL Expiry Check\",\"expected\":\"> $EXP_DAYS days\",\"status\":\"FAIL\",\"details\":\"Server certificate not found in $SSL_DIR/\"},"
+fi
+
+echo -e "\n10. 🔢 Version Consistency Check..."
+write_report "### Version Consistency Check"
+V1=$(run_sql $NODE1_PORT "SELECT @@version;")
+V2=$(run_sql $NODE2_PORT "SELECT @@version;")
+V3=$(run_sql $NODE3_PORT "SELECT @@version;")
+
+if [ "$V1" = "$V2" ] && [ "$V2" = "$V3" ]; then
+    PASS=$((PASS + 1))
+    echo "✅ All nodes running MariaDB $V1"
+    write_report "| Version Consistency | All nodes same version | PASS | All nodes: $V1 |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Version Consistency\",\"nature\":\"Version Consistency\",\"expected\":\"All nodes same version\",\"status\":\"PASS\",\"details\":\"All nodes: $V1\"},"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ Version mismatch: $V1 / $V2 / $V3"
+    write_report "| Version Consistency | All nodes same version | FAIL | $V1 / $V2 / $V3 |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Version Consistency\",\"nature\":\"Version Consistency\",\"expected\":\"All nodes same version\",\"status\":\"FAIL\",\"details\":\"$V1 / $V2 / $V3\"},"
+fi
+
+echo -e "\n11. 🏗️ CRUD Operations Test..."
+write_report "### CRUD Operations Test"
+run_sql $NODE1_PORT "CREATE TABLE IF NOT EXISTS $DB.crud_test (id INT AUTO_INCREMENT PRIMARY KEY, val VARCHAR(100));"
+run_sql $NODE1_PORT "INSERT INTO $DB.crud_test (val) VALUES ('row1'), ('row2'), ('row3');"
+INS_COUNT=$(run_sql $NODE1_PORT "SELECT COUNT(*) FROM $DB.crud_test;")
+run_sql $NODE1_PORT "UPDATE $DB.crud_test SET val='updated' WHERE val='row1';"
+UPD_VAL=$(run_sql $NODE1_PORT "SELECT val FROM $DB.crud_test WHERE val='updated' LIMIT 1;")
+run_sql $NODE1_PORT "DELETE FROM $DB.crud_test WHERE val='row2';"
+DEL_COUNT=$(run_sql $NODE1_PORT "SELECT COUNT(*) FROM $DB.crud_test;")
+
+if [ "$INS_COUNT" = "3" ] && [ "$UPD_VAL" = "updated" ] && [ "$DEL_COUNT" = "2" ]; then
+    PASS=$((PASS + 1))
+    echo "✅ CRUD operations successful (insert=3, update=ok, delete→2)"
+    write_report "| CRUD Operations | insert=3, update=ok, after delete=2 | PASS | All CRUD operations verified |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"CRUD Operations\",\"nature\":\"CRUD Operations\",\"expected\":\"insert=3, update=ok, delete→2\",\"status\":\"PASS\",\"details\":\"insert=$INS_COUNT, update=$UPD_VAL, after_delete=$DEL_COUNT\"},"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ CRUD operations failed: insert=$INS_COUNT, update=$UPD_VAL, delete=$DEL_COUNT"
+    write_report "| CRUD Operations | insert=3, update=ok, after delete=2 | FAIL | insert=$INS_COUNT, update=$UPD_VAL, delete=$DEL_COUNT |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"CRUD Operations\",\"nature\":\"CRUD Operations\",\"expected\":\"insert=3, update=ok, delete→2\",\"status\":\"FAIL\",\"details\":\"insert=$INS_COUNT, update=$UPD_VAL, delete=$DEL_COUNT\"},"
 fi
 
 # Collect data for all nodes for comparison (Full view: Vars + Status + Galera Opts)
@@ -614,7 +672,12 @@ graph TD
 </body>
 </html>
 EOF
+TOTAL=$((PASS + FAIL))
+write_report "\n## Summary\n- ✅ Passed: $PASS / $TOTAL\n- ❌ Failed: $FAIL / $TOTAL"
 echo "🏁 Galera Test Suite Finished."
+echo "   Passed: $PASS | Failed: $FAIL"
 echo "Markdown Report: $REPORT_MD"
 echo "HTML Report: $REPORT_HTML"
 echo "=========================================================="
+
+[ "$FAIL" -eq 0 ] || exit 1

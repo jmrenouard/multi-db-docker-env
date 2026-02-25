@@ -135,16 +135,48 @@ test-mongo: ## Run functional tests on the MongoDB ReplicaSet
 	@bash ./tests/test_mongo_rs.sh
 
 
+# --- MONGODB 8 REPLICASET ---
+MONGO8_COMPOSE = docker-compose-mongo8-rs.yml
+
+mongo8-up: ## Start MongoDB 8 ReplicaSet (3 nodes + HAProxy)
+	@echo "🚀 Starting MongoDB 8 ReplicaSet..."
+	docker compose -f $(MONGO8_COMPOSE) up -d
+	@echo "⏳ Waiting for MongoDB 8 nodes to initialize (15s)..."
+	@sleep 15
+	@echo "⛓️  Setting up ReplicaSet..."
+	@bash ./conf/mongo-rs/setup_rs_mongo8.sh
+	@echo "⏳ Waiting for HAProxy to detect backends (5s)..."
+	@sleep 5
+	@echo "✅ MongoDB 8 ReplicaSet is ready."
+
+mongo8-down: ## Stop MongoDB 8 ReplicaSet and remove volumes
+	@echo "🛑 Stopping MongoDB 8 ReplicaSet..."
+	docker compose -f $(MONGO8_COMPOSE) down -v
+
+mongo8-status: ## Show MongoDB 8 ReplicaSet status
+	@echo "📊 MongoDB 8 ReplicaSet Status..."
+	@docker exec mongo8_n1 mongosh --quiet --eval "var s=rs.status(); s.members.forEach(function(m){print(m.name+' | '+m.stateStr+' | health='+m.health);});" 2>/dev/null
+
+mongo8-logs: ## Follow MongoDB 8 ReplicaSet logs
+	docker compose -f $(MONGO8_COMPOSE) logs -f
+
+mongo8-ps: ## Show MongoDB 8 ReplicaSet running containers
+	docker compose -f $(MONGO8_COMPOSE) ps
+
+test-mongo8: ## Run functional tests on MongoDB 8 ReplicaSet
+	@MONGO_NODES="mongo8_n1 mongo8_n2 mongo8_n3" bash ./tests/test_mongo_rs.sh
 # --- Main Targets ---
 .PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 postgres15 stop status logs \
         build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera test-patroni \
         pgpool-up pgpool-down pgpool-status pgpool-logs pgpool-ps test-pgpool \
         innodb-up innodb-down innodb-status innodb-logs innodb-ps test-innodb \
         mongo-up mongo-down mongo-status mongo-logs mongo-ps test-mongo \
+        mongo8-up mongo8-down mongo8-status mongo8-logs mongo8-ps test-mongo8 \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
         gen-ssl clean-ssl renew-ssl renew-ssl-galera renew-ssl-repli emergency-galera emergency-repli check-galera check-repli \
+        gen-ssl-innodb gen-ssl-pgpool gen-ssl-mongo gen-ssl-patroni gen-ssl-all check-ssl-all \
         test-config start verify inject sync-test-db
 
 # --- Paths ---
@@ -733,6 +765,41 @@ renew-ssl-repli: ## Force SSL certificate regeneration and reload on active Repl
 	@echo "✨ Replication zero-downtime SSL rotation completed."
 
 renew-ssl: renew-ssl-galera ## [DEPRECATED] Use renew-ssl-galera or renew-ssl-repli
+
+gen-ssl-innodb: ## Generate TLS certificates for MySQL InnoDB Cluster
+	bash ./scripts/gen_ssl_innodb.sh
+
+gen-ssl-pgpool: ## Generate TLS certificates for PostgreSQL PgPool-II
+	bash ./scripts/gen_ssl_pgpool.sh
+
+gen-ssl-mongo: ## Generate TLS certificates for MongoDB ReplicaSet
+	bash ./scripts/gen_ssl_mongo.sh
+
+gen-ssl-patroni: ## Generate TLS certificates for Patroni PostgreSQL
+	bash ./scripts/gen_ssl_patroni.sh
+
+gen-ssl-all: gen-ssl gen-ssl-innodb gen-ssl-pgpool gen-ssl-mongo gen-ssl-patroni ## Generate TLS certificates for ALL products
+	@echo "✅ All TLS certificates generated."
+
+check-ssl-all: ## Verify TLS certificate validity for all products
+	@echo "🔍 Checking TLS certificates..."
+	@for d in ssl ssl/innodb ssl/pgpool ssl/mongo ssl/patroni; do \
+		if [ -d "$$d" ]; then \
+			CA=$$(ls $$d/ca-cert.pem $$d/ca.pem 2>/dev/null | head -1); \
+			CERT=$$(ls $$d/server-cert.pem $$d/server.crt 2>/dev/null | head -1); \
+			if [ -n "$$CA" ] && [ -n "$$CERT" ]; then \
+				if openssl verify -CAfile "$$CA" "$$CERT" >/dev/null 2>&1; then \
+					echo "✅ $$d: valid"; \
+				else \
+					echo "❌ $$d: INVALID"; \
+				fi; \
+			else \
+				echo "⚠️  $$d: no certificates found"; \
+			fi; \
+		else \
+			echo "⏭️  $$d: directory not found"; \
+		fi; \
+	done
 
 clean-data: clean-galera clean-repli clean-ssl ## Remove ALL data, backup, and SSL directories (CAUTION!)
 

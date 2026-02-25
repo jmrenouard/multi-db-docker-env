@@ -44,6 +44,10 @@ run_sql() {
     mariadb -h 127.0.0.1 -P $port -u$USER -p$PASS -sN -e "$query" 2>/dev/null
 }
 
+# PASS/FAIL counters
+PASS=0
+FAIL=0
+
 # Data for HTML report
 CONN_STATS=""
 REPL_INFO=""
@@ -151,10 +155,12 @@ else
 fi
 
 if [ "$ROW_COUNT" -eq 1 ]; then
+    PASS=$((PASS + 1))
     echo "✅ Data replicated successfully to Slave 1"
     write_report "| Master -> Slave 1 Sync | Write on Master should replicate to Slave 1 | PASS | Row found on Slave 1 |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Replication Master->Slave 1\",\"nature\":\"Replication Sync (Slave 1)\",\"expected\":\"Data replicated from Master\",\"status\":\"PASS\",\"details\":\"Row found with value: $VAL\"},"
 else
+    FAIL=$((FAIL + 1))
     echo "❌ Data NOT found on Slave 1"
     write_report "| Master -> Slave 1 Sync | Write on Master should replicate to Slave 1 | FAIL | Row NOT found on Slave 1 |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Replication Master->Slave 1\",\"nature\":\"Replication Sync (Slave 1)\",\"expected\":\"Data replicated from Master\",\"status\":\"FAIL\",\"details\":\"Row NOT found\"},"
@@ -169,10 +175,12 @@ else
 fi
 
 if [ "$ROW_COUNT_S2" -eq 1 ]; then
+    PASS=$((PASS + 1))
     echo "✅ Data replicated successfully to Slave 2"
     write_report "| Master -> Slave 2 Sync | Write on Master should replicate to Slave 2 | PASS | Row found on Slave 2 |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Replication Master->Slave 2\",\"nature\":\"Replication Sync (Slave 2)\",\"expected\":\"Data replicated from Master\",\"status\":\"PASS\",\"details\":\"Row found with value: $VAL_S2\"},"
 else
+    FAIL=$((FAIL + 1))
     echo "❌ Data NOT found on Slave 2"
     write_report "| Master -> Slave 2 Sync | Write on Master should replicate to Slave 2 | FAIL | Row NOT found on Slave 2 |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Replication Master->Slave 2\",\"nature\":\"Replication Sync (Slave 2)\",\"expected\":\"Data replicated from Master\",\"status\":\"FAIL\",\"details\":\"Row NOT found\"},"
@@ -186,10 +194,12 @@ mariadb -h 127.0.0.1 -P $SLAVE1_PORT -utest_ro -ptestpass $DB -e "INSERT INTO te
 run_sql $SLAVE1_PORT "DROP USER 'test_ro'@'%';"
 
 if [ "$RO_ERR" -eq 0 ]; then
+    FAIL=$((FAIL + 1))
     echo "❌ ERROR: Slave 1 accepted a write (should be read-only for non-super users)"
     write_report "| Slave Read-Only | Write on Slave should be rejected | FAIL | Slave accepted the write from non-super user |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Slave Read-Only\",\"nature\":\"Read-Only Constraint\",\"expected\":\"Slave should reject writes for non-super users\",\"status\":\"FAIL\",\"details\":\"Slave 1 incorrectly accepted the write\"},"
 else
+    PASS=$((PASS + 1))
     echo "✅ Slave 1 correctly rejected the write (Read-only mode enforced)"
     write_report "| Slave Read-Only | Write on Slave should be rejected | PASS | Correctly rejected write from non-super user |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Slave Read-Only\",\"nature\":\"Read-Only Constraint\",\"expected\":\"Slave should reject writes for non-super users\",\"status\":\"PASS\",\"details\":\"Slave 1 rejected the write as expected\"},"
@@ -198,13 +208,79 @@ fi
 echo -e "\n7. 🔐 SSL Connection Verification..."
 CIPHER=$(mariadb -h 127.0.0.1 -P $MASTER_PORT -u$USER -p$PASS -sN -e "SHOW STATUS LIKE 'Ssl_cipher';" | awk '{print $2}')
 if [[ "$CIPHER" != "" ]] && [[ "$CIPHER" != "NULL" ]]; then
+    PASS=$((PASS + 1))
     echo "✅ SSL Connection verified on Master (Cipher: $CIPHER)"
     write_report "| SSL Connectivity (Master) | Node should support SSL | PASS | Connected with $CIPHER |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"SSL Connectivity Master\",\"nature\":\"SSL Status Check\",\"expected\":\"Connection should be encrypted\",\"status\":\"PASS\",\"details\":\"Connected to Master using SSL ($CIPHER)\"},"
 else
+    FAIL=$((FAIL + 1))
     echo "❌ SSL NOT active on Master"
     write_report "| SSL Connectivity (Master) | Node should support SSL | FAIL | SSL Cipher is empty/null |"
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"SSL Connectivity Master\",\"nature\":\"SSL Status Check\",\"expected\":\"Connection should be encrypted\",\"status\":\"FAIL\",\"details\":\"SSL not active on Master\"},"
+fi
+
+echo -e "\n8. 🗂️ DDL Replication Test..."
+write_report "### DDL Replication Test"
+echo ">> Adding column 'extra_col' on Master..."
+run_sql $MASTER_PORT "ALTER TABLE $DB.test_table ADD COLUMN extra_col VARCHAR(50) DEFAULT 'ddl_ok';"
+sleep 2
+echo ">> Verifying column on Slaves..."
+DDL_OK=true
+for port in $SLAVE1_PORT $SLAVE2_PORT; do
+    if run_sql $port "DESCRIBE $DB.test_table;" | grep -q "extra_col"; then
+        echo "✅ DDL replicated to port $port"
+    else
+        echo "❌ DDL NOT replicated to port $port"
+        DDL_OK=false
+    fi
+done
+if [ "$DDL_OK" = true ]; then
+    PASS=$((PASS + 1))
+    write_report "| DDL Replication | ALTER TABLE should replicate to slaves | PASS | Column exists on all slaves |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"DDL Replication\",\"nature\":\"DDL Replication\",\"expected\":\"ALTER TABLE replicates\",\"status\":\"PASS\",\"details\":\"Column extra_col on all slaves\"},"
+else
+    FAIL=$((FAIL + 1))
+    write_report "| DDL Replication | ALTER TABLE should replicate to slaves | FAIL | Column missing on some slaves |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"DDL Replication\",\"nature\":\"DDL Replication\",\"expected\":\"ALTER TABLE replicates\",\"status\":\"FAIL\",\"details\":\"Column missing on some slaves\"},"
+fi
+
+echo -e "\n9. 🏗️ CRUD Operations Test..."
+write_report "### CRUD Operations Test"
+run_sql $MASTER_PORT "CREATE TABLE IF NOT EXISTS $DB.crud_test (id INT AUTO_INCREMENT PRIMARY KEY, val VARCHAR(100));"
+run_sql $MASTER_PORT "INSERT INTO $DB.crud_test (val) VALUES ('r1'), ('r2'), ('r3');"
+INS_COUNT=$(run_sql $MASTER_PORT "SELECT COUNT(*) FROM $DB.crud_test;")
+run_sql $MASTER_PORT "UPDATE $DB.crud_test SET val='upd' WHERE val='r1';"
+UPD_VAL=$(run_sql $MASTER_PORT "SELECT val FROM $DB.crud_test WHERE val='upd' LIMIT 1;")
+run_sql $MASTER_PORT "DELETE FROM $DB.crud_test WHERE val='r2';"
+DEL_COUNT=$(run_sql $MASTER_PORT "SELECT COUNT(*) FROM $DB.crud_test;")
+
+if [ "$INS_COUNT" = "3" ] && [ "$UPD_VAL" = "upd" ] && [ "$DEL_COUNT" = "2" ]; then
+    PASS=$((PASS + 1))
+    echo "✅ CRUD operations successful"
+    write_report "| CRUD | insert=3, update=ok, delete→2 | PASS | Verified |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"CRUD\",\"nature\":\"CRUD Operations\",\"expected\":\"insert=3,update=ok,delete→2\",\"status\":\"PASS\",\"details\":\"ins=$INS_COUNT,upd=$UPD_VAL,del=$DEL_COUNT\"},"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ CRUD operations failed"
+    write_report "| CRUD | insert=3, update=ok, delete→2 | FAIL | ins=$INS_COUNT,upd=$UPD_VAL,del=$DEL_COUNT |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"CRUD\",\"nature\":\"CRUD Operations\",\"expected\":\"insert=3,update=ok,delete→2\",\"status\":\"FAIL\",\"details\":\"ins=$INS_COUNT,upd=$UPD_VAL,del=$DEL_COUNT\"},"
+fi
+
+echo -e "\n10. 🔢 Version Consistency..."
+write_report "### Version Consistency"
+VM=$(run_sql $MASTER_PORT "SELECT @@version;")
+VS1=$(run_sql $SLAVE1_PORT "SELECT @@version;")
+VS2=$(run_sql $SLAVE2_PORT "SELECT @@version;")
+if [ "$VM" = "$VS1" ] && [ "$VS1" = "$VS2" ]; then
+    PASS=$((PASS + 1))
+    echo "✅ All nodes running MariaDB $VM"
+    write_report "| Version | All same | PASS | $VM |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Version\",\"nature\":\"Version Consistency\",\"expected\":\"All same\",\"status\":\"PASS\",\"details\":\"All: $VM\"},"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ Version mismatch: $VM / $VS1 / $VS2"
+    write_report "| Version | All same | FAIL | $VM / $VS1 / $VS2 |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Version\",\"nature\":\"Version Consistency\",\"expected\":\"All same\",\"status\":\"FAIL\",\"details\":\"$VM / $VS1 / $VS2\"},"
 fi
 
 # Generate HTML Report
@@ -347,7 +423,12 @@ graph TD
 EOF
 
 echo -e "\n=========================================================="
+TOTAL=$((PASS + FAIL))
+write_report "\n## Summary\n- ✅ Passed: $PASS / $TOTAL\n- ❌ Failed: $FAIL / $TOTAL"
 echo "🏁 Test Suite Finished."
+echo "   Passed: $PASS | Failed: $FAIL"
 echo "Markdown Report: $REPORT_MD"
 echo "HTML Report: $REPORT_HTML"
 echo "=========================================================="
+
+[ "$FAIL" -eq 0 ] || exit 1

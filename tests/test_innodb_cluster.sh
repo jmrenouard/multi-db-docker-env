@@ -312,12 +312,43 @@ else
 fi
 
 # ==================================================================
+# TEST 11: CRUD Operations
+# ==================================================================
+echo ""
+echo "11. 🏗️ CRUD Operations Test..."
+write_report "## 11. CRUD Operations"
+
+run_mysql mysql_node1 3306 -e "
+    CREATE TABLE IF NOT EXISTS innodb_test.crud_test (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        val VARCHAR(100)
+    ) ENGINE=InnoDB;
+    INSERT INTO innodb_test.crud_test (val) VALUES ('r1'), ('r2'), ('r3');
+" > /dev/null 2>&1
+
+INS=$(run_mysql mysql_node1 3306 -NB -e "SELECT COUNT(*) FROM innodb_test.crud_test;" 2>/dev/null | tr -d '[:space:]')
+run_mysql mysql_node1 3306 -e "UPDATE innodb_test.crud_test SET val='upd' WHERE val='r1';" > /dev/null 2>&1
+UPD=$(run_mysql mysql_node1 3306 -NB -e "SELECT val FROM innodb_test.crud_test WHERE val='upd' LIMIT 1;" 2>/dev/null | tr -d '[:space:]')
+run_mysql mysql_node1 3306 -e "DELETE FROM innodb_test.crud_test WHERE val='r2';" > /dev/null 2>&1
+DEL=$(run_mysql mysql_node1 3306 -NB -e "SELECT COUNT(*) FROM innodb_test.crud_test;" 2>/dev/null | tr -d '[:space:]')
+
+if [ "$INS" = "3" ] && [ "$UPD" = "upd" ] && [ "$DEL" = "2" ]; then
+    PASS=$((PASS + 1))
+    echo "✅ CRUD operations successful (insert=3, update=ok, delete→2)"
+    write_report "- ✅ CRUD: insert=$INS, update=$UPD, after_delete=$DEL"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ CRUD failed: ins=$INS, upd=$UPD, del=$DEL"
+    write_report "- ❌ CRUD: ins=$INS, upd=$UPD, del=$DEL"
+fi
+
+# ==================================================================
 # Cleanup
 # ==================================================================
 run_mysql mysql_node1 3306 -e "DROP DATABASE IF EXISTS innodb_test;" > /dev/null 2>&1 || true
 
-# Summary
-write_report "\n## Summary\n- ✅ Passed: $PASS\n- ❌ Failed: $FAIL"
+TOTAL=$((PASS + FAIL))
+write_report "\n## Summary\n- ✅ Passed: $PASS / $TOTAL\n- ❌ Failed: $FAIL / $TOTAL"
 
 # Generate HTML report
 cat <<HTMLEOF > "$REPORT_HTML"
@@ -360,3 +391,5 @@ echo "   Passed: $PASS | Failed: $FAIL"
 echo "Markdown Report: $REPORT_MD"
 echo "HTML Report: $REPORT_HTML"
 echo "=========================================================="
+
+[ "$FAIL" -eq 0 ] || exit 1

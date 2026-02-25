@@ -370,11 +370,39 @@ else
 fi
 
 # ==================================================================
-# TEST 13: HAProxy Stats Dashboard
+# TEST 13b: CRUD Operations Test
 # ==================================================================
 echo ""
-echo "13. ⚖️ HAProxy Stats Dashboard..."
-write_report "## 13. HAProxy Stats"
+echo "13b. 🏗️ CRUD Operations Test..."
+write_report "## 13b. CRUD Operations"
+
+run_psql pgpool 9999 -c "
+    CREATE TABLE IF NOT EXISTS pgpool_crud_test (id serial PRIMARY KEY, val text);
+    INSERT INTO pgpool_crud_test (val) VALUES ('r1'), ('r2'), ('r3');
+" > /dev/null 2>&1
+
+INS=$(run_psql pg_node1 5432 -tAc "SELECT count(*) FROM pgpool_crud_test;" 2>/dev/null | tr -d '[:space:]')
+run_psql pgpool 9999 -c "UPDATE pgpool_crud_test SET val='upd' WHERE val='r1';" > /dev/null 2>&1
+UPD=$(run_psql pg_node1 5432 -tAc "SELECT val FROM pgpool_crud_test WHERE val='upd' LIMIT 1;" 2>/dev/null | tr -d '[:space:]')
+run_psql pgpool 9999 -c "DELETE FROM pgpool_crud_test WHERE val='r2';" > /dev/null 2>&1
+DEL=$(run_psql pg_node1 5432 -tAc "SELECT count(*) FROM pgpool_crud_test;" 2>/dev/null | tr -d '[:space:]')
+
+if [ "$INS" = "3" ] && [ "$UPD" = "upd" ] && [ "$DEL" = "2" ]; then
+    PASS=$((PASS + 1))
+    echo "✅ CRUD operations successful (insert=3, update=ok, delete→2)"
+    write_report "- ✅ CRUD: insert=$INS, update=$UPD, after_delete=$DEL"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ CRUD failed: ins=$INS, upd=$UPD, del=$DEL"
+    write_report "- ❌ CRUD: ins=$INS, upd=$UPD, del=$DEL"
+fi
+
+# ==================================================================
+# TEST 14: HAProxy Stats Dashboard
+# ==================================================================
+echo ""
+echo "14. ⚖️ HAProxy Stats Dashboard..."
+write_report "## 14. HAProxy Stats"
 
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8406/stats" 2>/dev/null || echo "000")
 if [ "$HTTP_CODE" = "200" ]; then
@@ -392,9 +420,11 @@ fi
 # ==================================================================
 run_psql pgpool 9999 -c "DROP TABLE IF EXISTS pgpool_replication_test;" > /dev/null 2>&1 || true
 run_psql pgpool 9999 -c "DROP TABLE IF EXISTS pgpool_concurrent_test;" > /dev/null 2>&1 || true
+run_psql pgpool 9999 -c "DROP TABLE IF EXISTS pgpool_crud_test;" > /dev/null 2>&1 || true
 
 # Summary
-write_report "\n## Summary\n- ✅ Passed: $PASS\n- ❌ Failed: $FAIL"
+TOTAL=$((PASS + FAIL))
+write_report "\n## Summary\n- ✅ Passed: $PASS / $TOTAL\n- ❌ Failed: $FAIL / $TOTAL"
 
 # Generate HTML report
 cat <<HTMLEOF > "$REPORT_HTML"
@@ -428,23 +458,6 @@ cat <<HTMLEOF > "$REPORT_HTML"
         <span class="badge badge-pass">✅ Passed: $PASS</span>
         <span class="badge badge-fail">❌ Failed: $FAIL</span>
     </div>
-    <h2>Test Results</h2>
-    <table>
-        <tr><th>#</th><th>Test</th><th>Result</th></tr>
-        <tr><td>1</td><td>PostgreSQL Node Status (3 nodes)</td><td class="pass">3/3 UP</td></tr>
-        <tr><td>2</td><td>PgPool-II Connection</td><td>$([ "$PASS" -ge 4 ] && echo '<span class="pass">✅ PASS</span>' || echo '<span class="fail">❌ FAIL</span>')</td></tr>
-        <tr><td>3</td><td>HAProxy RW/RO Connectivity</td><td>$([ "$PASS" -ge 6 ] && echo '<span class="pass">✅ PASS</span>' || echo '<span class="fail">❌ FAIL</span>')</td></tr>
-        <tr><td>4</td><td>Streaming Replication</td><td>$([ "$PASS" -ge 8 ] && echo '<span class="pass">✅ PASS</span>' || echo '<span class="fail">❌ FAIL</span>')</td></tr>
-        <tr><td>5</td><td>Write Isolation on Standbys</td><td class="pass">Standbys reject writes</td></tr>
-        <tr><td>6</td><td>DDL Replication</td><td class="pass">Schema changes replicated</td></tr>
-        <tr><td>7</td><td>Load Balancing</td><td class="pass">Active</td></tr>
-        <tr><td>8</td><td>Version Consistency</td><td class="pass">All nodes same version</td></tr>
-        <tr><td>9</td><td>WAL Streaming</td><td class="pass">2 standbys streaming</td></tr>
-        <tr><td>10</td><td>Replication Slots</td><td class="pass">2 active slots</td></tr>
-        <tr><td>11</td><td>Concurrent Writes</td><td class="pass">30/30 rows + replicated</td></tr>
-        <tr><td>12</td><td>PgPool-II Version</td><td class="pass">$PGPOOL_VER</td></tr>
-        <tr><td>13</td><td>HAProxy Stats Dashboard</td><td class="pass">UP</td></tr>
-    </table>
 </div>
 </body>
 </html>
@@ -457,3 +470,5 @@ echo "   Passed: $PASS | Failed: $FAIL"
 echo "Markdown Report: $REPORT_MD"
 echo "HTML Report: $REPORT_HTML"
 echo "=========================================================="
+
+[ "$FAIL" -eq 0 ] || exit 1
