@@ -65,7 +65,7 @@ services:
 
   # 🔵 PgPool-II (Connection Pooling + Load Balancing)
   pgpool:
-    image: pgpool/pgpool:latest
+    image: pgpool/pgpool:4.6
     hostname: pgpool
     container_name: pgpool
     restart: unless-stopped

@@ -416,6 +416,42 @@ else
 fi
 
 # ==================================================================
+# TEST 15: PgPool-II Connection Pools Stats
+# ==================================================================
+echo ""
+echo "15. 🏊 PgPool-II Connection Pools..."
+write_report "## 15. Connection Pools"
+
+POOLS=$(run_psql pgpool 9999 -tAc "SHOW pool_pools;" 2>/dev/null || echo "FAIL")
+if [ "$POOLS" != "FAIL" ] && [ -n "$POOLS" ]; then
+    echo "✅ PgPool-II Connection pools visible."
+    write_report "- ✅ Connection pools checking: OK"
+    PASS=$((PASS + 1))
+else
+    echo "⚠️ PgPool-II Connection pools check failed."
+    write_report "- ⚠️ Connection pools checking: FAILED"
+    FAIL=$((FAIL + 1))
+fi
+
+# ==================================================================
+# TEST 16: PgPool-II Client Processes
+# ==================================================================
+echo ""
+echo "16. 🔄 PgPool-II Client Processes..."
+write_report "## 16. Client Processes"
+
+PROCESSES=$(run_psql pgpool 9999 -tAc "SHOW pool_processes;" 2>/dev/null || echo "FAIL")
+if [ "$PROCESSES" != "FAIL" ] && [ -n "$PROCESSES" ]; then
+    echo "✅ PgPool-II Client Processes visible."
+    write_report "- ✅ Client processes checking: OK"
+    PASS=$((PASS + 1))
+else
+    echo "⚠️ PgPool-II Client Processes check failed."
+    write_report "- ⚠️ Client processes checking: FAILED"
+    FAIL=$((FAIL + 1))
+fi
+
+# ==================================================================
 # Cleanup
 # ==================================================================
 run_psql pgpool 9999 -c "DROP TABLE IF EXISTS pgpool_replication_test;" > /dev/null 2>&1 || true

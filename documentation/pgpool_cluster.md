@@ -18,7 +18,7 @@ High-availability PostgreSQL 17 cluster using PgPool-II for connection pooling a
 │       │  Replication   │              │                       │
 │       ▼                ▼              ▼                       │
 │  ┌─────────────────────────────────────────┐                  │
-│  │           PgPool-II 4.4                 │                  │
+│  │           PgPool-II 4.6                 │                  │
 │  │        Connection Pooling               │                  │
 │  │        Load Balancing                   │                  │
 │  │        10.8.0.20 / :9999                │                  │
@@ -39,7 +39,7 @@ High-availability PostgreSQL 17 cluster using PgPool-II for connection pooling a
 | `pg_node1` | `postgres:17` | `10.8.0.11` | Primary (read/write) |
 | `pg_node2` | `postgres:17` | `10.8.0.12` | Standby (read-only) |
 | `pg_node3` | `postgres:17` | `10.8.0.13` | Standby (read-only) |
-| `pgpool` | `pgpool/pgpool:latest` | `10.8.0.20` | Connection pooling + LB |
+| `pgpool` | `pgpool/pgpool:4.6` | `10.8.0.20` | Connection pooling + LB |
 | `haproxy_pgpool` | `haproxy:latest` | `10.8.0.100` | External routing |
 
 ## Quick Start
@@ -100,13 +100,37 @@ psql -h 127.0.0.1 -p 5101 -U postgres
 | `sr_check_period` | 5s |
 | `health_check_period` | 10s |
 
+## Advanced PgPool-II Monitoring
+
+PgPool-II provides several administrative commands to manage and monitor the cluster directly via SQL interface.
+
+### View Pool Nodes Status
+
+```bash
+psql -h 127.0.0.1 -p 9999 -U postgres -c "SHOW pool_nodes;"
+```
+
+### Display Active Connection Pools
+
+Check connection pooling metrics to see how many cached connections are currently in use.
+
+```bash
+psql -h 127.0.0.1 -p 9999 -U postgres -c "SHOW pool_pools;"
+```
+
+### View Client Processes
+
+```bash
+psql -h 127.0.0.1 -p 9999 -U postgres -c "SHOW pool_processes;"
+```
+
 ## Automated Testing
 
 ```bash
 make test-pgpool
 ```
 
-The test suite validates **20 checks across 13 test groups**:
+The test suite validates **22 checks across 15 test groups**:
 
 | # | Test | Description |
 | :--- | :--- | :--- |
@@ -122,7 +146,10 @@ The test suite validates **20 checks across 13 test groups**:
 | 10 | Replication Slots | 2 active replication slots |
 | 11 | Concurrent Writes | 30 rows + replication verification |
 | 12 | PgPool-II Version | PgPool-II process info |
-| 13 | HAProxy Stats | Stats dashboard availability |
+| 13 | CRUD Ops Test | Perform schema operations |
+| 14 | HAProxy Stats | Stats dashboard availability |
+| 15 | Connection Pools | Inspect PgPool-II Connection Pooling |
+| 16 | Client Processes | View PgPool-II client processes active states |
 
 Reports are generated in `./reports/` (Markdown + HTML).
 

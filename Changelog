@@ -1,3 +1,8 @@
+1.2.4 2026-03-14
+- feat: update PgPool-II to version 4.6 in docker-compose-pgpool.yml.
+- feat: add Connection Pools and Client Processes test cases in test_pgpool.sh.
+- doc: update `pgpool_cluster.md` with version 4.6 references and monitoring sections.
+
 1.2.3 2026-02-16
 - feat: integrate Patroni functional tests (`test-patroni`).
 - doc: update `patroni_cluster.md` with testing instructions.
