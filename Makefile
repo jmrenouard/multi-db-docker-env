@@ -254,6 +254,12 @@ help:
 	@printf "    \033[1minnodb-status\033[0m - 📊 Shows Group Replication status\n"
 	@printf "    \033[1mtest-innodb\033[0m   - 🧪 Runs InnoDB Cluster functional tests\n"
 	@printf "\n"
+	@printf "  \033[1;32mMySQLTuner Integration:\033[0m\n"
+	@printf "    \033[1mmysqltuner-galera\033[0m  - 🔍 Run MySQLTuner audit on Galera Cluster\n"
+	@printf "    \033[1mmysqltuner-innodb\033[0m  - 🔍 Run MySQLTuner audit on InnoDB Cluster\n"
+	@printf "    \033[1mmysqltuner-repli\033[0m   - 🔍 Run MySQLTuner audit on Replication\n"
+	@printf "    \033[1mmysqltuner-all\033[0m     - 🔍 Run MySQLTuner on all HA topologies\n"
+	@printf "\n"
 
 # 🚀 Starts the default database service
 start: $(DEFAULT_SERVICE)
@@ -502,6 +508,32 @@ test-config: ## Validate the current orchestration configuration, directory stru
 	bash ./tests/test_security_ssl.sh
 	bash ./tests/test_profiles.sh
 
+
+# --- MySQLTuner Integration ---
+# These targets run MySQLTuner against HA topologies for E2E validation.
+# Set MYSQLTUNER_PATH to the path of mysqltuner.pl if not in a sibling directory.
+
+mysqltuner-galera: up-galera inject-employee-galera ## Run MySQLTuner audit on Galera cluster
+	@echo "🔍 Running MySQLTuner on Galera Cluster..."
+	@bash ./scripts/run_mysqltuner.sh --topology galera
+
+mysqltuner-innodb: innodb-up ## Run MySQLTuner audit on InnoDB Cluster
+	@echo "🔍 Running MySQLTuner on InnoDB Cluster..."
+	@bash ./scripts/run_mysqltuner.sh --topology innodb_cluster
+
+mysqltuner-repli: up-repli inject-employee-repli ## Run MySQLTuner audit on Replication
+	@echo "🔍 Running MySQLTuner on Replication..."
+	@bash ./scripts/run_mysqltuner.sh --topology replication
+
+mysqltuner-all: ## Run MySQLTuner audit on all HA topologies sequentially
+	@echo "🔍 Running MySQLTuner on ALL HA topologies..."
+	@$(MAKE) mysqltuner-galera || true
+	@$(MAKE) down-galera
+	@$(MAKE) mysqltuner-innodb || true
+	@$(MAKE) innodb-down
+	@$(MAKE) mysqltuner-repli || true
+	@$(MAKE) down-repli
+	@echo "✅ MySQLTuner audit complete for all topologies. Reports in ./reports/"
 
 # --- Start-up Targets by Profile ---
 traefik: stop
