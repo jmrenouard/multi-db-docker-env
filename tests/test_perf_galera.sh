@@ -75,7 +75,7 @@ case $ACTION in
     prepare)
         echo_title "Preparing Galera cluster for $PROFILE test..."
         PREP_HOST="10.6.0.11"
-        docker exec -it $CLIENT_CONTAINER mariadb -h$PREP_HOST -uroot -p$DB_PASS -e "DROP DATABASE IF EXISTS $DB_NAME; CREATE DATABASE $DB_NAME;"
+        docker exec -it -e MYSQL_PWD="$DB_PASS" $CLIENT_CONTAINER mariadb -h$PREP_HOST -uroot -e "DROP DATABASE IF EXISTS $DB_NAME; CREATE DATABASE $DB_NAME;"
         echo "Creating $TABLES tables..."
         docker exec -it $CLIENT_CONTAINER $COMMAND --mysql-host=$PREP_HOST --threads=1 prepare
         echo_success "Preparation complete."
@@ -91,8 +91,8 @@ case $ACTION in
         BF_BEFORE=0; CERT_BEFORE=0
         NODES=("mariadb-galera_01-1" "mariadb-galera_02-1" "mariadb-galera_03-1")
         for node in "${NODES[@]}"; do
-            bf=$(docker exec $node mariadb -h 127.0.0.1 -uroot -p$DB_PASS -N -s -e "SHOW STATUS LIKE 'wsrep_local_bf_aborts';" | awk '{print $2}' || echo 0)
-            cert=$(docker exec $node mariadb -h 127.0.0.1 -uroot -p$DB_PASS -N -s -e "SHOW STATUS LIKE 'wsrep_local_cert_failures';" | awk '{print $2}' || echo 0)
+            bf=$(docker exec -e MYSQL_PWD="$DB_PASS" $node mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW STATUS LIKE 'wsrep_local_bf_aborts';" | awk '{print $2}' || echo 0)
+            cert=$(docker exec -e MYSQL_PWD="$DB_PASS" $node mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW STATUS LIKE 'wsrep_local_cert_failures';" | awk '{print $2}' || echo 0)
             BF_BEFORE=$((BF_BEFORE + bf)); CERT_BEFORE=$((CERT_BEFORE + cert))
         done
 
@@ -102,8 +102,8 @@ case $ACTION in
         # Capture Galera stats after
         BF_AFTER=0; CERT_AFTER=0
         for node in "${NODES[@]}"; do
-            bf=$(docker exec $node mariadb -h 127.0.0.1 -uroot -p$DB_PASS -N -s -e "SHOW STATUS LIKE 'wsrep_local_bf_aborts';" | awk '{print $2}' || echo 0)
-            cert=$(docker exec $node mariadb -h 127.0.0.1 -uroot -p$DB_PASS -N -s -e "SHOW STATUS LIKE 'wsrep_local_cert_failures';" | awk '{print $2}' || echo 0)
+            bf=$(docker exec -e MYSQL_PWD="$DB_PASS" $node mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW STATUS LIKE 'wsrep_local_bf_aborts';" | awk '{print $2}' || echo 0)
+            cert=$(docker exec -e MYSQL_PWD="$DB_PASS" $node mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW STATUS LIKE 'wsrep_local_cert_failures';" | awk '{print $2}' || echo 0)
             BF_AFTER=$((BF_AFTER + bf)); CERT_AFTER=$((CERT_AFTER + cert))
         done
         BF_DIFF=$((BF_AFTER - BF_BEFORE)); CERT_DIFF=$((CERT_AFTER - CERT_BEFORE))
@@ -112,7 +112,7 @@ case $ACTION in
         LOGS_OUT=""
         for node in "${NODES[@]}"; do
             # 💡 Pro Tip: Conflict logs often go to the file defined by log_error, not always to docker logs
-            log_file=$(docker exec "$node" mariadb -h 127.0.0.1 -uroot -p$DB_PASS -N -s -e "SHOW VARIABLES LIKE 'log_error';" 2>/dev/null | awk '{print $2}')
+            log_file=$(docker exec -e MYSQL_PWD="$DB_PASS" "$node" mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW VARIABLES LIKE 'log_error';" 2>/dev/null | awk '{print $2}')
             
             if [ -n "$log_file" ]; then
                 # Get logs from file (conflicts) AND docker logs (system/startup errors)

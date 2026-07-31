@@ -4,15 +4,18 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-echo "[fix2] Patching tests/test_lab.py..."
-python3 /tmp/patch_test_lab.py
-
 echo "[fix2] Patching scripts/setup_repli.sh..."
-sed -i \
-    -e 's|mariadb -h 127\.0\.0\.1 -P \$port -u\$USER -p\$PASS |MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER |g' \
-    -e 's|mariadb -h 127\.0\.0\.1 -P \$port -u\$USER -p\$PASS$|MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER|g' \
-    -e 's|mariadb-dump -h 127\.0\.0\.1 -P \$MASTER_PORT -u\$USER -p\$PASS|MYSQL_PWD="$PASS" mariadb-dump -h 127.0.0.1 -P $MASTER_PORT -u$USER|g' \
-    scripts/setup_repli.sh && echo "  Patched setup_repli.sh"
+if grep -qE 'mariadb -h 127\.0\.0\.1 -P \$port -u\$USER -p\$PASS($| )' scripts/setup_repli.sh \
+   || grep -q 'mariadb-dump -h 127\.0\.0\.1 -P \$MASTER_PORT -u\$USER -p\$PASS' scripts/setup_repli.sh; then
+    sed -i \
+        -e 's|mariadb -h 127\.0\.0\.1 -P \$port -u\$USER -p\$PASS |MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER |g' \
+        -e 's|mariadb -h 127\.0\.0\.1 -P \$port -u\$USER -p\$PASS$|MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER|g' \
+        -e 's|mariadb-dump -h 127\.0\.0\.1 -P \$MASTER_PORT -u\$USER -p\$PASS|MYSQL_PWD="$PASS" mariadb-dump -h 127.0.0.1 -P $MASTER_PORT -u$USER|g' \
+        scripts/setup_repli.sh
+    echo "  Patched setup_repli.sh"
+else
+    echo "  setup_repli.sh already patched or patterns changed."
+fi
 
 echo "[fix2] Patching scripts/run_mysqltuner.sh..."
 sed -i \

@@ -53,6 +53,66 @@ check_no_pattern "scripts/start_mariadb.sh" ':-p\"\$MARIADB_ROOT' "No conditiona
 check_uses       "scripts/start_mariadb.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
 
 echo ""
+echo "-- Makefile"
+check_no_pattern "Makefile" '\-p"(\$\(DB_ROOT_PASSWORD\)|\$\$\{DB_ROOT_PASSWORD)' "No inline -p in Makefile"
+check_uses       "Makefile" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- conf/innodb-cluster/setup_cluster.sh"
+check_no_pattern "conf/innodb-cluster/setup_cluster.sh" '\-p"\$DB_PASS"' "No inline -p in setup_cluster.sh"
+check_uses       "conf/innodb-cluster/setup_cluster.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- scripts/backup_logical.sh"
+check_no_pattern "scripts/backup_logical.sh" '\-p\$DB_PASS' "No inline -p in backup_logical.sh"
+check_uses       "scripts/backup_logical.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- scripts/restore_logical.sh"
+check_no_pattern "scripts/restore_logical.sh" '\-p\$DB_PASS' "No inline -p in restore_logical.sh"
+check_uses       "scripts/restore_logical.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- scripts/gen_profiles.sh"
+check_no_pattern "scripts/gen_profiles.sh" '\-p\$PASS' "No inline -p in gen_profiles.sh"
+check_uses       "scripts/gen_profiles.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- tests/test_galera.sh"
+check_no_pattern "tests/test_galera.sh" '\-p\$PASS' "No inline -p in test_galera.sh"
+check_uses       "tests/test_galera.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- tests/test_haproxy_galera.sh"
+check_no_pattern "tests/test_haproxy_galera.sh" '\-p\$PASS' "No inline -p in test_haproxy_galera.sh"
+check_uses       "tests/test_haproxy_galera.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- tests/test_innodb_cluster.sh"
+check_no_pattern "tests/test_innodb_cluster.sh" '\-p"\$DB_PASS"' "No inline -p in test_innodb_cluster.sh"
+check_uses       "tests/test_innodb_cluster.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- tests/test_lb_galera.sh"
+check_no_pattern "tests/test_lb_galera.sh" '\-p"\$PASS"' "No inline -p in test_lb_galera.sh"
+check_uses       "tests/test_lb_galera.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- tests/test_perf_galera.sh"
+check_no_pattern "tests/test_perf_galera.sh" '\-p\$DB_PASS' "No inline -p in test_perf_galera.sh"
+check_uses       "tests/test_perf_galera.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- tests/test_perf_repli.sh"
+check_no_pattern "tests/test_perf_repli.sh" '\-p\$DB_PASS' "No inline -p in test_perf_repli.sh"
+check_uses       "tests/test_perf_repli.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
+echo "-- tests/test_repli.sh"
+check_no_pattern "tests/test_repli.sh" '\-p\$PASS' "No inline -p in test_repli.sh"
+check_uses       "tests/test_repli.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
 echo "================================================="
 echo "Results: $PASS passed / $FAIL failed"
 [[ $FAIL -eq 0 ]] && echo "All security checks passed!" && exit 0

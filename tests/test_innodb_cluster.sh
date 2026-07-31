@@ -35,8 +35,8 @@ run_mysql() {
     local host="$1"
     local port="$2"
     shift 2
-    docker run --rm --network "$NETWORK" \
-        mysql:8.4 mysql -h "$host" -P "$port" -u "$DB_USER" -p"$DB_PASS" --connect-timeout=5 "$@" 2>/dev/null
+    docker run --rm --network "$NETWORK" -e MYSQL_PWD="$DB_PASS" \
+        mysql:8.4 mysql -h "$host" -P "$port" -u "$DB_USER" --connect-timeout=5 "$@" 2>/dev/null
 }
 
 # Initialize report

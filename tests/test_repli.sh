@@ -41,7 +41,7 @@ EOF
 run_sql() {
     local port=$1
     local query=$2
-    mariadb -h 127.0.0.1 -P $port -u$USER -p$PASS -sN -e "$query" 2>/dev/null
+    MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER -sN -e "$query" 2>/dev/null
 }
 
 # PASS/FAIL counters
@@ -71,8 +71,8 @@ while [ $(($(date +%s) - START_WAIT)) -lt $MAX_WAIT ]; do
             ALL_UP=false
         else
             # Use raw mariadb to ensure labels are present for grep
-            IO=$(mariadb -h 127.0.0.1 -P $port -u$USER -p$PASS -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_IO_Running:" | awk '{print $2}')
-            SQL=$(mariadb -h 127.0.0.1 -P $port -u$USER -p$PASS -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_SQL_Running:" | awk '{print $2}')
+            IO=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_IO_Running:" | awk '{print $2}')
+            SQL=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_SQL_Running:" | awk '{print $2}')
             if [ "$IO" != "Yes" ] || [ "$SQL" != "Yes" ]; then
                 REPL_OK=false
             fi
@@ -104,7 +104,7 @@ for role in "Master:$MASTER_PORT" "Slave1:$SLAVE1_PORT" "Slave2:$SLAVE2_PORT"; d
     ssl="N/A"
     if run_sql $port "SELECT 1" > /dev/null; then
         status="UP"
-        CIPHER=$(mariadb -h 127.0.0.1 -P $port -u$USER -p$PASS -sN -e "SHOW STATUS LIKE 'Ssl_cipher';" | awk '{print $2}')
+        CIPHER=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER -sN -e "SHOW STATUS LIKE 'Ssl_cipher';" | awk '{print $2}')
         if [ ! -z "$CIPHER" ] && [ "$CIPHER" != "NULL" ]; then
             ssl="$CIPHER"
         else
@@ -129,10 +129,10 @@ for port in $SLAVE1_PORT $SLAVE2_PORT; do
 done
 
 write_report "\n## Sections for replication (master & slave)"
-write_report "### Detailed Master Status\n\`\`\`sql\n$(mariadb -h 127.0.0.1 -P $MASTER_PORT -u$USER -p$PASS -e "SHOW MASTER STATUS\G")\n\`\`\`"
-SLAVE1_FULL=$(mariadb -h 127.0.0.1 -P $SLAVE1_PORT -u$USER -p$PASS -e "SHOW SLAVE STATUS\G")
+write_report "### Detailed Master Status\n\`\`\`sql\n$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $MASTER_PORT -u$USER -e "SHOW MASTER STATUS\G")\n\`\`\`"
+SLAVE1_FULL=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $SLAVE1_PORT -u$USER -e "SHOW SLAVE STATUS\G")
 write_report "### Detailed Slave 1 Status\n\`\`\`sql\n$SLAVE1_FULL\n\`\`\`"
-SLAVE2_FULL=$(mariadb -h 127.0.0.1 -P $SLAVE2_PORT -u$USER -p$PASS -e "SHOW SLAVE STATUS\G")
+SLAVE2_FULL=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $SLAVE2_PORT -u$USER -e "SHOW SLAVE STATUS\G")
 write_report "### Detailed Slave 2 Status\n\`\`\`sql\n$SLAVE2_FULL\n\`\`\`"
 
 echo -e "\n5. 🧪 Performing Data Replication Test..."
@@ -206,7 +206,7 @@ else
 fi
 
 echo -e "\n7. 🔐 SSL Connection Verification..."
-CIPHER=$(mariadb -h 127.0.0.1 -P $MASTER_PORT -u$USER -p$PASS -sN -e "SHOW STATUS LIKE 'Ssl_cipher';" | awk '{print $2}')
+CIPHER=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $MASTER_PORT -u$USER -sN -e "SHOW STATUS LIKE 'Ssl_cipher';" | awk '{print $2}')
 if [[ "$CIPHER" != "" ]] && [[ "$CIPHER" != "NULL" ]]; then
     PASS=$((PASS + 1))
     echo "✅ SSL Connection verified on Master (Cipher: $CIPHER)"

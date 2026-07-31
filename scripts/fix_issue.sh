@@ -3,7 +3,7 @@
 # Usage: bash scripts/fix_issue.sh <github-issue-url> [--dry-run]
 set -euo pipefail
 
-GH_TOKEN="${GH_TOKEN:-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}"
+GH_TOKEN="${GH_TOKEN:-}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BASE_BRANCH="main"
 DRY_RUN=false
