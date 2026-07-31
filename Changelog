@@ -1,3 +1,7 @@
+1.2.9 2026-08-01
+- fix: remove deprecated innodb_file_per_table and innodb_flush_method options for MariaDB 11.8+ (issue #4)
+- doc: update gcustom_1.cnf, gcustom_2.cnf, and gcustom_3.cnf configurations
+
 1.2.8 2026-07-31
 - fix: use sakila as primary test database for mysql96 due to nested source regression (issue #3)
 - fix: Makefile: inject sakila dataset as primary database when db=employees is requested for mysql96
