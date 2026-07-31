@@ -106,7 +106,7 @@ test-innodb: ## Run functional tests on the InnoDB Cluster
 # --- MONGODB REPLICASET ---
 MONGO_COMPOSE = docker-compose-mongo-rs.yml
 
-mongo-up: ## Start MongoDB ReplicaSet (3 nodes + HAProxy)
+mongo-up: gen-ssl-mongo ## Start MongoDB ReplicaSet (3 nodes + HAProxy)
 	@echo "🚀 Starting MongoDB ReplicaSet..."
 	docker compose -f $(MONGO_COMPOSE) up -d
 	@echo "⏳ Waiting for MongoDB nodes to initialize (15s)..."
