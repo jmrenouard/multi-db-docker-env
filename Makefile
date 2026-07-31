@@ -507,12 +507,15 @@ test-all:
 		docker compose down -v; \
 	@printf "\n\033[1;32m✅ All services tested successfully!\033[0m\n"
 
-.PHONY: test-all-report test-failover
+.PHONY: test-all-report test-failover test-backup-restore
 test-all-report: ## Aggregate all individual HTML test reports into a consolidated report
 	@bash ./scripts/aggregate_reports.sh
 
 test-failover: ## Run automated primary failover & resilience tests
 	@bash ./tests/test_failover.sh ${TARGET:-all}
+
+test-backup-restore: ## Run backup and restore procedure verification tests
+	@bash ./tests/test_backup_restore.sh
 	
 test-config: ## Validate the current orchestration configuration, directory structure, SSL and profiles
 	@echo "🚀 Running Configuration Validation..."
