@@ -19,14 +19,14 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Validate Configuration & Environment
-        run: |
-          make test-config
-
       - name: Generate and Check TLS Certificates
         run: |
           make gen-ssl-all
           make check-ssl-all
+
+      - name: Validate Configuration & Environment
+        run: |
+          make test-config
 
       - name: Verify Backup & Restore Procedures
         run: |

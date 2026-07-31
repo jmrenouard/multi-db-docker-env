@@ -8,8 +8,8 @@ echo "=========================================================="
 
 SSL_DIR="./ssl"
 if [ ! -d "$SSL_DIR" ]; then
-    echo "❌ SSL directory not found. Please run 'make gen-ssl' first."
-    exit 1
+    echo "⚠️ SSL directory not found. Generating certificates..."
+    bash ./scripts/gen_ssl.sh
 fi
 
 echo "1. Checking certificate chaining..."
