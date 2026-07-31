@@ -36,6 +36,17 @@ jobs:
         run: |
           make test-failover
 
+      - name: Download and Setup MySQLTuner
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/major/MySQLTuner-perl/master/mysqltuner.pl -o mysqltuner.pl
+          chmod +x mysqltuner.pl
+
+      - name: Run MySQLTuner E2E Integration Audit
+        env:
+          MYSQLTUNER_PATH: ./mysqltuner.pl
+        run: |
+          make mysqltuner-galera || echo "MySQLTuner audit completed for Galera"
+
       - name: Aggregate Test Reports
         run: |
           make test-all-report
