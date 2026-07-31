@@ -139,7 +139,7 @@ for p in $PORTS; do
     echo "--- Node $NODE_IDX (port $p) ---"
 
     # Check connectivity
-    if ! mysqladmin -h 127.0.0.1 -P "$p" -u "$DB_USER" -p"$DB_PASS" ping >/dev/null 2>&1; then
+    if ! MYSQL_PWD="$DB_PASS" mysqladmin -h 127.0.0.1 -P "$p" -u "$DB_USER" ping >/dev/null 2>&1; then
         echo "⚠️  Port $p is not responding, skipping."
         continue
     fi
