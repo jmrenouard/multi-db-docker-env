@@ -29,6 +29,7 @@ services:
     volumes:
       - pg_pgpool_data1:/var/lib/postgresql/data
       - ./conf/pgpool/pg_primary.conf:/docker-entrypoint-initdb.d/00-primary.sh:ro
+      - ./ssl/pgpool:/var/lib/postgresql/ssl:ro
     networks:
       backend_pgpool:
         ipv4_address: 10.8.0.11
@@ -42,6 +43,7 @@ services:
       - "5612:5432"
     volumes:
       - pg_pgpool_data2:/var/lib/postgresql/data
+      - ./ssl/pgpool:/var/lib/postgresql/ssl:ro
     depends_on:
       - pg_node1
     networks:
@@ -57,6 +59,7 @@ services:
       - "5613:5432"
     volumes:
       - pg_pgpool_data3:/var/lib/postgresql/data
+      - ./ssl/pgpool:/var/lib/postgresql/ssl:ro
     depends_on:
       - pg_node1
     networks:
@@ -102,6 +105,12 @@ services:
       - PGPOOL_PARAMS_ENABLE_POOL_HBA=off
       - PGPOOL_PARAMS_POOL_PASSWD=
       - PGPOOL_PARAMS_ALLOW_CLEAR_TEXT_FRONTEND_AUTH=on
+      - PGPOOL_PARAMS_SSL=on
+      - PGPOOL_PARAMS_SSL_KEY=/var/lib/pgpool/ssl/server.key
+      - PGPOOL_PARAMS_SSL_CERT=/var/lib/pgpool/ssl/server.crt
+      - PGPOOL_PARAMS_SSL_CA_CERT=/var/lib/pgpool/ssl/ca-cert.pem
+    volumes:
+      - ./ssl/pgpool:/var/lib/pgpool/ssl:ro
     ports:
       - "9999:9999"
     depends_on:

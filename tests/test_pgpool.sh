@@ -464,11 +464,11 @@ SSL_STATUS=$(echo "$SSL_STATUS" | tr -d '[:space:]')
 if [ "$SSL_STATUS" = "on" ]; then
     PASS=$((PASS + 1))
     echo "✅ TLS/SSL is ACTIVE on Primary (pg_node1)"
-    write_report "- ✅ TLS/SSL: ACTIVE"
+    write_report "- ✅ TLS/SSL: ACTIVE on Primary"
 else
-    PASS=$((PASS + 1))
-    echo "ℹ️ TLS/SSL status checked: $SSL_STATUS (Targeted for Phase 2.2)"
-    write_report "- ℹ️ TLS/SSL Status: $SSL_STATUS (Targeted for Phase 2.2)"
+    FAIL=$((FAIL + 1))
+    echo "❌ TLS/SSL is NOT active on Primary (got: $SSL_STATUS)"
+    write_report "- ❌ TLS/SSL Status on Primary: $SSL_STATUS"
 fi
 
 # ==================================================================
