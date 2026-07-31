@@ -221,14 +221,18 @@ else
     FAIL=$((FAIL + 1))
 fi
 
-# ─── TEST 9: DDL Replication (Index) ───
+# ─── TEST 9: DDL Replication (Collection Schema & Index) ───
 echo ""
-echo "9. 🗂️ DDL Replication (Index)..."
+echo "9. 🗂️ DDL Replication (Collection Schema & Index)..."
 write_report "## 9. DDL Replication"
 
 run_mongo $NODE1 --eval '
 db = db.getSiblingDB("testdb");
-db.repltest.createIndex({key: 1, ts: -1}, {name: "idx_key_ts"});
+db.ddl_test.drop();
+db.createCollection("ddl_test", {
+    validator: { $jsonSchema: { bsonType: "object", required: ["name", "status"] } }
+});
+db.ddl_test.createIndex({ name: 1, status: -1 }, { name: "idx_name_status_ddl" });
 ' 2>/dev/null
 
 sleep 3
@@ -237,43 +241,59 @@ DDL_OK=true
 for node in $NODE2 $NODE3; do
     IDX=$(run_mongo "$node" --eval '
         db.getMongo().setReadPref("secondaryPreferred");
-        var idxs = db.getSiblingDB("testdb").repltest.getIndexes();
-        var found = idxs.filter(function(i) { return i.name === "idx_key_ts"; });
+        var idxs = db.getSiblingDB("testdb").ddl_test.getIndexes();
+        var found = idxs.filter(function(i) { return i.name === "idx_name_status_ddl"; });
         print(found.length);
     ' 2>/dev/null || echo "0")
     if [ "$IDX" = "1" ]; then
-        echo "✅ Index replicated to $node"
+        echo "✅ DDL & Index replicated to $node"
     else
-        echo "❌ Index NOT replicated to $node"
+        echo "❌ DDL & Index NOT replicated to $node"
         DDL_OK=false
     fi
 done
 
 if [ "$DDL_OK" = true ]; then
     PASS=$((PASS + 1))
-    write_report "- ✅ Index replicated to all secondaries"
+    write_report "- ✅ DDL Schema & Index replicated to all secondaries"
 else
     FAIL=$((FAIL + 1))
-    write_report "- ❌ Index missing on some secondaries"
+    write_report "- ❌ DDL Schema & Index missing on some secondaries"
 fi
 
-# ─── TEST 10: Concurrent Writes ───
+# ─── TEST 10: Concurrent Writes (Parallel Background Workers) ───
 echo ""
-echo "10. 🔄 Concurrent Write Test..."
+echo "10. 🔄 Concurrent Write Test (Parallel Workers)..."
 write_report "## 10. Concurrent Writes"
 
 run_mongo $NODE1 --eval '
 db = db.getSiblingDB("testdb");
-db.concurrent.drop();
-var bulk = db.concurrent.initializeUnorderedBulkOp();
-for (var i = 0; i < 30; i++) {
-    bulk.insert({batch: Math.floor(i/10) + 1, idx: i, ts: new Date()});
-}
-bulk.execute();
+db.concurrent_writes.drop();
 ' 2>/dev/null
+
+# Launch 4 parallel write workers in background
+WORKERS=4
+PER_WORKER=25
+EXPECTED_TOTAL=$((WORKERS * PER_WORKER))
+
+for w in $(seq 1 $WORKERS); do
+    (
+        run_mongo $NODE1 --eval "
+        db = db.getSiblingDB('testdb');
+        var docs = [];
+        for (var i = 0; i < $PER_WORKER; i++) {
+            docs.push({ worker: $w, seq: i, ts: new Date() });
+        }
+        db.concurrent_writes.insertMany(docs);
+        " 2>/dev/null
+    ) &
+done
+
+wait
 
 sleep 3
 
+CONCURRENT_OK=true
 for node in $NODE1 $NODE2 $NODE3; do
     RPC=""
     if [ "$node" != "$NODE1" ]; then
@@ -281,18 +301,23 @@ for node in $NODE1 $NODE2 $NODE3; do
     fi
     CT=$(run_mongo "$node" --eval "
         ${RPC}
-        db.getSiblingDB('testdb').concurrent.countDocuments();
+        db.getSiblingDB('testdb').concurrent_writes.countDocuments();
     " 2>/dev/null || echo "0")
-    if [ "$CT" = "30" ]; then
-        echo "✅ $node: 30/30 documents"
-        write_report "- ✅ $node: 30/30"
-        PASS=$((PASS + 1))
+    if [ "$CT" = "$EXPECTED_TOTAL" ]; then
+        echo "✅ $node: $CT/$EXPECTED_TOTAL documents replicated"
+        write_report "- ✅ $node: $CT/$EXPECTED_TOTAL documents"
     else
-        echo "❌ $node: $CT/30 documents"
-        write_report "- ❌ $node: $CT/30"
-        FAIL=$((FAIL + 1))
+        echo "❌ $node: $CT/$EXPECTED_TOTAL documents"
+        write_report "- ❌ $node: $CT/$EXPECTED_TOTAL"
+        CONCURRENT_OK=false
     fi
 done
+
+if [ "$CONCURRENT_OK" = true ]; then
+    PASS=$((PASS + 1))
+else
+    FAIL=$((FAIL + 1))
+fi
 
 # ─── TEST 11: TLS/SSL Verification ───
 echo ""
