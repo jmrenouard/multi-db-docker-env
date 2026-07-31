@@ -1,7 +1,7 @@
 1.2.8 2026-07-31
 - fix: use sakila as primary test database for mysql96 due to nested source regression (issue #3)
 - fix: Makefile: inject sakila dataset as primary database when db=employees is requested for mysql96
-- fix: tests/test_lab.py: assert sakila actor count for mysql96 as primary dataset fallback without skipping tests
+- fix: tests/test_lab.py: gate sakila dataset fallback specifically to mysql96 version
 - doc: update POTENTIAL_ISSUES.md for mysql96 primary dataset test parity
 
 1.2.7 2026-07-31
