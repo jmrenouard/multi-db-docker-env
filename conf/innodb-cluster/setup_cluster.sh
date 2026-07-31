@@ -89,10 +89,20 @@ for node in "mysql_node2" "mysql_node3"; do
     sleep 8
 done
 
-# 7. Verify Group Replication status
+# 7. Verify Group Replication status (Wait for ONLINE state, max 60s)
 echo ""
-echo "7. 📊 Verifying Group Replication status..."
-sleep 5
+echo "7. 📊 Waiting for all 3 nodes to reach ONLINE state..."
+MAX_WAIT=60
+START_TIME=$(date +%s)
+while [ $(($(date +%s) - START_TIME)) -lt $MAX_WAIT ]; do
+    ONLINE_COUNT=$(docker exec -e MYSQL_PWD="$DB_PASS" mysql_node1 mysql -uroot -NB -e "SELECT COUNT(*) FROM performance_schema.replication_group_members WHERE MEMBER_STATE='ONLINE';" 2>/dev/null || echo "0")
+    ONLINE_COUNT=$(echo "$ONLINE_COUNT" | tr -d '[:space:]')
+    if [ "$ONLINE_COUNT" -ge 3 ]; then
+        break
+    fi
+    sleep 2
+done
+
 docker exec -e MYSQL_PWD="$DB_PASS" mysql_node1 mysql -uroot -e "
     SELECT MEMBER_HOST, MEMBER_STATE, MEMBER_ROLE FROM performance_schema.replication_group_members;
 " 2>/dev/null

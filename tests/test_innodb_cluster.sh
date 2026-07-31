@@ -46,6 +46,19 @@ cat <<EOF > "$REPORT_MD"
 
 EOF
 
+# Pre-flight readiness check
+echo "0. ⏳ Pre-flight: Waiting for Group Replication to be ONLINE (max 60s)..."
+MAX_WAIT=60
+START_TIME=$(date +%s)
+while [ $(($(date +%s) - START_TIME)) -lt $MAX_WAIT ]; do
+    ONLINE_COUNT=$(run_mysql mysql_node1 3306 -NB -e "SELECT COUNT(*) FROM performance_schema.replication_group_members WHERE MEMBER_STATE='ONLINE';" 2>/dev/null || echo "0")
+    ONLINE_COUNT=$(echo "$ONLINE_COUNT" | tr -d '[:space:]')
+    if [ "$ONLINE_COUNT" -ge 3 ] 2>/dev/null; then
+        break
+    fi
+    sleep 2
+done
+
 # ==================================================================
 # TEST 1: MySQL Node Status
 # ==================================================================

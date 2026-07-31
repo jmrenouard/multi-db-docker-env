@@ -1,5 +1,5 @@
 1.3.11 2026-08-01
-- 
+- fix(innodb): add ONLINE state wait loop in setup_cluster.sh and pre-flight check in test_innodb_cluster.sh
 
 1.3.10 2026-08-01
 - feat: add test-all-topologies target to Makefile to run E2E verification across all standalone DBs and HA clusters (Galera, Replication, InnoDB, PgPool, Patroni, Mongo)
