@@ -17,7 +17,7 @@ echo "1. ⏳ Waiting for all MySQL nodes to be ready (max 120s)..."
 for node in "${NODES[@]}"; do
     TIMEOUT=120
     ELAPSED=0
-    while ! docker exec "$node" mysql -uroot -p"$DB_PASS" -e "SELECT 1" &>/dev/null; do
+    while ! docker exec -e MYSQL_PWD="$DB_PASS" "$node" mysql -uroot -e "SELECT 1" &>/dev/null; do
         sleep 2
         ELAPSED=$((ELAPSED + 2))
         if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
@@ -32,7 +32,7 @@ done
 echo ""
 echo "2. ⛓️  Installing Group Replication plugin..."
 for node in "${NODES[@]}"; do
-    docker exec "$node" mysql -uroot -p"$DB_PASS" -e "
+    docker exec -e MYSQL_PWD="$DB_PASS" "$node" mysql -uroot -e "
         INSTALL PLUGIN group_replication SONAME 'group_replication.so';
     " 2>/dev/null || true
     echo "   ✅ GR plugin installed on $node."
@@ -42,7 +42,7 @@ done
 echo ""
 echo "3. 🔄 Resetting GTID state on all nodes..."
 for node in "${NODES[@]}"; do
-    docker exec "$node" mysql -uroot -p"$DB_PASS" -e "
+    docker exec -e MYSQL_PWD="$DB_PASS" "$node" mysql -uroot -e "
         RESET MASTER;
     " 2>/dev/null || true
     echo "   ✅ GTID reset on $node."
@@ -52,7 +52,7 @@ done
 echo ""
 echo "4. 👤 Creating replication user on all nodes..."
 for node in "${NODES[@]}"; do
-    docker exec "$node" mysql -uroot -p"$DB_PASS" -e "
+    docker exec -e MYSQL_PWD="$DB_PASS" "$node" mysql -uroot -e "
         SET SQL_LOG_BIN=0;
         CREATE USER IF NOT EXISTS 'repl_user'@'%' IDENTIFIED BY 'replpass';
         GRANT REPLICATION SLAVE ON *.* TO 'repl_user'@'%';
@@ -67,7 +67,7 @@ done
 # 5. Configure and start Group Replication on primary (Node 1)
 echo ""
 echo "5. ⛓️  Starting Group Replication on primary (mysql_node1)..."
-docker exec mysql_node1 mysql -uroot -p"$DB_PASS" -e "
+docker exec -e MYSQL_PWD="$DB_PASS" mysql_node1 mysql -uroot -e "
     CHANGE REPLICATION SOURCE TO SOURCE_USER='repl_user', SOURCE_PASSWORD='replpass' FOR CHANNEL 'group_replication_recovery';
     SET GLOBAL group_replication_bootstrap_group=ON;
     START GROUP_REPLICATION;
@@ -81,7 +81,7 @@ echo ""
 echo "6. ⛓️  Joining secondary nodes..."
 for node in "mysql_node2" "mysql_node3"; do
     echo "   >> Joining $node..."
-    docker exec "$node" mysql -uroot -p"$DB_PASS" -e "
+    docker exec -e MYSQL_PWD="$DB_PASS" "$node" mysql -uroot -e "
         CHANGE REPLICATION SOURCE TO SOURCE_USER='repl_user', SOURCE_PASSWORD='replpass' FOR CHANNEL 'group_replication_recovery';
         START GROUP_REPLICATION;
     " 2>/dev/null
@@ -93,7 +93,7 @@ done
 echo ""
 echo "7. 📊 Verifying Group Replication status..."
 sleep 5
-docker exec mysql_node1 mysql -uroot -p"$DB_PASS" -e "
+docker exec -e MYSQL_PWD="$DB_PASS" mysql_node1 mysql -uroot -e "
     SELECT MEMBER_HOST, MEMBER_STATE, MEMBER_ROLE FROM performance_schema.replication_group_members;
 " 2>/dev/null
 

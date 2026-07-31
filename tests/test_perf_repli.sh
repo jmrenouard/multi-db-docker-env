@@ -75,7 +75,7 @@ case $ACTION in
     prepare)
         echo_title "Preparing Replication cluster for $PROFILE test..."
         PREP_HOST="10.5.0.11"
-        docker exec -it $CLIENT_CONTAINER mariadb -h$PREP_HOST -uroot -p$DB_PASS -e "DROP DATABASE IF EXISTS $DB_NAME; CREATE DATABASE $DB_NAME;"
+        docker exec -it -e MYSQL_PWD="$DB_PASS" $CLIENT_CONTAINER mariadb -h$PREP_HOST -uroot -e "DROP DATABASE IF EXISTS $DB_NAME; CREATE DATABASE $DB_NAME;"
         echo "Creating $TABLES tables..."
         docker exec -it $CLIENT_CONTAINER $COMMAND --mysql-host=$PREP_HOST --threads=1 prepare
         echo_success "Preparation complete."
@@ -87,16 +87,15 @@ case $ACTION in
         REPORT_FILE="reports/test_perf_repli_$(date +%Y%m%d_%H%M%S).html"
         START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         
-        # Capture Slave Lag BEFORE
-        LAG_BEFORE_02=$(docker exec mariadb-mariadb_02-1 mariadb -h 127.0.0.1 -uroot -p$DB_PASS -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
-        LAG_BEFORE_03=$(docker exec mariadb-mariadb_03-1 mariadb -h 127.0.0.1 -uroot -p$DB_PASS -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
+        LAG_BEFORE_02=$(docker exec -e MYSQL_PWD="$DB_PASS" mariadb-mariadb_02-1 mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
+        LAG_BEFORE_03=$(docker exec -e MYSQL_PWD="$DB_PASS" mariadb-mariadb_03-1 mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
 
         # Run sysbench
         docker exec -it $CLIENT_CONTAINER $COMMAND run | tee "$RAW_OUT"
         
         # Capture Slave Lag AFTER
-        LAG_AFTER_02=$(docker exec mariadb-mariadb_02-1 mariadb -h 127.0.0.1 -uroot -p$DB_PASS -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
-        LAG_AFTER_03=$(docker exec mariadb-mariadb_03-1 mariadb -h 127.0.0.1 -uroot -p$DB_PASS -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
+        LAG_AFTER_02=$(docker exec -e MYSQL_PWD="$DB_PASS" mariadb-mariadb_02-1 mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
+        LAG_AFTER_03=$(docker exec -e MYSQL_PWD="$DB_PASS" mariadb-mariadb_03-1 mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
         [ "$LAG_AFTER_02" == "NULL" ] || [ -z "$LAG_AFTER_02" ] && LAG_AFTER_02=0
         [ "$LAG_AFTER_03" == "NULL" ] || [ -z "$LAG_AFTER_03" ] && LAG_AFTER_03=0
         REPLI_LAG=$(( LAG_AFTER_02 > LAG_AFTER_03 ? LAG_AFTER_02 : LAG_AFTER_03 ))

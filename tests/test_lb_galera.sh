@@ -47,7 +47,7 @@ echo "1. ⏳ Iterating through Load Balancer ($ITERATIONS connections)..."
 
 for i in $(seq 1 $ITERATIONS); do
     # Use -sN for robust parsing of single values
-    RESULT=$(mariadb -h "$LB_HOST" -P "$LB_PORT" -u "$USER" -p"$PASS" -sN -e "SELECT @@hostname, (SELECT VARIABLE_VALUE FROM information_schema.SESSION_STATUS WHERE VARIABLE_NAME='Ssl_cipher');" 2>/dev/null)
+    RESULT=$(MYSQL_PWD="$PASS" mariadb -h "$LB_HOST" -P "$LB_PORT" -u "$USER" -sN -e "SELECT @@hostname, (SELECT VARIABLE_VALUE FROM information_schema.SESSION_STATUS WHERE VARIABLE_NAME='Ssl_cipher');" 2>/dev/null)
     if [ $? -eq 0 ]; then
         HOSTNAME=$(echo "$RESULT" | awk '{print $1}')
         SSL=$(echo "$RESULT" | awk '{print $2}')

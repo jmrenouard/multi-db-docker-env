@@ -13,17 +13,18 @@ class TestDatabaseLab(unittest.TestCase):
 
     def run_mysql_query(self, query):
         """Executes a SQL query against a running container via Traefik (localhost:3306)."""
+        env = os.environ.copy()
+        env["MYSQL_PWD"] = self.db_root_password
         cmd = [
             "mysql",
             "-uroot",
-            f"-p{self.db_root_password}",
             "-h127.0.0.1",
             "-P3306",
             "-e", query,
             "--skip-column-names",
             "--batch"
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, env=env)
         return result
 
     def run_pg_query(self, query):

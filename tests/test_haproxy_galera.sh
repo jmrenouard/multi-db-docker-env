@@ -74,7 +74,7 @@ function get_latency() {
     local total_time=0
     for ((i=1; i<=5; i++)); do
         local start=$(date +%s%N)
-        mariadb -h $host -P $port -u$USER -p$PASS -e "SELECT 1;" >/dev/null 2>&1
+        MYSQL_PWD="$PASS" mariadb -h $host -P $port -u$USER -e "SELECT 1;" >/dev/null 2>&1
         local end=$(date +%s%N)
         total_time=$((total_time + (end - start)/1000000))
     done
@@ -96,8 +96,8 @@ echo ""
 # 3. 🧩 Vérification de la Persistance (Sticky Sessions)
 echo "3. 🧩 Test de Persistance / Sticky Sessions..."
 write_report "\n## 3. Session Persistence"
-H1=$(mariadb -h $LB_IP -P $LB_PORT -u$USER -p$PASS -sN -e "SELECT @@hostname;")
-H2=$(mariadb -h $LB_IP -P $LB_PORT -u$USER -p$PASS -sN -e "SELECT @@hostname;")
+H1=$(MYSQL_PWD="$PASS" mariadb -h $LB_IP -P $LB_PORT -u$USER -sN -e "SELECT @@hostname;")
+H2=$(MYSQL_PWD="$PASS" mariadb -h $LB_IP -P $LB_PORT -u$USER -sN -e "SELECT @@hostname;")
 if [ "$H1" == "$H2" ]; then
     MODE="PERSO (Sticky)"
     echo "   📍 Mode de connexion : $MODE"
@@ -123,7 +123,7 @@ echo ">> [TEST] Vérification de la continuité de service..."
 declare -A FAILOVER_COUNT
 FAILED_REQS=0
 for ((i=1; i<=10; i++)); do
-    HOSTNAME=$(mariadb -h $LB_IP -P $LB_PORT -u$USER -p$PASS -sN -e "SELECT @@hostname;" 2>/dev/null || echo "DOWN")
+    HOSTNAME=$(MYSQL_PWD="$PASS" mariadb -h $LB_IP -P $LB_PORT -u$USER -sN -e "SELECT @@hostname;" 2>/dev/null || echo "DOWN")
     ((FAILOVER_COUNT[$HOSTNAME]++))
     if [ "$HOSTNAME" == "DOWN" ]; then ((FAILED_REQS++)); fi
 done

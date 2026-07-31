@@ -62,7 +62,7 @@ fi
 # Execute dump inside container and compress
 # We use --single-transaction for InnoDB consistency
 # We use --routines --triggers --events for a complete dump
-docker exec "$CONTAINER" bash -c "mariadb-dump -u$DB_USER -p$DB_PASS --single-transaction --routines --triggers --events $DUMP_OPTS | pigz > $BACKUP_DIR/$FILENAME"
+docker exec -e MYSQL_PWD="$DB_PASS" "$CONTAINER" bash -c "mariadb-dump -u$DB_USER --single-transaction --routines --triggers --events $DUMP_OPTS | pigz > $BACKUP_DIR/$FILENAME"
 
 if [ $? -eq 0 ]; then
     echo_success "Backup completed successfully!"

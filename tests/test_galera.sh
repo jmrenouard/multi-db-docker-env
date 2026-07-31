@@ -41,7 +41,7 @@ EOF
 run_sql() {
     local port=$1
     local query=$2
-    mariadb -h 127.0.0.1 -P $port -uroot -p$PASS -sN -e "$query" 2>/dev/null
+    MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -sN -e "$query" 2>/dev/null
 }
 
 # PASS/FAIL counters
@@ -63,10 +63,10 @@ while [ $(($(date +%s) - START_WAIT)) -lt $MAX_WAIT ]; do
     for i in 1 2 3; do
         port_var="NODE${i}_PORT"
         port=${!port_var}
-        if mariadb -h 127.0.0.1 -P $port -uroot -p$PASS -e "SELECT 1" > /dev/null 2>&1; then
-            W_READY=$(mariadb -h 127.0.0.1 -P $port -uroot -p$PASS -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_ready';" | awk '{print $2}')
-            W_SIZE=$(mariadb -h 127.0.0.1 -P $port -uroot -p$PASS -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';" | awk '{print $2}')
-            W_STATE=$(mariadb -h 127.0.0.1 -P $port -uroot -p$PASS -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" | awk '{print $2}')
+        if MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -e "SELECT 1" > /dev/null 2>&1; then
+            W_READY=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_ready';" | awk '{print $2}')
+            W_SIZE=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';" | awk '{print $2}')
+            W_STATE=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" | awk '{print $2}')
             echo "   Node $i (Port $port): Ready=$W_READY, Size=$W_SIZE, State=$W_STATE"
             if [ "$W_READY" = "ON" ] && [ "$W_SIZE" = "3" ] && [ "$W_STATE" = "Synced" ]; then
                 ((MATCH_COUNT++))
@@ -102,7 +102,7 @@ for i in 1 2 3; do
     size="-"
     state="-"
     ssl="-"
-    if mariadb -h 127.0.0.1 -P $port -u$USER -p$PASS -e "SELECT 1" > /dev/null; then
+    if MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER -e "SELECT 1" > /dev/null; then
         status="UP"
         ready=$(run_sql $port "SHOW GLOBAL STATUS LIKE 'wsrep_ready';" | awk '{print $2}')
         size=$(run_sql $port "SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';" | awk '{print $2}')
@@ -204,7 +204,7 @@ echo ">> Setting up a record for conflict..."
 run_sql $NODE1_PORT "INSERT INTO $DB.sync_test (id, node_id, msg) VALUES (100, 1, 'Conflict base');"
 
 echo ">> Simulating concurrent updates on Node 1 and Node 2..."
-mariadb -h 127.0.0.1 -P $NODE1_PORT -uroot -p$PASS $DB -e "SET AUTOCOMMIT=0; UPDATE sync_test SET msg='Updated by Node 1' WHERE id=100; SELECT SLEEP(2); COMMIT;" > /dev/null 2>&1 &
+mariadb -h 127.0.0.1 -P $NODE1_PORT -uroot $DB -e "SET AUTOCOMMIT=0; UPDATE sync_test SET msg='Updated by Node 1' WHERE id=100; SELECT SLEEP(2); COMMIT;" >/dev/null 2>&1 &
 PID1=$!
 
 sleep 0.5
@@ -239,7 +239,7 @@ write_report "### Unique Key Constraint Test"
 echo ">> Inserting record ID 500 on Node 1..."
 run_sql $NODE1_PORT "INSERT INTO $DB.sync_test (id, node_id, msg) VALUES (500, 1, 'Initial 500');"
 echo ">> Attempting to insert same ID 500 on Node 2 (Should fail)..."
-ERR_MSG=$(mariadb -h 127.0.0.1 -P $NODE2_PORT -uroot -p$PASS $DB -e "INSERT INTO sync_test (id, node_id, msg) VALUES (500, 2, 'Duplicate 500');" 2>&1)
+ERR_MSG=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $NODE2_PORT -uroot $DB -e "INSERT INTO sync_test (id, node_id, msg) VALUES (500, 2, 'Duplicate 500');" 2>&1)
 if echo "$ERR_MSG" | grep -q "Duplicate entry"; then
     PASS=$((PASS + 1))
     echo "✅ Node 2 correctly rejected duplicate entry"
@@ -366,7 +366,7 @@ NODE_DATA="{"
 for i in 1 2 3; do
     port_var="NODE${i}_PORT"
     port=${!port_var}
-    if mariadb -h 127.0.0.1 -P $port -uroot -p$PASS -e "SELECT 1" > /dev/null 2>&1; then
+    if MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -e "SELECT 1" > /dev/null 2>&1; then
         OPTS=$(run_sql $port "SELECT @@wsrep_provider_options;")
         VARS=$(run_sql $port "SHOW GLOBAL VARIABLES;")
         STATS=$(run_sql $port "SHOW GLOBAL STATUS;")
