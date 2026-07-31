@@ -1,3 +1,7 @@
+1.2.22 2026-08-01
+- feat: implement automated primary failover test suite tests/test_failover.sh (issue #18)
+- feat: add make test-failover target in Makefile to test HA cluster resilience
+
 1.2.21 2026-08-01
 - feat: implement test report aggregation script scripts/aggregate_reports.sh (issue #17)
 - feat: add make test-all-report target in Makefile to consolidate HTML test reports
