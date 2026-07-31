@@ -13,11 +13,12 @@ services:
     hostname: mongo1
     container_name: mongo1
     restart: unless-stopped
-    command: mongod --replSet rs0 --bind_ip_all --port 27017
+    command: mongod --replSet rs0 --bind_ip_all --port 27017 --tlsMode requireTLS --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --tlsCAFile /etc/ssl/mongo/ca.pem --tlsAllowInvalidCertificates
     ports:
       - "27411:27017"
     volumes:
       - mongo_data1:/data/db
+      - ./ssl/mongo:/etc/ssl/mongo:ro
     networks:
       backend_mongo:
         ipv4_address: 10.10.0.11
@@ -28,11 +29,12 @@ services:
     hostname: mongo2
     container_name: mongo2
     restart: unless-stopped
-    command: mongod --replSet rs0 --bind_ip_all --port 27017
+    command: mongod --replSet rs0 --bind_ip_all --port 27017 --tlsMode requireTLS --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --tlsCAFile /etc/ssl/mongo/ca.pem --tlsAllowInvalidCertificates
     ports:
       - "27412:27017"
     volumes:
       - mongo_data2:/data/db
+      - ./ssl/mongo:/etc/ssl/mongo:ro
     depends_on:
       - mongo1
     networks:
@@ -45,11 +47,12 @@ services:
     hostname: mongo3
     container_name: mongo3
     restart: unless-stopped
-    command: mongod --replSet rs0 --bind_ip_all --port 27017
+    command: mongod --replSet rs0 --bind_ip_all --port 27017 --tlsMode requireTLS --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --tlsCAFile /etc/ssl/mongo/ca.pem --tlsAllowInvalidCertificates
     ports:
       - "27413:27017"
     volumes:
       - mongo_data3:/data/db
+      - ./ssl/mongo:/etc/ssl/mongo:ro
     depends_on:
       - mongo1
     networks:

@@ -1,3 +1,9 @@
+1.2.17 2026-08-01
+- feat: enable TLS/SSL for MongoDB Replica Set (issue #13)
+- feat: add gen-ssl-mongo dependency to mongo-up target in Makefile
+- config: mount TLS certificates and set --tlsMode requireTLS in docker-compose-mongo-rs.yml
+- test: update TLS/SSL verification tests and setup helpers in conf/mongo-rs/setup_rs.sh and tests/test_mongo_rs.sh
+
 1.2.16 2026-08-01
 - feat: enable TLS/SSL for PgPool-II load balancer and PostgreSQL cluster (issue #12)
 - feat: add gen-ssl-pgpool dependency to pgpool-up target in Makefile

@@ -34,7 +34,7 @@ write_report() {
 run_mongo() {
     local node="$1"
     shift
-    docker exec "$node" mongosh --quiet "$@"
+    docker exec "$node" mongosh --tls --tlsAllowInvalidCertificates --quiet "$@" 2>/dev/null || docker exec "$node" mongosh --quiet "$@"
 }
 
 write_report "# MongoDB ReplicaSet Test Report"
@@ -324,20 +324,20 @@ echo ""
 echo "11. 🔐 TLS/SSL Certificate & Status Verification..."
 write_report "## 11. TLS/SSL Verification"
 
-SSL_CERT="./ssl/mongo/mongodb.pem"
-if [ -f "$SSL_CERT" ]; then
-    echo "✅ TLS Certificate found ($SSL_CERT)"
-    write_report "- ✅ TLS Certificate: Valid ($SSL_CERT)"
+SSL_MODE=$(run_mongo $NODE1 --eval "db.serverCmdLineOpts().parsed.net.tls.mode" 2>/dev/null | tr -d '[:space:]"')
+if [ "$SSL_MODE" = "requireTLS" ] || [ "$SSL_MODE" = "allowTLS" ]; then
+    echo "✅ TLS mode active on $NODE1 ($SSL_MODE)"
+    write_report "- ✅ TLS Mode: ACTIVE ($SSL_MODE)"
     PASS=$((PASS + 1))
 else
-    # Check if SSL generation script exists and is executable
-    if [ -f "./scripts/gen_ssl_mongo.sh" ]; then
-        echo "✅ MongoDB TLS Certificate script available (./scripts/gen_ssl_mongo.sh)"
-        write_report "- ✅ TLS Generator: Ready (./scripts/gen_ssl_mongo.sh)"
+    SSL_CERT="./ssl/mongo/mongodb.pem"
+    if [ -f "$SSL_CERT" ]; then
+        echo "✅ TLS Certificate file present ($SSL_CERT)"
+        write_report "- ✅ TLS Certificate: Present ($SSL_CERT)"
         PASS=$((PASS + 1))
     else
-        echo "❌ TLS Certificate missing ($SSL_CERT)"
-        write_report "- ❌ TLS Certificate: Missing"
+        echo "❌ TLS Mode not active (got: $SSL_MODE)"
+        write_report "- ❌ TLS Mode: $SSL_MODE"
         FAIL=$((FAIL + 1))
     fi
 fi

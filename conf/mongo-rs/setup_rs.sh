@@ -5,6 +5,12 @@ set -euo pipefail
 
 NODES=("mongo1" "mongo2" "mongo3")
 
+run_mongosh() {
+    local node="$1"
+    shift
+    docker exec "$node" mongosh --tls --tlsAllowInvalidCertificates --quiet "$@" 2>/dev/null || docker exec "$node" mongosh --quiet "$@"
+}
+
 echo "=========================================================="
 echo "⚙️  MongoDB ReplicaSet Setup"
 echo "=========================================================="
@@ -15,7 +21,7 @@ echo "1. ⏳ Waiting for all MongoDB nodes to be ready (max 120s)..."
 for node in "${NODES[@]}"; do
     TIMEOUT=120
     ELAPSED=0
-    while ! docker exec "$node" mongosh --quiet --eval "db.runCommand({ping:1})" &>/dev/null; do
+    while ! run_mongosh "$node" --eval "db.runCommand({ping:1})" &>/dev/null; do
         sleep 2
         ELAPSED=$((ELAPSED + 2))
         if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
@@ -29,7 +35,7 @@ done
 # 2. Initiate ReplicaSet
 echo ""
 echo "2. ⛓️  Initiating ReplicaSet rs0..."
-docker exec mongo1 mongosh --quiet --eval "
+run_mongosh mongo1 --eval "
 try {
     rs.initiate({
         _id: 'rs0',
@@ -56,7 +62,7 @@ echo "3. ⏳ Waiting for primary election (max 60s)..."
 TIMEOUT=60
 ELAPSED=0
 while true; do
-    IS_PRIMARY=$(docker exec mongo1 mongosh --quiet --eval "rs.isMaster().ismaster" 2>/dev/null || echo "false")
+    IS_PRIMARY=$(run_mongosh mongo1 --eval "rs.isMaster().ismaster" 2>/dev/null || echo "false")
     if [ "$IS_PRIMARY" = "true" ]; then
         echo "   ✅ mongo1 elected as PRIMARY."
         break
@@ -77,7 +83,7 @@ sleep 10
 # 5. Verify ReplicaSet status
 echo ""
 echo "5. 📊 Verifying ReplicaSet status..."
-docker exec mongo1 mongosh --quiet --eval "
+run_mongosh mongo1 --eval "
 var s = rs.status();
 s.members.forEach(function(m) {
     print(m.name + ' | ' + m.stateStr + ' | health=' + m.health);
