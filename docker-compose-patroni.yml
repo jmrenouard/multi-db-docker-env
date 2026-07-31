@@ -59,12 +59,30 @@ services:
     image: patroni-rhel8-postgresql:latest
     container_name: node1
     hostname: node1
-    entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/bin/supervisord -c /etc/supervisord.conf
+    entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/local/bin/supervisord -c /etc/supervisord.conf
     environment:
       - PATRONI_NAME=node1
       - PATRONI_ETCD3_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
       - PATRONI_RESTAPI_CONNECT_ADDRESS=node1:8008
       - PATRONI_POSTGRESQL_CONNECT_ADDRESS=node1:5432
+      - CACERT_PATH=/etc/patroni/certs/ca.crt
+      - ETCD_CLIENT_CERT=/etc/patroni/certs/etcd-client.crt
+      - ETCD_CLIENT_KEY=/etc/patroni/certs/etcd-client.key
+      - PATRONI_API_CERT=/etc/patroni/certs/patroni-api.crt
+      - PATRONI_API_KEY=/etc/patroni/certs/patroni-api.key
+      - POSTGRES_SERVER_CERT=/etc/patroni/certs/postgresql-server.crt
+      - POSTGRES_SERVER_KEY=/etc/patroni/certs/postgresql-server.key
+      - PATRONI_ETCD3_PROTOCOL=https
+      - ETCD_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PATRONI_VERIFY_CLIENT=required
+      - PG_HBA_SSL_TYPE=hostssl
+      - PG_HBA_METHOD=md5
+      - PGSSLMODE=verify-ca
+      - PGSSLCERT=/etc/patroni/certs/postgresql-client.crt
+      - PGSSLKEY=/etc/patroni/certs/postgresql-client.key
+      - PGSSLROOTCERT=/etc/patroni/certs/ca.crt
     volumes:
       - node1_data:/datas
       - ./certs_patroni:/certs:ro
@@ -80,12 +98,30 @@ services:
     image: patroni-rhel8-postgresql:latest
     container_name: node2
     hostname: node2
-    entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/bin/supervisord -c /etc/supervisord.conf
+    entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/local/bin/supervisord -c /etc/supervisord.conf
     environment:
       - PATRONI_NAME=node2
       - PATRONI_ETCD3_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
       - PATRONI_RESTAPI_CONNECT_ADDRESS=node2:8008
       - PATRONI_POSTGRESQL_CONNECT_ADDRESS=node2:5432
+      - CACERT_PATH=/etc/patroni/certs/ca.crt
+      - ETCD_CLIENT_CERT=/etc/patroni/certs/etcd-client.crt
+      - ETCD_CLIENT_KEY=/etc/patroni/certs/etcd-client.key
+      - PATRONI_API_CERT=/etc/patroni/certs/patroni-api.crt
+      - PATRONI_API_KEY=/etc/patroni/certs/patroni-api.key
+      - POSTGRES_SERVER_CERT=/etc/patroni/certs/postgresql-server.crt
+      - POSTGRES_SERVER_KEY=/etc/patroni/certs/postgresql-server.key
+      - PATRONI_ETCD3_PROTOCOL=https
+      - ETCD_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PATRONI_VERIFY_CLIENT=required
+      - PG_HBA_SSL_TYPE=hostssl
+      - PG_HBA_METHOD=md5
+      - PGSSLMODE=verify-ca
+      - PGSSLCERT=/etc/patroni/certs/postgresql-client.crt
+      - PGSSLKEY=/etc/patroni/certs/postgresql-client.key
+      - PGSSLROOTCERT=/etc/patroni/certs/ca.crt
     volumes:
       - node2_data:/datas
       - ./certs_patroni:/certs:ro
@@ -101,12 +137,30 @@ services:
     image: patroni-rhel8-postgresql:latest
     container_name: node3
     hostname: node3
-    entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/bin/supervisord -c /etc/supervisord.conf
+    entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/local/bin/supervisord -c /etc/supervisord.conf
     environment:
       - PATRONI_NAME=node3
       - PATRONI_ETCD3_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
       - PATRONI_RESTAPI_CONNECT_ADDRESS=node3:8008
       - PATRONI_POSTGRESQL_CONNECT_ADDRESS=node3:5432
+      - CACERT_PATH=/etc/patroni/certs/ca.crt
+      - ETCD_CLIENT_CERT=/etc/patroni/certs/etcd-client.crt
+      - ETCD_CLIENT_KEY=/etc/patroni/certs/etcd-client.key
+      - PATRONI_API_CERT=/etc/patroni/certs/patroni-api.crt
+      - PATRONI_API_KEY=/etc/patroni/certs/patroni-api.key
+      - POSTGRES_SERVER_CERT=/etc/patroni/certs/postgresql-server.crt
+      - POSTGRES_SERVER_KEY=/etc/patroni/certs/postgresql-server.key
+      - PATRONI_ETCD3_PROTOCOL=https
+      - ETCD_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PATRONI_VERIFY_CLIENT=required
+      - PG_HBA_SSL_TYPE=hostssl
+      - PG_HBA_METHOD=md5
+      - PGSSLMODE=verify-ca
+      - PGSSLCERT=/etc/patroni/certs/postgresql-client.crt
+      - PGSSLKEY=/etc/patroni/certs/postgresql-client.key
+      - PGSSLROOTCERT=/etc/patroni/certs/ca.crt
     volumes:
       - node3_data:/datas
       - ./certs_patroni:/certs:ro
@@ -129,6 +183,7 @@ services:
       - "7000:7000"
     volumes:
       - ./certs_patroni:/certs:ro
+      - ./conf/haproxy-patroni.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     depends_on:
       - node1
       - node2
