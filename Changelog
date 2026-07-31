@@ -1,3 +1,7 @@
+1.2.23 2026-08-01
+- feat: implement backup and restore verification test suite tests/test_backup_restore.sh (issue #19)
+- feat: add make test-backup-restore target in Makefile
+
 1.2.22 2026-08-01
 - feat: implement automated primary failover test suite tests/test_failover.sh (issue #18)
 - feat: add make test-failover target in Makefile to test HA cluster resilience
