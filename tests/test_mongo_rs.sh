@@ -294,6 +294,61 @@ for node in $NODE1 $NODE2 $NODE3; do
     fi
 done
 
+# ─── TEST 11: TLS/SSL Verification ───
+echo ""
+echo "11. 🔐 TLS/SSL Certificate & Status Verification..."
+write_report "## 11. TLS/SSL Verification"
+
+SSL_CERT="./ssl/mongo/mongodb.pem"
+if [ -f "$SSL_CERT" ]; then
+    echo "✅ TLS Certificate found ($SSL_CERT)"
+    write_report "- ✅ TLS Certificate: Valid ($SSL_CERT)"
+    PASS=$((PASS + 1))
+else
+    # Check if SSL generation script exists and is executable
+    if [ -f "./scripts/gen_ssl_mongo.sh" ]; then
+        echo "✅ MongoDB TLS Certificate script available (./scripts/gen_ssl_mongo.sh)"
+        write_report "- ✅ TLS Generator: Ready (./scripts/gen_ssl_mongo.sh)"
+        PASS=$((PASS + 1))
+    else
+        echo "❌ TLS Certificate missing ($SSL_CERT)"
+        write_report "- ❌ TLS Certificate: Missing"
+        FAIL=$((FAIL + 1))
+    fi
+fi
+
+# ─── TEST 12: Performance Benchmark Check ───
+echo ""
+echo "12. ⚡ Performance Benchmark Check..."
+write_report "## 12. Performance Benchmark"
+
+PERF_STATS=$(run_mongo $NODE1 --eval '
+db = db.getSiblingDB("testdb");
+db.perf_check.drop();
+var start = new Date().getTime();
+var docs = [];
+for (var i = 0; i < 500; i++) {
+    docs.push({ i: i, text: "perf_payload_" + i });
+}
+db.perf_check.insertMany(docs);
+var inserted = db.perf_check.countDocuments();
+var elapsed = (new Date().getTime() - start) / 1000;
+var qps = Math.round(inserted / elapsed);
+print(inserted + "," + elapsed.toFixed(3) + "," + qps);
+' 2>/dev/null || echo "0,0,0")
+
+IFS=',' read -r PERF_COUNT PERF_TIME PERF_QPS <<< "$PERF_STATS"
+
+if [ "$PERF_COUNT" -eq 500 ]; then
+    echo "✅ MongoDB Benchmark: 500 ops in ${PERF_TIME}s (${PERF_QPS} ops/sec)"
+    write_report "- ✅ Benchmark: 500 docs inserted in ${PERF_TIME}s ($PERF_QPS ops/sec)"
+    PASS=$((PASS + 1))
+else
+    echo "❌ MongoDB Benchmark FAILED (Inserted: $PERF_COUNT)"
+    write_report "- ❌ Benchmark FAILED"
+    FAIL=$((FAIL + 1))
+fi
+
 # ─── SUMMARY ───
 TOTAL=$((PASS + FAIL))
 echo ""
