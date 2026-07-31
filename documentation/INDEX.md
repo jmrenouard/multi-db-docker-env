@@ -57,6 +57,7 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 | **[Galera Bootstrap](galera_bootstrap.md)** | Step-by-step guide for initializing and growing Galera clusters. |
 | **[Replication Setup](replication_setup.md)** | How to configure and automate Master/Slave replication. |
 | **[SSL & Security](replication_ssl.md)** | Configuring SSL for encrypted connections and secure replication. |
+| **[TLS/SSL Architecture](tls_setup.md)** | Unified TLS/SSL architecture and setup guide across all database technologies. |
 
 ## 🐘 PostgreSQL & HA Architectures
 
