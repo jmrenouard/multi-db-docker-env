@@ -15,7 +15,7 @@ DB_NAME="test_patroni_db"
 RW_PORT=5000
 RO_PORT=5001
 HAPROXY_HOST="127.0.0.1"
-PATRONI_NET="patroni_net"
+PATRONI_NET="multi-db-docker-env_patroni_net"
 PG_IMAGE="postgres:17-alpine"
 
 # Reports
@@ -57,7 +57,7 @@ echo ""
 echo "1. 📊 Checking Cluster Status..."
 write_report "## 1. Cluster Status"
 
-STATUS_OUTPUT=$(docker exec node1 patronictl -c /etc/patroni/patroni.yml list 2>/dev/null || echo "FAILED")
+STATUS_OUTPUT=$(docker exec node1 patronictl -c /etc/patroni.yml list 2>/dev/null || echo "FAILED")
 echo "$STATUS_OUTPUT"
 write_report "\`\`\`\n$STATUS_OUTPUT\n\`\`\`"
 
@@ -244,7 +244,7 @@ echo ""
 echo "8. ⚙️ Patroni Config..."
 write_report "## 8. Config"
 
-SCOPE=$(docker exec node1 patronictl -c /etc/patroni/patroni.yml show-config 2>/dev/null | head -5)
+SCOPE=$(docker exec node1 patronictl -c /etc/patroni.yml show-config 2>/dev/null | head -5)
 if [ -n "$SCOPE" ]; then
     PASS=$((PASS + 1))
     echo "✅ Patroni config accessible"

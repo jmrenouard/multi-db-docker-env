@@ -30,7 +30,7 @@ patroni-down:
 
 patroni-status:
 	@echo "📊 Statut du cluster Patroni..."
-	docker exec node1 patronictl -c /etc/patroni/patroni.yml list
+	docker exec node1 patronictl -c /etc/patroni.yml list
 
 patroni-logs:
 	docker compose -f $(PATRONI_COMPOSE) logs -f
