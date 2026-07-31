@@ -180,7 +180,7 @@ test-mongo8: ## Run functional tests on MongoDB 8 ReplicaSet
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
         gen-ssl clean-ssl renew-ssl renew-ssl-galera renew-ssl-repli emergency-galera emergency-repli check-galera check-repli \
         gen-ssl-innodb gen-ssl-pgpool gen-ssl-mongo gen-ssl-patroni gen-ssl-all check-ssl-all \
-        test-config start verify inject sync-test-db
+        test-config start verify inject sync-test-db test-all-topologies test-all-environments
 
 # --- Paths ---
 TEST_DB_DIR = test_db
@@ -262,6 +262,10 @@ help:
 	@printf "    \033[1mmysqltuner-innodb\033[0m  - 🔍 Run MySQLTuner audit on InnoDB Cluster\n"
 	@printf "    \033[1mmysqltuner-repli\033[0m   - 🔍 Run MySQLTuner audit on Replication\n"
 	@printf "    \033[1mmysqltuner-all\033[0m     - 🔍 Run MySQLTuner on all HA topologies\n"
+	@printf "\n"
+	@printf "  \033[1;32mEnd-to-End Testing:\033[0m\n"
+	@printf "    \033[1mtest-all\033[0m           - 🧪 Runs functional tests on all standalone databases\n"
+	@printf "    \033[1mtest-all-topologies\033[0m- 🧪 Runs E2E tests across ALL standalone DBs and HA topologies\n"
 	@printf "\n"
 
 # 🚀 Starts the default database service
@@ -508,7 +512,52 @@ test-all:
 	done
 	@printf "\n\033[1;32m✅ All services tested successfully!\033[0m\n"
 
-.PHONY: test-all-report test-failover test-backup-restore
+.PHONY: test-all-report test-failover test-backup-restore test-all-topologies test-all-environments
+
+test-all-topologies: test-config test-all ## Run E2E verification tests across ALL standalone DBs and HA topologies (Galera, Replication, InnoDB, PgPool, Patroni, Mongo)
+	@echo "=========================================================="
+	@echo "🚀 Starting Full E2E Topology Test Suite"
+	@echo "=========================================================="
+	@echo ">> 🧪 1. Testing Galera Cluster..."
+	@$(MAKE) full-galera || exit 1
+	@$(MAKE) down-galera
+	@echo ">> 🧪 2. Testing Replication Cluster..."
+	@$(MAKE) full-repli || exit 1
+	@$(MAKE) down-repli
+	@echo ">> 🧪 3. Testing MySQL InnoDB Cluster..."
+	@$(MAKE) gen-ssl-innodb
+	@$(MAKE) innodb-up || exit 1
+	@$(MAKE) test-innodb || exit 1
+	@$(MAKE) innodb-down
+	@echo ">> 🧪 4. Testing PostgreSQL PgPool-II Cluster..."
+	@$(MAKE) gen-ssl-pgpool
+	@$(MAKE) pgpool-up || exit 1
+	@$(MAKE) test-pgpool || exit 1
+	@$(MAKE) pgpool-down
+	@echo ">> 🧪 5. Testing Patroni PostgreSQL Cluster..."
+	@$(MAKE) gen-ssl-patroni
+	@$(MAKE) patroni-up || exit 1
+	@$(MAKE) test-patroni || exit 1
+	@$(MAKE) patroni-down
+	@echo ">> 🧪 6. Testing MongoDB ReplicaSet..."
+	@$(MAKE) gen-ssl-mongo
+	@$(MAKE) mongo-up || exit 1
+	@$(MAKE) test-mongo || exit 1
+	@$(MAKE) mongo-down
+	@echo ">> 🧪 7. Testing MongoDB 8 ReplicaSet..."
+	@$(MAKE) mongo8-up || exit 1
+	@$(MAKE) test-mongo8 || exit 1
+	@$(MAKE) mongo8-down
+	@echo ">> 🧪 8. Testing Failover & Backup/Restore..."
+	@$(MAKE) test-failover || exit 1
+	@$(MAKE) test-backup-restore || exit 1
+	@echo ">> 📊 Aggregating all reports..."
+	@$(MAKE) test-all-report
+	@echo "=========================================================="
+	@echo "🎉 FULL E2E TOPOLOGY TEST SUITE PASSED SUCCESSFULLY!"
+	@echo "=========================================================="
+
+test-all-environments: test-all-topologies ## Alias for test-all-topologies
 test-all-report: ## Aggregate all individual HTML test reports into a consolidated report
 	@bash ./scripts/aggregate_reports.sh
 
