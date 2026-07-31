@@ -7,8 +7,6 @@ binlog_format=ROW
 default_storage_engine=InnoDB
 # InnoDB lock mode for auto-increment (Required for Galera: 2)
 innodb_autoinc_lock_mode=2
-# Enable individual file per table
-innodb_file_per_table=1
 # Maximum number of simultaneous connections
 max_connections=1024
 # Global bind address to allow remote connections
@@ -55,8 +53,6 @@ binlog_expire_logs_seconds=172800
 # --- InnoDB Settings ---
 # Redo log flush frequency (0=Performance, 1=ACID)
 innodb_flush_log_at_trx_commit = 0
-# Use O_DSYNC to avoid 'Can't change size of file' errors on WSL2 bind mounts
-innodb_flush_method = O_DSYNC
 # InnoDB buffer pool size
 innodb_buffer_pool_size = 1G
 # Redo log file size
