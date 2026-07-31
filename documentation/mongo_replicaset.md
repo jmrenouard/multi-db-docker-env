@@ -4,25 +4,19 @@ MongoDB 7.0 ReplicaSet cluster with HAProxy for connection routing.
 
 ## Architecture
 
-```
-┌───────────────────────────────────────────────────────────────┐
-│                    Network: 10.10.0.0/24                      │
-│                                                               │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐                  │
-│  │  mongo1  │   │  mongo2  │   │  mongo3  │                   │
-│  │ PRIMARY  │   │SECONDARY │   │SECONDARY │                   │
-│  │10.10.0.11│   │10.10.0.12│   │10.10.0.13│                   │
-│  │  :27411  │   │  :27412  │   │  :27413  │                   │
-│  └────┬─────┘   └─────┬────┘   └─────┬────┘                  │
-│       │  ReplicaSet    │              │                       │
-│       │    rs0         │              │                       │
-│       ▼                ▼              ▼                       │
-│  ┌─────────────────────────────────────────┐                  │
-│  │           HAProxy                       │                  │
-│  │    RW :27100  │  Stats :8408           │                   │
-│  │         10.10.0.20                      │                  │
-│  └─────────────────────────────────────────┘                  │
-└───────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Client[Client / App] -->|Port 27100| LB[HAProxy LB<br/>10.10.0.20]
+    
+    subgraph Mongo_ReplicaSet [MongoDB ReplicaSet: 10.10.0.0/24]
+        LB -->|Writes & Reads| M1["mongo1 (Primary)<br/>10.10.0.11:27017"]
+        LB -->|Read RR| M2["mongo2 (Secondary)<br/>10.10.0.12:27017"]
+        LB -->|Read RR| M3["mongo3 (Secondary)<br/>10.10.0.13:27017"]
+        
+        M1 <-->|ReplicaSet rs0| M2
+        M2 <-->|ReplicaSet rs0| M3
+        M3 <-->|ReplicaSet rs0| M1
+    end
 ```
 
 ### Components

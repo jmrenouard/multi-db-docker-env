@@ -4,32 +4,21 @@ High-availability PostgreSQL 17 cluster using PgPool-II for connection pooling a
 
 ## Architecture
 
-```
-┌───────────────────────────────────────────────────────────────┐
-│                    Network: 10.8.0.0/24                       │
-│                                                               │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐                  │
-│  │ pg_node1 │──▶│ pg_node2 │   │ pg_node3 │                  │
-│  │ PRIMARY  │   │ STANDBY  │   │ STANDBY  │                  │
-│  │ 10.8.0.11│   │ 10.8.0.12│   │ 10.8.0.13│                  │
-│  │ :5611    │   │ :5612    │   │ :5613    │                  │
-│  └────┬─────┘   └─────┬────┘   └─────┬────┘                  │
-│       │  Streaming     │              │                       │
-│       │  Replication   │              │                       │
-│       ▼                ▼              ▼                       │
-│  ┌─────────────────────────────────────────┐                  │
-│  │           PgPool-II 4.6                 │                  │
-│  │        Connection Pooling               │                  │
-│  │        Load Balancing                   │                  │
-│  │        10.8.0.20 / :9999                │                  │
-│  └───────────────────┬─────────────────────┘                  │
-│                      │                                        │
-│  ┌───────────────────▼─────────────────────┐                  │
-│  │           HAProxy                       │                  │
-│  │    RW :5100  │  RO :5101  │ Stats :8406 │                  │
-│  │           10.8.0.100                    │                  │
-│  └─────────────────────────────────────────┘                  │
-└───────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Client_W[Write Client] -->|Port 5100| LB[HAProxy LB<br/>10.8.0.100]
+    Client_R[Read Client] -->|Port 5101| LB
+    
+    LB -->|HAProxy Routing| Pool[PgPool-II 4.6<br/>10.8.0.20:9999]
+    
+    subgraph PG_Streaming_Replication [PG Cluster: 10.8.0.0/24]
+        Pool -->|Writes| N1["pg_node1 (Primary)<br/>10.8.0.11:5432"]
+        Pool -->|Read Load Balancing| N2["pg_node2 (Standby)<br/>10.8.0.12:5432"]
+        Pool -->|Read Load Balancing| N3["pg_node3 (Standby)<br/>10.8.0.13:5432"]
+        
+        N1 --"Streaming Replication"--> N2
+        N1 --"Streaming Replication"--> N3
+    end
 ```
 
 ### Components
