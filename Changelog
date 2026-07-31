@@ -1,3 +1,8 @@
+1.2.18 2026-08-01
+- feat: enable TLS/SSL for Patroni PostgreSQL Docker cluster (issue #14)
+- feat: update scripts/gen_ssl_patroni.sh to generate certificates for Patroni and sync to ssl/patroni
+- test: update TLS/SSL verification assertions in tests/test_patroni.sh
+
 1.2.17 2026-08-01
 - feat: enable TLS/SSL for MongoDB Replica Set (issue #13)
 - feat: add gen-ssl-mongo dependency to mongo-up target in Makefile

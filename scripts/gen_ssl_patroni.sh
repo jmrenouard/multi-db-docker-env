@@ -9,42 +9,13 @@ echo "=========================================================="
 echo "🔐 Patroni PostgreSQL TLS Certificate Generator"
 echo "=========================================================="
 
-check_certificates() {
-    [ -f "$SSL_DIR/ca-cert.pem" ] && \
-    [ -f "$SSL_DIR/server.crt" ] && \
-    [ -f "$SSL_DIR/server.key" ] && \
-    openssl verify -CAfile "$SSL_DIR/ca-cert.pem" "$SSL_DIR/server.crt" >/dev/null 2>&1
-}
+CERT_DIR="certs_patroni" bash ./scripts/patroni/generate_certs.sh
 
-if check_certificates; then
-    echo "✅ Patroni TLS certificates already valid. Skipping."
-    exit 0
+if [ -d "certs_patroni" ]; then
+    cp -f certs_patroni/ca.crt "$SSL_DIR/ca-cert.pem" 2>/dev/null || true
+    cp -f certs_patroni/postgresql-server.crt "$SSL_DIR/server.crt" 2>/dev/null || true
+    cp -f certs_patroni/postgresql-server.key "$SSL_DIR/server.key" 2>/dev/null || true
 fi
 
-echo ">> 📁 Generating CA..."
-openssl genrsa 2048 > "$SSL_DIR/ca-key.pem" 2>/dev/null
-openssl req -new -x509 -nodes -days 3650 \
-    -key "$SSL_DIR/ca-key.pem" \
-    -out "$SSL_DIR/ca-cert.pem" \
-    -subj "/CN=Patroni-PostgreSQL-CA"
-
-echo ">> 📁 Generating Server Certificate..."
-openssl req -newkey rsa:2048 -nodes -days 3650 \
-    -keyout "$SSL_DIR/server.key" \
-    -out "$SSL_DIR/server.csr" \
-    -subj "/CN=patroni-server" 2>/dev/null
-
-openssl x509 -req -in "$SSL_DIR/server.csr" -days 3650 \
-    -CA "$SSL_DIR/ca-cert.pem" \
-    -CAkey "$SSL_DIR/ca-key.pem" \
-    -set_serial 01 \
-    -out "$SSL_DIR/server.crt" 2>/dev/null
-
-# PostgreSQL requires key to be readable only by owner
-chmod 600 "$SSL_DIR/server.key"
-rm -f "$SSL_DIR/"*.csr
-chmod 644 "$SSL_DIR/ca-cert.pem" "$SSL_DIR/server.crt"
-
-echo ""
-echo "✅ Patroni TLS certificates generated in $SSL_DIR/"
+echo "✅ Patroni TLS certificates generated in $SSL_DIR/ and certs_patroni/"
 echo "=========================================================="

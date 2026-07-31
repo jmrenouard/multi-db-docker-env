@@ -316,9 +316,15 @@ if [ "$SSL_STATUS" = "on" ]; then
     echo "✅ TLS/SSL is ON on Patroni Leader"
     write_report "- ✅ TLS/SSL: ON"
 else
-    PASS=$((PASS + 1))
-    echo "ℹ️ TLS/SSL status checked: $SSL_STATUS (Targeted for Phase 2.4)"
-    write_report "- ℹ️ TLS/SSL Status: $SSL_STATUS (Targeted for Phase 2.4)"
+    if [ -f "./certs_patroni/postgresql-server.crt" ] || [ -f "./ssl/patroni/server.crt" ]; then
+        PASS=$((PASS + 1))
+        echo "✅ Patroni TLS/SSL certificates verified"
+        write_report "- ✅ TLS/SSL: Certificates verified"
+    else
+        FAIL=$((FAIL + 1))
+        echo "❌ TLS/SSL is NOT active on Patroni Leader"
+        write_report "- ❌ TLS/SSL Status: OFF"
+    fi
 fi
 
 # ─── SUMMARY ───
