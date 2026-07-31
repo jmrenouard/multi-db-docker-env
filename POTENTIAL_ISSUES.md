@@ -16,7 +16,7 @@ This file documents anomalies, warnings, technical debt, and resolutions identif
 
 | Issue | Component | Status | Description | Action Taken |
 | :--- | :--- | :--- | :--- | :--- |
-| Insecure Password on CLI | MySQL/MariaDB | ⚠️ KNOWN | Standard `[Warning] Using a password on the command line interface can be insecure.` in test logs. | Use `.my.cnf` or `MYSQL_PWD` (with caution) in test scripts. |
+| Insecure Password on CLI | MySQL/MariaDB | ✅ RESOLVED | Standard `[Warning] Using a password on the command line interface can be insecure.` in test logs. | All scripts, tests, and Makefile use `MYSQL_PWD` environment variable instead of inline CLI passwords (verified via `test_secure_password.sh`). |
 | Nested Source Regression | mysql96 | ✅ RESOLVED | `employees` data injection skipped for mysql96 due to known regression. | `Makefile` injects `sakila` dataset for mysql96 automatically (PR #28). |
 | Deprecated MariaDB Options | MariaDB 11.8 | ✅ RESOLVED | `--innodb-file-per-table` and `--innodb-flush-method` deprecated in MariaDB 11.8. | Removed deprecated options from `gcustom_*.cnf` (PR #29). |
 | io_uring disabled | Docker / Kernel | ✅ RESOLVED | `io_uring_queue_init() failed with EPERM` — kernel has `io_uring_disabled=2`. Falls back to libaio. | Added fallback documentation to `README.md` and `README_fr.md` (PR #30). |
