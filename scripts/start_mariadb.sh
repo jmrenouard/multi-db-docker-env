@@ -62,7 +62,7 @@ if [ ! -f "$DATA_DIR/.initialized" ]; then
         
         # Shutdown temporary MariaDB
         echo ">> 🛑 Stopping temporary MariaDB..."
-        mariadb-admin --socket="$SOCKET" -u root ${MARIADB_ROOT_PASSWORD:+-p"$MARIADB_ROOT_PASSWORD"} shutdown || kill -s TERM "$pid" || true
+        MYSQL_PWD="${MARIADB_ROOT_PASSWORD:-}" mariadb-admin --socket="$SOCKET" -u root shutdown || kill -s TERM "$pid" || true
         wait "$pid" || true
     fi
     
