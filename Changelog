@@ -1,3 +1,8 @@
+1.2.5 2026-07-10
+- feat: add MySQLTuner E2E integration with Makefile targets (mysqltuner-galera, mysqltuner-innodb, mysqltuner-repli, mysqltuner-all)
+- feat: add scripts/run_mysqltuner.sh wrapper with auto-topology detection and multi-node scanning
+- docs(roadmap): add Phase 4 (MySQLTuner E2E Integration) to ROADMAP.md
+
 1.2.4 2026-03-14
 - feat: update PgPool-II to version 4.6 in docker-compose-pgpool.yml.
 - feat: add Connection Pools and Client Processes test cases in test_pgpool.sh.

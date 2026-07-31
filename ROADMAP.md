@@ -96,3 +96,41 @@ Enable TLS/SSL across all products for encrypted client connections.
 | Failover testing | Automated primary failover tests per cluster type | 🟡 MEDIUM |
 | Backup/Restore tests | Verify backup and restore procedures per product | 🟢 LOW |
 | CI/CD integration | GitHub Actions workflow for automated test execution | 🟢 LOW |
+
+---
+
+## Phase 4 — MySQLTuner E2E Integration
+
+> Bridge between multi-db-docker-env and MySQLTuner-perl for end-to-end validation of tuning diagnostics across HA topologies.
+
+### MySQLTuner Audit Targets
+
+| Target | Topology | Description |
+| :--- | :--- | :--- |
+| `mysqltuner-galera` | Galera Cluster (3 nodes) | Start cluster, inject data, run MySQLTuner on all nodes |
+| `mysqltuner-innodb` | InnoDB Cluster (3 nodes) | Start cluster, setup Group Replication, run MySQLTuner |
+| `mysqltuner-repli` | Replication (3 nodes) | Start source + replicas, run MySQLTuner on each |
+| `mysqltuner-all` | All topologies | Sequential audit of all HA topologies |
+
+### Integration Architecture
+
+```
+multi-db-docker-env                    MySQLTuner-perl
+┌──────────────────────┐              ┌──────────────────────┐
+│ make mysqltuner-*    │──────────────│ mysqltuner.pl        │
+│   → up-galera/innodb │   runs via   │   → Audit output     │
+│   → inject data      │ MYSQLTUNER_  │   → HTML report      │
+│   → run_mysqltuner.sh│ PATH env     │                      │
+│   → reports/         │              │ build/test_ha.sh     │
+└──────────────────────┘              │   → analyze_mt_output│
+                                      │   → HA profiles      │
+                                      └──────────────────────┘
+```
+
+### Implementation Status
+
+- [x] `scripts/run_mysqltuner.sh` — Auto-detect topology and run MySQLTuner
+- [x] Makefile targets — `mysqltuner-galera`, `mysqltuner-innodb`, `mysqltuner-repli`, `mysqltuner-all`
+- [ ] GitHub Actions workflow for automated MySQLTuner E2E testing
+- [ ] Cross-project HTML report aggregation
+
