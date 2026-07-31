@@ -4,6 +4,31 @@ This project includes a high-availability PostgreSQL 17 cluster based on RHEL 8 
 
 ## Architecture
 
+```mermaid
+graph TD
+    Client_W[Write Client] -->|Port 5000| LB[HAProxy LB<br/>Stats: 7000]
+    Client_R[Read Client] -->|Port 5001| LB
+    
+    subgraph Patroni_PostgreSQL_Cluster [Patroni PG Cluster]
+        LB -->|Writes (Leader)| N1["node1 (Leader)<br/>PostgreSQL"]
+        LB -->|Read RR (Replicas)| N2["node2 (Replica)<br/>PostgreSQL"]
+        LB -->|Read RR (Replicas)| N3["node3 (Replica)<br/>PostgreSQL"]
+        
+        N1 --"Streaming Replication"--> N2
+        N1 --"Streaming Replication"--> N3
+    end
+    
+    subgraph ETCD_Consensus [ETCD Consensus Cluster]
+        E1[etcd1] <--> E2[etcd2]
+        E2 <--> E3[etcd3]
+        E3 <--> E1
+    end
+    
+    N1 -.->|Consensus / DCS| ETCD_Consensus
+    N2 -.->|Consensus / DCS| ETCD_Consensus
+    N3 -.->|Consensus / DCS| ETCD_Consensus
+```
+
 - **ETCD Cluster**: 3 nodes (`etcd1`, `etcd2`, `etcd3`) for distributed configuration and consensus.
 - **PostgreSQL Nodes**: 3 nodes (`node1`, `node2`, `node3`) managed by Patroni.
 - **HAProxy**: Load balancer providing a single entry point for read-write and read-only traffic.

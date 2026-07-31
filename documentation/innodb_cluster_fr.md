@@ -4,25 +4,20 @@ Cluster MySQL 8.0 avec Group Replication et HAProxy pour le routage transparent 
 
 ## Architecture
 
-```
-┌───────────────────────────────────────────────────────────────┐
-│                    Réseau : 10.9.0.0/24                       │
-│                                                               │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐                  │
-│  │mysql_node1│   │mysql_node2│  │mysql_node3│                 │
-│  │ PRIMAIRE  │   │SECONDAIRE│   │SECONDAIRE│                  │
-│  │ 10.9.0.11│   │ 10.9.0.12│   │ 10.9.0.13│                  │
-│  │ :4411    │   │ :4412    │   │ :4413    │                    │
-│  └────┬─────┘   └─────┬────┘   └─────┬────┘                  │
-│       │  Group         │              │                       │
-│       │  Replication   │              │                       │
-│       ▼                ▼              ▼                       │
-│  ┌─────────────────────────────────────────┐                  │
-│  │           HAProxy                       │                  │
-│  │    RW :6446  │  RO :6447               │                  │
-│  │    Stats :8407  │  10.9.0.20            │                  │
-│  └─────────────────────────────────────────┘                  │
-└───────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Client_W[Client Écriture] -->|Port 6446| LB[HAProxy LB<br/>10.9.0.20]
+    Client_R[Client Lecture] -->|Port 6447| LB
+    
+    subgraph InnoDB_Cluster [Cluster InnoDB : 10.9.0.0/24]
+        LB -->|Écritures| N1["mysql_node1 (Primaire)<br/>10.9.0.11:3306"]
+        LB -->|Lectures RR| N2["mysql_node2 (Secondaire)<br/>10.9.0.12:3306"]
+        LB -->|Lectures RR| N3["mysql_node3 (Secondaire)<br/>10.9.0.13:3306"]
+        
+        N1 <-->|Group Replication| N2
+        N2 <-->|Group Replication| N3
+        N3 <-->|Group Replication| N1
+    end
 ```
 
 ### Composants
