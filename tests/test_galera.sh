@@ -107,7 +107,7 @@ for i in 1 2 3; do
     size="-"
     state="-"
     ssl="-"
-    if MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER -e "SELECT 1" > /dev/null; then
+    if MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u$USER -e "SELECT 1" > /dev/null 2>&1; then
         status="UP"
         ready=$(run_sql $port "SHOW GLOBAL STATUS LIKE 'wsrep_ready';" | awk '{print $2}')
         size=$(run_sql $port "SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';" | awk '{print $2}')
@@ -244,7 +244,7 @@ write_report "### Unique Key Constraint Test"
 echo ">> Inserting record ID 500 on Node 1..."
 run_sql $NODE1_PORT "INSERT INTO $DB.sync_test (id, node_id, msg) VALUES (500, 1, 'Initial 500');"
 echo ">> Attempting to insert same ID 500 on Node 2 (Should fail)..."
-ERR_MSG=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $NODE2_PORT -uroot $DB -e "INSERT INTO sync_test (id, node_id, msg) VALUES (500, 2, 'Duplicate 500');" 2>&1)
+ERR_MSG=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $NODE2_PORT -uroot $DB -e "INSERT INTO sync_test (id, node_id, msg) VALUES (500, 2, 'Duplicate 500');" 2>&1)
 if echo "$ERR_MSG" | grep -q "Duplicate entry"; then
     PASS=$((PASS + 1))
     echo "✅ Node 2 correctly rejected duplicate entry"
@@ -430,7 +430,7 @@ NODE_DATA="{"
 for i in 1 2 3; do
     port_var="NODE${i}_PORT"
     port=${!port_var}
-    if MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -e "SELECT 1" > /dev/null 2>&1; then
+    if MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -uroot -e "SELECT 1" > /dev/null 2>&1; then
         OPTS=$(run_sql $port "SELECT @@wsrep_provider_options;")
         VARS=$(run_sql $port "SHOW GLOBAL VARIABLES;")
         STATS=$(run_sql $port "SHOW GLOBAL STATUS;")
