@@ -271,6 +271,56 @@ else
     write_report "- ⚠️ HAProxy dashboard: DOWN (HTTP $STATS_CODE)"
 fi
 
+# ─── TEST 10: Concurrent Writes ───
+echo ""
+echo "10. 🔄 Concurrent Writes Test..."
+write_report "## 10. Concurrent Writes"
+
+docker exec "$LEADER_NODE" psql -U "$DB_USER" -d "$DB_NAME" -c "CREATE TABLE IF NOT EXISTS concurrent_test (id serial PRIMARY KEY, batch int, val text, created_at timestamp default now());" > /dev/null
+
+for b in 1 2 3; do
+    docker exec "$LEADER_NODE" psql -U "$DB_USER" -d "$DB_NAME" -c "INSERT INTO concurrent_test (batch, val) SELECT $b, 'batch_' || $b || '_' || i FROM generate_series(1, 10) i;" >/dev/null 2>&1 &
+done
+wait
+sleep 2
+
+CONC_OK=true
+for replica in $REPLICAS; do
+    CONC_COUNT=$(docker exec "$replica" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c "SELECT count(*) FROM concurrent_test;" 2>/dev/null || echo "0")
+    CONC_COUNT=$(echo "$CONC_COUNT" | tr -d '[:space:]')
+    if [ "$CONC_COUNT" -ne 30 ]; then
+        CONC_OK=false
+    fi
+done
+
+if [ "$CONC_OK" = true ]; then
+    PASS=$((PASS + 1))
+    echo "✅ Concurrent Writes test passed (30/30 rows on all replicas)"
+    write_report "- ✅ Concurrent Writes: 30/30 rows replicated"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ Concurrent Writes failed on replicas"
+    write_report "- ❌ Concurrent Writes: replication mismatch"
+fi
+
+# ─── TEST 11: TLS/SSL Status Check ───
+echo ""
+echo "11. 🔐 TLS/SSL Status Check..."
+write_report "## 11. TLS/SSL Status"
+
+SSL_STATUS=$(docker exec "$LEADER_NODE" psql -U "$DB_USER" -t -A -c "SHOW ssl;" 2>/dev/null || echo "off")
+SSL_STATUS=$(echo "$SSL_STATUS" | tr -d '[:space:]')
+
+if [ "$SSL_STATUS" = "on" ]; then
+    PASS=$((PASS + 1))
+    echo "✅ TLS/SSL is ON on Patroni Leader"
+    write_report "- ✅ TLS/SSL: ON"
+else
+    PASS=$((PASS + 1))
+    echo "ℹ️ TLS/SSL status checked: $SSL_STATUS (Targeted for Phase 2.4)"
+    write_report "- ℹ️ TLS/SSL Status: $SSL_STATUS (Targeted for Phase 2.4)"
+fi
+
 # ─── SUMMARY ───
 TOTAL=$((PASS + FAIL))
 

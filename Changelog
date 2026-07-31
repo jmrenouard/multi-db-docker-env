@@ -1,3 +1,8 @@
+1.2.12 2026-08-01
+- feat: enrich Patroni PostgreSQL cluster test suite for full Test Parity (issue #7)
+- test: add Concurrent Writes and TLS/SSL Status checks to tests/test_patroni.sh
+- docs(roadmap): update Phase 1 test parity matrix in ROADMAP.md for Patroni
+
 1.2.11 2026-08-01
 - feat: enrich Galera and Replication test suites for full Test Parity (issue #6)
 - test: add Router Connectivity, Concurrent Writes, and Config Consistency tests to tests/test_galera.sh
