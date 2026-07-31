@@ -1,3 +1,8 @@
+1.3.7 2026-08-01
+- fix(test): resolve PASS variable collision with test counter in test_repli.sh and test_galera.sh
+- fix(test): add SSL_FLAGS (--ssl-ca) to mariadb client TCP connections in test_repli.sh, test_galera.sh, and setup_repli.sh
+- fix(makefile): add missing done and fix recipe syntax in test-all target
+
 1.3.6 2026-08-01
 - doc: update ROADMAP.md to synchronize all Phase 1-4 milestone tables and status matrices to 100% complete
 
