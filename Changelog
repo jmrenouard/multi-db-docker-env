@@ -1,3 +1,9 @@
+1.2.11 2026-08-01
+- feat: enrich Galera and Replication test suites for full Test Parity (issue #6)
+- test: add Router Connectivity, Concurrent Writes, and Config Consistency tests to tests/test_galera.sh
+- test: add Router Connectivity, Concurrent Writes, and Config Consistency tests to tests/test_repli.sh
+- docs(roadmap): update Phase 1 test parity matrix in ROADMAP.md for Galera and Repli
+
 1.2.10 2026-08-01
 - doc: add io_uring EPERM failure fallback troubleshooting note in README.md and README_fr.md (issue #5)
 

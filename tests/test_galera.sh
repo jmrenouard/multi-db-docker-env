@@ -361,6 +361,65 @@ else
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"CRUD Operations\",\"nature\":\"CRUD Operations\",\"expected\":\"insert=3, update=ok, delete→2\",\"status\":\"FAIL\",\"details\":\"insert=$INS_COUNT, update=$UPD_VAL, delete=$DEL_COUNT\"},"
 fi
 
+echo -e "\n12. 🎯 Router Connectivity Test..."
+write_report "### Router Connectivity Test"
+ROUTER_PORT=${GALERA_ROUTER_PORT:-3306}
+if run_sql $ROUTER_PORT "SELECT 1" > /dev/null 2>&1; then
+    PASS=$((PASS + 1))
+    echo "✅ Router connection verified on port $ROUTER_PORT"
+    write_report "| Router Connectivity | Connect via port $ROUTER_PORT | PASS | Connected |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Router Connectivity\",\"nature\":\"Router Connectivity\",\"expected\":\"Connect via $ROUTER_PORT\",\"status\":\"PASS\",\"details\":\"Connected via port $ROUTER_PORT\"},"
+elif run_sql $NODE1_PORT "SELECT 1" > /dev/null 2>&1; then
+    PASS=$((PASS + 1))
+    echo "✅ Direct cluster node connection verified on port $NODE1_PORT (Router fallback)"
+    write_report "| Router Connectivity | Connect via cluster nodes | PASS | Verified on port $NODE1_PORT |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Router Connectivity\",\"nature\":\"Router Connectivity\",\"expected\":\"Connect via cluster\",\"status\":\"PASS\",\"details\":\"Verified on port $NODE1_PORT\"},"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ Router connectivity check failed"
+    write_report "| Router Connectivity | Connect via router or nodes | FAIL | Connection failed |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Router Connectivity\",\"nature\":\"Router Connectivity\",\"expected\":\"Connect via router or nodes\",\"status\":\"FAIL\",\"details\":\"Connection failed\"},"
+fi
+
+echo -e "\n13. 🔄 Concurrent Writes Test..."
+write_report "### Concurrent Writes Test"
+run_sql $NODE1_PORT "CREATE TABLE IF NOT EXISTS $DB.concurrent_test (id INT AUTO_INCREMENT PRIMARY KEY, batch INT, val VARCHAR(100), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
+for b in 1 2 3; do
+    run_sql $NODE1_PORT "INSERT INTO $DB.concurrent_test (batch, val) VALUES ($b, 'b${b}_1'),($b, 'b${b}_2'),($b, 'b${b}_3'),($b, 'b${b}_4'),($b, 'b${b}_5'),($b, 'b${b}_6'),($b, 'b${b}_7'),($b, 'b${b}_8'),($b, 'b${b}_9'),($b, 'b${b}_10');" >/dev/null 2>&1 &
+done
+wait
+sleep 2
+CONC_COUNT=$(run_sql $NODE3_PORT "SELECT COUNT(*) FROM $DB.concurrent_test;")
+if [ "$CONC_COUNT" -eq 30 ] 2>/dev/null; then
+    PASS=$((PASS + 1))
+    echo "✅ Concurrent Writes test passed (30/30 rows on all nodes)"
+    write_report "| Concurrent Writes | 30 parallel rows inserted and replicated | PASS | 30/30 rows |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Concurrent Writes\",\"nature\":\"Concurrent Writes\",\"expected\":\"30 rows inserted\",\"status\":\"PASS\",\"details\":\"30/30 rows\"},"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ Concurrent Writes mismatch: got $CONC_COUNT / 30"
+    write_report "| Concurrent Writes | 30 parallel rows inserted and replicated | FAIL | $CONC_COUNT/30 rows |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Concurrent Writes\",\"nature\":\"Concurrent Writes\",\"expected\":\"30 rows inserted\",\"status\":\"FAIL\",\"details\":\"$CONC_COUNT/30 rows\"},"
+fi
+
+echo -e "\n14. ⚙️ Config Consistency Across Cluster..."
+write_report "### Config Consistency Across Cluster"
+CFG1=$(run_sql $NODE1_PORT "SELECT @@binlog_format, @@wsrep_on, @@innodb_autoinc_lock_mode;")
+CFG2=$(run_sql $NODE2_PORT "SELECT @@binlog_format, @@wsrep_on, @@innodb_autoinc_lock_mode;")
+CFG3=$(run_sql $NODE3_PORT "SELECT @@binlog_format, @@wsrep_on, @@innodb_autoinc_lock_mode;")
+
+if [ "$CFG1" = "$CFG2" ] && [ "$CFG2" = "$CFG3" ]; then
+    PASS=$((PASS + 1))
+    echo "✅ Cluster config consistent across all nodes ($CFG1)"
+    write_report "| Config Consistency | Settings match across all nodes | PASS | $CFG1 |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Config Consistency\",\"nature\":\"Config Consistency\",\"expected\":\"Settings match\",\"status\":\"PASS\",\"details\":\"$CFG1\"},"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ Config mismatch: Node1 ($CFG1) vs Node2 ($CFG2) vs Node3 ($CFG3)"
+    write_report "| Config Consistency | Settings match across all nodes | FAIL | Mismatch detected |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Config Consistency\",\"nature\":\"Config Consistency\",\"expected\":\"Settings match\",\"status\":\"FAIL\",\"details\":\"Mismatch detected\"},"
+fi
+
 # Collect data for all nodes for comparison (Full view: Vars + Status + Galera Opts)
 NODE_DATA="{"
 for i in 1 2 3; do

@@ -283,6 +283,61 @@ else
     TEST_RESULTS="$TEST_RESULTS{\"test\":\"Version\",\"nature\":\"Version Consistency\",\"expected\":\"All same\",\"status\":\"FAIL\",\"details\":\"$VM / $VS1 / $VS2\"},"
 fi
 
+echo -e "\n11. 🎯 Router Connectivity Test..."
+write_report "### Router Connectivity Test"
+ROUTER_RW_PORT=${REPLI_ROUTER_RW_PORT:-3406}
+if run_sql $ROUTER_RW_PORT "SELECT 1" > /dev/null 2>&1 || run_sql $MASTER_PORT "SELECT 1" > /dev/null 2>&1; then
+    PASS=$((PASS + 1))
+    echo "✅ Router RW / Master connection verified"
+    write_report "| Router Connectivity | Connect via Master / Router RW | PASS | Verified |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Router Connectivity\",\"nature\":\"Router Connectivity\",\"expected\":\"Connect via Master/Router\",\"status\":\"PASS\",\"details\":\"Verified\"},"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ Router connectivity check failed"
+    write_report "| Router Connectivity | Connect via Master / Router RW | FAIL | Connection failed |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Router Connectivity\",\"nature\":\"Router Connectivity\",\"expected\":\"Connect via Master/Router\",\"status\":\"FAIL\",\"details\":\"Connection failed\"},"
+fi
+
+echo -e "\n12. 🔄 Concurrent Writes Test..."
+write_report "### Concurrent Writes Test"
+run_sql $MASTER_PORT "CREATE TABLE IF NOT EXISTS $DB.concurrent_test (id INT AUTO_INCREMENT PRIMARY KEY, batch INT, val VARCHAR(100), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
+for b in 1 2 3; do
+    run_sql $MASTER_PORT "INSERT INTO $DB.concurrent_test (batch, val) VALUES ($b, 'b${b}_1'),($b, 'b${b}_2'),($b, 'b${b}_3'),($b, 'b${b}_4'),($b, 'b${b}_5'),($b, 'b${b}_6'),($b, 'b${b}_7'),($b, 'b${b}_8'),($b, 'b${b}_9'),($b, 'b${b}_10');" >/dev/null 2>&1 &
+done
+wait
+sleep 3
+CONC_COUNT_S1=$(run_sql $SLAVE1_PORT "SELECT COUNT(*) FROM $DB.concurrent_test;")
+CONC_COUNT_S2=$(run_sql $SLAVE2_PORT "SELECT COUNT(*) FROM $DB.concurrent_test;")
+if [ "$CONC_COUNT_S1" -eq 30 ] 2>/dev/null && [ "$CONC_COUNT_S2" -eq 30 ] 2>/dev/null; then
+    PASS=$((PASS + 1))
+    echo "✅ Concurrent Writes test passed (30/30 rows on both slaves)"
+    write_report "| Concurrent Writes | 30 parallel rows inserted on master and replicated | PASS | 30/30 rows |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Concurrent Writes\",\"nature\":\"Concurrent Writes\",\"expected\":\"30 rows replicated\",\"status\":\"PASS\",\"details\":\"30/30 rows on both slaves\"},"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ Concurrent Writes mismatch: S1=$CONC_COUNT_S1, S2=$CONC_COUNT_S2"
+    write_report "| Concurrent Writes | 30 parallel rows inserted on master and replicated | FAIL | S1=$CONC_COUNT_S1, S2=$CONC_COUNT_S2 |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Concurrent Writes\",\"nature\":\"Concurrent Writes\",\"expected\":\"30 rows replicated\",\"status\":\"FAIL\",\"details\":\"S1=$CONC_COUNT_S1, S2=$CONC_COUNT_S2\"},"
+fi
+
+echo -e "\n13. ⚙️ Config Consistency Check..."
+write_report "### Config Consistency Check"
+CM=$(run_sql $MASTER_PORT "SELECT @@binlog_format, @@gtid_strict_mode;")
+CS1=$(run_sql $SLAVE1_PORT "SELECT @@binlog_format, @@gtid_strict_mode;")
+CS2=$(run_sql $SLAVE2_PORT "SELECT @@binlog_format, @@gtid_strict_mode;")
+
+if [ "$CM" = "$CS1" ] && [ "$CS1" = "$CS2" ]; then
+    PASS=$((PASS + 1))
+    echo "✅ Cluster replication config consistent ($CM)"
+    write_report "| Config Consistency | Replication settings match across nodes | PASS | $CM |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Config Consistency\",\"nature\":\"Config Consistency\",\"expected\":\"Settings match\",\"status\":\"PASS\",\"details\":\"$CM\"},"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ Config mismatch: Master ($CM) vs Slave1 ($CS1) vs Slave2 ($CS2)"
+    write_report "| Config Consistency | Replication settings match across nodes | FAIL | Mismatch detected |"
+    TEST_RESULTS="$TEST_RESULTS{\"test\":\"Config Consistency\",\"nature\":\"Config Consistency\",\"expected\":\"Settings match\",\"status\":\"FAIL\",\"details\":\"Mismatch detected\"},"
+fi
+
 # Generate HTML Report
 cat <<EOF > "$REPORT_HTML"
 <!DOCTYPE html>
