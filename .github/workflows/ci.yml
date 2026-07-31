@@ -1,0 +1,48 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Configuration & Environment
+        run: |
+          make test-config
+
+      - name: Generate and Check TLS Certificates
+        run: |
+          make gen-ssl-all
+          make check-ssl-all
+
+      - name: Verify Backup & Restore Procedures
+        run: |
+          make test-backup-restore
+
+      - name: Run Failover Tests
+        run: |
+          make test-failover
+
+      - name: Aggregate Test Reports
+        run: |
+          make test-all-report
+
+      - name: Upload Test Reports Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: reports/
