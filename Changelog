@@ -1,3 +1,7 @@
+1.2.19 2026-08-01
+- doc: implement unified TLS targets documentation and architecture guide in documentation/tls_setup.md (issue #15)
+- docs(index): link tls_setup.md in documentation/INDEX.md
+
 1.2.18 2026-08-01
 - feat: enable TLS/SSL for Patroni PostgreSQL Docker cluster (issue #14)
 - feat: update scripts/gen_ssl_patroni.sh to generate certificates for Patroni and sync to ssl/patroni
