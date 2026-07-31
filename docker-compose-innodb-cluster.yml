@@ -21,6 +21,7 @@ services:
     volumes:
       - innodb_data1:/var/lib/mysql
       - ./conf/innodb-cluster/node1.cnf:/etc/mysql/conf.d/group_replication.cnf:ro
+      - ./ssl/innodb:/etc/mysql/ssl:ro
     networks:
       backend_innodb:
         ipv4_address: 10.9.0.11
@@ -39,6 +40,7 @@ services:
     volumes:
       - innodb_data2:/var/lib/mysql
       - ./conf/innodb-cluster/node2.cnf:/etc/mysql/conf.d/group_replication.cnf:ro
+      - ./ssl/innodb:/etc/mysql/ssl:ro
     depends_on:
       - mysql_node1
     networks:
@@ -59,6 +61,7 @@ services:
     volumes:
       - innodb_data3:/var/lib/mysql
       - ./conf/innodb-cluster/node3.cnf:/etc/mysql/conf.d/group_replication.cnf:ro
+      - ./ssl/innodb:/etc/mysql/ssl:ro
     depends_on:
       - mysql_node1
     networks:
