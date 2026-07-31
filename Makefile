@@ -134,6 +134,9 @@ mongo-ps: ## Show MongoDB ReplicaSet running containers
 test-mongo: ## Run functional tests on the MongoDB ReplicaSet
 	@bash ./tests/test_mongo_rs.sh
 
+test-perf-mongo: ## Run performance benchmark suite on MongoDB ReplicaSet
+	@bash ./tests/test_perf_mongo.sh $${PROFILE:-light} $${ACTION:-run}
+
 
 # --- MONGODB 8 REPLICASET ---
 MONGO8_COMPOSE = docker-compose-mongo8-rs.yml

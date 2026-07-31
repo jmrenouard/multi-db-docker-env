@@ -1,3 +1,9 @@
+1.2.7 2026-07-31
+- feat: add MongoDB ReplicaSet performance benchmark suite (tests/test_perf_mongo.sh) (issue #10)
+- feat: add test-perf-mongo target to Makefile
+- test: enrich tests/test_mongo_rs.sh with TLS/SSL verification and performance benchmark checks
+- docs(roadmap): update MongoDB test parity matrix in ROADMAP.md for Phase 1
+
 1.2.6 2026-07-31
 - fix: replace insecure -p CLI password arg with MYSQL_PWD env var across all scripts and Makefile (issue #2)
 - fix: tests/test_lab.py: pass password via MYSQL_PWD environment variable in run_mysql_query()
