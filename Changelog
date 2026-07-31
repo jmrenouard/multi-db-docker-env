@@ -1,3 +1,6 @@
+1.3.9 2026-08-01
+- 
+
 1.3.8 2026-08-01
 - fix(test): resolve remaining PASS variable collision and SSL_FLAGS in test_galera.sh
 
