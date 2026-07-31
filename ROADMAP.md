@@ -16,12 +16,12 @@ Every cluster test suite MUST include all categories below.
 | 4 | Write Replication | Write on primary replicated | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 5 | Write Isolation | Read-only nodes reject writes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 6 | DDL Replication | Schema changes replicated | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 7 | CRUD Operations | Insert/Update/Delete on primary | ✅ | ✅ | ✅ | ✅ | ★ | ✅ |
+| 7 | CRUD Operations | Insert/Update/Delete on primary | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 8 | Version Consistency | Same version across all nodes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 9 | Concurrent Writes | N parallel inserts via router | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 10 | Config Consistency | Cluster config validated | ✅ | ✅ | ✅ | ✅ | ★ | ✅ |
-| 11 | TLS/SSL Verification | TLS status on connections | ✅ | ✅ | ✅ | ✅ | ★ | ✅ |
-| 12 | Performance Benchmark | Sysbench or equivalent | ✅ | ✅ | ✅ | ✅ | ★ | ✅ |
+| 10 | Config Consistency | Cluster config validated | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 11 | TLS/SSL Verification | TLS status on connections | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 12 | Performance Benchmark | Sysbench or equivalent | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 13 | HTML Report | Styled HTML output | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 14 | PASS/FAIL Counters | Structured pass/fail counting | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 

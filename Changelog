@@ -1,3 +1,8 @@
+1.2.14 2026-08-01
+- feat: enrich MySQL InnoDB Cluster test suite for full Test Parity (issue #9)
+- test: add Config Consistency, TLS/SSL Status check, and Performance Micro-Benchmark tests to tests/test_innodb_cluster.sh
+- docs(roadmap): complete Phase 1 Test Parity matrix across all database cluster technologies in ROADMAP.md
+
 1.2.13 2026-08-01
 - feat: enrich PgPool-II cluster test suite for full Test Parity (issue #8)
 - test: add TLS/SSL Status check and Performance Micro-Benchmark tests to tests/test_pgpool.sh
