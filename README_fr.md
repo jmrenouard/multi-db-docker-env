@@ -333,3 +333,24 @@ graph TD
     ```bash
     make stop
     ```
+
+## 🔧 Dépannage & Notes de Performance
+
+### Avertissement et repli `io_uring` EPERM
+
+Lors du démarrage des conteneurs MySQL ou MariaDB sur des hôtes Linux avec des profils de sécurité noyau restreints (`kernel.io_uring_disabled=2`), les logs peuvent afficher :
+
+```text
+io_uring_queue_init() failed with EPERM — kernel has io_uring_disabled=2.
+```
+
+- **Impact** : Aucun dysfonctionnement. Le moteur de base de données bascule automatiquement et de manière transparente sur `libaio` pour l'I/O asynchrone.
+- **Action requise** : Aucune pour les environnements de développement ou de test.
+- **Optimisation des performances (Optionnel)** : Si vous avez besoin des performances I/O maximales de `io_uring`, activez-le sur votre système hôte :
+
+  ```bash
+  sudo sysctl -w kernel.io_uring_disabled=0
+  ```
+
+  Pour rendre ce réglage persistant après redémarrage, ajoutez `kernel.io_uring_disabled = 0` dans `/etc/sysctl.conf`.
+
