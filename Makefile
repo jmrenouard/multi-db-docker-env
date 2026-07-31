@@ -44,7 +44,7 @@ test-patroni: ## Run functional tests on the Patroni cluster
 # --- PGPOOL-II CLUSTER ---
 PGPOOL_COMPOSE = docker-compose-pgpool.yml
 
-pgpool-up: ## Start PostgreSQL + PgPool-II + HAProxy cluster
+pgpool-up: gen-ssl-pgpool ## Start PostgreSQL + PgPool-II + HAProxy cluster
 	@echo "🚀 Starting PgPool-II cluster..."
 	docker compose -f $(PGPOOL_COMPOSE) up -d
 	@echo "⏳ Waiting for primary to initialize (20s)..."
