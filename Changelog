@@ -1,3 +1,7 @@
+1.3.0 2026-08-01
+- feat: implement CI/CD pipeline via GitHub Actions workflow .github/workflows/ci.yml (issue #20)
+- doc: update ROADMAP.md to mark all Phase 3 and Phase 4 roadmap milestones as 100% complete
+
 1.2.23 2026-08-01
 - feat: implement backup and restore verification test suite tests/test_backup_restore.sh (issue #19)
 - feat: add make test-backup-restore target in Makefile
