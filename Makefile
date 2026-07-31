@@ -419,7 +419,11 @@ inject-data:
 			printf "Injecting data into %s using %s...\n" "$${DB_CONTAINER}" "$${MYSQL_CMD}"; \
 			if [ "$(db)" = "employees" ]; then \
 				if [ "$(service)" = "mysql96" ]; then \
-					printf "⚠️ Skipping 'employees' for mysql96 (Nested source regression). Use sakila instead.\n"; \
+					printf "⚠️ Skipping 'employees' for mysql96 (Nested source regression). Injecting 'sakila' as primary test database instead...\n"; \
+					docker cp $(TEST_DB_DIR)/sakila "$${DB_CONTAINER}:/tmp/" && \
+					docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-schema.sql" && \
+					docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-data.sql" && \
+					printf "✅ 'sakila' database injected as primary dataset for mysql96.\n"; \
 				else \
 					docker cp $(TEST_DB_DIR)/employees "$${DB_CONTAINER}:/tmp/test_db" && \
 					docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/test_db && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < employees.sql" && \
