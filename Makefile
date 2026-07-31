@@ -505,8 +505,11 @@ test-all:
 		\
 		printf "🛑 Stopping service %s...\n" "$$service" && \
 		docker compose down -v; \
-	done
 	@printf "\n\033[1;32m✅ All services tested successfully!\033[0m\n"
+
+.PHONY: test-all-report
+test-all-report: ## Aggregate all individual HTML test reports into a consolidated report
+	@bash ./scripts/aggregate_reports.sh
 	
 test-config: ## Validate the current orchestration configuration, directory structure, SSL and profiles
 	@echo "🚀 Running Configuration Validation..."
