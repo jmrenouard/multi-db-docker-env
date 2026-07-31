@@ -2,7 +2,11 @@
 # test_mongo_rs.sh
 # Functional test suite for MongoDB ReplicaSet (lab context, no auth)
 # Supports MongoDB 7 and 8 via MONGO_NODES env var
-set -euo pipefail
+# Source common test library if available
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
+    source "$SCRIPT_DIR/lib/common.sh"
+fi
 
 # Configurable node names (default: MongoDB 7 nodes)
 NODE1="${MONGO_NODE1:-mongo1}"

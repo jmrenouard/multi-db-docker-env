@@ -1,3 +1,7 @@
+1.2.20 2026-08-01
+- feat: implement unified test framework library tests/lib/common.sh (issue #16)
+- test: source tests/lib/common.sh in tests/test_mongo_rs.sh
+
 1.2.19 2026-08-01
 - doc: implement unified TLS targets documentation and architecture guide in documentation/tls_setup.md (issue #15)
 - docs(index): link tls_setup.md in documentation/INDEX.md
