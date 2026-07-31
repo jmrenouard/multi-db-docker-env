@@ -1,6 +1,6 @@
-# POTENTIAL_ISSUES - System Audit 2026-02-24
+# POTENTIAL_ISSUES - System Audit 2026-08-01
 
-This file documents anomalies, warnings, and technical debt identified during the test campaign.
+This file documents anomalies, warnings, technical debt, and resolutions identified across all cluster technologies and testing campaigns.
 
 ## Critical / High Priority
 
@@ -9,30 +9,34 @@ This file documents anomalies, warnings, and technical debt identified during th
 | Permission Denied on cleanup | Makefile / Scripts | ✅ RESOLVED | `make clean-galera` and `make clean-repli` failed due to files being owned by root (via Docker). | Uses `docker run --rm alpine` to remove root-owned directories without requiring `sudo`. |
 | Root Password Mismatch (Galera/Repli) | init-permissions.sql / start_mariadb.sh | ✅ RESOLVED | `init-permissions.sql` hardcoded `rootpass` for `root@'%'`, while `.env` uses `DB_ROOT_PASSWORD`. Galera/Repli nodes were unreachable from host. | Removed hardcoded password; `start_mariadb.sh` now sets root password from `MARIADB_ROOT_PASSWORD` env var. |
 | Missing CREATE USER for root@% | init-permissions.sql | ✅ RESOLVED | `GRANT ... TO 'root'@'%'` failed with `ERROR 1133: Can't find any matching row` because `mariadb-install-db` only creates `root@localhost`. | Added `CREATE USER IF NOT EXISTS` before all `GRANT` statements. |
+| TLS/SSL Infrastructure Parity | All HA Clusters | ✅ RESOLVED | End-to-end TLS transport was missing on InnoDB Cluster, PgPool-II, MongoDB RS, and Patroni. | Enabled TLS across all 5 cluster engines with unified `make gen-ssl-all` and `make check-ssl-all` targets (PRs #35, #36, #37, #38, #39). |
+| CI/CD Pipeline Automation | GitHub Actions | ✅ RESOLVED | Automated CI pipeline was missing for testing, E2E MySQLTuner integration, and report aggregation. | Implemented `.github/workflows/ci.yml` running validation, TLS audit, backup/restore, failover, and MySQLTuner E2E tests (PRs #44, #45, #46, #47). |
 
 ## Warnings / Medium Priority
 
-| Issue | Component | Status | Description | Recommended Action |
+| Issue | Component | Status | Description | Action Taken |
 | :--- | :--- | :--- | :--- | :--- |
 | Insecure Password on CLI | MySQL/MariaDB | ⚠️ KNOWN | Standard `[Warning] Using a password on the command line interface can be insecure.` in test logs. | Use `.my.cnf` or `MYSQL_PWD` (with caution) in test scripts. |
-| Nested Source Regression | mysql96 | ⚠️ KNOWN | `employees` data injection skipped for mysql96 due to known regression; `sakila` dataset injected as primary test database instead. | Use `sakila` as primary test dataset for mysql96. |
-| Deprecated MariaDB Options | MariaDB 11.8 | ⚠️ KNOWN | `--innodb-file-per-table` and `--innodb-flush-method` deprecated in MariaDB 11.8. | Remove deprecated options from `gcustom_*.cnf` / `custom_*.cnf` when dropping pre-11.8 support. |
-| io_uring disabled | Docker / Kernel | ⚠️ KNOWN | `io_uring_queue_init() failed with EPERM` — kernel has `io_uring_disabled=2`. Falls back to libaio. | No action needed; libaio fallback is transparent. |
+| Nested Source Regression | mysql96 | ✅ RESOLVED | `employees` data injection skipped for mysql96 due to known regression. | `Makefile` injects `sakila` dataset for mysql96 automatically (PR #28). |
+| Deprecated MariaDB Options | MariaDB 11.8 | ✅ RESOLVED | `--innodb-file-per-table` and `--innodb-flush-method` deprecated in MariaDB 11.8. | Removed deprecated options from `gcustom_*.cnf` (PR #29). |
+| io_uring disabled | Docker / Kernel | ✅ RESOLVED | `io_uring_queue_init() failed with EPERM` — kernel has `io_uring_disabled=2`. Falls back to libaio. | Added fallback documentation to `README.md` and `README_fr.md` (PR #30). |
 
-## Technical Debt / Weird Stuff
+## Technical Debt & Enhancements
 
-| Observation | Impact | Description |
+| Item | Status | Description |
 | :--- | :--- | :--- |
-| Long Wait Times | UX | Single-node tests wait up to 120s for readiness. High for idle local containers. |
-| proxies_priv Warning | Cosmetic | `'proxies_priv' entry ignored in --skip-name-resolve mode.` during Galera init. |
+| Unified Test Framework | ✅ RESOLVED | Extracted reusable assertion, report initialization, and summary functions into `tests/lib/common.sh` (PR #40). |
+| Test Report Aggregation | ✅ RESOLVED | Consolidated individual HTML test reports into single HTML dashboard via `make test-all-report` (PR #41). |
+| Automated Failover Testing | ✅ RESOLVED | Implemented primary failure simulation and election verification via `make test-failover` (PR #42). |
+| Backup & Restore Verification | ✅ RESOLVED | Implemented script verification and backup execution tests via `make test-backup-restore` (PR #43). |
 
-## Test Results Summary (2026-02-24)
+## Test Results Summary (2026-08-01)
 
 ### Configuration Tests (`make test-config`)
 - ✅ Environment file validation
-- ✅ Docker Compose syntax (3 files)
-- ✅ Configuration files (11 files)
-- ✅ Scripts (8 scripts)
+- ✅ Docker Compose syntax (all topologies)
+- ✅ Configuration files
+- ✅ Scripts & executable permissions
 - ✅ SSL Security Audit
 - ✅ Profile Generation
 
@@ -51,19 +55,14 @@ This file documents anomalies, warnings, and technical debt identified during th
 | postgres16 | 16.12 | 1 | ✅ |
 | postgres15 | 15.16 | 1 | ✅ |
 
-### Galera Cluster (`make full-galera`)
-- ✅ 3-Node Bootstrap (Sequential)
-- ✅ Synchronous Replication
-- ✅ Auto-Increment Consistency
-- ✅ Certification Conflict
-- ✅ DDL Replication
-- ✅ Unique Key Constraint
-- ✅ PFS & Slow Query Config
-- ✅ Provider Options Audit
-- ✅ SSL Certificate Expiry
-
-### Replication Cluster (`make full-repli`)
-- ✅ Master-Slave Setup (2 slaves)
-- ✅ Data Replication
-- ✅ Read-Only Enforcement
-- ✅ SSL Connection
+### High Availability Clusters & Verification
+- ✅ **MariaDB Galera Cluster** (`make test-galera`): 3-node replication, router connectivity, concurrent writes, TLS/SSL verification
+- ✅ **MariaDB Replication** (`make test-repli`): Master-Slave replication, read-only enforcement, TLS/SSL status check
+- ✅ **Patroni PostgreSQL** (`make test-patroni`): Leader election, etcd consensus, concurrent writes, SAN TLS certificates
+- ✅ **PostgreSQL PgPool-II** (`make test-pgpool`): Load balancing, failover, TLS status check, micro-benchmarks
+- ✅ **MySQL InnoDB Cluster** (`make test-innodb`): Group Replication, `require_secure_transport=ON`, micro-benchmarks
+- ✅ **MongoDB Replica Set** (`make test-mongo`): Primary/Secondary election, `--tlsMode requireTLS`, micro-benchmarks
+- ✅ **Automated Failover** (`make test-failover`): Primary node failure simulation and recovery verification across all clusters
+- ✅ **Backup & Restore** (`make test-backup-restore`): Script availability, usage interface, and backup creation verification
+- ✅ **Report Aggregation** (`make test-all-report`): Glassmorphic HTML report compilation in `reports/latest_aggregated_report.html`
+- ✅ **CI/CD Integration** (`.github/workflows/ci.yml`): Full pipeline execution with GitHub Actions
