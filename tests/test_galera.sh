@@ -9,8 +9,13 @@ NODE1_PORT=3511
 NODE2_PORT=3512
 NODE3_PORT=3513
 USER="root"
-PASS="${DB_ROOT_PASSWORD:-rootpass}"
+DB_PASS="${DB_ROOT_PASSWORD:-rootpass}"
 DB="test_galera_db"
+
+SSL_FLAGS=""
+if [ -f ./ssl/ca-cert.pem ]; then
+    SSL_FLAGS="--ssl-ca=./ssl/ca-cert.pem"
+fi
 
 # Create reports directory if it doesn't exist
 REPORT_DIR="./reports"
@@ -41,7 +46,7 @@ EOF
 run_sql() {
     local port=$1
     local query=$2
-    MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -sN -e "$query" 2>/dev/null
+    MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -uroot -sN -e "$query" 2>/dev/null
 }
 
 # PASS/FAIL counters
@@ -63,10 +68,10 @@ while [ $(($(date +%s) - START_WAIT)) -lt $MAX_WAIT ]; do
     for i in 1 2 3; do
         port_var="NODE${i}_PORT"
         port=${!port_var}
-        if MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -e "SELECT 1" > /dev/null 2>&1; then
-            W_READY=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_ready';" | awk '{print $2}')
-            W_SIZE=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';" | awk '{print $2}')
-            W_STATE=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -uroot -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" | awk '{print $2}')
+        if MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -uroot -e "SELECT 1" > /dev/null 2>&1; then
+            W_READY=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -uroot -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_ready';" | awk '{print $2}')
+            W_SIZE=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -uroot -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';" | awk '{print $2}')
+            W_STATE=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -uroot -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" | awk '{print $2}')
             echo "   Node $i (Port $port): Ready=$W_READY, Size=$W_SIZE, State=$W_STATE"
             if [ "$W_READY" = "ON" ] && [ "$W_SIZE" = "3" ] && [ "$W_STATE" = "Synced" ]; then
                 ((MATCH_COUNT++))

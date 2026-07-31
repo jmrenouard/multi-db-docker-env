@@ -9,8 +9,13 @@ MASTER_PORT=3411
 SLAVE1_PORT=3412
 SLAVE2_PORT=3413
 USER="root"
-PASS="${DB_ROOT_PASSWORD:-rootpass}"
+DB_PASS="${DB_ROOT_PASSWORD:-rootpass}"
 DB="test_repli_db"
+
+SSL_FLAGS=""
+if [ -f ./ssl/ca-cert.pem ]; then
+    SSL_FLAGS="--ssl-ca=./ssl/ca-cert.pem"
+fi
 
 # Create reports directory if it doesn't exist
 REPORT_DIR="./reports"
@@ -41,7 +46,7 @@ EOF
 run_sql() {
     local port=$1
     local query=$2
-    MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER -sN -e "$query" 2>/dev/null
+    MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u$USER -sN -e "$query" 2>/dev/null
 }
 
 # PASS/FAIL counters
@@ -71,8 +76,8 @@ while [ $(($(date +%s) - START_WAIT)) -lt $MAX_WAIT ]; do
             ALL_UP=false
         else
             # Use raw mariadb to ensure labels are present for grep
-            IO=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_IO_Running:" | awk '{print $2}')
-            SQL=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_SQL_Running:" | awk '{print $2}')
+            IO=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u$USER -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_IO_Running:" | awk '{print $2}')
+            SQL=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u$USER -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_SQL_Running:" | awk '{print $2}')
             if [ "$IO" != "Yes" ] || [ "$SQL" != "Yes" ]; then
                 REPL_OK=false
             fi
@@ -104,7 +109,7 @@ for role in "Master:$MASTER_PORT" "Slave1:$SLAVE1_PORT" "Slave2:$SLAVE2_PORT"; d
     ssl="N/A"
     if run_sql $port "SELECT 1" > /dev/null; then
         status="UP"
-        CIPHER=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $port -u$USER -sN -e "SHOW STATUS LIKE 'Ssl_cipher';" | awk '{print $2}')
+        CIPHER=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u$USER -sN -e "SHOW STATUS LIKE 'Ssl_cipher';" | awk '{print $2}')
         if [ ! -z "$CIPHER" ] && [ "$CIPHER" != "NULL" ]; then
             ssl="$CIPHER"
         else
@@ -129,10 +134,10 @@ for port in $SLAVE1_PORT $SLAVE2_PORT; do
 done
 
 write_report "\n## Sections for replication (master & slave)"
-write_report "### Detailed Master Status\n\`\`\`sql\n$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $MASTER_PORT -u$USER -e "SHOW MASTER STATUS\G")\n\`\`\`"
-SLAVE1_FULL=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $SLAVE1_PORT -u$USER -e "SHOW SLAVE STATUS\G")
+write_report "### Detailed Master Status\n\`\`\`sql\n$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $MASTER_PORT -u$USER -e "SHOW MASTER STATUS\G")\n\`\`\`"
+SLAVE1_FULL=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $SLAVE1_PORT -u$USER -e "SHOW SLAVE STATUS\G")
 write_report "### Detailed Slave 1 Status\n\`\`\`sql\n$SLAVE1_FULL\n\`\`\`"
-SLAVE2_FULL=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $SLAVE2_PORT -u$USER -e "SHOW SLAVE STATUS\G")
+SLAVE2_FULL=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $SLAVE2_PORT -u$USER -e "SHOW SLAVE STATUS\G")
 write_report "### Detailed Slave 2 Status\n\`\`\`sql\n$SLAVE2_FULL\n\`\`\`"
 
 echo -e "\n5. 🧪 Performing Data Replication Test..."
@@ -190,7 +195,7 @@ echo -e "\n6. 🛡️ Read-Only Test on Slaves..."
 # Create a temporary non-super user to test read_only (which root bypasses)
 run_sql $SLAVE1_PORT "CREATE USER IF NOT EXISTS 'test_ro'@'%' IDENTIFIED BY 'testpass'; GRANT INSERT ON $DB.* TO 'test_ro'@'%'; FLUSH PRIVILEGES;"
 RO_ERR=0
-mariadb -h 127.0.0.1 -P $SLAVE1_PORT -utest_ro -ptestpass $DB -e "INSERT INTO test_table (msg) VALUES ('Illegal write from non-super user');" 2>/dev/null || RO_ERR=1
+mariadb $SSL_FLAGS -h 127.0.0.1 -P $SLAVE1_PORT -utest_ro -ptestpass $DB -e "INSERT INTO test_table (msg) VALUES ('Illegal write from non-super user');" 2>/dev/null || RO_ERR=1
 run_sql $SLAVE1_PORT "DROP USER 'test_ro'@'%';"
 
 if [ "$RO_ERR" -eq 0 ]; then
@@ -206,7 +211,7 @@ else
 fi
 
 echo -e "\n7. 🔐 SSL Connection Verification..."
-CIPHER=$(MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P $MASTER_PORT -u$USER -sN -e "SHOW STATUS LIKE 'Ssl_cipher';" | awk '{print $2}')
+CIPHER=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $MASTER_PORT -u$USER -sN -e "SHOW STATUS LIKE 'Ssl_cipher';" | awk '{print $2}')
 if [[ "$CIPHER" != "" ]] && [[ "$CIPHER" != "NULL" ]]; then
     PASS=$((PASS + 1))
     echo "✅ SSL Connection verified on Master (Cipher: $CIPHER)"

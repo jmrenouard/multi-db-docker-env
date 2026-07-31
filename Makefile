@@ -505,6 +505,7 @@ test-all:
 		\
 		printf "🛑 Stopping service %s...\n" "$$service" && \
 		docker compose down -v; \
+	done
 	@printf "\n\033[1;32m✅ All services tested successfully!\033[0m\n"
 
 .PHONY: test-all-report test-failover test-backup-restore
