@@ -75,7 +75,7 @@ test-pgpool: ## Run functional tests on the PgPool-II cluster
 # --- MYSQL INNODB CLUSTER ---
 INNODB_COMPOSE = docker-compose-innodb-cluster.yml
 
-innodb-up: ## Start MySQL InnoDB Cluster (3 nodes + MySQL Router)
+innodb-up: gen-ssl-innodb ## Start MySQL InnoDB Cluster (3 nodes + MySQL Router)
 	@echo "🚀 Starting MySQL InnoDB Cluster..."
 	docker compose -f $(INNODB_COMPOSE) up -d
 	@echo "⏳ Waiting for MySQL nodes to initialize (30s)..."

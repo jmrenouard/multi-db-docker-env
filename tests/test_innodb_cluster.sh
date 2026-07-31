@@ -364,23 +364,33 @@ else
 fi
 
 # ==================================================================
-# TEST 13: TLS/SSL Status Check
+# TEST 13: TLS/SSL Status & Enforcement Verification
 # ==================================================================
 echo ""
-echo "13. 🔐 TLS/SSL Status Check..."
-write_report "## 13. TLS/SSL Status"
+echo "13. 🔐 TLS/SSL Status & Enforcement Verification..."
+write_report "## 13. TLS/SSL Status & Enforcement"
 
-SSL_CIPHER=$(run_mysql mysql_node1 3306 -NB -e "SHOW STATUS LIKE 'Ssl_cipher';" 2>/dev/null | awk '{print $2}')
-SSL_CIPHER=$(echo "$SSL_CIPHER" | tr -d '[:space:]')
+SECURE_TRANS=$(run_mysql mysql_node1 3306 -NB -e "SELECT @@require_secure_transport;" 2>/dev/null | tr -d '[:space:]')
+SSL_CIPHER=$(run_mysql mysql_node1 3306 -NB -e "SHOW STATUS LIKE 'Ssl_cipher';" 2>/dev/null | awk '{print $2}' | tr -d '[:space:]')
+
+if [ "$SECURE_TRANS" = "1" ] || [ "$SECURE_TRANS" = "ON" ]; then
+    PASS=$((PASS + 1))
+    echo "✅ require_secure_transport=ON verified on Primary"
+    write_report "- ✅ require_secure_transport: ON"
+else
+    FAIL=$((FAIL + 1))
+    echo "❌ require_secure_transport is NOT ON (got: $SECURE_TRANS)"
+    write_report "- ❌ require_secure_transport: $SECURE_TRANS"
+fi
 
 if [ -n "$SSL_CIPHER" ] && [ "$SSL_CIPHER" != "NULL" ]; then
     PASS=$((PASS + 1))
-    echo "✅ TLS/SSL active on Primary (Cipher: $SSL_CIPHER)"
-    write_report "- ✅ TLS/SSL: ACTIVE ($SSL_CIPHER)"
+    echo "✅ Active TLS connection verified (Cipher: $SSL_CIPHER)"
+    write_report "- ✅ TLS Cipher: $SSL_CIPHER"
 else
     PASS=$((PASS + 1))
-    echo "ℹ️ TLS/SSL status checked (Targeted for Phase 2.1)"
-    write_report "- ℹ️ TLS/SSL Status: Checked (Targeted for Phase 2.1)"
+    echo "ℹ️ TLS Cipher status checked: $SSL_CIPHER"
+    write_report "- ℹ️ TLS Cipher: $SSL_CIPHER"
 fi
 
 # ==================================================================

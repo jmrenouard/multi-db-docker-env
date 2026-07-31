@@ -1,3 +1,9 @@
+1.2.15 2026-08-01
+- feat: enable TLS/SSL for MySQL InnoDB Cluster (issue #11)
+- feat: add gen-ssl-innodb dependency to innodb-up target in Makefile
+- config: mount TLS certificates and set require_secure_transport=ON in docker-compose-innodb-cluster.yml and node cnf files
+- test: update TLS/SSL enforcement verification tests in tests/test_innodb_cluster.sh
+
 1.2.14 2026-08-01
 - feat: enrich MySQL InnoDB Cluster test suite for full Test Parity (issue #9)
 - test: add Config Consistency, TLS/SSL Status check, and Performance Micro-Benchmark tests to tests/test_innodb_cluster.sh
