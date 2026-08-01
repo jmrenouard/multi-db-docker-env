@@ -840,7 +840,7 @@ gen-ssl: ## Generate SSL certificates for MariaDB
 	bash ./scripts/gen_ssl.sh
 
 clean-ssl: ## Remove SSL certificates (REVERSIBLE)
-	rm -rf ssl/
+	@docker run --rm -v "$(CURDIR):/workspace" alpine sh -c 'rm -rf /workspace/ssl' 2>/dev/null || rm -rf ssl/
 
 renew-ssl-galera: ## Force SSL certificate regeneration and reload on active Galera nodes
 	@echo ">> 🔄 Regenerating SSL certificates..."
