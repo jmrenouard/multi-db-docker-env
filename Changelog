@@ -1,3 +1,6 @@
+1.3.14 2026-08-01
+- 
+
 1.3.13 2026-08-01
 - fix(mongo): update mongod flags with --tlsAllowConnectionsWithoutCertificates and add client certificate options in setup_rs.sh and test_mongo_rs.sh
 
