@@ -38,7 +38,7 @@ write_report() {
 run_mongo() {
     local node="$1"
     shift
-    docker exec "$node" mongosh --tls --tlsAllowInvalidCertificates --quiet "$@" 2>/dev/null || docker exec "$node" mongosh --quiet "$@"
+    docker exec "$node" mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --quiet "$@" 2>/dev/null || docker exec "$node" mongosh --tls --tlsAllowInvalidCertificates --quiet "$@" 2>/dev/null || docker exec "$node" mongosh --quiet "$@"
 }
 
 write_report "# MongoDB ReplicaSet Test Report"
@@ -97,7 +97,7 @@ echo ""
 echo "3. 🔌 Testing HAProxy Connectivity..."
 write_report "## 3. HAProxy"
 
-if docker exec $NODE1 mongosh --host $HAPROXY_NODE --port $HAPROXY_PORT --quiet --eval "db.runCommand({ping:1})" &>/dev/null; then
+if run_mongo $NODE1 --host $HAPROXY_NODE --port $HAPROXY_PORT --eval "db.runCommand({ping:1})" &>/dev/null; then
     echo "✅ HAProxy ($HAPROXY_PORT) connected"
     write_report "- ✅ HAProxy ($HAPROXY_PORT): Connected"
     PASS=$((PASS + 1))
@@ -166,7 +166,7 @@ echo ""
 echo "6. 🏗️ CRUD Operations Test..."
 write_report "## 6. CRUD Operations"
 
-CRUD_RESULT=$(docker exec $NODE1 mongosh --quiet --eval '
+CRUD_RESULT=$(run_mongo $NODE1 --eval '
 db = db.getSiblingDB("testdb");
 db.crud.drop();
 db.crud.insertMany([{a:1},{a:2},{a:3}]);

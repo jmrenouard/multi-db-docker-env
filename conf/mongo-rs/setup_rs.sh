@@ -8,7 +8,7 @@ NODES=("mongo1" "mongo2" "mongo3")
 run_mongosh() {
     local node="$1"
     shift
-    docker exec "$node" mongosh --tls --tlsAllowInvalidCertificates --quiet "$@" 2>/dev/null || docker exec "$node" mongosh --quiet "$@"
+    docker exec "$node" mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --quiet "$@" 2>/dev/null || docker exec "$node" mongosh --tls --tlsAllowInvalidCertificates --quiet "$@" 2>/dev/null || docker exec "$node" mongosh --quiet "$@"
 }
 
 echo "=========================================================="
