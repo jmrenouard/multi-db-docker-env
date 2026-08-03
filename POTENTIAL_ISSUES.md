@@ -20,6 +20,8 @@ This file documents anomalies, warnings, technical debt, and resolutions identif
 | Nested Source Regression | mysql96 | ✅ RESOLVED | `employees` data injection skipped for mysql96 due to known regression. | `Makefile` injects `sakila` dataset for mysql96 automatically (PR #28). |
 | Deprecated MariaDB Options | MariaDB 11.8 | ✅ RESOLVED | `--innodb-file-per-table` and `--innodb-flush-method` deprecated in MariaDB 11.8. | Removed deprecated options from `gcustom_*.cnf` (PR #29). |
 | io_uring disabled | Docker / Kernel | ✅ RESOLVED | `io_uring_queue_init() failed with EPERM` — kernel has `io_uring_disabled=2`. Falls back to libaio. | Added fallback documentation to `README.md` and `README_fr.md` (PR #30). |
+| PgPool Permissive TLS Key Permissions | PgPool-II / `gen_ssl_pgpool.sh` | 🟡 IDENTIFIED | `gen_ssl_pgpool.sh` sets `chmod 666` on keys and `777` on dir (Sourcery AI PR #56 audit). | Restrict key permissions to `600` and directories to `700/755`. |
+| Unpinned PgPool Image Tag | PgPool-II / Docker Compose | 🟡 IDENTIFIED | `pgpool` image uses `:latest` tag making builds non-deterministic (Sourcery AI PR #56 audit). | Pin `pgpool2` image to specific version tag. |
 
 ## Technical Debt & Enhancements
 
@@ -29,6 +31,8 @@ This file documents anomalies, warnings, technical debt, and resolutions identif
 | Test Report Aggregation | ✅ RESOLVED | Consolidated individual HTML test reports into single HTML dashboard via `make test-all-report` (PR #41). |
 | Automated Failover Testing | ✅ RESOLVED | Implemented primary failure simulation and election verification via `make test-failover` (PR #42). |
 | Backup & Restore Verification | ✅ RESOLVED | Implemented script verification and backup execution tests via `make test-backup-restore` (PR #43). |
+| Duplicated SSL_FLAGS Initialization | 🟡 IDENTIFIED | `SSL_FLAGS` check duplicated across Galera, Repli, and InnoDB scripts (Sourcery AI PR #51/#52 audit). Extract to `common.sh`. |
+| Duplicated InnoDB Cluster Wait Loop | 🟡 IDENTIFIED | 60s Group Replication ONLINE state loop duplicated in `setup_cluster.sh` and `test_innodb_cluster.sh` (Sourcery AI PR #55 audit). |
 
 ## Test Results Summary (2026-08-01)
 

@@ -85,6 +85,7 @@ Enable TLS/SSL across all products for encrypted client connections.
 | Failover testing | Automated primary failover tests per cluster type | 🟡 MEDIUM | ✅ Complete |
 | Backup/Restore tests | Verify backup and restore procedures per product | 🟢 LOW | ✅ Complete |
 | CI/CD integration | GitHub Actions workflow for automated test execution | 🟢 LOW | ✅ Complete |
+| Sourcery AI Code Hardening | Refactor TLS key permissions, pin PgPool tag, unify `SSL_FLAGS` helper | 🟡 MEDIUM | 🔄 In Progress |
 
 ---
 
