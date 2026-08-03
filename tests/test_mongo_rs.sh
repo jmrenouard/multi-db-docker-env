@@ -375,7 +375,7 @@ print(inserted + "," + elapsed.toFixed(3) + "," + qps);
 
 IFS=',' read -r PERF_COUNT PERF_TIME PERF_QPS <<< "$PERF_STATS"
 
-if [ "$PERF_COUNT" -eq 500 ]; then
+if [[ "$PERF_COUNT" =~ ^[0-9]+$ ]] && [ "$PERF_COUNT" -eq 500 ]; then
     echo "✅ MongoDB Benchmark: 500 ops in ${PERF_TIME}s (${PERF_QPS} ops/sec)"
     write_report "- ✅ Benchmark: 500 docs inserted in ${PERF_TIME}s ($PERF_QPS ops/sec)"
     PASS=$((PASS + 1))
