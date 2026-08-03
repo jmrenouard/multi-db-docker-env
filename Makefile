@@ -666,6 +666,10 @@ COMPOSE_REPLI = docker-compose-repli.yml
 
 ## Image Management
 build-image: ## Build the base mariadb_ssh image
+	@if [ ! -f id_rsa ] || [ ! -f id_rsa.pub ]; then \
+		echo "🔑 Generating SSH keypair (id_rsa / id_rsa.pub) for build context..."; \
+		ssh-keygen -t rsa -b 4096 -f id_rsa -N ""; \
+	fi
 	docker build -t $(IMAGE_NAME) .
 
 install-client: ## Install MariaDB client on the host (Ubuntu/Debian)
