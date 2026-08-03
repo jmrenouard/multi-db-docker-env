@@ -28,3 +28,4 @@ __pycache__/
 htmlcov/
 *.code-workspace
 certs_patroni/**
+pgcopydb/
