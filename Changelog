@@ -1,3 +1,6 @@
+1.3.17 2026-08-03
+- doc: comprehensively enrich ROADMAP.md Phase 5 and POTENTIAL_ISSUES.md based on exhaustive analysis of 99 Sourcery AI PR comments.
+
 1.3.16 2026-08-03
 - doc: generate documentation/sourcery_ai_audit.md containing complete audit of 99 Sourcery AI PR comments and update documentation index.
 
