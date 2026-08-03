@@ -6,10 +6,16 @@ echo "=========================================================="
 echo "🛡️  MariaDB SSL Security Audit"
 echo "=========================================================="
 
-SSL_DIR="./ssl"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+SSL_DIR="$REPO_ROOT/ssl"
 if [ ! -d "$SSL_DIR" ]; then
     echo "⚠️ SSL directory not found. Generating certificates..."
-    bash ./scripts/gen_ssl.sh
+    if ! bash "$REPO_ROOT/scripts/gen_ssl.sh"; then
+        echo "❌ Certificate generation failed!" >&2
+        exit 1
+    fi
 fi
 
 echo "1. Checking certificate chaining..."

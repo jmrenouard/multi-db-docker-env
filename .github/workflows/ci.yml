@@ -10,6 +10,8 @@ jobs:
   test-and-validate:
     runs-on: ubuntu-latest
     env:
+      # Temporary override to suppress GitHub Actions runner Node 16/20 deprecation warnings.
+      # Can be safely removed once all action dependencies natively run on Node 20+.
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
 
     steps:
@@ -40,14 +42,14 @@ jobs:
 
       - name: Download and Setup MySQLTuner
         run: |
-          curl -fsSL https://raw.githubusercontent.com/major/MySQLTuner-perl/master/mysqltuner.pl -o mysqltuner.pl
+          curl -fsSL https://raw.githubusercontent.com/major/MySQLTuner-perl/v2.6.0/mysqltuner.pl -o mysqltuner.pl || curl -fsSL https://raw.githubusercontent.com/major/MySQLTuner-perl/master/mysqltuner.pl -o mysqltuner.pl
           chmod +x mysqltuner.pl
 
       - name: Run MySQLTuner E2E Integration Audit
         env:
           MYSQLTUNER_PATH: ./mysqltuner.pl
         run: |
-          make mysqltuner-galera || echo "MySQLTuner audit completed for Galera"
+          make mysqltuner-galera
 
       - name: Aggregate Test Reports
         run: |

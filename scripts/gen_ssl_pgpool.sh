@@ -5,7 +5,11 @@ set -euo pipefail
 SSL_DIR="./ssl/pgpool"
 mkdir -p "$SSL_DIR"
 if [ -d "$SSL_DIR" ]; then
-    docker run --rm -v "$(pwd)/$SSL_DIR:/ssl" alpine sh -c "chmod -R 777 /ssl 2>/dev/null || true" 2>/dev/null || true
+    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+        docker run --rm -v "$(pwd)/$SSL_DIR:/ssl" alpine sh -c "chmod -R 755 /ssl 2>/dev/null || true" 2>/dev/null || true
+    else
+        chmod -R 755 "$SSL_DIR" 2>/dev/null || true
+    fi
 fi
 
 echo "=========================================================="
@@ -45,7 +49,15 @@ openssl x509 -req -in "$SSL_DIR/server.csr" -days 3650 \
 
 # PostgreSQL requires key to be owned by database user (postgres UID 999) with 0600 mode
 rm -f "$SSL_DIR/"*.csr
-docker run --rm -v "$(pwd)/$SSL_DIR:/ssl" alpine sh -c "chown -R 999:999 /ssl && chmod 600 /ssl/server.key && chmod 666 /ssl/ca-cert.pem /ssl/server.crt /ssl/ca-key.pem 2>/dev/null && chmod 777 /ssl" 2>/dev/null || true
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    docker run --rm -v "$(pwd)/$SSL_DIR:/ssl" alpine sh -c \
+        "chown -R 999:999 /ssl && chmod 755 /ssl && chmod 600 /ssl/server.key /ssl/ca-key.pem && chmod 644 /ssl/ca-cert.pem /ssl/server.crt" 2>/dev/null || true
+else
+    chmod 755 "$SSL_DIR" 2>/dev/null || true
+    chmod 600 "$SSL_DIR/server.key" "$SSL_DIR/ca-key.pem" 2>/dev/null || true
+    chmod 644 "$SSL_DIR/ca-cert.pem" "$SSL_DIR/server.crt" 2>/dev/null || true
+    chown -R 999:999 "$SSL_DIR" 2>/dev/null || true
+fi
 
 echo ""
 echo "✅ PgPool TLS certificates generated in $SSL_DIR/"

@@ -16,6 +16,8 @@ else
     init_report() { :; }
 fi
 
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 init_report "test_backup_restore" "Backup & Restore Verification Report"
 
 echo "=========================================================="
@@ -33,7 +35,7 @@ SCRIPTS=(
 )
 
 for s in "${SCRIPTS[@]}"; do
-    if [ -f "$s" ] && [ -x "$s" ]; then
+    if [ -f "$REPO_ROOT/$s" ] && [ -x "$REPO_ROOT/$s" ]; then
         assert_pass "Script Check" "Found executable $s"
     else
         assert_fail "Script Check" "Missing or non-executable $s"
@@ -44,7 +46,11 @@ done
 echo ""
 echo "2. ⚙️  Verifying Script Usage / CLI Interface..."
 for s in "${SCRIPTS[@]}"; do
-    OUTPUT=$(bash "$s" 2>&1 || true)
+    full_path="$REPO_ROOT/$s"
+    if [ ! -x "$full_path" ]; then
+        continue
+    fi
+    OUTPUT=$(bash "$full_path" 2>&1 || true)
     if echo "$OUTPUT" | grep -qi "usage"; then
         assert_pass "Usage Check" "$s outputs usage instructions"
     else
@@ -58,7 +64,7 @@ echo "3. 📦 Active Cluster Backup Verification..."
 
 if docker ps --format '{{.Names}}' | grep -q "mariadb-g1"; then
     echo ">> Testing Galera Logical Backup..."
-    if bash scripts/backup_logical.sh galera testdb &>/dev/null; then
+    if bash "$REPO_ROOT/scripts/backup_logical.sh" galera testdb &>/dev/null; then
         assert_pass "Galera Backup" "Logical backup created successfully"
     else
         assert_fail "Galera Backup" "Logical backup failed"

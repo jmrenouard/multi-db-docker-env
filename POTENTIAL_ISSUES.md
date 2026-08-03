@@ -41,11 +41,11 @@ This file documents anomalies, warnings, security vulnerabilities, technical deb
 
 ## Documentation & Typo Corrections
 
-| File | Issue Type | Description | Resolution Plan |
-| :--- | :--- | :--- | :--- |
-| `documentation/tls_setup.md` | Typo | "Repli" abbreviation used instead of full term "Replication" (Sourcery AI PR #39 alert). | Replace "Repli" with "Replication". |
-| `README_fr.md` | Grammar | Grammatical agreement: "Optionnel" used with feminine noun "Optimisation" (Sourcery AI PR #30 alert). | Change to "Optionnelle". |
-| `ROADMAP.md` | Grammar | Noun "setup" used instead of verb phrase "set up" (Sourcery AI PR #22 alert). | Correct verb usages across Markdown documentation. |
+| File                         | Issue Type | Description                                                                                           | Resolution Plan                                    |
+| :-----------------------------| :-----------| :------------------------------------------------------------------------------------------------------| :---------------------------------------------------|
+| `documentation/tls_setup.md` | Typo       | "Repli" abbreviation used instead of full term "Replication" (Sourcery AI PR #39 alert).              | Replace "Repli" with "Replication".                |
+| `README_fr.md`               | Grammar    | Grammatical agreement: "Optionnel" used with feminine noun "Optimisation" (Sourcery AI PR #30 alert). | Change to "Optionnelle".                           |
+| `ROADMAP.md`                 | Grammar    | Noun "setup" used instead of verb phrase "set up" (Sourcery AI PR #22 alert).                         | Correct verb usages across Markdown documentation. |
 
 ---
 

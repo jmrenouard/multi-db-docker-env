@@ -8,7 +8,17 @@ NODES=("mongo1" "mongo2" "mongo3")
 run_mongosh() {
     local node="$1"
     shift
-    docker exec "$node" mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --quiet "$@" 2>/dev/null || docker exec "$node" mongosh --tls --tlsAllowInvalidCertificates --quiet "$@" 2>/dev/null || docker exec "$node" mongosh --quiet "$@"
+    local option_sets=(
+        "--tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --quiet"
+        "--tls --tlsAllowInvalidCertificates --quiet"
+        "--quiet"
+    )
+    for opts in "${option_sets[@]}"; do
+        if docker exec "$node" mongosh $opts "$@" 2>/dev/null; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 echo "=========================================================="

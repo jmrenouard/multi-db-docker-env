@@ -10,7 +10,7 @@ All cluster configurations support end-to-end encrypted transport (client-to-clu
 
 | Technology Cluster | Certificate Directory | CA File | Server Cert / Key | Key Config Flags |
 | :--- | :--- | :--- | :--- | :--- |
-| **MariaDB Galera / Repli** | `ssl/` | `ca-cert.pem` | `server-cert.pem` / `server-key.pem` | `ssl=1`, `ssl-ca`, `ssl-cert`, `ssl-key` |
+| **MariaDB Galera / Replication** | `ssl/` | `ca-cert.pem` | `server-cert.pem` / `server-key.pem` | `ssl=1`, `ssl-ca`, `ssl-cert`, `ssl-key` |
 | **MySQL InnoDB Cluster** | `ssl/innodb/` | `ca-cert.pem` | `server-cert.pem` / `server-key.pem` | `require_secure_transport=ON` |
 | **PostgreSQL PgPool-II** | `ssl/pgpool/` | `ca-cert.pem` | `server.crt` / `server.key` | `ssl=on`, `PGPOOL_PARAMS_SSL=on` |
 | **MongoDB ReplicaSet** | `ssl/mongo/` | `ca.pem` | `mongodb.pem` (combined) | `--tlsMode requireTLS` |
@@ -35,7 +35,7 @@ make check-ssl-all
 ```
 
 ### 3. Per-Engine Generation Targets
-- **MariaDB Galera / Repli**: `make gen-ssl`
+- **MariaDB Galera / Replication**: `make gen-ssl`
 - **MySQL InnoDB Cluster**: `make gen-ssl-innodb`
 - **PostgreSQL PgPool-II**: `make gen-ssl-pgpool`
 - **MongoDB ReplicaSet**: `make gen-ssl-mongo`

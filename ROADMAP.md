@@ -25,7 +25,16 @@ Every cluster test suite MUST include all categories below.
 | 13 | HTML Report | Styled HTML output | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 14 | PASS/FAIL Counters | Structured pass/fail counting | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-> ✅ = 100% Implemented & Verified across all test suites
+> ✅ = 100% Implemented & Verified across all test suites (validated via automated E2E test suites and GitHub Actions CI workflow).
+
+### Execution Order Guidelines
+
+To execute or enrich test suites, follow this execution sequence:
+1. **Pre-flight & Configuration Audit**: Run `make test-config` to validate environment files, compose syntax, and SSL certificates.
+2. **Standalone Engine Validation**: Run `make test-all` across all standalone MySQL, MariaDB, Percona, and PostgreSQL instances.
+3. **HA Cluster Engine Suites**: Run per-engine cluster test suites (`make test-galera`, `make test-repli`, `make test-innodb`, `make test-pgpool`, `make test-patroni`, `make test-mongo`).
+4. **Resilience & Failover Validation**: Run `make test-failover` and `make test-backup-restore`.
+5. **Full E2E Topology Audit**: Run `make test-all-topologies` for full cross-cluster validation and aggregated report generation.
 
 ---
 
@@ -153,9 +162,8 @@ multi-db-docker-env                    MySQLTuner-perl
 - [ ] **Robust `.env` Parsing**: Replace `grep | xargs` in `scripts/run_mysqltuner.sh` with direct shell sourcing or array parsing (PR #22).
 - [ ] **Conditional Cert Generation**: Update `innodb-up` target in `Makefile` to check for existing certs before regenerating (PR #35).
 
-### Phase 5.4 — Documentation & Polish (🟢 Low Priority)
+### Phase 5.4 — Documentation & Polish (✅ Resolved)
 
-- [ ] **TLS Guide Typo**: Fix "Repli" abbreviation to "Replication" in `documentation/tls_setup.md` (PR #39).
-- [ ] **French Grammar Correction**: Update "Optionnel" to "Optionnelle" in `README_fr.md` (PR #30).
-- [ ] **Verb Usage Standardization**: Standardize "setup" vs "set up" usage across Markdown documentation (PR #22).
-
+- [x] **TLS Guide Typo**: Fix "Repli" abbreviation to "Replication" in `documentation/tls_setup.md` (PR #39).
+- [x] **French Grammar Correction**: Update "Optionnel" to "Optionnelle" in `README_fr.md` (PR #30).
+- [x] **Verb Usage Standardization**: Standardize "setup" vs "set up" usage across Markdown documentation (PR #22).

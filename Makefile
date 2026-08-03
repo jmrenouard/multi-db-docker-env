@@ -525,22 +525,22 @@ test-all-topologies: test-config test-all ## Run E2E verification tests across A
 	@$(MAKE) full-repli || exit 1
 	@$(MAKE) down-repli
 	@echo ">> 🧪 3. Testing MySQL InnoDB Cluster..."
-	@$(MAKE) gen-ssl-innodb
+	@$(MAKE) gen-ssl-innodb || exit 1
 	@$(MAKE) innodb-up || exit 1
 	@$(MAKE) test-innodb || exit 1
 	@$(MAKE) innodb-down
 	@echo ">> 🧪 4. Testing PostgreSQL PgPool-II Cluster..."
-	@$(MAKE) gen-ssl-pgpool
+	@$(MAKE) gen-ssl-pgpool || exit 1
 	@$(MAKE) pgpool-up || exit 1
 	@$(MAKE) test-pgpool || exit 1
 	@$(MAKE) pgpool-down
 	@echo ">> 🧪 5. Testing Patroni PostgreSQL Cluster..."
-	@$(MAKE) gen-ssl-patroni
+	@$(MAKE) gen-ssl-patroni || exit 1
 	@$(MAKE) patroni-up || exit 1
 	@$(MAKE) test-patroni || exit 1
 	@$(MAKE) patroni-down
 	@echo ">> 🧪 6. Testing MongoDB ReplicaSet..."
-	@$(MAKE) gen-ssl-mongo
+	@$(MAKE) gen-ssl-mongo || exit 1
 	@$(MAKE) mongo-up || exit 1
 	@$(MAKE) test-mongo || exit 1
 	@$(MAKE) mongo-down
