@@ -6,7 +6,9 @@ This document outlines the unified TLS/SSL infrastructure implemented across all
 
 ## 🏗️ Architecture Overview
 
-All cluster configurations support end-to-end encrypted transport (client-to-cluster and node-to-node) using X.509 certificates generated locally via OpenSSL:
+All cluster configurations support end-to-end encrypted transport (client-to-cluster and node-to-node) using X.509 certificates generated locally via OpenSSL.
+
+> **Note**: Certificate directories listed below are relative to the repository root directory (`./ssl/`). At container startup, these host paths are mounted into each container filesystem (e.g., `/etc/ssl/mongo/` or `/etc/ssl/pgpool/`).
 
 | Technology Cluster | Certificate Directory | CA File | Server Cert / Key | Key Config Flags |
 | :--- | :--- | :--- | :--- | :--- |

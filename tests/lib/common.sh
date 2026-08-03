@@ -117,6 +117,30 @@ assert_greater_than() {
 
 print_summary() {
     local total=$((PASS + FAIL))
+    if [ -n "$REPORT_MD" ] && [ -n "$REPORT_HTML" ] && [ -f "$REPORT_MD" ]; then
+        cat <<EOF > "$REPORT_HTML"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Report</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background-color: #0f172a; color: #f1f5f9; padding: 2rem; }
+        .pass { color: #4ade80; font-weight: bold; }
+        .fail { color: #f87171; font-weight: bold; }
+        pre { background: #1e293b; padding: 1rem; border-radius: 0.5rem; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Test Report Summary</h1>
+    <p>Passed: <span class="pass">$PASS</span> / $total | Failed: <span class="fail">$FAIL</span> / $total</p>
+    <hr style="border-color: #334155; margin: 1rem 0;">
+    <pre>$(cat "$REPORT_MD")</pre>
+</body>
+</html>
+EOF
+    fi
+
     echo ""
     echo "=========================================================="
     echo "🏁 Test Suite Summary"

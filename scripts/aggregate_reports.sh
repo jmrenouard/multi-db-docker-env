@@ -22,23 +22,24 @@ TOTAL_PASS=0
 TOTAL_FAIL=0
 SUITE_SUMMARY_ROWS=""
 
-if [ -z "$REPORTS" ]; then
-    echo "⚠️  No test reports found in $REPORT_DIR/"
+if [ ! -d "$REPORT_DIR" ]; then
+    echo "⚠️  No test reports directory found at $REPORT_DIR/"
 else
-    for r in $REPORTS; do
+    while IFS= read -r r; do
+        [ -f "$r" ] || continue
         BASENAME=$(basename "$r")
         # Extract title or filename
         TITLE=$(grep -oP '<title>\K[^<]+' "$r" 2>/dev/null || echo "$BASENAME")
         
-        # Count passes and fails if present in HTML
-        PASS_CNT=$(grep -oi "pass" "$r" | wc -l || echo "0")
-        FAIL_CNT=$(grep -oi "fail" "$r" | wc -l || echo "0")
+        # Count passes and fails using word matches to avoid substrings (e.g. "password")
+        PASS_CNT=$( (grep -oiw "pass" "$r" 2>/dev/null || true) | wc -l | tr -d '[:space:]')
+        FAIL_CNT=$( (grep -oiw "fail" "$r" 2>/dev/null || true) | wc -l | tr -d '[:space:]')
         
         TOTAL_PASS=$((TOTAL_PASS + PASS_CNT))
         TOTAL_FAIL=$((TOTAL_FAIL + FAIL_CNT))
 
         SUITE_SUMMARY_ROWS+="<tr class=\"border-b border-slate-700/50 hover:bg-slate-800/30\"><td class=\"py-3 px-4 font-semibold text-slate-200\">$TITLE</td><td class=\"py-3 px-4 text-xs font-mono text-slate-400\">$BASENAME</td><td class=\"py-3 px-4 text-green-400 font-bold\">$PASS_CNT</td><td class=\"py-3 px-4 text-red-400 font-bold\">$FAIL_CNT</td><td class=\"py-3 px-4\"><a href=\"$BASENAME\" target=\"_blank\" class=\"text-cyan-400 hover:underline text-xs\">View Report &rarr;</a></td></tr>"
-    done
+    done < <(find "$REPORT_DIR" -maxdepth 1 -name "*.html" ! -name "*aggregated*" | sort)
 fi
 
 cat <<EOF > "$OUT_HTML"

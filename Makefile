@@ -562,7 +562,7 @@ test-all-report: ## Aggregate all individual HTML test reports into a consolidat
 	@bash ./scripts/aggregate_reports.sh
 
 test-failover: ## Run automated primary failover & resilience tests
-	@bash ./tests/test_failover.sh ${TARGET:-all}
+	@bash ./tests/test_failover.sh "${TARGET:-all}"
 
 test-backup-restore: ## Run backup and restore procedure verification tests
 	@bash ./tests/test_backup_restore.sh

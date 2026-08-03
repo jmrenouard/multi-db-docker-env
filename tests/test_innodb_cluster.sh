@@ -401,9 +401,9 @@ if [ -n "$SSL_CIPHER" ] && [ "$SSL_CIPHER" != "NULL" ]; then
     echo "✅ Active TLS connection verified (Cipher: $SSL_CIPHER)"
     write_report "- ✅ TLS Cipher: $SSL_CIPHER"
 else
-    PASS=$((PASS + 1))
-    echo "ℹ️ TLS Cipher status checked: $SSL_CIPHER"
-    write_report "- ℹ️ TLS Cipher: $SSL_CIPHER"
+    FAIL=$((FAIL + 1))
+    echo "❌ TLS Cipher status missing/NULL (got: $SSL_CIPHER)"
+    write_report "- ❌ TLS Cipher: $SSL_CIPHER"
 fi
 
 # ==================================================================
@@ -413,20 +413,23 @@ echo ""
 echo "14. ⚡ Performance Micro-Benchmark via Router..."
 write_report "## 14. Performance Micro-Benchmark"
 
+SUCCESS_COUNT=0
 START_TIME=$(date +%s%N 2>/dev/null || date +%s)
 for i in $(seq 1 20); do
-    run_mysql haproxy_innodb 6446 -NB -e "SELECT 1;" > /dev/null 2>&1
+    if run_mysql haproxy_innodb 6446 -NB -e "SELECT 1;" > /dev/null 2>&1; then
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    fi
 done
 END_TIME=$(date +%s%N 2>/dev/null || date +%s)
 
-if [ -n "$START_TIME" ] && [ -n "$END_TIME" ]; then
+if [ "$SUCCESS_COUNT" -eq 20 ]; then
     PASS=$((PASS + 1))
-    echo "✅ Performance micro-benchmark completed (20 queries via Router)"
-    write_report "- ✅ Micro-benchmark: SUCCESS (20 queries routed)"
+    echo "✅ Performance micro-benchmark completed (20/20 queries via Router)"
+    write_report "- ✅ Micro-benchmark: SUCCESS (20/20 queries routed)"
 else
     FAIL=$((FAIL + 1))
-    echo "❌ Performance micro-benchmark failed"
-    write_report "- ❌ Micro-benchmark: FAILED"
+    echo "❌ Performance micro-benchmark failed (Successful: $SUCCESS_COUNT/20)"
+    write_report "- ❌ Micro-benchmark: FAILED ($SUCCESS_COUNT/20 queries)"
 fi
 
 # ==================================================================

@@ -1,3 +1,7 @@
+1.3.19 2026-08-03
+- fix: address PR review feedback across test scripts (test_innodb_cluster.sh, test_pgpool.sh, test_mongo_rs.sh), Makefile, aggregate_reports.sh, and gen_ssl_patroni.sh.
+- doc: update ROADMAP.md Phase 5 and POTENTIAL_ISSUES.md to mark 100% of Sourcery AI items as resolved.
+
 1.3.18 2026-08-03
 - fix: resolve all Sourcery AI code review findings across setup scripts, tests, TLS permissions, Makefile targets, and CI workflow.
 

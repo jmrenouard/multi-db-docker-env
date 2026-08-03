@@ -328,22 +328,29 @@ echo ""
 echo "11. 🔐 TLS/SSL Certificate & Status Verification..."
 write_report "## 11. TLS/SSL Verification"
 
-SSL_MODE=$(run_mongo $NODE1 --eval "db.serverCmdLineOpts().parsed.net.tls.mode" 2>/dev/null | tr -d '[:space:]"')
-if [ "$SSL_MODE" = "requireTLS" ] || [ "$SSL_MODE" = "allowTLS" ]; then
-    echo "✅ TLS mode active on $NODE1 ($SSL_MODE)"
-    write_report "- ✅ TLS Mode: ACTIVE ($SSL_MODE)"
+ALL_TLS_OK=true
+for node in $NODE1 $NODE2 $NODE3; do
+    SSL_MODE=$(run_mongo "$node" --eval "db.serverCmdLineOpts().parsed.net.tls.mode" 2>/dev/null | tr -d '[:space:]"')
+    if [ "$SSL_MODE" = "requireTLS" ] || [ "$SSL_MODE" = "allowTLS" ]; then
+        echo "✅ TLS mode active on $node ($SSL_MODE)"
+        write_report "- ✅ $node TLS Mode: ACTIVE ($SSL_MODE)"
+    else
+        SSL_CERT="./ssl/mongo/mongodb.pem"
+        if [ -f "$SSL_CERT" ]; then
+            echo "✅ TLS Certificate file present for $node ($SSL_CERT)"
+            write_report "- ✅ $node TLS Certificate: Present ($SSL_CERT)"
+        else
+            echo "❌ TLS Mode not active on $node (got: $SSL_MODE)"
+            write_report "- ❌ $node TLS Mode: $SSL_MODE"
+            ALL_TLS_OK=false
+        fi
+    fi
+done
+
+if [ "$ALL_TLS_OK" = true ]; then
     PASS=$((PASS + 1))
 else
-    SSL_CERT="./ssl/mongo/mongodb.pem"
-    if [ -f "$SSL_CERT" ]; then
-        echo "✅ TLS Certificate file present ($SSL_CERT)"
-        write_report "- ✅ TLS Certificate: Present ($SSL_CERT)"
-        PASS=$((PASS + 1))
-    else
-        echo "❌ TLS Mode not active (got: $SSL_MODE)"
-        write_report "- ❌ TLS Mode: $SSL_MODE"
-        FAIL=$((FAIL + 1))
-    fi
+    FAIL=$((FAIL + 1))
 fi
 
 # ─── TEST 12: Performance Benchmark Check ───

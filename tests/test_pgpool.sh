@@ -458,7 +458,7 @@ echo ""
 echo "17. 🔐 TLS/SSL Status Check..."
 write_report "## 17. TLS/SSL Status Check"
 
-SSL_STATUS=$(run_psql pg_node1 5432 -tAc "SHOW ssl;" 2>/dev/null || echo "off")
+SSL_STATUS=$(run_psql pg_node1 5432 -tAc "SHOW ssl;" 2>/dev/null || echo "error")
 SSL_STATUS=$(echo "$SSL_STATUS" | tr -d '[:space:]')
 
 if [ "$SSL_STATUS" = "on" ]; then
@@ -478,20 +478,23 @@ echo ""
 echo "18. ⚡ Performance Micro-Benchmark via PgPool..."
 write_report "## 18. Performance Micro-Benchmark"
 
-START_TIME=$(date +%s%N 2>/dev/null || date +%s)
+SUCCESS_COUNT=0
+START_TIME=$(date +%s)
 for i in $(seq 1 20); do
-    run_psql pgpool 9999 -tAc "SELECT 1;" > /dev/null 2>&1
+    if run_psql pgpool 9999 -tAc "SELECT 1;" > /dev/null 2>&1; then
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    fi
 done
-END_TIME=$(date +%s%N 2>/dev/null || date +%s)
+END_TIME=$(date +%s)
 
-if [ -n "$START_TIME" ] && [ -n "$END_TIME" ]; then
+if [ "$SUCCESS_COUNT" -eq 20 ]; then
     PASS=$((PASS + 1))
-    echo "✅ Performance micro-benchmark completed (20 queries via PgPool)"
-    write_report "- ✅ Micro-benchmark: SUCCESS (20 queries routed)"
+    echo "✅ Performance micro-benchmark completed (20/20 queries via PgPool)"
+    write_report "- ✅ Micro-benchmark: SUCCESS (20/20 queries routed)"
 else
     FAIL=$((FAIL + 1))
-    echo "❌ Performance micro-benchmark failed"
-    write_report "- ❌ Micro-benchmark: FAILED"
+    echo "❌ Performance micro-benchmark failed (Successful: $SUCCESS_COUNT/20)"
+    write_report "- ❌ Micro-benchmark: FAILED ($SUCCESS_COUNT/20 queries)"
 fi
 
 # ==================================================================
