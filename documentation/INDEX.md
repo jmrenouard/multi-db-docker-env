@@ -91,6 +91,7 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 | --- | --- |
 | **[Test Cases](tests.md)** | Automated functional test descriptions, expected results, and reporting details. |
 | **[Supported Products](supported_products.md)** | Comprehensive matrix of all supported DB engines, versions, ports, and HA modes. |
+| **[Sourcery AI Audit](sourcery_ai_audit.md)** | Complete audit report of 99 code review feedback items from Sourcery AI across 36 PRs. |
 
 ---
 
