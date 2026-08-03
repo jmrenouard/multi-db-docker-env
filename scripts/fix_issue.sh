@@ -7,16 +7,24 @@ GH_TOKEN="${GH_TOKEN:-}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BASE_BRANCH="main"
 DRY_RUN=false
-[[ "${1:-}" == "--dry-run" || "${2:-}" == "--dry-run" ]] && DRY_RUN=true
-ISSUE_URL="${1:-}"
+ISSUE_URL=""
+
+for arg in "$@"; do
+    if [[ "$arg" == "--dry-run" ]]; then
+        DRY_RUN=true
+    elif [[ -z "$ISSUE_URL" ]]; then
+        ISSUE_URL="$arg"
+    fi
+done
 
 step() { echo -e "\n=== $* ==="; }
 ok()   { echo "[OK]   $*"; }
 warn() { echo "[WARN] $*"; }
 fail() { echo "[FAIL] $*"; exit 1; }
 
-step "1/8 - Parse Issue URL"
-[[ -z "$ISSUE_URL" ]] && fail "Usage: $0 <github-issue-url> [--dry-run]"
+step "1/8 - Parse Issue URL & Authentication"
+[[ -z "$GH_TOKEN" ]] && fail "GH_TOKEN environment variable must be set for GitHub API access"
+[[ -z "$ISSUE_URL" ]] && fail "Usage: $0 [--dry-run] <github-issue-url>"
 if [[ "$ISSUE_URL" =~ github\.com/([^/]+)/([^/]+)/issues/([0-9]+) ]]; then
     OWNER="${BASH_REMATCH[1]}"; REPO_NAME="${BASH_REMATCH[2]}"; ISSUE_NUMBER="${BASH_REMATCH[3]}"
     REPO="${OWNER}/${REPO_NAME}"

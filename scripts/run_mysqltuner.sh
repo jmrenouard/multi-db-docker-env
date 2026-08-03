@@ -14,7 +14,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 if [ -f "$PROJECT_ROOT/.env" ]; then
-    export "$(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)"
+    while IFS='=' read -r key value; do
+        [[ -z "$key" || "$key" =~ ^# ]] && continue
+        export "$key=$value"
+    done < "$PROJECT_ROOT/.env"
 fi
 
 DB_PASS="${DB_ROOT_PASSWORD:-rootpass}"
@@ -43,7 +46,7 @@ fi
 # Parse arguments
 PORT=""
 TOPOLOGY=""
-EXTRA_ARGS=""
+EXTRA_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -56,7 +59,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         *)
-            EXTRA_ARGS="$EXTRA_ARGS $1"
+            EXTRA_ARGS+=("$1")
             shift
             ;;
     esac

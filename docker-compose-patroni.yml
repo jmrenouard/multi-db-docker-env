@@ -75,7 +75,7 @@ services:
       - PATRONI_ETCD3_PROTOCOL=https
       - ETCD_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-postgres}
       - PATRONI_VERIFY_CLIENT=required
       - PG_HBA_SSL_TYPE=hostssl
       - PG_HBA_METHOD=md5
@@ -114,7 +114,7 @@ services:
       - PATRONI_ETCD3_PROTOCOL=https
       - ETCD_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-postgres}
       - PATRONI_VERIFY_CLIENT=required
       - PG_HBA_SSL_TYPE=hostssl
       - PG_HBA_METHOD=md5
@@ -153,7 +153,7 @@ services:
       - PATRONI_ETCD3_PROTOCOL=https
       - ETCD_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-postgres}
       - PATRONI_VERIFY_CLIENT=required
       - PG_HBA_SSL_TYPE=hostssl
       - PG_HBA_METHOD=md5
