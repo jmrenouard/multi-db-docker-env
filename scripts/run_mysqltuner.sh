@@ -158,7 +158,7 @@ for p in $PORTS; do
         --verbose \
         --forcemem 256 \
         --reportfile "$REPORT_FILE" \
-        $EXTRA_ARGS \
+        ${EXTRA_ARGS:+"${EXTRA_ARGS[@]}"} \
         > "$OUTPUT_FILE" 2>&1 || true
 
     echo "  📄 Output: $OUTPUT_FILE"
