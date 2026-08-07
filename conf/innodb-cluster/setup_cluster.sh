@@ -69,6 +69,7 @@ echo ""
 echo "5. ⛓️  Starting Group Replication on primary (mysql_node1)..."
 docker exec -e MYSQL_PWD="$DB_PASS" mysql_node1 mysql -uroot -e "
     CHANGE REPLICATION SOURCE TO SOURCE_USER='repl_user', SOURCE_PASSWORD='replpass' FOR CHANNEL 'group_replication_recovery';
+    SET GLOBAL group_replication_recovery_use_ssl=ON;
     SET GLOBAL group_replication_bootstrap_group=ON;
     START GROUP_REPLICATION;
     SET GLOBAL group_replication_bootstrap_group=OFF;
@@ -83,6 +84,7 @@ for node in "mysql_node2" "mysql_node3"; do
     echo "   >> Joining $node..."
     docker exec -e MYSQL_PWD="$DB_PASS" "$node" mysql -uroot -e "
         CHANGE REPLICATION SOURCE TO SOURCE_USER='repl_user', SOURCE_PASSWORD='replpass' FOR CHANNEL 'group_replication_recovery';
+        SET GLOBAL group_replication_recovery_use_ssl=ON;
         START GROUP_REPLICATION;
     " 2>/dev/null
     echo "   ✅ $node join initiated."
