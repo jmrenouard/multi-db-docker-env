@@ -82,6 +82,26 @@ class TestProjectGovernanceRules(unittest.TestCase):
         self.assertIn("APP-001", content)
         self.assertIn("IDEA-001", content)
 
+    def test_roadmap_and_potential_issues_consolidated_in_english(self) -> None:
+        """Verify ROADMAP.md and POTENTIAL_ISSUES.md redirect to living registers and enforce English."""
+        roadmap_path = ROOT / "ROADMAP.md"
+        potential_issues_path = ROOT / "POTENTIAL_ISSUES.md"
+        logbook_path = ROOT / "docs" / "ACTION_LOGBOOK.md"
+        agents_path = ROOT / "AGENTS.md"
+
+        self.assertTrue(roadmap_path.is_file(), "ROADMAP.md must exist as redirection pointer")
+        self.assertTrue(potential_issues_path.is_file(), "POTENTIAL_ISSUES.md must exist as redirection pointer")
+
+        roadmap_content = roadmap_path.read_text(encoding="utf-8")
+        potential_issues_content = potential_issues_path.read_text(encoding="utf-8")
+        logbook_content = logbook_path.read_text(encoding="utf-8")
+        agents_content = agents_path.read_text(encoding="utf-8")
+
+        self.assertIn("docs/ACTION_LOGBOOK.md", roadmap_content)
+        self.assertIn("docs/RCA_REGISTER.md", potential_issues_content)
+        self.assertIn("Strategic Roadmap & Milestones", logbook_content)
+        self.assertIn("English", agents_content)
+
 
 if __name__ == "__main__":
     unittest.main()

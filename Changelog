@@ -1,3 +1,6 @@
+1.3.29 2026-10-30
+- test: add unit tests asserting consolidated roadmap and RCA redirection pointers and English governance rules.
+
 1.3.28 2026-10-30
 - doc: redirect POTENTIAL_ISSUES.md to consolidated RCA Register.
 
