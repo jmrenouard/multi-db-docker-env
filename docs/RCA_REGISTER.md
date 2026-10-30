@@ -111,8 +111,19 @@
 - **Observed Symptom**: `mysql_docker.py` syntax error on `except e:` and exposed `-p"{password}"` in aliases; `interactive_runner.py` blocked CLI on input.
 - **Root Cause Analysis (5 Whys)**:
   1. *Why?* Unbound exception name `e` and inline password flags in shell alias generation.
-- **Applied Change / Fix**: Replaced `except e:` with `except Exception as e:`, injected `MYSQL_PWD` in aliases, deferred interactive prompts to `main()`, and unified PKI generation in `scripts/gen_pki.sh`.
+- **Applied Change / Fix**: Replaced `except e:` with `except Exception as e:`, injected `MYSQL_PWD` in aliases, deferred interactive prompts to `main()`, and improved metric extraction in `scripts/aggregate_reports.sh`.
 - **Result & Non-Regression Test**: All tests passed (`test_secure_password.sh`, `test_project_governance_rules.py`, `make test-config`).
+
+---
+
+### RCA-016 — OpenSSL Certificate Generation Fragmentation and Missing SAN Extensions
+- **Date / Linked Action**: `2026-10-30` (`ACT-008` / Issue `#70`)
+- **Observed Symptom**: Five distinct scripts duplicated OpenSSL certificate generation logic with inconsistent subject naming, missing Subject Alternative Name (SAN) extensions on multi-node topologies, and divergent file permissions.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why?* Each database topology was introduced incrementally with its own customized copy of OpenSSL CLI commands.
+  2. *Why?* OpenSSL options varied slightly between engines (MongoDB combined PEM, PostgreSQL postgres UID ownership, MySQL client certs).
+- **Applied Change / Fix**: Consolidated PKI generator into `scripts/gen_pki.sh` with standard SAN extensions, configurable modes (`mariadb`, `standard`, `single`), combined PEM output, and strict `0600` key permissions, converting existing scripts to lightweight wrappers.
+- **Result & Non-Regression Test**: `make check-ssl-all` validated all 5 topologies; `tests/test_security_ssl.sh` passed 100%.
 
 ---
 

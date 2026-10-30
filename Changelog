@@ -1,5 +1,8 @@
+1.3.31 2026-10-30
+- feat: consolidate OpenSSL generators into unified scripts/gen_pki.sh with SAN extensions (Closes #70).
+- doc: record ACT-008 in docs/ACTION_LOGBOOK.md and RCA-016 in docs/RCA_REGISTER.md.
+
 1.3.30 2026-10-30
-- feat: consolidate OpenSSL generators into unified scripts/gen_pki.sh.
 - fix: resolve 10 Ponytail audit remediation findings across Python and Bash scripts (Closes #68).
 - doc: record ACT-007 in docs/ACTION_LOGBOOK.md and RCA-015 in docs/RCA_REGISTER.md.
 - test: add mysql_docker.py password security regression check to tests/test_secure_password.sh.
