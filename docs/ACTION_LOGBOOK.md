@@ -72,6 +72,18 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-004 — Consolidate Potential Issues into RCA Register (Issue `#62`)
+- **Date**: `2026-10-30T22:47+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#62` (`docs/issue-62-consolidate-rca-register`)
+- **Request**: Consolidate all historical anomalies, warnings, technical debt, and Sourcery AI resolutions from `POTENTIAL_ISSUES.md` into `docs/RCA_REGISTER.md`.
+- **Changes**:
+  - Expanded [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) with `RCA-003` to `RCA-014`, `IMP-004` to `IMP-005`, and `APP-003`.
+  - Bumped [`VERSION`](../VERSION) to `1.3.27`; updated [`Changelog`](../Changelog).
+- **Result**: `python -m unittest discover -s tests -v` passing (100%), PR diff strictly within `< 15,000` characters limit (`~8,500` chars).
+
+---
+
 ### ACT-003 — Redirect ROADMAP.md to Consolidated Action Logbook (Issue `#60`)
 - **Date**: `2026-10-30T22:46+01:00`
 - **Status**: `COMPLETED`
