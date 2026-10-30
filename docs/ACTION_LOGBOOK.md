@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-010 — Milestone 1: Golang Scaffolding, CLI Entry Point, and Typed Config Loader (Issue `#74`)
+- **Date**: `2026-10-31T00:25+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#74` (`feat/issue-74-golang-scaffolding-pki`)
+- **Request**: Implement Milestone 1 Go scaffolding: go.mod scaffolding, cmd/mdb CLI entry point, and pkg/config typed loader.
+- **Changes**: Initialized `go.mod` (module `github.com/jmrenouard/multi-db-docker-env`); created `cmd/mdb/main.go` with `version` and `config` commands; built `pkg/config/config.go` with `.env` parser and validation; added comprehensive unit tests in `pkg/config/config_test.go`; bumped `VERSION` to `1.3.33`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (100%), `go build ./...` succeeded, `python -m unittest discover -s tests -v` passed without regression, PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-009 — Migrate Mongo, PgPool, and Patroni SSL Scripts to Unified PKI Generator (Issue `#72`)
 - **Date**: `2026-10-30T23:58+01:00`
 - **Status**: `COMPLETED`
