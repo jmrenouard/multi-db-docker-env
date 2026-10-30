@@ -72,6 +72,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-006 — Add Governance Tests for Consolidated Registers and English Language (Issue `#66`)
+- **Date**: `2026-10-30T22:50+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#66` (`test/issue-66-consolidated-governance-test`)
+- **Request**: Add unit test coverage in `tests/test_project_governance_rules.py` asserting that `ROADMAP.md` and `POTENTIAL_ISSUES.md` redirect to living registers and that English language is strictly enforced.
+- **Changes**: Added `test_roadmap_and_potential_issues_consolidated_in_english` in [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py); bumped [`VERSION`](../VERSION) to `1.3.29`; updated [`Changelog`](../Changelog).
+- **Result**: `python -m unittest discover -s tests -v` passing (100%), PR diff strictly within `< 15,000` characters limit (`~2,400` chars).
+
+---
+
 ### ACT-005 — Redirect POTENTIAL_ISSUES.md to Consolidated RCA Register (Issue `#64`)
 - **Date**: `2026-10-30T22:48+01:00`
 - **Status**: `COMPLETED`
