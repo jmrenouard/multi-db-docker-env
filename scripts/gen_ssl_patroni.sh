@@ -9,9 +9,13 @@ echo "=========================================================="
 echo "🔐 Patroni PostgreSQL TLS Certificate Generator"
 echo "=========================================================="
 
-if ! CERT_DIR="certs_patroni" bash ./scripts/patroni/generate_certs.sh; then
-    echo "❌ ERROR: Certificate generation failed in generate_certs.sh" >&2
-    exit 1
+if [ -f ./scripts/patroni/generate_certs.sh ]; then
+    if ! CERT_DIR="certs_patroni" bash ./scripts/patroni/generate_certs.sh; then
+        echo "❌ ERROR: Certificate generation failed in generate_certs.sh" >&2
+        exit 1
+    fi
+else
+    exec "$(dirname "$0")/gen_pki.sh" --dir "$SSL_DIR" --cn "Patroni-Cluster" --mode standard "$@"
 fi
 
 if [ -d "certs_patroni" ]; then

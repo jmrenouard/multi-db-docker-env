@@ -127,6 +127,16 @@
 
 ---
 
+### RCA-017 — Incomplete Delegation and Permission Fragmentation in Multi-DB SSL Scripts
+- **Date / Linked Action**: `2026-10-30` (`ACT-009` / Issue `#72`)
+- **Observed Symptom**: MongoDB, PostgreSQL PgPool-II, and Patroni SSL generator scripts retained legacy OpenSSL code with unaligned flags and skipped `--force` handling.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why?* Migration was split atomically to remain strictly under the 15,000 PR diff character limit.
+- **Applied Change / Fix**: Migrated `gen_ssl_mongo.sh` and `gen_ssl_pgpool.sh` to delegate to `gen_pki.sh` with `--force` bypass and strict permissions; added fallback in `gen_ssl_patroni.sh`.
+- **Result & Non-Regression Test**: `make check-ssl-all` validated all 5 topologies; `tests/test_security_ssl.sh` passed 100%.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
