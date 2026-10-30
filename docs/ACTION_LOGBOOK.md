@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-009 — Migrate Mongo, PgPool, and Patroni SSL Scripts to Unified PKI Generator (Issue `#72`)
+- **Date**: `2026-10-30T23:58+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#72` (`feat/issue-72-migrate-remaining-ssl-wrappers`)
+- **Request**: Migrate `scripts/gen_ssl_mongo.sh`, `scripts/gen_ssl_pgpool.sh`, and `scripts/gen_ssl_patroni.sh` to delegate to unified `scripts/gen_pki.sh` with `--force` bypass, strict `0600` key permissions, and SAN extensions.
+- **Changes**: Converted `gen_ssl_mongo.sh` and `gen_ssl_pgpool.sh` to delegate to `gen_pki.sh` with `--force` support; added fallback to `gen_pki.sh` in `gen_ssl_patroni.sh`; updated `VERSION` to `1.3.32`; updated `Changelog`.
+- **Result**: `make check-ssl-all` validated all 5 topologies; `make test-config` and unit tests passed; PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-008 — OpenSSL PKI Certificate Generators Consolidation (Issue `#70`)
 - **Date**: `2026-10-30T23:50+01:00`
 - **Status**: `COMPLETED`
