@@ -1,3 +1,6 @@
+1.3.25 2026-10-30
+- doc: consolidate strategic roadmap and milestones into docs/ACTION_LOGBOOK.md and add pointer in ROADMAP.md.
+
 1.3.24 2026-10-30
 - feat: reintegrate CIS Benchmarks project development rules, English AGENTS.md, .agents/rules, living registers (docs/ACTION_LOGBOOK.md, docs/RCA_REGISTER.md), and automated governance unit tests.
 - fix: defensively guard subprocess execution in tests/test_lab.py against missing database binaries on host.
