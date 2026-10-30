@@ -68,9 +68,17 @@
 | :--- | :--- | :--- | :--- | :--- |
 | *None* | — | — | — | All current actions are completed and archived below. |
 
----
-
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-008 — OpenSSL PKI Certificate Generators Consolidation (Issue `#70`)
+- **Date**: `2026-10-30T23:50+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#70` (`feat/issue-70-unified-pki-generator`)
+- **Request**: Consolidate five OpenSSL certificate generators (`gen_ssl.sh`, `gen_ssl_innodb.sh`, `gen_ssl_mongo.sh`, `gen_ssl_patroni.sh`, `gen_ssl_pgpool.sh`) into unified `scripts/gen_pki.sh` with Subject Alternative Name (SAN) support and strict `0600` key permissions while preserving existing script entry points as thin wrappers.
+- **Changes**: Created `scripts/gen_pki.sh` with SAN extensions, multi-mode certificate topologies (`mariadb`, `standard`, `single`), combined PEM generation, and configurable file ownership/permissions (`0600`/`0644`); converted wrapper scripts into one-line delegators with `--force` bypass; updated `VERSION` to `1.3.31`; updated `Changelog`.
+- **Result**: `make check-ssl-all` validated all 5 topologies; `tests/test_security_ssl.sh` passed; `make test-config` passed (100%); PR diff strictly < 15,000 characters.
+
+---
 
 ### ACT-007 — Ponytail Audit Remediation across Python, Bash and Test Scripts (Issue `#68`)
 - **Date**: `2026-10-30T22:30+01:00`
