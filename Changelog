@@ -1,3 +1,6 @@
+1.3.28 2026-10-30
+- doc: redirect POTENTIAL_ISSUES.md to consolidated RCA Register.
+
 1.3.27 2026-10-30
 - doc: consolidate potential issues, warnings, and Sourcery AI resolutions into docs/RCA_REGISTER.md.
 

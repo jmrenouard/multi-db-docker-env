@@ -72,6 +72,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-005 — Redirect POTENTIAL_ISSUES.md to Consolidated RCA Register (Issue `#64`)
+- **Date**: `2026-10-30T22:48+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#64` (`docs/issue-64-redirect-potential-issues`)
+- **Request**: Replace obsolete root `POTENTIAL_ISSUES.md` with an explicit redirection pointer to `docs/RCA_REGISTER.md`.
+- **Changes**: Replaced [`POTENTIAL_ISSUES.md`](../POTENTIAL_ISSUES.md) content with pointer note; bumped [`VERSION`](../VERSION) to `1.3.28`; updated [`Changelog`](../Changelog).
+- **Result**: `python -m unittest discover -s tests -v` passing (100%), PR diff strictly within `< 15,000` characters limit (`~8,200` chars).
+
+---
+
 ### ACT-004 — Consolidate Potential Issues into RCA Register (Issue `#62`)
 - **Date**: `2026-10-30T22:47+01:00`
 - **Status**: `COMPLETED`
