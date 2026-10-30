@@ -72,6 +72,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-003 — Redirect ROADMAP.md to Consolidated Action Logbook (Issue `#60`)
+- **Date**: `2026-10-30T22:46+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#60` (`docs/issue-60-redirect-roadmap-md`)
+- **Request**: Replace obsolete root `ROADMAP.md` with an explicit redirection pointer to `docs/ACTION_LOGBOOK.md`.
+- **Changes**: Replaced [`ROADMAP.md`](../ROADMAP.md) content with pointer note; bumped [`VERSION`](../VERSION) to `1.3.26`; updated [`Changelog`](../Changelog).
+- **Result**: `python -m unittest discover -s tests -v` passing (100%), PR diff strictly within `< 15,000` characters limit (`~11,540` chars).
+
+---
+
 ### ACT-002 — Merge Strategic Roadmap into Unified Action Logbook (Issue `#58`)
 - **Date**: `2026-10-30T22:45+01:00`
 - **Status**: `COMPLETED`
