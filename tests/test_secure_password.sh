@@ -113,6 +113,11 @@ check_no_pattern "tests/test_repli.sh" '\-p\$PASS' "No inline -p in test_repli.s
 check_uses       "tests/test_repli.sh" "MYSQL_PWD" "Uses MYSQL_PWD"
 
 echo ""
+echo "-- mysql_docker.py"
+check_no_pattern "mysql_docker.py" '\-p\\\"\{password\}\\\"' "No inline -p in mysql_docker.py"
+check_uses       "mysql_docker.py" "MYSQL_PWD" "Uses MYSQL_PWD"
+
+echo ""
 echo "================================================="
 echo "Results: $PASS passed / $FAIL failed"
 [[ $FAIL -eq 0 ]] && echo "All security checks passed!" && exit 0

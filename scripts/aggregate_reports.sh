@@ -31,9 +31,15 @@ else
         # Extract title or filename
         TITLE=$(grep -oP '<title>\K[^<]+' "$r" 2>/dev/null || echo "$BASENAME")
         
-        # Count passes and fails using word matches to avoid substrings (e.g. "password")
-        PASS_CNT=$( (grep -oiw "pass" "$r" 2>/dev/null || true) | wc -l | tr -d '[:space:]')
-        FAIL_CNT=$( (grep -oiw "fail" "$r" 2>/dev/null || true) | wc -l | tr -d '[:space:]')
+        # Extract metrics: structured JSON report, status fields, or keywords (avoiding HTML tags)
+        PASS_CNT=0; FAIL_CNT=0
+        if [ -f "${r%.html}.json" ] && command -v jq >/dev/null 2>&1; then
+            PASS_CNT=$(jq -r '.passed // .pass // 0' "${r%.html}.json" 2>/dev/null || echo 0)
+            FAIL_CNT=$(jq -r '.failed // .fail // 0' "${r%.html}.json" 2>/dev/null || echo 0)
+        else
+            PASS_CNT=$( (grep -oE "status['\"]?\s*[:=]\s*['\"]?(PASS|PASSED|SUCCESS)" "$r" 2>/dev/null || grep -oE '\b(PASSED|SUCCESS)\b' "$r" 2>/dev/null || true) | wc -l | tr -d '[:space:]')
+            FAIL_CNT=$( (grep -oE "status['\"]?\s*[:=]\s*['\"]?(FAIL|FAILED)" "$r" 2>/dev/null || grep -oE '\b(FAILED|FAILURE)\b' "$r" 2>/dev/null || true) | wc -l | tr -d '[:space:]')
+        fi
         
         TOTAL_PASS=$((TOTAL_PASS + PASS_CNT))
         TOTAL_FAIL=$((TOTAL_FAIL + FAIL_CNT))

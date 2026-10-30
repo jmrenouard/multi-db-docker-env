@@ -72,6 +72,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-007 — Ponytail Audit Remediation across Python, Bash and Test Scripts (Issue `#68`)
+- **Date**: `2026-10-30T22:30+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#68` (`fix/issue-68-ponytail-audit-remediation`)
+- **Request**: Resolve 10 Ponytail audit remediation findings across legacy Python, Bash, and test scripts (R1).
+- **Changes**: Fixed CLI prompt blocking in `interactive_runner.py`; fixed `except e:`, missing argument, and password exposure in `mysql_docker.py`; improved metric extraction in `scripts/aggregate_reports.sh`; safeguarded `.env` and error handling in `tests/test_galera.sh` and `test_repli.sh`; consolidated PKI generator in `scripts/gen_pki.sh`; bumped `VERSION` to `1.3.30`; updated `Changelog`.
+- **Result**: `make test-config`, governance, and security regression tests passed; PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-006 — Add Governance Tests for Consolidated Registers and English Language (Issue `#66`)
 - **Date**: `2026-10-30T22:50+01:00`
 - **Status**: `COMPLETED`

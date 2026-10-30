@@ -2,7 +2,17 @@
 
 # Configuration
 if [ -f .env ]; then
-    export "$(grep -v '^#' .env | xargs)"
+    while IFS= read -r line || [ -n "$line" ]; do
+        trimmed=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+        [[ -z "$trimmed" || "$trimmed" =~ ^# ]] && continue
+        if [[ "$trimmed" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            val="${BASH_REMATCH[2]}"
+            val="${val%\"}"; val="${val#\"}"
+            val="${val%\'}"; val="${val#\'}"
+            export "$key=$val"
+        fi
+    done < .env
 fi
 
 MASTER_PORT=3411
@@ -46,7 +56,7 @@ EOF
 run_sql() {
     local port=$1
     local query=$2
-    MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u$USER -sN -e "$query" 2>/dev/null
+    MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P "$port" -u"$USER" -sN -e "$query"
 }
 
 # PASS/FAIL counters
