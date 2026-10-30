@@ -182,6 +182,11 @@
 - **Nature & Justification**: Baseline verified across standalone MySQL (9.6.0, 8.4.8, 8.0.45), MariaDB (11.8.6, 11.4.10, 10.11.16, 10.6.25), Percona (8.0.44), PostgreSQL (17.8, 16.12, 15.16), and all 6 HA topologies (Galera, Replication, Patroni, PgPool-II, InnoDB Cluster, MongoDB RS).
 - **Removal Condition**: Continuous CI execution across all standalone versions.
 
+### APP-004 — In-Memory Self-Signed x509 PKI Engine for Laboratory Isolation
+- **Target Files**: `pkg/pki/cert.go`, `cmd/mdb/main.go`
+- **Nature & Justification**: Hermetic self-signed CA and SAN leaf certificates using Go `crypto/x509` and RSA 2048 without external OpenSSL or public CAs.
+- **Removal Condition**: Production deployments using external corporate CA or ACME automation.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)

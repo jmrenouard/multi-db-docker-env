@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-011 — Native Pure-Go x509 PKI Engine with SAN and CLI Integration (Issue `#76`)
+- **Date**: `2026-10-31T00:35+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#76` (`feat/issue-76-golang-native-pki`)
+- **Request**: Native x509 PKI engine (pkg/pki) with SAN, RSA 2048, combined PEM, and mdb pki CLI.
+- **Changes**: Created `pkg/pki/cert.go` for multi-topology cert generation; integrated `pki` in `cmd/mdb/main.go`; added tests in `pkg/pki/cert_test.go`; bumped `VERSION` to `1.3.34`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (100%), `go build ./...` succeeded, `python -m unittest discover -s tests -v` passed, PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-010 — Milestone 1: Golang Scaffolding, CLI Entry Point, and Typed Config Loader (Issue `#74`)
 - **Date**: `2026-10-31T00:25+01:00`
 - **Status**: `COMPLETED`
