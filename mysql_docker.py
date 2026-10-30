@@ -41,11 +41,11 @@ def generate_bash_alias(env_name, port, password):
     """Generate useful Bash aliases for a MySQL environment."""
     exporte = f"export MYSQL_DEFAULTS_FILE_{env_name}={script_dir}/{env_name}.my.cnf"
     aliases = [
-        f"alias {env_name}='docker exec -it {env_name} mysql -uroot -p\"{password}\"'",
-        f"alias {env_name}c='docker exec -i {env_name} mysql -uroot -p\"{password}\"'",
-        f"alias {env_name}dump='docker exec -it {env_name} mysqldump -uroot -p\"{password}\"'",
-        f"alias {env_name}flush='docker exec -it {env_name} mysql -uroot -p\"{password}\" -e \"FLUSH PRIVILEGES;\"'",
-        f"alias {env_name}dblist='docker exec -it {env_name} mysql -uroot -p\"{password}\" -e \"SHOW DATABASES;\"'",
+        f"alias {env_name}='docker exec -e MYSQL_PWD=\"{password}\" -it {env_name} mysql -uroot'",
+        f"alias {env_name}c='docker exec -e MYSQL_PWD=\"{password}\" -i {env_name} mysql -uroot'",
+        f"alias {env_name}dump='docker exec -e MYSQL_PWD=\"{password}\" -it {env_name} mysqldump -uroot'",
+        f"alias {env_name}flush='docker exec -e MYSQL_PWD=\"{password}\" -it {env_name} mysql -uroot -e \"FLUSH PRIVILEGES;\"'",
+        f"alias {env_name}dblist='docker exec -e MYSQL_PWD=\"{password}\" -it {env_name} mysql -uroot -e \"SHOW DATABASES;\"'",
         f"alias {env_name}sh='docker exec -it {env_name} bash'",
         f"alias {env_name}logs='docker logs {env_name}'",
         f"alias {env_name}stop='docker stop {env_name}'",
@@ -87,7 +87,7 @@ def launch_container(env_name, db_type, version, username, password, debug=False
         return    
     except docker.errors.NotFound:
       print(f"{container_name} not found")
-    except e:
+    except Exception as e:
       print(f"Erreur: {e}")
       return
  
@@ -119,9 +119,8 @@ def launch_container(env_name, db_type, version, username, password, debug=False
         print(f"Error launching container: {e}")
     
     if 'container' in locals() and container:
-        if 'container' in locals() and container:
-            create_my_cnf(env_name, username, password, port=port)
-            generate_bash_alias(env_name, port, password)
+        create_my_cnf(env_name, username, password, port=port)
+        generate_bash_alias(env_name, port, password)
 
 def stop_container(env_name, debug=False):
     """Stop a Docker container."""
@@ -180,8 +179,6 @@ def remove_environment(env_name, debug=False):
                 print(f"{bashrc_path} was empty and has been removed.")
             else:
                 print(f"Alias for {env_name} removed from {bashrc_path}.")
-    except Exception as e:
-        print(f"Error removing alias: {e}")
     except Exception as e:
         print(f"Error removing alias: {e}")
 
@@ -273,7 +270,7 @@ def main(debug=False):
         remove_environment(args.env_name, debug=args.debug)
     elif args.command == "info":
         create_my_cnf(args.env_name, args.username, args.password, port=args.port)
-        generate_bash_alias(args.env_name, args.port)
+        generate_bash_alias(args.env_name, args.port, args.password)
     else:
         parser.print_help()
 

@@ -106,6 +106,16 @@
 
 ---
 
+### RCA-015 — Syntax Crash and Insecure Password Leakage in Legacy Scripts
+- **Date / Linked Action**: `2026-10-30` (`ACT-007` / Issue `#68`)
+- **Observed Symptom**: `mysql_docker.py` syntax error on `except e:` and exposed `-p"{password}"` in aliases; `interactive_runner.py` blocked CLI on input.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why?* Unbound exception name `e` and inline password flags in shell alias generation.
+- **Applied Change / Fix**: Replaced `except e:` with `except Exception as e:`, injected `MYSQL_PWD` in aliases, deferred interactive prompts to `main()`, and unified PKI generation in `scripts/gen_pki.sh`.
+- **Result & Non-Regression Test**: All tests passed (`test_secure_password.sh`, `test_project_governance_rules.py`, `make test-config`).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters

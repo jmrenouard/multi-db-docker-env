@@ -5,9 +5,6 @@ import sys
 import argparse
 from datetime import datetime
 
-# Configuration
-def get_steps():
-    print("\n🏗️  Select Installation Type:")
 # Localized Strings
 STRINGS = {
     'en': {
@@ -80,7 +77,17 @@ def select_language():
         pass
 
 # Configuration
-def get_steps():
+def get_steps(auto=False):
+    if auto:
+        p_name, tgt = "MariaDB 11.4", "mariadb114"
+        return f"{'Standalone' if L == 'en' else 'Autonome'} ({p_name})", [
+            {"id": "config", "name": "Test Configuration", "description": "Validates environment and SSL configuration.", "command": "make test-config"},
+            {"id": "start", "name": f"Start {p_name}", "description": f"Starts {p_name} container.", "command": f"make {tgt}"},
+            {"id": "status", "name": "Check Status", "description": f"Shows status of {p_name}.", "command": "make status"},
+            {"id": "inject", "name": "Inject Data", "description": "Injects employees dataset.", "command": f"make inject-data service={tgt} db=employees"},
+            {"id": "verify", "name": "Verify Integrity", "description": "Runs integrity checks.", "command": "make test-config"}
+        ]
+
     print(f"\n{STRINGS[L]['select_type']}")
     print(STRINGS[L]['standalone'])
     print(STRINGS[L]['galera'])
@@ -230,8 +237,8 @@ def get_steps():
             }
         ]
 
-select_language()
-INSTALL_TYPE, STEPS = get_steps()
+INSTALL_TYPE = ""
+STEPS = []
 
 REPORT_FILE = "reports/run_report.html"
 
@@ -586,6 +593,7 @@ def generate_report(results, finished=False):
     print(STRINGS[L]['report_updated'].format(REPORT_FILE))
 
 def main():
+    global L, INSTALL_TYPE, STEPS
     parser = argparse.ArgumentParser(description="Interactive and Automated Test Runner")
     parser.add_argument("-a", "--auto", action="store_true", help="Run in automated mode (no prompts)")
     parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode (prompts for each step)")
@@ -593,8 +601,11 @@ def main():
     args = parser.parse_args()
 
     if args.lang:
-        global L
         L = args.lang
+    elif not args.auto:
+        select_language()
+
+    INSTALL_TYPE, STEPS = get_steps(auto=args.auto)
 
     print(STRINGS[L]['dashboard'])
     print("=" * 40)
