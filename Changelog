@@ -1,3 +1,7 @@
+1.3.33 2026-10-30
+- feat: implement Milestone 1 Go scaffolding (go.mod), CLI entry point (cmd/mdb), and typed config loader (pkg/config) (Closes #74).
+- doc: record ACT-010 in docs/ACTION_LOGBOOK.md and IMP-006 in docs/RCA_REGISTER.md.
+
 1.3.32 2026-10-30
 - feat: migrate mongo, pgpool, and patroni scripts to unified pki generator (Closes #72).
 - doc: record ACT-009 in docs/ACTION_LOGBOOK.md and RCA-017 in docs/RCA_REGISTER.md.

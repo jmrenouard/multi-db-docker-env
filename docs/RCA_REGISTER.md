@@ -159,6 +159,10 @@
 - **Why It Is a Dead-End**: Root process execution inside containers violates container security standards (Sourcery AI PR #53 alert).
 - **Adopted Decision**: Configure unprivileged user execution (`postgres`, `mysql`) in supervisor configuration files.
 
+### IMP-006 — External OpenSSL Subprocess Invocation in Golang Architecture
+- **Why It Is a Dead-End**: Invoking `openssl` via shell scripts or Go `os/exec` introduces external binary dependencies, cross-platform pathing issues on Windows, and error-masking risks.
+- **Adopted Decision**: Utilize native Go `crypto/x509`, `crypto/rsa`, and `encoding/pem` in `pkg/pki` for all CA and SAN certificate generation with programmatic file mode `0600`.
+
 ---
 
 ## 3. Current Approximations & Simplifying Assumptions (`APP`)
