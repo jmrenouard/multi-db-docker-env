@@ -167,3 +167,19 @@ multi-db-docker-env                    MySQLTuner-perl
 - [x] **TLS Guide Typo**: Fixed "Repli" abbreviation to "Replication" and added relative path note in `documentation/tls_setup.md` (PR #39).
 - [x] **French Grammar Correction**: Updated "Optionnel" to "Optionnelle" in `README_fr.md` (PR #30).
 - [x] **Verb Usage Standardization**: Standardized "setup" vs "set up" usage across Markdown documentation (PR #22).
+
+---
+
+## Phase 6 — Project Governance & Engineering Standards (✅ Complete)
+
+> Reintegration and alignment with the CIS Benchmarks development and governance framework to ensure consistency, accountability, and seamless pull request reviews.
+
+### Implementation Status
+
+- [x] **Repository Governance Rules (`AGENTS.md`)**: Root instructions enforcing English language across all commits, issues, PRs, and documentation.
+- [x] **Workspace Entrypoint (`.agents/AGENTS.md`)**: Dedicated instructions for AI coding agents and pairings.
+- [x] **Rules Directory (`.agents/rules/`)**: `git-workflow.md`, `github-workflow.md`, and `project-governance.md` with `trigger: always_on`.
+- [x] **Diff Size Gate (`< 15,000` Chars)**: Enforce sub-15K character PR diffs (`git diff main...HEAD | wc -c`) for clean bot reviews (Sourcery AI).
+- [x] **Living Registers (`docs/`)**: Initialized [`docs/ACTION_LOGBOOK.md`](docs/ACTION_LOGBOOK.md) and [`docs/RCA_REGISTER.md`](docs/RCA_REGISTER.md) tracking all actions, errors, dead-ends, and approximations.
+- [x] **Execution & Best Practices**: Root [`03_execution_rules.md`](03_execution_rules.md) and [`04_best_practices.md`](04_best_practices.md) synchronized with `.agent/rules/`.
+- [x] **Automated Governance Verification**: Dedicated unit test suite [`tests/test_project_governance_rules.py`](tests/test_project_governance_rules.py) guaranteeing zero rule drift.

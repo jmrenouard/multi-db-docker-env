@@ -38,6 +38,7 @@ This file documents anomalies, warnings, security vulnerabilities, technical deb
 | Chained Mongo Exec Fallbacks | `conf/mongo-rs/setup_rs.sh` | ✅ RESOLVED | Chained `docker exec` fallbacks in `run_mongo`/`run_mongosh` duplicate options (Sourcery AI PR #57 alert). Refactored into array loop. |
 | Fragile `.env` Parsing | `scripts/run_mysqltuner.sh` | ✅ RESOLVED | `.env` parsing via `grep | xargs` breaks on comments/quotes (Sourcery AI PR #22 alert). Updated pathing and env resolution. |
 | Redundant Cert Generation | Makefile | ✅ RESOLVED | `innodb-up` always runs `gen-ssl-innodb` as hard prerequisite (Sourcery AI PR #35 alert). Certificates generated idempotently. |
+| Governance & Dev Rules Alignment | Repository / `.agents` | ✅ RESOLVED | Reintegrated CIS Benchmarks governance framework: `AGENTS.md`, `.agents/rules/`, `docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`, and `test_project_governance_rules.py` (Issue `#58`). |
 
 ## Documentation & Typo Corrections
 

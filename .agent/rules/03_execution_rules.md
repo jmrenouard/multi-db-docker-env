@@ -1,44 +1,35 @@
 ---
 trigger: always_on
-description: Strict execution constraints and development workflow
+description: Core execution rules and constraints for the Multi-DB Docker Environment project.
 category: governance
 ---
-# 03 Execution Rules: Safeguards and Workflow
+# 03_execution_rules.md
 
 ## 🧠 Rationale
-
-High-density development requires strict guardrails to prevent regressions and maintain operational silence while ensuring all changes are verified and documented.
+To ensure consistency, reliability, security, and smooth code review across all database environments, orchestration scripts, and test suites. Strict adherence to these rules prevents broken tests, inconsistent naming, environment dependencies, and rejected Pull Requests.
 
 ## 🛠️ Implementation
 
-### 1. Formal Prohibitions (Hard Constraints)
+### 1. Mandatory Testing
+- Any new or modified database service, topology, or script MUST be verified locally via corresponding `make test-*` targets or test scripts before committing.
+- Code must not be committed until tests pass locally.
 
-1. **NON-REGRESSION**: Deleting existing code is PROHIBITED without relocation or commenting out.
-2. **DEPENDENCY MINIMALISM**: No new dependencies in containers unless absolutely necessary.
-3. **OPERATIONAL SILENCE**: Explanations/pedagogy are PROSCRIBED. Only code, commands, and results.
-4. **LANGUAGE**: Implementation limited to Bash and Docker.
-5. **DOCUMENTATION**: All comments and documentation within code and configuration files MUST be in English ONLY.
+### 2. Naming Conventions & Orchestration
+- Orchestration: `Makefile` is the exclusive entry point (`make up-*`, `make down-*`, `make test-*`).
+- Compose files: `docker-compose-<topology>.yml` (e.g., `docker-compose-galera.yml`, `docker-compose-patroni.yml`).
+- Test scripts: `tests/test_<topology>.sh` and `tests/test_*.py`.
+- Documentation: English ONLY across all technical documents, comments, issues, and PRs.
 
-### 2. Output Format
+### 3. Bash & Script Portability
+- All bash scripts MUST use `set -euo pipefail`.
+- Variables must always be quoted (`"$VAR"`).
+- Explicit error handling: no silent masking of errors or swallowed failures.
 
-1. **NO CHATTER**: No intro or conclusion sentences.
-2. **CODE ONLY**: Use Search/Replace blocks for files > 50 lines.
-3. **MANDATORY PROSPECTIVE**: Conclude with 3 technical evolution paths.
-4. **MEMORY UPDATE**: Include the JSON MEMORY_UPDATE_PROTOCOL block at the end.
-
-### 3. Development Workflow
-
-1. **Impact Analysis**: Silent analysis of consistency before generation.
-2. **Bash Robustness**: `set -euo pipefail`, variable protection `"$VAR"`, explicit error handling.
-3. **Validation by Proof**: Changes must be verifiable via `make test-*`. HTML reports required for documentation.
-4. **Git Protocol**: Commit immediately after validation using Conventional Commits. Single branch (`main`).
-
-### 4. Security (Lab Context)
-
-- Embedding sensitive data (e.g., default passwords like `rootpass`) is ALLOWED for this lab environment (must be documented in README).
+### 4. Pull Request Size & Atomic Splitting
+- Maximum PR diff size is strictly **15,000 characters** (`git diff main...HEAD | wc -c` < 15000).
+- Large features or cluster additions must be split into atomic, sub-15K-character Pull Requests to pass review bots (Sourcery AI limit) and human review.
 
 ## ✅ Verification
-
-- Run `make test` after any core change.
-- Verify commit history follows Conventional Commits.
-- Audit output for prohibited pedagogy.
+- Run `make test-config` or relevant `make test-*` targets.
+- Verify bash scripts adhere to `set -euo pipefail`.
+- Run `git diff main...HEAD | wc -c` to confirm PR diff size < 15,000 characters before submitting PR.
