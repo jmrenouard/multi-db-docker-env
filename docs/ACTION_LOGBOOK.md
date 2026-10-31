@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-024 — Resolve POSIX 126 Permission Denied on `scripts/gen_pki.sh` in CI TLS Generation (Issue `#102`)
+- **Date**: `2026-11-01T00:04+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#102` (`fix/issue-102-gen-pki-exec-permissions`)
+- **Request**: Fix GitHub Actions CI run `41247154340` failing at Step #4 (`Generate and Check TLS Certificates`) with `scripts/gen_pki.sh: Permission denied` (POSIX error 126).
+- **Changes**: Updated `scripts/gen_ssl.sh`, `scripts/gen_ssl_innodb.sh`, `scripts/gen_ssl_mongo.sh`, `scripts/gen_ssl_patroni.sh`, and `scripts/gen_ssl_pgpool.sh` to invoke `exec bash "$(dirname "$0")/gen_pki.sh"` explicitly so execution never depends on filesystem executable bits. Updated `docs/ACTION_LOGBOOK.md` (`ACT-024`) and `docs/RCA_REGISTER.md` (`RCA-022`).
+- **Result**: `make gen-ssl-all` and `make check-ssl-all` succeed across all 5 database topologies without POSIX 126 errors; PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-023 — Ponytail v2.0.0 Audit Remediation Part 2: Makefile, CI Go Gate, Setup Script & HAProxy Pinning (Issue `#100`)
 - **Date**: `2026-10-31T23:10+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#100` (`fix/issue-100-makefile-ci-compose`)
 - **Request**: Resolve Ponytail Audit findings #4, #5, #6, #8, and #9 across `Makefile`, `scripts/setup_repli.sh`, and Docker Compose files.

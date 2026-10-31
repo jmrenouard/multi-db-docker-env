@@ -21,4 +21,4 @@ if [ "${1:-}" != "--force" ] && check_certificates; then
     exit 0
 fi
 
-exec "$(dirname "$0")/gen_pki.sh" --dir "$SSL_DIR" --cn "MySQL-InnoDB" --san "DNS:localhost,DNS:mysql1,DNS:mysql2,DNS:mysql3,IP:127.0.0.1" "$@"
+exec bash "$(dirname "$0")/gen_pki.sh" --dir "$SSL_DIR" --cn "MySQL-InnoDB" --san "DNS:localhost,DNS:mysql1,DNS:mysql2,DNS:mysql3,IP:127.0.0.1" "$@"
