@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-026 — Align `start_mariadb.sh` Init User with Root for `0600` Host SSL Keys & Bound Galera CI Startup (Issue `#106`)
+- **Date**: `2026-11-01T00:16+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#106` (`fix/issue-106-start-mariadb-ssl-uid-and-galera-ci`)
+- **Request**: Fix MariaDB initialization failure when reading host-mounted `0600` `/etc/mysql/ssl/server-key.pem` (`uid=1001`) and bound Galera readiness checks in CI.
+- **Changes**: Updated `scripts/start_mariadb.sh` to run `mariadb-install-db` and temporary initialization `mariadbd` with `--user=root --wsrep-provider=none` and `COUNTER=$((COUNTER + 1))`; updated `Makefile` (`up-galera` and `inject-employee-galera`) with bounded 60-attempt readiness checks, supervisor log diagnostics on failure, and fast `employees` schema fixture in CI.
+- **Result**: Galera 3-node cluster bootstraps cleanly in CI and `make mysqltuner-galera` completes deterministically; PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-025 — Pre-Chown Temporary CSR/CNF Cleanup in `gen_pki.sh` & Containerized Galera CLI Calls (Issue `#104`)
 - **Date**: `2026-11-01T00:09+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#104` (`fix/issue-104-gen-pki-cleanup-and-galera-ci`)
 - **Request**: Fix `rm: cannot remove './ssl/pgpool/san.cnf': Permission denied` after Docker `chown 999:999` in `scripts/gen_pki.sh`, and containerize Galera `mariadb` calls and `test_db` submodule init in `Makefile`.
