@@ -1,8 +1,11 @@
 package report
 
 import (
+	"bytes"
+	"embed"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,6 +15,9 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/dbclient"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/runner"
 )
+
+//go:embed templates/report.html
+var templateFS embed.FS
 
 // Metadata captures the execution context and environment.
 type Metadata struct {
@@ -166,4 +172,40 @@ func WriteJSONTelemetry(report *Report, filePath string) error {
 		return fmt.Errorf("report cannot be nil")
 	}
 	return report.SaveJSON(filePath)
+}
+
+// RenderHTML executes the embedded HTML template against the report data.
+func (r *Report) RenderHTML() (string, error) {
+	r.ComputeSummary()
+	tmpl, err := template.ParseFS(templateFS, "templates/report.html")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse embedded report template: %w", err)
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, r); err != nil {
+		return "", fmt.Errorf("failed to execute report template: %w", err)
+	}
+	return buf.String(), nil
+}
+
+// SaveHTML renders and saves the HTML report to disk.
+func (r *Report) SaveHTML(filePath string) error {
+	htmlStr, err := r.RenderHTML()
+	if err != nil {
+		return err
+	}
+	if dir := filepath.Dir(filePath); dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+	return os.WriteFile(filePath, []byte(htmlStr), 0644)
+}
+
+// RenderHTMLReport renders and writes HTML report to disk (helper function).
+func RenderHTMLReport(report *Report, filePath string) error {
+	if report == nil {
+		return fmt.Errorf("report cannot be nil")
+	}
+	return report.SaveHTML(filePath)
 }

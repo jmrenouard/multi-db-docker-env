@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-020 — Embedded HTML Report Template and CLI Subcommand (Issue `#94`)
+- **Date**: `2026-10-31T02:26+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#94` (`feat/issue-94-embedded-html-reporter-cli`)
+- **Request**: Embedded HTML template aggregator in `pkg/report` and `mdb report` subcommand in `cmd/mdb/main.go`.
+- **Changes**: Created `pkg/report/templates/report.html`; added `RenderHTML` and `SaveHTML` to `pkg/report/report.go`; updated `pkg/report/report_test.go`; added `report` subcommand to `cmd/mdb/main.go`; bumped `VERSION` to `1.3.43`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (63 tests), race detector passed with 0 data races, diff strictly < 15,000 characters.
+
+---
+
 ### ACT-019 — Structured JSON Telemetry Engine and Summary Aggregator (Issue `#92`)
 - **Date**: `2026-10-31T02:20+01:00`
 - **Status**: `COMPLETED`
