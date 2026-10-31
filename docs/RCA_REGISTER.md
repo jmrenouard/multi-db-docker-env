@@ -243,3 +243,8 @@
 ### IDEA-004 — Dynamic Topology Manifest Engine via YAML
 - **Priority / Target**: `Low` · `pkg/topology/manifest.go`
 - **Description**: Allow user-defined database topologies loaded dynamically from external YAML files without Go recompilation.
+
+### IDEA-005 — Automated Performance Regression Gate via Sysbench Metrics
+- **Priority / Target**: `High` · `pkg/bench/sysbench.go`, `cmd/mdb`
+- **Description**: Automatically compare parsed sysbench TPS and 95th percentile latency against historical baseline thresholds, failing CI on performance degradation.
+

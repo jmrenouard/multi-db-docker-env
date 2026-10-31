@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-018 — Sysbench Benchmark Runner & CLI Integration (Issue `#90`)
+- **Date**: `2026-10-31T02:08+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#90` (`feat/issue-90-sysbench-runner-cli`)
+- **Request**: Sysbench benchmark runner and regex metric parser (`pkg/bench`), CLI `test` and `bench` subcommands in `cmd/mdb/main.go`.
+- **Changes**: Created `pkg/bench/sysbench.go`, `pkg/bench/sysbench_test.go`; updated `cmd/mdb/main.go`; bumped `VERSION` to `1.3.41`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (100%), race detector passed with 0 data races, governance tests passed, PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-017 — Concurrent Step Execution Pipeline (Issue `#88`)
 - **Date**: `2026-10-31T02:00+01:00`
 - **Status**: `COMPLETED`
