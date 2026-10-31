@@ -175,6 +175,10 @@
 - **Why It Is a Dead-End**: Invoking `openssl` via shell scripts or Go `os/exec` introduces external binary dependencies, cross-platform pathing issues on Windows, and error-masking risks.
 - **Adopted Decision**: Utilize native Go `crypto/x509`, `crypto/rsa`, and `encoding/pem` in `pkg/pki` for all CA and SAN certificate generation with programmatic file mode `0600`.
 
+### IMP-007 — Docker Go SDK Dependency Overhead
+- **Why It Is a Dead-End**: Importing `github.com/docker/docker/client` introduces massive transitive dependency trees (>25MB overhead, moby conflicts).
+- **Adopted Decision**: Wrap `docker` CLI via standard library `os/exec` abstraction (`CommandRunner` interface) allowing hermetic unit testing without live daemons.
+
 ---
 
 ## 3. Current Approximations & Simplifying Assumptions (`APP`)
@@ -198,6 +202,11 @@
 - **Target Files**: `pkg/pki/cert.go`, `cmd/mdb/main.go`
 - **Nature & Justification**: Hermetic self-signed CA and SAN leaf certificates using Go `crypto/x509` and RSA 2048 without external OpenSSL or public CAs.
 - **Removal Condition**: Production deployments using external corporate CA or ACME automation.
+
+### APP-005 — Hermetic CommandRunner Interface for Docker Testing
+- **Target Files**: `pkg/docker/client.go`, `pkg/docker/docker_test.go`
+- **Nature & Justification**: In-memory `MockCommandRunner` allows unit tests to execute hermetically without requiring a live Docker daemon.
+- **Removal Condition**: Live integration tests run against real containers in Phase 3.
 
 ---
 

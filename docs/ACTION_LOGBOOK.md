@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-013 — Docker Engine & Compose Wrapper with Mock Runner (Issue `#80`)
+- **Date**: `2026-10-31T01:05+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#80` (`feat/issue-80-docker-wrapper-client`)
+- **Request**: Docker Engine and Compose wrapper (`pkg/docker`) with `CommandRunner` and hermetic mock runner.
+- **Changes**: Created `pkg/docker/client.go`, `compose.go`, `docker_test.go`; bumped `VERSION` to `1.3.36`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed, race detector passed (0 races), PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-012 — Native PKI Engine Error Propagation and Verify All Remediation (Issue `#78`)
 - **Date**: `2026-10-31T01:00+01:00`
 - **Status**: `COMPLETED`
