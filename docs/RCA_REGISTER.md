@@ -178,7 +178,19 @@
 
 ---
 
-## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
+### RCA-022 — POSIX 126 Permission denied on scripts/gen_pki.sh During CI TLS Certificate Generation
+- **Date / Linked Action**: 2026-11-01 (ACT-024 / Issue #102)
+- **Observed Symptom**: GitHub Actions run 41247154340 failed at Step #4 (Generate and Check TLS Certificates) with ./scripts/gen_ssl.sh: line 31: exec: .../scripts/gen_pki.sh: cannot execute: Permission denied (make: *** [Makefile:860: gen-ssl] Error 126).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did make gen-ssl-all fail?* Because gen_ssl.sh executed exec "/gen_pki.sh" directly and Linux returned EACCES (POSIX 126).
+  2. *Why did Linux return EACCES?* Because scripts/gen_pki.sh was stored in the Git tree with mode 100644 (non-executable) rather than 100755.
+  3. *Why did all 5 gen_ssl*.sh wrappers rely on the executable bit?* Because they invoked gen_pki.sh directly via exec without prefixing ash.
+- **Applied Change / Fix**: Updated scripts/gen_ssl.sh, scripts/gen_ssl_innodb.sh, scripts/gen_ssl_mongo.sh, scripts/gen_ssl_patroni.sh, and scripts/gen_ssl_pgpool.sh to invoke exec bash "/gen_pki.sh", ensuring portable execution regardless of filesystem mode bits.
+- **Result & Non-Regression Test**: Verified via make gen-ssl-all and make check-ssl-all in CI.
+
+---
+
+## 2. Technical Dead-Ends & Abandoned Leads (IMP)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
 - **Why It Is a Dead-End**: Automated review bots (Sourcery AI) and CI review gates reject or fail on oversized PRs (`> 15,000` diff characters).
