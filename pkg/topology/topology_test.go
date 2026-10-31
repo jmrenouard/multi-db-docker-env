@@ -36,11 +36,15 @@ func TestBaseTopology_Lifecycle(t *testing.T) {
 	client := docker.NewClientWithRunner(mock)
 	topo := NewGaleraTopology()
 
-	if err := topo.Up(ctx, client); err != nil || !strings.Contains(strings.Join(mock.Calls[0], " "), "compose -f docker-compose-galera.yml up -d") {
-		t.Fatalf("Up: %v", err)
+	if err := topo.Up(ctx, client); err != nil || len(mock.Calls) != 2 || !strings.Contains(strings.Join(mock.Calls[0], " "), "MARIADB_GALERA_BOOTSTRAP=1 up -d galera_01") || !strings.Contains(strings.Join(mock.Calls[1], " "), "compose -f docker-compose-galera.yml up -d") {
+		t.Fatalf("Up: %v, calls: %v", err, mock.Calls)
 	}
-	if err := topo.Down(ctx, client); err != nil || !strings.Contains(strings.Join(mock.Calls[1], " "), "compose -f docker-compose-galera.yml down -v") {
+	if err := topo.Down(ctx, client); err != nil || !strings.Contains(strings.Join(mock.Calls[2], " "), "compose -f docker-compose-galera.yml down -v") {
 		t.Fatalf("Down: %v", err)
+	}
+	repli := NewRepliTopology()
+	if err := repli.Up(ctx, client); err != nil || !strings.Contains(strings.Join(mock.Calls[len(mock.Calls)-1], " "), "bash scripts/setup_repli.sh") {
+		t.Fatalf("Repli Up setup script: %v, calls: %v", err, mock.Calls)
 	}
 	st, err := topo.Status(ctx, client)
 	if err != nil || !st.Running || len(st.Services) != 1 || topo.Verify(ctx, client) != nil {

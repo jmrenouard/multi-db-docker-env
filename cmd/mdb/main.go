@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jmrenouard/multi-db-docker-env/pkg/bench"
@@ -15,10 +16,11 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/pki"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/report"
+	"github.com/jmrenouard/multi-db-docker-env/pkg/runner"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-var version = "2.0.0"
+var version = "2.0.1"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -122,7 +124,8 @@ func main() {
 		cfg := dbclient.Config{
 			Name:        name,
 			ClusterType: name,
-			Container:   defaultContainer(name),
+			Container:   resolveContainer(ctx, client, name),
+			Password:    loadPassword(),
 			Executor:    client,
 		}
 		verifier, err := dbclient.NewVerifier(name, cfg)
@@ -158,14 +161,15 @@ func main() {
 		_ = fs.Parse(os.Args[3:])
 
 		client, ctx := docker.NewClient(), context.Background()
-		runner := bench.NewSysbenchRunner(bench.SysbenchConfig{
+		sbRunner := bench.NewSysbenchRunner(bench.SysbenchConfig{
 			Workload:  *workload,
-			Container: defaultContainer(name),
+			Container: resolveContainer(ctx, client, name),
+			Password:  loadPassword(),
 			Threads:   *threads,
 			Duration:  *duration,
 			Executor:  client,
 		})
-		res, err := runner.Run(ctx)
+		res, err := sbRunner.Run(ctx)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Benchmark failed: %v\n", err)
 			os.Exit(1)
@@ -178,6 +182,7 @@ func main() {
 		htmlOut := fs.String("html", "", "Path to export HTML report")
 		_ = fs.Parse(os.Args[2:])
 
+		pass := loadPassword()
 		rep := report.NewReport(version)
 		client, ctx := docker.NewClient(), context.Background()
 
@@ -188,22 +193,31 @@ func main() {
 			}
 		}
 
+		var mu sync.Mutex
+		steps := make([]runner.Step, 0, len(topos))
 		for _, name := range topos {
-			cfg := dbclient.Config{
-				Name:        name,
-				ClusterType: name,
-				Container:   defaultContainer(name),
-				Executor:    client,
-			}
-			verifier, err := dbclient.NewVerifier(name, cfg)
-			if err != nil {
-				continue
-			}
-			health, _ := verifier.VerifyCluster(ctx)
-			if health != nil {
-				rep.AddCluster(health)
-			}
-			_ = verifier.Close()
+			n := name
+			steps = append(steps, runner.Step{
+				Name: "verify-" + n,
+				Run: func(sCtx context.Context) error {
+					v, err := dbclient.NewVerifier(n, dbclient.Config{Name: n, ClusterType: n, Container: resolveContainer(sCtx, client, n), Password: pass, Executor: client})
+					if err != nil {
+						return err
+					}
+					defer v.Close()
+					h, err := v.VerifyCluster(sCtx)
+					if h != nil {
+						mu.Lock()
+						rep.AddCluster(h)
+						mu.Unlock()
+					}
+					return err
+				},
+			})
+		}
+		results, _ := runner.NewPipeline(steps...).Run(ctx)
+		for _, res := range results {
+			rep.AddStep(res)
 		}
 
 		rep.ComputeSummary()
@@ -233,15 +247,33 @@ func main() {
 	}
 }
 
+func loadPassword() string {
+	if cfg, err := config.Load(""); err == nil && cfg != nil {
+		return cfg.RootPassword
+	}
+	return config.DefaultConfig().RootPassword
+}
+
 func defaultContainer(topo string) string {
 	switch strings.ToLower(topo) {
-	case "galera": return "node1"
-	case "repli": return "primary"
-	case "innodb": return "mysql1"
-	case "patroni": return "patroni1"
+	case "galera": return "galera_01"
+	case "repli": return "mariadb_02"
+	case "innodb": return "mysql_node1"
+	case "patroni": return "node1"
 	case "pgpool": return "pgpool"
-	case "mongo", "mongo8": return "mongo1"
-	default: return "db"
+	case "mongo": return "mongo1"
+	case "mongo8": return "mongo8_n1"
+	default: return "mariadb-11.8"
 	}
+}
+
+func resolveContainer(ctx context.Context, client *docker.Client, topo string) string {
+	base := defaultContainer(topo)
+	if client != nil {
+		if names, err := client.PS(ctx, "name="+base); err == nil && len(names) > 0 {
+			return names[0]
+		}
+	}
+	return base
 }
 

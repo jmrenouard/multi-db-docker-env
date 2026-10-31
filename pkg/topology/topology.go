@@ -33,6 +33,14 @@ type BaseTopology struct {
 	requiredCerts []string
 }
 
+var setupScripts = map[string]string{
+	"repli":  "scripts/setup_repli.sh",
+	"innodb": "conf/innodb-cluster/setup_cluster.sh",
+	"pgpool": "scripts/pgpool/setup_replication.sh",
+	"mongo":  "conf/mongo-rs/setup_rs.sh",
+	"mongo8": "conf/mongo-rs/setup_rs_mongo8.sh",
+}
+
 func NewBaseTopology(name, description string, composeFiles, requiredCerts []string) *BaseTopology {
 	return &BaseTopology{
 		name:          name,
@@ -48,7 +56,15 @@ func (b *BaseTopology) ComposeFiles() []string  { return b.composeFiles }
 func (b *BaseTopology) RequiredCerts() []string { return b.requiredCerts }
 
 func (b *BaseTopology) Up(ctx context.Context, client *docker.Client) error {
-	return client.ComposeUp(ctx, b.composeFiles, nil, true)
+	if err := client.ComposeUp(ctx, b.composeFiles, nil, true); err != nil {
+		return err
+	}
+	if s := setupScripts[b.name]; s != "" {
+		if _, stderr, code, err := client.Runner().Run(ctx, "bash", s); err != nil || code != 0 {
+			return fmt.Errorf("topology %s setup %s failed (%d): %s: %w", b.name, s, code, string(stderr), err)
+		}
+	}
+	return nil
 }
 
 func (b *BaseTopology) Down(ctx context.Context, client *docker.Client) error {
