@@ -26,9 +26,11 @@ x509_extensions = v3_ca
 commonName = Common Name
 [v3_req]
 basicConstraints = CA:FALSE
+keyUsage = digitalSignature, keyEncipherment
 subjectAltName = $SANS
 [v3_ca]
 basicConstraints = critical, CA:TRUE
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
 subjectAltName = $SANS
 EOF
 
@@ -59,6 +61,8 @@ fi
 chmod 600 "$CA_KEY" "$SRV_KEY" 2>/dev/null || true
 chmod 644 "$CA_CERT" "$SRV_CERT" 2>/dev/null || true
 
+rm -f "$CFG" "$DIR"/*.csr "$DIR"/*.srl "$DIR"/t.csr
+
 if [ -n "$CHOWN_U" ]; then
     if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
         docker run --rm -v "$(pwd)/$DIR:/ssl" alpine sh -c "chown -R $CHOWN_U /ssl && chmod 755 /ssl && chmod 600 /ssl/*key* /ssl/*.key 2>/dev/null || true" 2>/dev/null || true
@@ -67,5 +71,4 @@ if [ -n "$CHOWN_U" ]; then
     fi
 fi
 
-rm -f "$CFG" "$DIR"/*.csr "$DIR"/*.srl "$DIR"/t.csr
 echo "✅ PKI certificates ($CN) generated in $DIR/"
