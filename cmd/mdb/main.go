@@ -18,7 +18,7 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-var version = "1.3.43"
+var version = "2.0.0"
 
 func main() {
 	if len(os.Args) < 2 {

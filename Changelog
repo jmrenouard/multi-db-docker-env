@@ -1,3 +1,19 @@
+2.0.0 2026-10-31
+- feat: complete major Golang v2.0.0 migration providing statically compiled multi-db orchestrator binary mdb (Closes #96).
+- feat: integrate build-go and test-go targets into Makefile for cross-platform Go build and test orchestration.
+- feat: add typed configuration loader (.env parsing and validation) in pkg/config.
+- feat: add native x509 PKI engine with SAN, RSA 2048, and strict 0600 key permissions in pkg/pki.
+- feat: add Docker Engine and Compose wrapper with hermetic CommandRunner abstraction in pkg/docker.
+- feat: add declarative cluster topologies (Galera, Replication, Patroni, PgPool, InnoDB, Mongo) in pkg/topology.
+- feat: add pure-Go database verification drivers for MySQL, PostgreSQL, and MongoDB in pkg/dbclient.
+- feat: add concurrent DAG step execution pipeline with streaming output capture in pkg/runner.
+- feat: add sysbench benchmark runner and regex metric parser in pkg/bench.
+- feat: add structured JSON telemetry and embedded HTML report aggregator in pkg/report.
+- fix: resolve all 10 Ponytail audit remediation findings across Python, Bash, and test scripts.
+- doc: record ACT-021 in docs/ACTION_LOGBOOK.md and complete Phase 7 in Executive Dashboard.
+- doc: update docs/RCA_REGISTER.md with embedded template approximation APP-007 and completed roadmap items.
+- test: verify 100% unit test pass rate across 63 Go tests and 10 Python governance tests with 0 data races.
+
 1.3.43 2026-10-31
 - feat: implement embedded HTML report template aggregator and mdb report CLI subcommand (pkg/report, cmd/mdb) (Closes #94).
 - test: add hermetic unit tests for HTML template rendering and report saving in pkg/report/report_test.go.

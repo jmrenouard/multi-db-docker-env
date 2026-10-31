@@ -180,7 +180,8 @@ test-mongo8: ## Run functional tests on MongoDB 8 ReplicaSet
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
         gen-ssl clean-ssl renew-ssl renew-ssl-galera renew-ssl-repli emergency-galera emergency-repli check-galera check-repli \
         gen-ssl-innodb gen-ssl-pgpool gen-ssl-mongo gen-ssl-patroni gen-ssl-all check-ssl-all \
-        test-config start verify inject sync-test-db test-all-topologies test-all-environments
+        test-config start verify inject sync-test-db test-all-topologies test-all-environments \
+        build-go test-go
 
 # --- Paths ---
 TEST_DB_DIR = test_db
@@ -266,6 +267,10 @@ help:
 	@printf "  \033[1;32mEnd-to-End Testing:\033[0m\n"
 	@printf "    \033[1mtest-all\033[0m           - 🧪 Runs functional tests on all standalone databases\n"
 	@printf "    \033[1mtest-all-topologies\033[0m- 🧪 Runs E2E tests across ALL standalone DBs and HA topologies\n"
+	@printf "\n"
+	@printf "  \033[1;32mGolang Orchestrator (v2.0.0):\033[0m\n"
+	@printf "    \033[1mbuild-go\033[0m           - 🔨 Compiles mdb CLI binary into bin/mdb\n"
+	@printf "    \033[1mtest-go\033[0m            - 🧪 Runs complete Go unit test suite\n"
 	@printf "\n"
 
 # 🚀 Starts the default database service
@@ -573,6 +578,17 @@ test-config: ## Validate the current orchestration configuration, directory stru
 	bash ./tests/test_config.sh
 	bash ./tests/test_security_ssl.sh
 	bash ./tests/test_profiles.sh
+
+# --- Golang Tooling & Build Targets ---
+build-go: ## Compile mdb binary into bin/mdb
+	@echo "🔨 Building mdb binary..."
+	@mkdir -p bin
+	CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/mdb ./cmd/mdb
+
+test-go: ## Run complete Go test suite
+	@echo "🧪 Running Go test suite..."
+	go test -v ./...
+
 
 
 # --- MySQLTuner Integration ---

@@ -224,6 +224,11 @@
 - **Nature & Justification**: Verification runs via `CommandExecutor` container exec abstraction or TCP ping to maintain zero external SDK bloat.
 - **Removal Condition**: Native database drivers adopted if direct connection pooling becomes necessary in production.
 
+### APP-007 — Pure Go Embedded HTML Reporting via Standard Library embed.FS
+- **Target Files**: `pkg/report/report.go`, `pkg/report/templates/report.html`
+- **Nature & Justification**: Standalone HTML reporting bundles styles and layout into Go binary via `embed.FS` without external node/npm build chains or remote CDN script loading for offline lab reproducibility.
+- **Removal Condition**: Standalone SPA front-end if interactive web UI is requested in future phases.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
