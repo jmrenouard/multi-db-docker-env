@@ -201,6 +201,18 @@
 
 ---
 
+### RCA-024 — MariaDB Init Failure on Host-Mounted `0600` SSL Key (`uid=1001` vs `uid=999`) & Unbounded Wait Loop in `up-galera`
+- **Date / Linked Action**: `2026-11-01` (`ACT-026` / Issue `#106`)
+- **Observed Symptom**: During `make mysqltuner-galera` in CI, `galera_01` started `supervisord` (`sshd`), but `mariadbd` exited during initialization while `up-galera` waited indefinitely at `Waiting for Node 1 to start...`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `up-galera` wait indefinitely?* Because `mariadbd` failed during initial bootstrap inside `scripts/start_mariadb.sh` and `autorestart=false` left `supervisord` running only `sshd`.
+  2. *Why did temporary `mariadbd` fail during initialization?* Because `start_mariadb.sh` invoked `mariadbd --user=mysql --wsrep-on=OFF` (`uid=999`), which loaded `/etc/mysql/conf.d/ssl.cnf` (`/etc/mysql/ssl/server-key.pem`, mode `0600` owned by host `runner` `uid=1001`) and `/etc/mysql/mariadb.conf.d/999_custom.cnf` (`wsrep_provider`).
+  3. *Why did final startup succeed as `root` while init failed?* Because line 96 used `exec mariadbd --user=root`, whereas lines 18 and 25 used `--user=mysql` without `--wsrep-provider=none`.
+- **Applied Change / Fix**: Aligned `scripts/start_mariadb.sh` init commands to `--user=root` with `--wsrep-provider=none` and `COUNTER=$((COUNTER + 1))`, bounded `up-galera` readiness polling to 60 attempts with supervisor log output, and added fast CI fixture injection for `inject-employee-galera`.
+- **Result & Non-Regression Test**: Verified via `make mysqltuner-galera` and full GitHub Actions CI pipeline.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
