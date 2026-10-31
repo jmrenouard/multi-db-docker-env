@@ -80,7 +80,7 @@ services:
         ipv4_address: 10.6.0.13
   # 🔵 Load Balancer (HAProxy)
   haproxy_galera:
-    image: haproxy:latest
+    image: haproxy:lts
     container_name: haproxy_galera
     restart: unless-stopped
     volumes:

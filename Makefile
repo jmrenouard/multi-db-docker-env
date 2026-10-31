@@ -375,6 +375,8 @@ client:
 		printf "❌ .env file is missing. Cannot retrieve password.\n"; \
 		exit 1; \
 	fi
+	@DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
+	DB_CONTAINER=$$($(GET_CONTAINER_NAME)); \
 	if [ -n "$${DB_SERVICE}" ]; then \
 		printf "💻 Connecting MySQL client to \033[1;32m%s\033[0m...\n" "$${DB_SERVICE}"; \
 		docker exec -it -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" mysql -uroot; \
@@ -410,7 +412,7 @@ inject-data:
 			timeout 120s bash -c "until docker exec $${DB_CONTAINER} pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done" || (printf \"\033[1;31m❌ Error: PostgreSQL reached timeout without becoming ready.\033[0m\n\" && exit 1); \
 			;; \
 		*) \
-			timeout 120s bash -c "until docker exec $${DB_CONTAINER} sh -c 'mysql -uroot -p\"$(DB_ROOT_PASSWORD)\" -e \"SELECT 1\" 2>/dev/null | grep -q 1 || mariadb -uroot -p\"$(DB_ROOT_PASSWORD)\" -e \"SELECT 1\" 2>/dev/null | grep -q 1'; do sleep 2; done" || (printf \"\033[1;31m❌ Error: Database reached timeout without becoming ready. Check credentials or logs.\033[0m\n\" && exit 1); \
+			timeout 120s bash -c "until docker exec -e MYSQL_PWD=\"$(DB_ROOT_PASSWORD)\" $${DB_CONTAINER} sh -c 'mysql -uroot -e \"SELECT 1\" 2>/dev/null | grep -q 1 || mariadb -uroot -e \"SELECT 1\" 2>/dev/null | grep -q 1'; do sleep 2; done" || (printf \"\033[1;31m❌ Error: Database reached timeout without becoming ready. Check credentials or logs.\033[0m\n\" && exit 1); \
 			;; \
 	esac; \
 	sleep 5; \
@@ -430,18 +432,18 @@ inject-data:
 				if [ "$(service)" = "mysql96" ]; then \
 					printf "⚠️ Skipping 'employees' for mysql96 (Nested source regression). Injecting 'sakila' as primary test database instead...\n"; \
 					docker cp $(TEST_DB_DIR)/sakila "$${DB_CONTAINER}:/tmp/" && \
-					docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-schema.sql" && \
-					docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-data.sql" && \
+					docker exec -i -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot < sakila-mv-schema.sql" && \
+					docker exec -i -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot < sakila-mv-data.sql" && \
 					printf "✅ 'sakila' database injected as primary dataset for mysql96.\n"; \
 				else \
 					docker cp $(TEST_DB_DIR)/employees "$${DB_CONTAINER}:/tmp/test_db" && \
-					docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/test_db && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < employees.sql" && \
+					docker exec -i -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c "cd /tmp/test_db && $${MYSQL_CMD} -uroot < employees.sql" && \
 					printf "✅ 'employees' database injected.\n"; \
 				fi; \
 			elif [ "$(db)" = "sakila" ]; then \
 				docker cp $(TEST_DB_DIR)/sakila "$${DB_CONTAINER}:/tmp/" && \
-				docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-schema.sql" && \
-				docker exec -i "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot -p\"$(DB_ROOT_PASSWORD)\" < sakila-mv-data.sql" && \
+				docker exec -i -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot < sakila-mv-schema.sql" && \
+				docker exec -i -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot < sakila-mv-data.sql" && \
 				printf "✅ 'sakila' database injected.\n"; \
 			fi \
 			;; \
@@ -466,7 +468,7 @@ test-all:
 				timeout 120s bash -c "until docker exec $${DB_CONTAINER} pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done" || exit 1; \
 				;; \
 			*) \
-				timeout 120s bash -c "until docker exec $${DB_CONTAINER} sh -c 'mysql -uroot -p\"$(DB_ROOT_PASSWORD)\" -e \"SELECT 1\" 2>/dev/null | grep -q 1 || mariadb -uroot -p\"$(DB_ROOT_PASSWORD)\" -e \"SELECT 1\" 2>/dev/null | grep -q 1'; do sleep 2; done" || exit 1; \
+				timeout 120s bash -c "until docker exec -e MYSQL_PWD=\"$(DB_ROOT_PASSWORD)\" $${DB_CONTAINER} sh -c 'mysql -uroot -e \"SELECT 1\" 2>/dev/null | grep -q 1 || mariadb -uroot -e \"SELECT 1\" 2>/dev/null | grep -q 1'; do sleep 2; done" || exit 1; \
 				;; \
 		esac; \
 		sleep 5; \
@@ -578,6 +580,8 @@ test-config: ## Validate the current orchestration configuration, directory stru
 	bash ./tests/test_config.sh
 	bash ./tests/test_security_ssl.sh
 	bash ./tests/test_profiles.sh
+	@if command -v go >/dev/null 2>&1; then $(MAKE) test-go; fi
+	@if command -v python3 >/dev/null 2>&1; then python3 -m unittest discover -s tests -v; fi
 
 # --- Golang Tooling & Build Targets ---
 build-go: ## Compile mdb binary into bin/mdb
@@ -901,6 +905,9 @@ gen-ssl-all: gen-ssl gen-ssl-innodb gen-ssl-pgpool gen-ssl-mongo gen-ssl-patroni
 
 check-ssl-all: ## Verify TLS certificate validity for all products
 	@echo "🔍 Checking TLS certificates..."
+	@if command -v go >/dev/null 2>&1; then \
+		go run ./cmd/mdb pki verify all; \
+	fi
 	@for d in ssl ssl/innodb ssl/pgpool ssl/mongo ssl/patroni; do \
 		if [ -d "$$d" ]; then \
 			CA=$$(ls $$d/ca-cert.pem $$d/ca.pem 2>/dev/null | head -1); \

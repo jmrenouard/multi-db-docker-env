@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-023 — Ponytail v2.0.0 Audit Remediation Part 2: Makefile, CI Go Gate, Setup Script & HAProxy Pinning (Issue `#100`)
+- **Date**: `2026-10-31T23:10+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#100` (`fix/issue-100-makefile-ci-compose`)
+- **Request**: Resolve Ponytail Audit findings #4, #5, #6, #8, and #9 across `Makefile`, `scripts/setup_repli.sh`, and Docker Compose files.
+- **Changes**: Fixed `DB_SERVICE`/`DB_CONTAINER` in `Makefile` (`client:`), replaced 7 `-p` flags with `MYSQL_PWD`, wired `mdb pki verify all` into `check-ssl-all` and `test-go`/`unittest` into `test-config` (executed by CI), defined `PASS` in `scripts/setup_repli.sh`, and pinned `haproxy:lts` in `docker-compose-galera.yml`, `docker-compose-repli.yml`, and `docker-compose-pgpool.yml`. Bumped `VERSION` to `2.0.2`.
+- **Result**: `go test -v ./...` passed (64/64), Python unit tests passed (10/10), PR diff < 15,000 chars.
+
+---
+
 ### ACT-022 — Ponytail v2.0.0 Audit Remediation Part 1: Go Runtime Wiring & Topology Bootstrap (Issue `#98`)
 - **Date**: `2026-10-31T23:04+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#98` (`fix/issue-98-go-runtime-wiring`)
 - **Request**: Resolve Ponytail Audit findings #1, #2, #3, and #7 on the v2.0.0 Go codebase.

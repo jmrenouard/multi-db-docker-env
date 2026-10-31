@@ -169,6 +169,15 @@
 
 ---
 
+### RCA-021 — Uninitialized Variables in `make client`, Unbound `$PASS` in `setup_repli.sh` & Missing Go CI Step
+- **Date / Linked Action**: `2026-10-31` (`ACT-023` / Issue `#100`)
+- **Observed Symptom**: `make client` failed because `DB_SERVICE`/`DB_CONTAINER` were not initialized in its subshell; `scripts/setup_repli.sh` referenced `$PASS` under `set -euo pipefail` when only `DB_PASS` was set; `Makefile` `inject-data`/`test-all` used `-p` flags; `test-config` did not invoke Go/Python unit tests in CI.
+- **Root Cause Analysis**: Incremental migrations left residual CLI password flags in `Makefile` and a variable rename mismatch (`DB_PASS` vs `PASS`) in `setup_repli.sh`.
+- **Applied Change / Fix**: Initialized `DB_SERVICE`/`DB_CONTAINER` in `client:`, replaced all 7 `-p` flags in `Makefile` with `-e MYSQL_PWD`, defined `PASS="$DB_PASS"` in `scripts/setup_repli.sh`, wired `test-go` and `unittest` into `Makefile` `test-config`, and pinned `haproxy:lts` across Compose files.
+- **Result & Non-Regression Test**: Verified via `go test -v ./...` (64/64) and `python -m unittest discover -s tests -v` (10/10).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
@@ -198,6 +207,10 @@
 ### IMP-007 — Docker Go SDK Dependency Overhead
 - **Why It Is a Dead-End**: Importing `github.com/docker/docker/client` introduces massive transitive dependency trees (>25MB overhead, moby conflicts).
 - **Adopted Decision**: Wrap `docker` CLI via standard library `os/exec` abstraction (`CommandRunner` interface) allowing hermetic unit testing without live daemons.
+
+### IMP-008 — Direct Modification of `.github/workflows/*.yml` via OAuth Token Without `workflow` Scope
+- **Why It Is a Dead-End**: GitHub rejects pushes modifying `.github/workflows/ci.yml` when authenticated via an OAuth App token lacking the `workflow` scope.
+- **Adopted Decision**: Wire new CI test suites (`make test-go`, `python3 -m unittest`) directly into the `Makefile` targets (`make test-config`, `make check-ssl-all`) already invoked by `.github/workflows/ci.yml`.
 
 ---
 
