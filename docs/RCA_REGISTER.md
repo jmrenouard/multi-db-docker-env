@@ -149,6 +149,17 @@
 
 ---
 
+### RCA-019 — Multi-Engine Database Health Verification in Containerized Clusters
+- **Date / Linked Action**: `2026-10-31` (`ACT-015` / Issue `#84`)
+- **Observed Symptom**: Verifying topologies previously required separate shell scripts or heavy external Go drivers.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why?* Engines expose distinct diagnostic commands (`wsrep_%`, replication status).
+  2. *Why avoid external SDKs?* Heavy drivers bloat binary size and require live database daemons.
+- **Applied Change / Fix**: Unified `Verifier` interface and pure-Go `CommandExecutor` abstraction with structured parsers.
+- **Result & Non-Regression Test**: Hermetic unit tests in `pkg/dbclient/dbclient_test.go`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
@@ -207,6 +218,11 @@
 - **Target Files**: `pkg/docker/client.go`, `pkg/docker/docker_test.go`
 - **Nature & Justification**: In-memory `MockCommandRunner` allows unit tests to execute hermetically without requiring a live Docker daemon.
 - **Removal Condition**: Live integration tests run against real containers in Phase 3.
+
+### APP-006 — CommandExecutor Pattern for Database Health Drivers
+- **Target Files**: `pkg/dbclient/dbclient.go`, `pkg/dbclient/dbclient_test.go`
+- **Nature & Justification**: Verification runs via `CommandExecutor` container exec abstraction or TCP ping to maintain zero external SDK bloat.
+- **Removal Condition**: Native database drivers adopted if direct connection pooling becomes necessary in production.
 
 ---
 
