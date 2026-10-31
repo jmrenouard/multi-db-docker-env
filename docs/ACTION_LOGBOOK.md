@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-017 — Concurrent Step Execution Pipeline (Issue `#88`)
+- **Date**: `2026-10-31T02:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#88` (`feat/issue-88-concurrent-runner-pipeline`)
+- **Request**: Concurrent step execution pipeline with dependency resolution, timeouts, and callbacks.
+- **Changes**: Created `pkg/runner/step.go`, `runner.go`, `runner_test.go`; bumped `VERSION` to `1.3.40`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (100%), race detector passed with 0 data races, diff < 15,000 characters.
+
+---
+
 ### ACT-016 — PostgreSQL and MongoDB Cluster Verification Drivers (Issue `#86`)
 - **Date**: `2026-10-31T01:50+01:00`
 - **Status**: `COMPLETED`
