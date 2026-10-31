@@ -52,7 +52,29 @@ func TestPKIEngine_Topologies(t *testing.T) {
 	if err := e.GenerateTopologyCerts("all"); err != nil {
 		t.Fatal(err)
 	}
+	if ok, err := e.VerifyTopologyCerts("all"); !ok || err != nil {
+		t.Fatalf("verify all failed: %v", err)
+	}
 	if _, err := e.VerifyTopologyCerts("unknown"); err == nil {
 		t.Fatal("expected err")
+	}
+
+	// Test corrupted cert returns an error
+	tamperPath := filepath.Join(d, "server-cert.pem")
+	if err := os.WriteFile(tamperPath, []byte("invalid-cert-bytes"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := e.VerifyTopologyCerts("mariadb"); ok || err == nil {
+		t.Fatal("expected verify failure with non-nil error for tampered cert")
+	}
+
+	// Test invalid directory write returns error in GenerateTopologyCerts
+	badDir := filepath.Join(d, "file_blocking_dir")
+	if err := os.WriteFile(badDir, []byte("blocker"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	badEngine := NewPKIEngine(badDir)
+	if err := badEngine.GenerateTopologyCerts("mariadb"); err == nil {
+		t.Fatal("expected error when writing to invalid directory")
 	}
 }

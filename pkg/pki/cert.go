@@ -214,14 +214,20 @@ func (p *PKIEngine) GenerateTopologyCerts(topology string) error {
 	ips := []net.IP{net.ParseIP("127.0.0.1")}
 	signAndSave := func(certName, suffix string, isClient bool, ca *KeyPair) (*KeyPair, error) {
 		kp, err := p.GenerateSignedCert(CertSpec{Name: spec.cn + suffix, DNSNames: spec.dns, IPAddresses: ips, IsClient: isClient}, ca)
-		if err != nil || save(certName, kp) != nil {
+		if err != nil {
+			return nil, err
+		}
+		if err := save(certName, kp); err != nil {
 			return nil, err
 		}
 		return kp, nil
 	}
 
 	caKP, err := p.GenerateCA(CertSpec{Name: spec.cn, DNSNames: spec.dns, IPAddresses: ips})
-	if err != nil || save(spec.caCert, caKP) != nil {
+	if err != nil {
+		return err
+	}
+	if err := save(spec.caCert, caKP); err != nil {
 		return err
 	}
 	srvKP, err := signAndSave(spec.srvCert, "-Server", false, caKP)
@@ -240,6 +246,14 @@ func (p *PKIEngine) GenerateTopologyCerts(topology string) error {
 }
 
 func (p *PKIEngine) VerifyTopologyCerts(topology string) (bool, error) {
+	if strings.ToLower(topology) == "all" {
+		for _, t := range []string{"mariadb", "innodb", "mongo", "patroni", "pgpool"} {
+			if ok, err := p.VerifyTopologyCerts(t); !ok || err != nil {
+				return false, err
+			}
+		}
+		return true, nil
+	}
 	spec, ok := topoMap[strings.ToLower(topology)]
 	if !ok {
 		return false, fmt.Errorf("unknown topology: %s", topology)
@@ -257,7 +271,10 @@ func (p *PKIEngine) VerifyTopologyCerts(topology string) (bool, error) {
 			continue
 		}
 		leaf, err := os.ReadFile(filepath.Join(dir, c))
-		if err != nil || p.VerifyCertBytes(ca, leaf) != nil {
+		if err != nil {
+			return false, err
+		}
+		if err := p.VerifyCertBytes(ca, leaf); err != nil {
 			return false, err
 		}
 	}
