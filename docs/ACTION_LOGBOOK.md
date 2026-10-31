@@ -20,6 +20,7 @@
 | **Phase 4** | MySQLTuner E2E Topology Integration | Cross-project tuning audit integration | ✅ Complete | `make mysqltuner-all` |
 | **Phase 5** | Sourcery AI Code & Security Hardening | 99 code review findings resolved across 36 PRs | ✅ Complete | `documentation/sourcery_ai_audit.md` |
 | **Phase 6** | Governance & Engineering Standards | CIS Benchmarks rules, `< 15K` diff limit, registers | ✅ Complete | `python -m unittest discover -s tests -v` |
+| **Phase 7** | Golang v2.0.0 Migration & Orchestrator | Statically compiled CLI, native PKI, verifiers, reports | ✅ Complete | `make test-go` |
 
 ---
 
@@ -60,6 +61,9 @@
 #### Phase 6: Project Governance & Engineering Standards (✅ Complete)
 - Reintegrated and aligned with CIS Benchmarks development framework: English documentation, `< 15,000` character PR diff limits, 8-step GitHub lifecycle, living Action Logbook and RCA Register, and automated unit tests (`tests/test_project_governance_rules.py`).
 
+#### Phase 7: Golang v2.0.0 Migration & Orchestrator (✅ Complete)
+- Major migration to statically compiled pure-Go CLI (`bin/mdb`), typed config (`pkg/config`), native x509 PKI (`pkg/pki`), declarative topologies (`pkg/topology`), pure-Go database health verifiers (`pkg/dbclient`), concurrent runner pipeline (`pkg/runner`), sysbench collector (`pkg/bench`), and embedded HTML reporting (`pkg/report`). Verified via `make test-go` with 0 data races.
+
 ---
 
 ## 1. Ongoing Actions (`IN PROGRESS`)
@@ -69,6 +73,20 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-021 — Release v2.0.0: Golang Migration, Makefile Integration & Governance (Issue `#96`)
+- **Date**: `2026-10-31T02:30+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#96` (`feat/issue-96-release-v200-makefile-governance`)
+- **Request**: Complete Milestone 4 of the Golang Migration roadmap: Makefile targets (`build-go`, `test-go`), bump `VERSION` to `2.0.0`, write v2.0.0 release notes in `Changelog`, update living registers.
+- **Changes**:
+  - Added `build-go` and `test-go` targets to [`Makefile`](../Makefile) with help text and `.PHONY` entries.
+  - Bumped version in [`cmd/mdb/main.go`](../cmd/mdb/main.go) and [`VERSION`](../VERSION) to `2.0.0`.
+  - Added comprehensive v2.0.0 release notes to [`Changelog`](../Changelog).
+  - Updated [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) (Phase 7 and `ACT-021`) and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`APP-007`).
+- **Result**: `make test-go` passed (63 tests across 9 packages), `wsl go test -race ./...` passed with 0 data races, Python unit tests passed (100%), PR diff strictly < 15,000 characters.
+
+---
 
 ### ACT-020 — Embedded HTML Report Template and CLI Subcommand (Issue `#94`)
 - **Date**: `2026-10-31T02:26+01:00`

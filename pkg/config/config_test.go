@@ -38,6 +38,8 @@ PORT=3306 # default
 }
 
 func TestLoad_FileAndEnv(t *testing.T) {
+	t.Setenv("DB_ROOT_PASSWORD", "")
+	t.Setenv("DEFAULT_SERVICE", "")
 	dir := t.TempDir()
 	envPath := filepath.Join(dir, ".env")
 	content := "DB_ROOT_PASSWORD=secret\nDEFAULT_SERVICE=pg16\nEXTRA_SANS=DNS:node1,IP:127.0.0.1\nOTHER=val"
