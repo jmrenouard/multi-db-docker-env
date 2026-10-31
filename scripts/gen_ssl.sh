@@ -28,4 +28,4 @@ if [ "${1:-}" != "--force" ] && check_certificates; then
     exit 0
 fi
 
-exec "$(dirname "$0")/gen_pki.sh" --dir "$SSL_DIR" --cn "MariaDB" --san "DNS:localhost,DNS:mariadb,IP:127.0.0.1" "$@"
+exec bash "$(dirname "$0")/gen_pki.sh" --dir "$SSL_DIR" --cn "MariaDB" --san "DNS:localhost,DNS:mariadb,IP:127.0.0.1" "$@"
