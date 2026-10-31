@@ -160,6 +160,15 @@
 
 ---
 
+### RCA-020 — Container Name Mismatch, Missing .env Password & Compose --env Flag in Go CLI
+- **Date / Linked Action**: `2026-10-31` (`ACT-022` / Issue `#98`)
+- **Observed Symptom**: `mdb test`/`report` used placeholder container names without `.env` password, and `RealCommandRunner` passed invalid `--env` flag to `docker compose`.
+- **Root Cause Analysis**: Hermetic mocks did not validate live `docker-compose-*.yml` container names or `docker compose` CLI flag syntax.
+- **Applied Change / Fix**: Aligned `defaultContainer`, added `resolveContainer`/`loadPassword` and `runner.NewPipeline` in `cmd/mdb/main.go`, extracted `--env` into `cmd.Env` in `pkg/docker/client.go`, and added setup scripts in `pkg/topology`.
+- **Result & Non-Regression Test**: Verified via `cmd/mdb/main_test.go`, `pkg/docker/docker_test.go`, and `pkg/topology/topology_test.go` (64/64 Go tests passing).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters

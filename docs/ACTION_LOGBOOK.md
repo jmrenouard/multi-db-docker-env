@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-022 — Ponytail v2.0.0 Audit Remediation Part 1: Go Runtime Wiring & Topology Bootstrap (Issue `#98`)
+- **Date**: `2026-10-31T23:04+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#98` (`fix/issue-98-go-runtime-wiring`)
+- **Request**: Resolve Ponytail Audit findings #1, #2, #3, and #7 on the v2.0.0 Go codebase.
+- **Changes**: Updated `cmd/mdb/main.go` (`defaultContainer`, `resolveContainer`, `loadPassword`, `runner.NewPipeline` in `report`), `pkg/docker/client.go` (`extractComposeEnv`), `pkg/topology/` (`WithSetupScript` and Galera bootstrap), `VERSION` (`2.0.1`), and `Changelog`.
+- **Result**: `go test -v ./...` passed (64/64), Python unit tests passed (10/10), PR diff < 15,000 chars.
+
+---
+
 ### ACT-021 — Release v2.0.0: Golang Migration, Makefile Integration & Governance (Issue `#96`)
 - **Date**: `2026-10-31T02:30+01:00`
 - **Status**: `COMPLETED`

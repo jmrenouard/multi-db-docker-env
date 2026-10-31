@@ -114,4 +114,8 @@ func TestRealCommandRunner(t *testing.T) {
 	if NewClient().Runner() == nil {
 		t.Fatal("nil runner")
 	}
+	cleanArgs, envVars := extractComposeEnv("docker", []string{"compose", "-f", "f1.yml", "--env", "K=V", "up", "-d"})
+	if len(envVars) != 1 || envVars[0] != "K=V" || strings.Contains(strings.Join(cleanArgs, " "), "--env") {
+		t.Fatalf("extractComposeEnv: args=%v env=%v", cleanArgs, envVars)
+	}
 }

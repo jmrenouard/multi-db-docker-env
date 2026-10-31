@@ -1,5 +1,11 @@
 package topology
 
+import (
+	"context"
+
+	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
+)
+
 type GaleraTopology struct{ *BaseTopology }
 
 func NewGaleraTopology() *GaleraTopology {
@@ -11,4 +17,11 @@ func NewGaleraTopology() *GaleraTopology {
 			[]string{"mariadb"},
 		),
 	}
+}
+
+func (g *GaleraTopology) Up(ctx context.Context, client *docker.Client) error {
+	if err := client.ComposeUp(ctx, g.ComposeFiles(), map[string]string{"MARIADB_GALERA_BOOTSTRAP": "1"}, true, "galera_01"); err != nil {
+		return err
+	}
+	return client.ComposeUp(ctx, g.ComposeFiles(), nil, true)
 }

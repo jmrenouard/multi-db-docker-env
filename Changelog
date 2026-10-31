@@ -1,3 +1,9 @@
+2.0.1 2026-10-31
+- fix: align defaultContainer, load .env password, wire runner.NewPipeline, and extract compose --env into cmd.Env (Closes #98).
+- fix: run Galera bootstrap and post-up setup scripts in pkg/topology.
+- doc: record ACT-022 in docs/ACTION_LOGBOOK.md and RCA-020 in docs/RCA_REGISTER.md.
+- test: add unit tests for container resolution, compose env, and topology setup (64 Go tests passing).
+
 2.0.0 2026-10-31
 - feat: complete major Golang v2.0.0 migration providing statically compiled multi-db orchestrator binary mdb (Closes #96).
 - feat: integrate build-go and test-go targets into Makefile for cross-platform Go build and test orchestration.

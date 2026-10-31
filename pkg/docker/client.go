@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -16,8 +17,29 @@ type CommandRunner interface {
 
 type RealCommandRunner struct{}
 
+func extractComposeEnv(name string, args []string) ([]string, []string) {
+	if name != "docker" || len(args) == 0 || args[0] != "compose" {
+		return args, nil
+	}
+	filtered := make([]string, 0, len(args))
+	var envVars []string
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--env" && i+1 < len(args) {
+			envVars = append(envVars, args[i+1])
+			i++
+		} else {
+			filtered = append(filtered, args[i])
+		}
+	}
+	return filtered, envVars
+}
+
 func (r *RealCommandRunner) Run(ctx context.Context, name string, args ...string) ([]byte, []byte, int, error) {
-	cmd := exec.CommandContext(ctx, name, args...)
+	cleanArgs, envVars := extractComposeEnv(name, args)
+	cmd := exec.CommandContext(ctx, name, cleanArgs...)
+	if len(envVars) > 0 {
+		cmd.Env = append(os.Environ(), envVars...)
+	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	err := cmd.Run()
@@ -31,7 +53,12 @@ func (r *RealCommandRunner) Run(ctx context.Context, name string, args ...string
 }
 
 func (r *RealCommandRunner) RunCombined(ctx context.Context, name string, args ...string) ([]byte, error) {
-	return exec.CommandContext(ctx, name, args...).CombinedOutput()
+	cleanArgs, envVars := extractComposeEnv(name, args)
+	cmd := exec.CommandContext(ctx, name, cleanArgs...)
+	if len(envVars) > 0 {
+		cmd.Env = append(os.Environ(), envVars...)
+	}
+	return cmd.CombinedOutput()
 }
 
 type MockCommandRunner struct {
