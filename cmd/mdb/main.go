@@ -14,14 +14,15 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/dbclient"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/pki"
+	"github.com/jmrenouard/multi-db-docker-env/pkg/report"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-var version = "1.3.41"
+var version = "1.3.43"
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: mdb <version|config|pki|up|down|status|topologies|test|bench> [options]")
+		fmt.Println("Usage: mdb <version|config|pki|up|down|status|topologies|test|bench|report> [options]")
 		os.Exit(1)
 	}
 
@@ -171,6 +172,61 @@ func main() {
 		}
 		data, _ := res.ToJSON()
 		fmt.Println(data)
+	case "report":
+		fs := flag.NewFlagSet("report", flag.ExitOnError)
+		jsonOut := fs.String("json", "", "Path to export JSON telemetry report")
+		htmlOut := fs.String("html", "", "Path to export HTML report")
+		_ = fs.Parse(os.Args[2:])
+
+		rep := report.NewReport(version)
+		client, ctx := docker.NewClient(), context.Background()
+
+		topos := fs.Args()
+		if len(topos) == 0 {
+			for _, t := range topology.DefaultRegistry().List() {
+				topos = append(topos, t.Name())
+			}
+		}
+
+		for _, name := range topos {
+			cfg := dbclient.Config{
+				Name:        name,
+				ClusterType: name,
+				Container:   defaultContainer(name),
+				Executor:    client,
+			}
+			verifier, err := dbclient.NewVerifier(name, cfg)
+			if err != nil {
+				continue
+			}
+			health, _ := verifier.VerifyCluster(ctx)
+			if health != nil {
+				rep.AddCluster(health)
+			}
+			_ = verifier.Close()
+		}
+
+		rep.ComputeSummary()
+
+		if *jsonOut != "" {
+			if err := rep.SaveJSON(*jsonOut); err != nil {
+				fmt.Fprintf(os.Stderr, "Error saving JSON report: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("JSON report saved to %s\n", *jsonOut)
+		}
+		if *htmlOut != "" {
+			if err := rep.SaveHTML(*htmlOut); err != nil {
+				fmt.Fprintf(os.Stderr, "Error saving HTML report: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("HTML report saved to %s\n", *htmlOut)
+		}
+
+		if *jsonOut == "" && *htmlOut == "" {
+			data, _ := rep.ToJSON()
+			fmt.Println(string(data))
+		}
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
 		os.Exit(1)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -180,6 +181,75 @@ func TestWriteJSONTelemetry(t *testing.T) {
 	}
 }
 
+func TestReport_RenderHTML_And_SaveHTML(t *testing.T) {
+	r := NewReport("2.0.0")
+	r.AddCluster(&dbclient.ClusterHealth{
+		Name:          "galera",
+		Status:        dbclient.StatusHealthy,
+		NodesExpected: 3,
+		NodesActive:   3,
+	})
+	r.AddBenchmark("galera", &bench.SysbenchResult{
+		Workload: "oltp_read_write",
+		Duration: 10.0,
+		TPS:      1500.0,
+		Latency: bench.LatencyMetrics{
+			Avg: 2.5,
+			P95: 4.1,
+		},
+	})
+	r.AddStep(runner.StepResult{
+		Name:     "VerifyGalera",
+		Success:  true,
+		Duration: 150 * time.Millisecond,
+		Output:   "All 3 nodes synced",
+	})
+
+	htmlStr, err := r.RenderHTML()
+	if err != nil {
+		t.Fatalf("RenderHTML failed: %v", err)
+	}
+
+	requiredSubstrings := []string{
+		"<!DOCTYPE html>",
+		"Multi-DB Docker Environment",
+		"2.0.0",
+		"galera",
+		"HEALTHY",
+		"oltp_read_write",
+		"1500.00",
+		"VerifyGalera",
+		"PASS",
+	}
+
+	for _, sub := range requiredSubstrings {
+		if !strings.Contains(htmlStr, sub) {
+			t.Errorf("rendered HTML missing expected substring: %q", sub)
+		}
+	}
+
+	tempDir := t.TempDir()
+	htmlPath := filepath.Join(tempDir, "reports", "dashboard.html")
+	if err := r.SaveHTML(htmlPath); err != nil {
+		t.Fatalf("SaveHTML failed: %v", err)
+	}
+
+	savedBytes, err := os.ReadFile(htmlPath)
+	if err != nil {
+		t.Fatalf("failed to read saved HTML file: %v", err)
+	}
+	if string(savedBytes) != htmlStr {
+		t.Error("saved HTML content does not match rendered string")
+	}
+
+	if err := RenderHTMLReport(nil, htmlPath); err == nil {
+		t.Error("expected error rendering nil report")
+	}
+	if err := RenderHTMLReport(r, htmlPath); err != nil {
+		t.Errorf("RenderHTMLReport failed: %v", err)
+	}
+}
+
 func TestReport_EmptyData(t *testing.T) {
 	r := NewReport("2.0.0")
 	data, err := r.ToJSON()
@@ -193,5 +263,13 @@ func TestReport_EmptyData(t *testing.T) {
 	}
 	if parsed.Summary.TotalClusters != 0 || parsed.Summary.TotalSteps != 0 {
 		t.Error("expected 0 clusters and 0 steps in empty report")
+	}
+
+	htmlStr, err := r.RenderHTML()
+	if err != nil {
+		t.Fatalf("RenderHTML on empty report failed: %v", err)
+	}
+	if !strings.Contains(htmlStr, "No cluster status recorded") {
+		t.Error("empty report should indicate no clusters")
 	}
 }
