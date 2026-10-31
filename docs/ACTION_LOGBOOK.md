@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-016 — PostgreSQL and MongoDB Cluster Verification Drivers (Issue `#86`)
+- **Date**: `2026-10-31T01:50+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#86` (`feat/issue-86-postgres-mongo-verifiers`)
+- **Request**: Verification drivers for PostgreSQL (Patroni, PgPool) and MongoDB (ReplicaSet).
+- **Changes**: Created `pkg/dbclient/postgres.go`, `mongo.go`, tests; bumped `VERSION` to `1.3.39`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (100%), 0 data races, governance tests passed, PR diff < 15,000 characters.
+
+---
+
 ### ACT-015 — Pure-Go Database Verification Drivers (Issue `#84`)
 - **Date**: `2026-10-31T01:35+01:00`
 - **Status**: `COMPLETED`
