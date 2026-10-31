@@ -20,7 +20,7 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-var version = "2.0.1"
+var version = "2.0.2"
 
 func main() {
 	if len(os.Args) < 2 {

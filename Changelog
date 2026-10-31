@@ -1,3 +1,9 @@
+2.0.2 2026-10-31
+- fix: initialize DB_SERVICE/DB_CONTAINER in Makefile client target, replace remaining -p flags with MYSQL_PWD, and define PASS in scripts/setup_repli.sh (Closes #100).
+- ci: wire make test-go and Python unittest into Makefile test-config target executed by GitHub Actions CI.
+- chore: pin haproxy:lts across Galera, Replication, and PgPool-II Docker Compose files and invoke mdb pki verify all in check-ssl-all.
+- doc: record ACT-023 in docs/ACTION_LOGBOOK.md and RCA-021 / IMP-008 in docs/RCA_REGISTER.md.
+
 2.0.1 2026-10-31
 - fix: align defaultContainer, load .env password, wire runner.NewPipeline, and extract compose --env into cmd.Env (Closes #98).
 - fix: run Galera bootstrap and post-up setup scripts in pkg/topology.
