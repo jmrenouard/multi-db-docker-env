@@ -1,3 +1,8 @@
+1.3.41 2026-10-31
+- feat: implement sysbench benchmark runner, metric parser, and test/bench CLI (pkg/bench, cmd/mdb) (Closes #90).
+- test: add hermetic unit tests for sysbench metrics parsing and runner execution in pkg/bench/sysbench_test.go.
+- doc: record ACT-018 in docs/ACTION_LOGBOOK.md and IDEA-005 in docs/RCA_REGISTER.md.
+
 1.3.40 2026-10-31
 - feat: implement concurrent step execution pipeline (pkg/runner) (Closes #88).
 - test: add hermetic unit tests with race detection in pkg/runner/runner_test.go.

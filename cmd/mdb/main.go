@@ -7,18 +7,21 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/jmrenouard/multi-db-docker-env/pkg/bench"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/config"
+	"github.com/jmrenouard/multi-db-docker-env/pkg/dbclient"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/pki"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-var version = "1.3.37"
+var version = "1.3.41"
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: mdb <version|config|pki|up|down|status|topologies> [options]")
+		fmt.Println("Usage: mdb <version|config|pki|up|down|status|topologies|test|bench> [options]")
 		os.Exit(1)
 	}
 
@@ -104,8 +107,85 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("Topology %s %s successful\n", name, cmd)
+	case "test":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: mdb test <topology>")
+			os.Exit(1)
+		}
+		name := os.Args[2]
+		if _, err := topology.DefaultRegistry().Get(name); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		client, ctx := docker.NewClient(), context.Background()
+		cfg := dbclient.Config{
+			Name:        name,
+			ClusterType: name,
+			Container:   defaultContainer(name),
+			Executor:    client,
+		}
+		verifier, err := dbclient.NewVerifier(name, cfg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Verifier error: %v\n", err)
+			os.Exit(1)
+		}
+		defer verifier.Close()
+		health, err := verifier.VerifyCluster(ctx)
+		if err != nil && health == nil {
+			fmt.Fprintf(os.Stderr, "Verification failed: %v\n", err)
+			os.Exit(1)
+		}
+		data, _ := json.MarshalIndent(health, "", "  ")
+		fmt.Println(string(data))
+		if health.Status == dbclient.StatusUnhealthy {
+			os.Exit(1)
+		}
+	case "bench":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: mdb bench <topology> [--workload <w>] [--threads <n>] [--duration <d>]")
+			os.Exit(1)
+		}
+		name := os.Args[2]
+		if _, err := topology.DefaultRegistry().Get(name); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		fs := flag.NewFlagSet("bench", flag.ExitOnError)
+		workload := fs.String("workload", "oltp_read_write", "Sysbench workload")
+		threads := fs.Int("threads", 4, "Number of threads")
+		duration := fs.Duration("duration", 10*time.Second, "Benchmark duration")
+		_ = fs.Parse(os.Args[3:])
+
+		client, ctx := docker.NewClient(), context.Background()
+		runner := bench.NewSysbenchRunner(bench.SysbenchConfig{
+			Workload:  *workload,
+			Container: defaultContainer(name),
+			Threads:   *threads,
+			Duration:  *duration,
+			Executor:  client,
+		})
+		res, err := runner.Run(ctx)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Benchmark failed: %v\n", err)
+			os.Exit(1)
+		}
+		data, _ := res.ToJSON()
+		fmt.Println(data)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
 		os.Exit(1)
 	}
 }
+
+func defaultContainer(topo string) string {
+	switch strings.ToLower(topo) {
+	case "galera": return "node1"
+	case "repli": return "primary"
+	case "innodb": return "mysql1"
+	case "patroni": return "patroni1"
+	case "pgpool": return "pgpool"
+	case "mongo", "mongo8": return "mongo1"
+	default: return "db"
+	}
+}
+
