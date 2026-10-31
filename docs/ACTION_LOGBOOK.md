@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-015 — Pure-Go Database Verification Drivers (Issue `#84`)
+- **Date**: `2026-10-31T01:35+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#84` (`feat/issue-84-dbclient-verification-drivers`)
+- **Request**: Pure-Go database verification drivers (`pkg/dbclient`) for MySQL/MariaDB with `Verifier` interface and hermetic tests.
+- **Changes**: Created `pkg/dbclient/dbclient.go`, `mysql.go`, `dbclient_test.go`; bumped `VERSION` to `1.3.38`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (100%), 0 data races, governance tests passed, PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-014 — Declarative Topology Engine & CLI Integration (Issue `#82`)
 - **Date**: `2026-10-31T01:15+01:00`
 - **Status**: `COMPLETED`
