@@ -49,6 +49,10 @@ func NewVerifier(clusterType string, cfg Config) (Verifier, error) {
 	switch lower {
 	case "galera", "repli", "mysql", "mariadb", "innodb":
 		return NewMySQLVerifier(cfg), nil
+	case "patroni", "pgpool", "postgres", "postgresql":
+		return NewPostgresVerifier(cfg), nil
+	case "mongo", "mongo8", "mongodb", "replicaset":
+		return NewMongoVerifier(cfg), nil
 	default:
 		return nil, fmt.Errorf("unsupported cluster type: %s", clusterType)
 	}
