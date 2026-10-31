@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-014 — Declarative Topology Engine & CLI Integration (Issue `#82`)
+- **Date**: `2026-10-31T01:15+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#82` (`feat/issue-82-topology-engine-cli`)
+- **Request**: Declarative topology definitions (`pkg/topology`) and CLI lifecycle commands (`up`, `down`, `status`, `topologies`) in `cmd/mdb/main.go`.
+- **Changes**: Created `pkg/topology/topology.go`, `standalone.go`, `galera.go`, `repli.go`, `patroni.go`, `pgpool.go`, `innodb.go`, `mongo.go`; wrote tests in `topology_test.go`; updated `cmd/mdb/main.go`; bumped `VERSION` to `1.3.37`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (100%), race detector passed with 0 data races, tests passed, PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-013 — Docker Engine & Compose Wrapper with Mock Runner (Issue `#80`)
 - **Date**: `2026-10-31T01:05+01:00`
 - **Status**: `COMPLETED`

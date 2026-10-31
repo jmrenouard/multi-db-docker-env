@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -8,14 +9,16 @@ import (
 	"strings"
 
 	"github.com/jmrenouard/multi-db-docker-env/pkg/config"
+	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/pki"
+	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-var version = "1.3.34"
+var version = "1.3.37"
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: mdb <version|config|pki> [options]")
+		fmt.Println("Usage: mdb <version|config|pki|up|down|status|topologies> [options]")
 		os.Exit(1)
 	}
 
@@ -60,7 +63,47 @@ func main() {
 				os.Exit(1)
 			}
 			fmt.Printf("Certificates for %s are valid in %s\n", topo, dir)
+		} else {
+			fmt.Fprintf(os.Stderr, "Unknown PKI action: %s\nUsage: mdb pki <generate|verify> [topology] [--dir <dir>]\n", action)
+			os.Exit(1)
 		}
+	case "topologies":
+		for _, t := range topology.DefaultRegistry().List() {
+			fmt.Printf("%-12s - %s\n", t.Name(), t.Description())
+		}
+	case "up", "down", "status":
+		cmd := os.Args[1]
+		if len(os.Args) < 3 {
+			fmt.Printf("Usage: mdb %s <topology>\n", cmd)
+			os.Exit(1)
+		}
+		name := os.Args[2]
+		topo, err := topology.DefaultRegistry().Get(name)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		client, ctx := docker.NewClient(), context.Background()
+		var actionErr error
+		if cmd == "up" {
+			actionErr = topo.Up(ctx, client)
+		} else if cmd == "down" {
+			actionErr = topo.Down(ctx, client)
+		} else {
+			st, err := topo.Status(ctx, client)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Status failed: %v\n", err)
+				os.Exit(1)
+			}
+			data, _ := json.MarshalIndent(st, "", "  ")
+			fmt.Println(string(data))
+			return
+		}
+		if actionErr != nil {
+			fmt.Fprintf(os.Stderr, "%s failed: %v\n", cmd, actionErr)
+			os.Exit(1)
+		}
+		fmt.Printf("Topology %s %s successful\n", name, cmd)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
 		os.Exit(1)

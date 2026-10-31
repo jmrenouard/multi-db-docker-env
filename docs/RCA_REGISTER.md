@@ -223,3 +223,7 @@
 ### IDEA-003 — Automated Pre-Commit PR Diff Character Count Gate
 - **Priority / Target**: `Medium` · `.githooks/pre-commit`
 - **Description**: Git hook rejecting commits that exceed 15,000 diff characters relative to `main` without explicit bypass.
+
+### IDEA-004 — Dynamic Topology Manifest Engine via YAML
+- **Priority / Target**: `Low` · `pkg/topology/manifest.go`
+- **Description**: Allow user-defined database topologies loaded dynamically from external YAML files without Go recompilation.

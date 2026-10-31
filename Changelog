@@ -1,3 +1,8 @@
+1.3.37 2026-10-31
+- feat: implement declarative topology definitions (pkg/topology) and mdb lifecycle CLI commands (Closes #82).
+- test: add hermetic unit tests for topology registry and lifecycle in pkg/topology/topology_test.go.
+- doc: record ACT-014 in docs/ACTION_LOGBOOK.md and IDEA-004 in docs/RCA_REGISTER.md.
+
 1.3.36 2026-10-31
 - feat: implement Docker Engine and Compose wrapper (pkg/docker) with hermetic CommandRunner abstraction (Closes #80).
 - test: add hermetic unit tests with MockCommandRunner in pkg/docker/docker_test.go.
