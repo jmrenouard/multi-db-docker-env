@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-025 — Pre-Chown Temporary CSR/CNF Cleanup in `gen_pki.sh` & Containerized Galera CLI Calls (Issue `#104`)
+- **Date**: `2026-11-01T00:09+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#104` (`fix/issue-104-gen-pki-cleanup-and-galera-ci`)
+- **Request**: Fix `rm: cannot remove './ssl/pgpool/san.cnf': Permission denied` after Docker `chown 999:999` in `scripts/gen_pki.sh`, and containerize Galera `mariadb` calls and `test_db` submodule init in `Makefile`.
+- **Changes**: Moved `rm -f "$CFG" "$DIR"/*.csr "$DIR"/*.srl "$DIR"/t.csr` before the `CHOWN_U` block in `scripts/gen_pki.sh` and added `keyUsage` extensions; updated `up-galera` and `inject-employee-galera` in `Makefile` to run `mariadb` inside `galera_01`/`galera_02`/`galera_03` containers and initialize `test_db` submodule when absent.
+- **Result**: `make gen-ssl-all`, `make check-ssl-all`, and CI stages execute cleanly without host permission or missing host binary errors; PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-024 — Resolve POSIX 126 Permission Denied on `scripts/gen_pki.sh` in CI TLS Generation (Issue `#102`)
 - **Date**: `2026-11-01T00:04+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#102` (`fix/issue-102-gen-pki-exec-permissions`)
 - **Request**: Fix GitHub Actions CI run `41247154340` failing at Step #4 (`Generate and Check TLS Certificates`) with `scripts/gen_pki.sh: Permission denied` (POSIX error 126).
