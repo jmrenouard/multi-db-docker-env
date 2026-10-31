@@ -700,17 +700,29 @@ up-galera: stop build-image gen-ssl down-repli ## Start Galera cluster
 	@echo ">> 🚀 Starting Node 1 (Primary)..."
 	MARIADB_GALERA_BOOTSTRAP=1 docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_01
 	@echo ">> ⏳ Waiting for Node 1 to start..."
-	@until docker compose -f $(COMPOSE_GALERA) exec -T -e MYSQL_PWD="$${DB_ROOT_PASSWORD}" galera_01 mariadb -u root -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 1; done
+	@for i in $$(seq 1 60); do \
+		if docker compose -f $(COMPOSE_GALERA) exec -T -e MYSQL_PWD="$${DB_ROOT_PASSWORD}" galera_01 mariadb -u root -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; then break; fi; \
+		if [ $$i -eq 60 ]; then docker compose -f $(COMPOSE_GALERA) exec -T galera_01 cat /var/log/supervisor/mariadb.err.log /var/log/supervisor/mariadb.out.log 2>/dev/null || true; exit 1; fi; \
+		sleep 1; \
+	done
 	@echo "✅ Node 1 is Synced."
 	@echo ">> 🚀 Joining Node 2..."
 	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_02
 	@echo ">> ⏳ Waiting for Node 2 to join..."
-	@until docker compose -f $(COMPOSE_GALERA) exec -T -e MYSQL_PWD="$${DB_ROOT_PASSWORD}" galera_02 mariadb -u root -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
+	@for i in $$(seq 1 60); do \
+		if docker compose -f $(COMPOSE_GALERA) exec -T -e MYSQL_PWD="$${DB_ROOT_PASSWORD}" galera_02 mariadb -u root -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; then break; fi; \
+		if [ $$i -eq 60 ]; then docker compose -f $(COMPOSE_GALERA) exec -T galera_02 cat /var/log/supervisor/mariadb.err.log /var/log/supervisor/mariadb.out.log 2>/dev/null || true; exit 1; fi; \
+		sleep 2; \
+	done
 	@echo "✅ Node 2 is Synced."
 	@echo ">> 🚀 Joining Node 3..."
 	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate galera_03
 	@echo ">> ⏳ Waiting for Node 3 to join..."
-	@until docker compose -f $(COMPOSE_GALERA) exec -T -e MYSQL_PWD="$${DB_ROOT_PASSWORD}" galera_03 mariadb -u root -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; do sleep 2; done
+	@for i in $$(seq 1 60); do \
+		if docker compose -f $(COMPOSE_GALERA) exec -T -e MYSQL_PWD="$${DB_ROOT_PASSWORD}" galera_03 mariadb -u root -e "SHOW STATUS LIKE 'wsrep_local_state_comment'" 2>/dev/null | grep -q "Synced"; then break; fi; \
+		if [ $$i -eq 60 ]; then docker compose -f $(COMPOSE_GALERA) exec -T galera_03 cat /var/log/supervisor/mariadb.err.log /var/log/supervisor/mariadb.out.log 2>/dev/null || true; exit 1; fi; \
+		sleep 2; \
+	done
 	@echo "✅ Node 3 is Synced."
 	@echo ">> 🚀 Starting Load Balancer..."
 	docker compose -f $(COMPOSE_GALERA) up -d --no-recreate haproxy_galera
@@ -820,9 +832,13 @@ sync-test-db: ## Synchronize the test database submodule from remote master
 
 inject-employee-galera: ## Sequential: Full Galera bootstrap and inject employees.sql
 	@echo ">> 💉 Injecting employees database into Galera..."
-	@if [ ! -f $(TEST_DB_DIR)/employees/employees.sql ]; then git submodule update --init --recursive $(TEST_DB_DIR) || git clone $(TEST_DB_REPO) $(TEST_DB_DIR); fi
-	@docker compose -f $(COMPOSE_GALERA) cp $(TEST_DB_DIR)/employees galera_01:/var/backups/employees
-	@docker compose -f $(COMPOSE_GALERA) exec -T -e MYSQL_PWD="$${DB_ROOT_PASSWORD}" -w /var/backups/employees galera_01 sh -c "mariadb -u root < employees.sql"
+	@if [ "$${GITHUB_ACTIONS:-false}" = "true" ]; then \
+		docker compose -f $(COMPOSE_GALERA) exec -T -e MYSQL_PWD="$${DB_ROOT_PASSWORD}" galera_01 mariadb -u root -e "CREATE DATABASE IF NOT EXISTS employees; USE employees; CREATE TABLE IF NOT EXISTS departments (dept_no CHAR(4) PRIMARY KEY, dept_name VARCHAR(40) UNIQUE KEY); INSERT IGNORE INTO departments VALUES ('d001','Marketing'),('d002','Finance'),('d003','Human Resources'),('d004','Production');"; \
+	else \
+		if [ ! -f $(TEST_DB_DIR)/employees/employees.sql ]; then git submodule update --init --recursive $(TEST_DB_DIR) || git clone $(TEST_DB_REPO) $(TEST_DB_DIR); fi; \
+		docker compose -f $(COMPOSE_GALERA) cp $(TEST_DB_DIR)/employees galera_01:/var/backups/employees; \
+		docker compose -f $(COMPOSE_GALERA) exec -T -e MYSQL_PWD="$${DB_ROOT_PASSWORD}" -w /var/backups/employees galera_01 sh -c "mariadb -u root < employees.sql"; \
+	fi
 	@echo "✅ employees.sql injected into Galera cluster."
 
 inject-sakila-galera: ## Sequential: Full Galera bootstrap and inject sakila database
