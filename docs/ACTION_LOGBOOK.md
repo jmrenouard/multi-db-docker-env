@@ -70,6 +70,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-012 — Native PKI Engine Error Propagation and Verify All Remediation (Issue `#78`)
+- **Date**: `2026-10-31T01:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#78` (`feat/issue-78-docker-wrapper-pki-fixes`)
+- **Request**: Fix error shadowing in `GenerateTopologyCerts` and `VerifyTopologyCerts`, add `"all"` topology support to `VerifyTopologyCerts`, add unit tests for corrupted certificates and invalid directories, and add `bin/` to `.gitignore`.
+- **Changes**: Updated `pkg/pki/cert.go` to support `VerifyTopologyCerts("all")` and preserve errors from `save` and `VerifyCertBytes`; added test coverage in `pkg/pki/cert_test.go`; added `bin/` and `*.exe` to `.gitignore`; bumped `VERSION` to `1.3.35`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (100%), race detector passed with 0 data races, `python -m unittest discover -s tests -v` passed, PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-011 — Native Pure-Go x509 PKI Engine with SAN and CLI Integration (Issue `#76`)
 - **Date**: `2026-10-31T00:35+01:00`
 - **Status**: `COMPLETED`

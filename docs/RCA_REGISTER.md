@@ -137,6 +137,18 @@
 
 ---
 
+### RCA-018 — Error Shadowing and Missing "all" Support in Native PKI Engine
+- **Date / Linked Action**: `2026-10-31` (`ACT-012` / Issue `#78`)
+- **Observed Symptom**: Fuzzing and adversarial stress testing revealed that `mdb pki verify all` returned `unknown topology: all`, write failures in `GenerateTopologyCerts` silently returned nil error, and certificate verification failures returned `Verify failed: <nil>`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did verify all fail?* `VerifyTopologyCerts` only queried `topoMap` directly and omitted the `"all"` iteration logic present in `GenerateTopologyCerts`.
+  2. *Why was the write error masked?* In `GenerateTopologyCerts`, `if err != nil || save(...) != nil { return nil, err }` evaluated `save(...) != nil` as true when `err` was still `nil`, returning `nil, nil`.
+  3. *Why was verify error `<nil>`?* In `VerifyTopologyCerts`, `if err != nil || p.VerifyCertBytes(...) != nil { return false, err }` returned `false, nil` because `err` was from `os.ReadFile`.
+- **Applied Change / Fix**: Added loop for `"all"` topology verification, uncoupled error evaluations into discrete statements checking and returning the specific non-nil error, and added comprehensive unit test assertions in `pkg/pki/cert_test.go`.
+- **Result & Non-Regression Test**: `go test -v ./pkg/pki` passes 100%, and tampered certificates correctly fail with non-nil descriptive error diagnostics.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
