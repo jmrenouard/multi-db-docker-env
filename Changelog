@@ -1,3 +1,8 @@
+1.3.42 2026-10-31
+- feat: implement structured telemetry model and JSON serializer in pkg/report (Closes #92).
+- test: add hermetic unit tests for report model and JSON serialization in pkg/report/report_test.go.
+- doc: record ACT-019 in docs/ACTION_LOGBOOK.md.
+
 1.3.41 2026-10-31
 - feat: implement sysbench benchmark runner, metric parser, and test/bench CLI (pkg/bench, cmd/mdb) (Closes #90).
 - test: add hermetic unit tests for sysbench metrics parsing and runner execution in pkg/bench/sysbench_test.go.
