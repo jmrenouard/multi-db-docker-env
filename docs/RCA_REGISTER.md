@@ -190,6 +190,17 @@
 
 ---
 
+### RCA-023 — Post-Chown `rm: Permission denied` on `ssl/pgpool` Temporary Files & Host `mariadb` CLI Assumption in CI
+- **Date / Linked Action**: `2026-11-01` (`ACT-025` / Issue `#104`)
+- **Observed Symptom**: Run `41251104195` failed with `rm: cannot remove './ssl/pgpool/san.cnf': Permission denied` in `gen-ssl-pgpool`, and `up-galera`/`inject-employee-galera` relied on host `mariadb` and pre-initialized `test_db`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `rm -f` fail on `./ssl/pgpool/san.cnf`?* Because `scripts/gen_pki.sh` ran `docker run ... chown -R 999:999 /ssl && chmod 755 /ssl` *before* unlinking temporary `.cnf`/`.csr`/`.srl` files, transferring directory write permissions away from the non-root runner (`uid=1001`).
+  2. *Why did `up-galera` and `inject-employee-galera` risk failure on CI runners?* Because `ubuntu-latest` does not pre-install `mariadb-client` on the host or check out submodules by default.
+- **Applied Change / Fix**: Moved `rm -f "$CFG" "$DIR"/*.csr "$DIR"/*.srl "$DIR"/t.csr` prior to the `CHOWN_U` block in `scripts/gen_pki.sh` and containerized `mariadb` execution in `up-galera` and `inject-employee-galera` with automatic `test_db` submodule initialization in `Makefile`.
+- **Result & Non-Regression Test**: Verified via `make gen-ssl-all`, `make check-ssl-all`, and full CI workflow execution.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
