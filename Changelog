@@ -1,3 +1,11 @@
+2.0.3 2026-11-01
+- fix: correct operator precedence in interactive failure prompt and halt outer loop on refusal (interactive_runner.py) (Closes #108).
+- fix: drain subprocess stderr asynchronously via background thread to prevent buffer deadlock on verbose output (interactive_runner.py).
+- fix: guard against UnboundLocalError/IndexError and exact alias prefix filtering in remove_environment (mysql_docker.py).
+- fix: use secrets.choice CSPRNG instead of random for secure password generation (mysql_docker.py).
+- doc: record ACT-024 in docs/ACTION_LOGBOOK.md and RCA-022 in docs/RCA_REGISTER.md.
+- test: add comprehensive unit test suite covering Findings 1, 2, 5, and 8 (tests/test_python_runners.py).
+
 2.0.2 2026-10-31
 - fix: initialize DB_SERVICE/DB_CONTAINER in Makefile client target, replace remaining -p flags with MYSQL_PWD, and define PASS in scripts/setup_repli.sh (Closes #100).
 - ci: wire make test-go and Python unittest into Makefile test-config target executed by GitHub Actions CI.

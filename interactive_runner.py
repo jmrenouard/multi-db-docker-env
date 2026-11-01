@@ -3,6 +3,7 @@ import os
 import json
 import sys
 import argparse
+import threading
 from datetime import datetime
 
 # Localized Strings
@@ -493,6 +494,8 @@ def run_command(command, update_func=None):
     
     stdout_lines = []
     stderr_lines = []
+    err_thread = threading.Thread(target=lambda: [stderr_lines.append(l) for l in iter(process.stderr.readline, '')], daemon=True)
+    err_thread.start()
 
     # Read stdout in real-time
     while True:
@@ -506,16 +509,18 @@ def run_command(command, update_func=None):
             if update_func and len(stdout_lines) % 5 == 0:
                 update_func("".join(stdout_lines), "".join(stderr_lines))
             
-    # Capture remaining stderr
-    stderr_content = process.stderr.read()
+    process.wait()
+    err_thread.join()
+    process.stdout.close()
+    process.stderr.close()
+    stderr_content = "".join(stderr_lines)
     if stderr_content:
         print(f"\n❌ STDERR:\n{stderr_content}")
-        stderr_lines.append(stderr_content)
         if update_func:
-            update_func("".join(stdout_lines), "".join(stderr_lines))
+            update_func("".join(stdout_lines), stderr_content)
 
     print("-" * 40)
-    return process.returncode, "".join(stdout_lines), "".join(stderr_lines)
+    return process.returncode, "".join(stdout_lines), stderr_content
 
 def generate_report(results, finished=False):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -587,7 +592,7 @@ def generate_report(results, finished=False):
     )
 
     os.makedirs(os.path.dirname(REPORT_FILE), exist_ok=True)
-    with open(REPORT_FILE, "w") as f:
+    with open(REPORT_FILE, "w", encoding="utf-8") as f:
         f.write(html)
     
     print(STRINGS[L]['report_updated'].format(REPORT_FILE))
@@ -682,8 +687,8 @@ def main():
                     print(STRINGS[L]['failed'].format(returncode))
                     if mode == 'i':
                         cont = input(STRINGS[L]['continue']).lower().strip()
-                        if cont != 'o' if L == 'fr' else 'y':
-                            break
+                        if cont != ('o' if L == 'fr' else 'y'):
+                            return
                 break # Exit the while True loop for this step
             else:
                 results.append({

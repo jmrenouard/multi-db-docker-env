@@ -178,6 +178,17 @@
 
 ---
 
+### RCA-022 — Operator Precedence Bug, Subprocess Deadlock, Variable Unbound & PRNG Insecurity
+- **Date / Linked Action**: `2026-11-01` (`ACT-024` / Issue `#108`)
+- **Observed Symptom**: (1) `interactive_runner.py` prompt evaluated `cont != 'o' if L == 'fr' else 'y'` as `'y'` in English, ignoring `'n'`; (2) `run_command` deadlocked on >64KB stderr output; (3) `mysql_docker.py` raised `UnboundLocalError`/`IndexError` on missing/untagged containers and wiped `db10` when removing `db1`; (4) `generate_password` used MT19937 PRNG.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Precedence & Deadlock*: `!=` binds tighter than `if...else`, evaluating to `'y'`; reading stdout to EOF before stderr saturated OS pipe buffers.
+  2. *Unbound Variable & Alias Substring*: Missing container left `container` unbound before tag lookup; substring match removed overlapping alias prefixes.
+- **Applied Change / Fix**: Fixed precedence to `if cont != ('o' if L == 'fr' else 'y'): return`; drained stderr concurrently via background thread; guarded container/image tags in `remove_environment` and filtered exact alias prefixes; switched to `secrets.choice`; added unit tests in `tests/test_python_runners.py`.
+- **Result & Non-Regression Test**: `python -m unittest discover -s tests -v` (16/16), `test_secure_password.sh` (34/34).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters

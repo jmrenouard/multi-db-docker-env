@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-024 — Python Runners Core Fixes: Operator Precedence, Pipe Deadlock, Alias Prefix & CSPRNG (Issue `#108`)
+- **Date**: `2026-11-01T23:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#108` (`fix/issue-108-runners-cli-fixes`)
+- **Request**: Resolve Ponytail audit remediation findings for Python runners (#1, #2, #5, #8).
+- **Changes**: Fixed operator precedence & stderr buffer deadlock in `interactive_runner.py`; fixed `UnboundLocalError`, image tags check, alias prefix filtering & CSPRNG in `mysql_docker.py`; added unit test suite in `tests/test_python_runners.py`; bumped `VERSION` to `2.0.3` and updated `Changelog`.
+- **Result**: `python -m unittest discover -s tests -v` passed (16/16), `test_secure_password.sh` passed (34/34), PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-023 — Ponytail v2.0.0 Audit Remediation Part 2: Makefile, CI Go Gate, Setup Script & HAProxy Pinning (Issue `#100`)
 - **Date**: `2026-10-31T23:10+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#100` (`fix/issue-100-makefile-ci-compose`)
 - **Request**: Resolve Ponytail Audit findings #4, #5, #6, #8, and #9 across `Makefile`, `scripts/setup_repli.sh`, and Docker Compose files.
