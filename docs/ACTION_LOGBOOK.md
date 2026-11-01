@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-027 — Python Runners Core Fixes: Operator Precedence, Pipe Deadlock, Alias Prefix & CSPRNG (Issue `#108`)
+- **Date**: `2026-11-01T23:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#108` (`fix/issue-108-runners-cli-fixes`)
+- **Request**: Resolve Ponytail audit remediation findings for Python runners (#1, #2, #5, #8).
+- **Changes**: Fixed operator precedence & stderr buffer deadlock in `interactive_runner.py`; fixed `UnboundLocalError`, image tags check, alias prefix filtering & CSPRNG in `mysql_docker.py`; added unit test suite in `tests/test_python_runners.py`; bumped `VERSION` to `2.0.3` and updated `Changelog`.
+- **Result**: `python -m unittest discover -s tests -v` passed (16/16), `test_secure_password.sh` passed (34/34), PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-026 — Align `start_mariadb.sh` Init User with Root for `0600` Host SSL Keys & Bound Galera CI Startup (Issue `#106`)
 - **Date**: `2026-11-01T00:16+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#106` (`fix/issue-106-start-mariadb-ssl-uid-and-galera-ci`)
 - **Request**: Fix MariaDB initialization failure when reading host-mounted `0600` `/etc/mysql/ssl/server-key.pem` (`uid=1001`) and bound Galera readiness checks in CI.

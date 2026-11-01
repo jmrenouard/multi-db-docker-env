@@ -1,5 +1,5 @@
 import argparse
-import random
+import secrets
 import string
 import os
 from docker import from_env
@@ -11,7 +11,7 @@ script_dir=Path(__file__).resolve().parent
 def generate_password(length=64):
     """Generate a random password."""
     chars = string.ascii_letters + string.digits
-    return ''.join(random.choice(chars) for _ in range(length))
+    return ''.join(secrets.choice(chars) for _ in range(length))
 
 def find_free_port():
     """Find a free port for forwarding that is not 3306."""
@@ -134,13 +134,15 @@ def stop_container(env_name, debug=False):
     except Exception as e:
         print(f"Error stopping container: {e}")
 
-def remove_environment(env_name, debug=False):
+def remove_environment(env_name, debug=False, docker_client=None):
     """Remove Docker container, image, .my.cnf file, and alias for the given environment."""
-    docker_client = from_env()
+    if docker_client is None:
+        docker_client = from_env()
     container_name = env_name
     my_cnf_path = f"{env_name}.my.cnf"
     bashrc_path = "mysql.bashrc"
 
+    container = None
     # Remove container
     try:
         container = docker_client.containers.get(container_name)
@@ -151,9 +153,10 @@ def remove_environment(env_name, debug=False):
 
     # Remove image
     try:
-        image_name = f"{container.image.tags[0]}"
-        docker_client.images.remove(image=image_name, force=True)
-        print(f"Image {image_name} removed successfully.")
+        if container and getattr(container, 'image', None) and container.image.tags:
+            image_name = f"{container.image.tags[0]}"
+            docker_client.images.remove(image=image_name, force=True)
+            print(f"Image {image_name} removed successfully.")
     except Exception as e:
         print(f"Error removing image: {e}")
 
@@ -166,12 +169,18 @@ def remove_environment(env_name, debug=False):
 
     # Remove alias from bashrc
     try:
+        sfx = ['', 'c', 'dump', 'flush', 'dblist', 'sh', 'logs', 'stop', 'start']
+        alias_prefixes = (
+            tuple(f"alias {env_name}{s}=" for s in sfx)
+            + tuple(f"alias _{env_name}{s}=" for s in sfx)
+            + (f"export MYSQL_DEFAULTS_FILE_{env_name}=",)
+        )
         if os.path.exists(bashrc_path):
             with open(bashrc_path, 'r') as f:
                 lines = f.readlines()
             with open(bashrc_path, 'w') as f:
                 for line in lines:
-                    if f"{env_name}" not in line and line.strip():
+                    if not line.strip().startswith(alias_prefixes) and line.strip():
                         f.write(line)
             # If the bashrc file is now empty, delete it
             if os.path.getsize(bashrc_path) == 0:
