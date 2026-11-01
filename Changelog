@@ -1,3 +1,9 @@
+2.0.6 2026-11-01
+- fix: resolve container names dynamically with fallback in performance and HAProxy tests (tests/test_perf_galera.sh, tests/test_perf_repli.sh, tests/test_haproxy_galera.sh) (Closes #114).
+- fix: replace fragile export grep xargs with safe POSIX shell sourcing across remaining scripts (scripts/gen_profiles.sh, scripts/setup_repli.sh, scripts/patroni/generate_certs.sh, tests/test_innodb_cluster.sh, tests/test_lb_galera.sh, tests/test_patroni.sh, tests/test_pgpool.sh).
+- doc: record ACT-030 in docs/ACTION_LOGBOOK.md and RCA-028 in docs/RCA_REGISTER.md.
+- test: verify all test suites pass with safe sourcing and dynamic resolution (16 unittest, 63 go test, bash tests).
+
 2.0.5 2026-11-01
 - fix: resolve container names dynamically with fallback across backup, restore, and failover scripts (scripts/backup_logical.sh, scripts/backup_physical.sh, scripts/restore_logical.sh, scripts/restore_physical.sh, tests/test_failover.sh, tests/test_backup_restore.sh) (Closes #112).
 - fix: prevent plaintext credential exposure in mariabackup by passing MYSQL_PWD to docker exec (scripts/backup_physical.sh).

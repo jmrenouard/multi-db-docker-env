@@ -5,7 +5,9 @@ set -euo pipefail
 
 # Configuration
 if [ -f .env ]; then
-    export "$(grep -v '^#' .env | xargs)"
+    set -a
+    . ./.env
+    set +a
 fi
 
 DB_USER="root"

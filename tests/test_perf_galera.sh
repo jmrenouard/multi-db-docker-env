@@ -2,7 +2,9 @@
 
 # Configuration
 if [ -f .env ]; then
-    export "$(grep -v '^#' .env | xargs)"
+    set -a
+    . ./.env
+    set +a
 fi
 
 DB_USER="root"
@@ -68,7 +70,8 @@ case $PROFILE in
         ;;
 esac
 
-CLIENT_CONTAINER="mariadb-galera_01-1"
+CLIENT_CONTAINER=$(docker ps --filter "name=galera_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+CLIENT_CONTAINER="${CLIENT_CONTAINER:-mariadb-galera_01-1}"
 COMMAND="sysbench $SCRIPT --db-driver=mysql --mysql-host=$TARGET_HOST --mysql-port=$TARGET_PORT --mysql-user=$DB_USER --mysql-password=$DB_PASS --mysql-db=$DB_NAME --tables=$TABLES --table-size=$TABLE_SIZE --threads=$THREADS --time=$TIME --report-interval=$REPORT_INTERVAL"
 
 case $ACTION in
@@ -89,7 +92,10 @@ case $ACTION in
         
         # Capture Galera stats before (Aggregate from all nodes)
         BF_BEFORE=0; CERT_BEFORE=0
-        NODES=("mariadb-galera_01-1" "mariadb-galera_02-1" "mariadb-galera_03-1")
+        NODE1=$(docker ps --filter "name=galera_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+        NODE2=$(docker ps --filter "name=galera_02" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+        NODE3=$(docker ps --filter "name=galera_03" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+        NODES=("${NODE1:-mariadb-galera_01-1}" "${NODE2:-mariadb-galera_02-1}" "${NODE3:-mariadb-galera_03-1}")
         for node in "${NODES[@]}"; do
             bf=$(docker exec -e MYSQL_PWD="$DB_PASS" $node mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW STATUS LIKE 'wsrep_local_bf_aborts';" | awk '{print $2}' || echo 0)
             cert=$(docker exec -e MYSQL_PWD="$DB_PASS" $node mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW STATUS LIKE 'wsrep_local_cert_failures';" | awk '{print $2}' || echo 0)

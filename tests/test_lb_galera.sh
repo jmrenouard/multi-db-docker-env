@@ -2,7 +2,9 @@
 
 # Configuration
 if [ -f .env ]; then
-    export "$(grep -v '^#' .env | xargs)"
+    set -a
+    . ./.env
+    set +a
 fi
 
 LB_HOST="127.0.0.1"

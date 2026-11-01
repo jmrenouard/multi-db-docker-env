@@ -247,6 +247,17 @@
 
 ---
 
+### RCA-028 — Hardcoded Perf/HAProxy Node Names & Fragile xargs .env Parsing
+- **Date / Linked Action**: `2026-11-02` (`ACT-030` / Issue `#114`)
+- **Observed Symptom**: `test_perf_galera.sh`, `test_perf_repli.sh`, and `test_haproxy_galera.sh` failed on root Compose deployments due to hardcoded container names (`mariadb-galera_0*-1`, `mariadb-mariadb_0*-1`); 7 remaining scripts used `export $(grep -v '^#' .env | xargs)` which broke on spaces, inline quotes, and empty/comment-only lines.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did node lookups fail?* Compose names containers `multi-db-docker-env-*` from repository root.
+  2. *Why did xargs break?* `xargs` splits arguments on whitespace and mishandles quoted strings or comments.
+- **Applied Change / Fix**: Dynamically resolved node names with fallback in `test_perf_galera.sh`, `test_perf_repli.sh`, and `test_haproxy_galera.sh`; replaced `xargs` with `if [ -f .env ]; then set -a; . ./.env; set +a; fi` across `gen_profiles.sh`, `setup_repli.sh`, `patroni/generate_certs.sh`, `test_innodb_cluster.sh`, `test_lb_galera.sh`, `test_patroni.sh`, and `test_pgpool.sh`.
+- **Result & Non-Regression Test**: All tests pass: `python -m unittest discover -s tests -v` (16/16), `go test -v ./...` (63/63), `bash tests/test_env.sh`, `bash tests/test_config.sh`, `bash tests/test_security_ssl.sh`, `bash tests/test_profiles.sh`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
