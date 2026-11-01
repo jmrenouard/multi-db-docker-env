@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-031 — Obsolete Legacy Scripts Cleanup (Issue `#116`)
+- **Date**: `2026-11-02T00:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#116` (`chore/issue-116-remove-dead-scripts`)
+- **Request**: Remove obsolete temporary workaround scripts `scripts/apply_fix_2.sh` and `scripts/fix_issue.sh` (#7B).
+- **Changes**: Removed `scripts/apply_fix_2.sh` and `scripts/fix_issue.sh`; bumped `VERSION` to `2.0.7`; updated `Changelog`.
+- **Result**: `tests/test_config.sh` passed, `python -m unittest discover -s tests -v` passed (16/16), `go test -v ./...` passed (63/63), PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-030 — Performance/HAProxy Container Resolution & Safe .env Sourcing (Issue `#114`)
 - **Date**: `2026-11-02T00:35+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#114` (`fix/issue-114-perf-container-resolution-env`)
 - **Request**: Resolve performance/HAProxy container resolution and safe .env sourcing across all remaining scripts (#3, #6).
