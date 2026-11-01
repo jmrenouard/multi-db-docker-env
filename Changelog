@@ -1,3 +1,8 @@
+2.0.7 2026-11-01
+- doc: record ACT-031 in docs/ACTION_LOGBOOK.md.
+- chore: remove obsolete legacy scripts apply_fix_2.sh and fix_issue.sh (scripts/apply_fix_2.sh, scripts/fix_issue.sh) (Closes #116).
+- test: verify configuration validator and full test suite pass cleanly without obsolete scripts.
+
 2.0.6 2026-11-01
 - fix: resolve container names dynamically with fallback in performance and HAProxy tests (tests/test_perf_galera.sh, tests/test_perf_repli.sh, tests/test_haproxy_galera.sh) (Closes #114).
 - fix: replace fragile export grep xargs with safe POSIX shell sourcing across remaining scripts (scripts/gen_profiles.sh, scripts/setup_repli.sh, scripts/patroni/generate_certs.sh, tests/test_innodb_cluster.sh, tests/test_lb_galera.sh, tests/test_patroni.sh, tests/test_pgpool.sh).
