@@ -2,7 +2,9 @@
 
 # Configuration
 if [ -f .env ]; then
-    export "$(grep -v '^#' .env | xargs)"
+    set -a
+    . ./.env
+    set +a
 fi
 
 DB_USER="root"
@@ -68,7 +70,8 @@ case $PROFILE in
         ;;
 esac
 
-CLIENT_CONTAINER="mariadb-mariadb_01-1"
+CLIENT_CONTAINER=$(docker ps --filter "name=mariadb_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+CLIENT_CONTAINER="${CLIENT_CONTAINER:-mariadb-mariadb_01-1}"
 COMMAND="sysbench $SCRIPT --db-driver=mysql --mysql-host=$TARGET_HOST --mysql-port=$TARGET_PORT --mysql-user=$DB_USER --mysql-password=$DB_PASS --mysql-db=$DB_NAME --tables=$TABLES --table-size=$TABLE_SIZE --threads=$THREADS --time=$TIME --report-interval=$REPORT_INTERVAL"
 
 case $ACTION in
@@ -87,22 +90,27 @@ case $ACTION in
         REPORT_FILE="reports/test_perf_repli_$(date +%Y%m%d_%H%M%S).html"
         START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         
-        LAG_BEFORE_02=$(docker exec -e MYSQL_PWD="$DB_PASS" mariadb-mariadb_02-1 mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
-        LAG_BEFORE_03=$(docker exec -e MYSQL_PWD="$DB_PASS" mariadb-mariadb_03-1 mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
+        SLAVE1_CONTAINER=$(docker ps --filter "name=mariadb_02" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+        SLAVE1_CONTAINER="${SLAVE1_CONTAINER:-mariadb-mariadb_02-1}"
+        SLAVE2_CONTAINER=$(docker ps --filter "name=mariadb_03" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+        SLAVE2_CONTAINER="${SLAVE2_CONTAINER:-mariadb-mariadb_03-1}"
+
+        LAG_BEFORE_02=$(docker exec -e MYSQL_PWD="$DB_PASS" "$SLAVE1_CONTAINER" mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
+        LAG_BEFORE_03=$(docker exec -e MYSQL_PWD="$DB_PASS" "$SLAVE2_CONTAINER" mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
 
         # Run sysbench
         docker exec -it $CLIENT_CONTAINER $COMMAND run | tee "$RAW_OUT"
         
         # Capture Slave Lag AFTER
-        LAG_AFTER_02=$(docker exec -e MYSQL_PWD="$DB_PASS" mariadb-mariadb_02-1 mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
-        LAG_AFTER_03=$(docker exec -e MYSQL_PWD="$DB_PASS" mariadb-mariadb_03-1 mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
+        LAG_AFTER_02=$(docker exec -e MYSQL_PWD="$DB_PASS" "$SLAVE1_CONTAINER" mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
+        LAG_AFTER_03=$(docker exec -e MYSQL_PWD="$DB_PASS" "$SLAVE2_CONTAINER" mariadb -h 127.0.0.1 -uroot -N -s -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master" | awk '{print $2}' || echo 0)
         [ "$LAG_AFTER_02" == "NULL" ] || [ -z "$LAG_AFTER_02" ] && LAG_AFTER_02=0
         [ "$LAG_AFTER_03" == "NULL" ] || [ -z "$LAG_AFTER_03" ] && LAG_AFTER_03=0
         REPLI_LAG=$(( LAG_AFTER_02 > LAG_AFTER_03 ? LAG_AFTER_02 : LAG_AFTER_03 ))
 
         echo_title "Collecting Container Logs..."
         LOGS_OUT=""
-        NODES=("mariadb-mariadb_01-1" "mariadb-mariadb_02-1" "mariadb-mariadb_03-1")
+        NODES=("$CLIENT_CONTAINER" "$SLAVE1_CONTAINER" "$SLAVE2_CONTAINER")
         for node in "${NODES[@]}"; do
             node_logs=$(docker logs --since "$START_TIME" "$node" 2>&1 | grep -iE "error|fatal|critical" || echo "No relevant issues found.")
             LOGS_OUT="$LOGS_OUT

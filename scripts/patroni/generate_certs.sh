@@ -7,7 +7,9 @@ mkdir -p "$CERT_DIR"
 
 # Charger les variables d'environnement si le fichier .env existe
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    . ./.env
+    set +a
 fi
 
 # SANs par défaut

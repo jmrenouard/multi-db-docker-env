@@ -3,7 +3,9 @@
 
 # Configuration
 if [ -f .env ]; then
-    export "$(grep -v '^#' .env | xargs)"
+    set -a
+    . ./.env
+    set +a
 fi
 
 LB_IP="127.0.0.1"
@@ -11,7 +13,8 @@ LB_PORT="3306"
 STATS_PORT="8404"
 USER="root"
 PASS="${DB_ROOT_PASSWORD:-rootpass}"
-NODE3_NAME="mariadb-galera_03-1"
+NODE3_NAME=$(docker ps --filter "name=galera_03" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+NODE3_NAME="${NODE3_NAME:-mariadb-galera_03-1}"
 
 # Create reports directory if it doesn't exist
 REPORT_DIR="./reports"
@@ -114,7 +117,7 @@ echo ""
 echo "4. 🧨 Test de Failover (Simulation de panne sur Node 3)..."
 write_report "\n## 4. Failover Simulation (Node 3)"
 echo ">> [ACTION] Arrêt du conteneur Node 3..."
-docker stop $NODE3_NAME > /dev/null
+docker stop "$NODE3_NAME" > /dev/null
 
 echo ">> [WAIT] Attente de la détection HAProxy (5s)..."
 sleep 5
@@ -143,7 +146,7 @@ STATUS="PASS"
 TEST_RESULTS="$TEST_RESULTS{\"test\":\"Failover\",\"nature\":\"Service Continuity\",\"expected\":\"< 2 drops\",\"status\":\"$STATUS\",\"details\":\"$FAILED_REQS failed requests out of 10\"},"
 
 echo ">> [ACTION] Redémarrage du conteneur Node 3..."
-docker start $NODE3_NAME > /dev/null
+docker start "$NODE3_NAME" > /dev/null
 
 # Generate HTML Report
 cat <<EOF > "$REPORT_HTML"

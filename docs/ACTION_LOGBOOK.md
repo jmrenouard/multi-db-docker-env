@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-030 — Performance/HAProxy Container Resolution & Safe .env Sourcing (Issue `#114`)
+- **Date**: `2026-11-02T00:35+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#114` (`fix/issue-114-perf-container-resolution-env`)
+- **Request**: Resolve performance/HAProxy container resolution and safe .env sourcing across all remaining scripts (#3, #6).
+- **Changes**: Dynamically resolved container names with fallback in `tests/test_perf_galera.sh`, `tests/test_perf_repli.sh`, and `tests/test_haproxy_galera.sh`; replaced fragile `export $(grep ... | xargs)` with safe shell sourcing in `scripts/gen_profiles.sh`, `scripts/setup_repli.sh`, `scripts/patroni/generate_certs.sh`, `tests/test_innodb_cluster.sh`, `tests/test_lb_galera.sh`, `tests/test_patroni.sh`, and `tests/test_pgpool.sh`; bumped `VERSION` to `2.0.6` and updated `Changelog`.
+- **Result**: `python -m unittest discover -s tests -v` passed (16/16), `go test -v ./...` passed (63/63), all bash test suites passed, PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-029 — Dynamic Container Resolution, Credential Protection & Python 3.11 CI Compatibility (Issue `#112`)
 - **Date**: `2026-11-02T00:20+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#112` (`fix/issue-112-bash-scripts-cleanup`)
 - **Request**: Resolve container prefix mismatch, physical backup credential exposure, and Python 3.11 syntax error (#3, #6).
