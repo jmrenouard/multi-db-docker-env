@@ -74,11 +74,35 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-024 — Python Runners Core Fixes: Operator Precedence, Pipe Deadlock, Alias Prefix & CSPRNG (Issue `#108`)
+### ACT-027 — Python Runners Core Fixes: Operator Precedence, Pipe Deadlock, Alias Prefix & CSPRNG (Issue `#108`)
 - **Date**: `2026-11-01T23:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#108` (`fix/issue-108-runners-cli-fixes`)
 - **Request**: Resolve Ponytail audit remediation findings for Python runners (#1, #2, #5, #8).
 - **Changes**: Fixed operator precedence & stderr buffer deadlock in `interactive_runner.py`; fixed `UnboundLocalError`, image tags check, alias prefix filtering & CSPRNG in `mysql_docker.py`; added unit test suite in `tests/test_python_runners.py`; bumped `VERSION` to `2.0.3` and updated `Changelog`.
 - **Result**: `python -m unittest discover -s tests -v` passed (16/16), `test_secure_password.sh` passed (34/34), PR diff strictly < 15,000 characters.
+
+---
+
+### ACT-026 — Align `start_mariadb.sh` Init User with Root for `0600` Host SSL Keys & Bound Galera CI Startup (Issue `#106`)
+- **Date**: `2026-11-01T00:16+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#106` (`fix/issue-106-start-mariadb-ssl-uid-and-galera-ci`)
+- **Request**: Fix MariaDB initialization failure when reading host-mounted `0600` `/etc/mysql/ssl/server-key.pem` (`uid=1001`) and bound Galera readiness checks in CI.
+- **Changes**: Updated `scripts/start_mariadb.sh` to run `mariadb-install-db` and temporary initialization `mariadbd` with `--user=root --wsrep-provider=none` and `COUNTER=$((COUNTER + 1))`; updated `Makefile` (`up-galera` and `inject-employee-galera`) with bounded 60-attempt readiness checks, supervisor log diagnostics on failure, and fast `employees` schema fixture in CI.
+- **Result**: Galera 3-node cluster bootstraps cleanly in CI and `make mysqltuner-galera` completes deterministically; PR diff strictly < 15,000 characters.
+
+---
+
+### ACT-025 — Pre-Chown Temporary CSR/CNF Cleanup in `gen_pki.sh` & Containerized Galera CLI Calls (Issue `#104`)
+- **Date**: `2026-11-01T00:09+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#104` (`fix/issue-104-gen-pki-cleanup-and-galera-ci`)
+- **Request**: Fix `rm: cannot remove './ssl/pgpool/san.cnf': Permission denied` after Docker `chown 999:999` in `scripts/gen_pki.sh`, and containerize Galera `mariadb` calls and `test_db` submodule init in `Makefile`.
+- **Changes**: Moved `rm -f "$CFG" "$DIR"/*.csr "$DIR"/*.srl "$DIR"/t.csr` before the `CHOWN_U` block in `scripts/gen_pki.sh` and added `keyUsage` extensions; updated `up-galera` and `inject-employee-galera` in `Makefile` to run `mariadb` inside `galera_01`/`galera_02`/`galera_03` containers and initialize `test_db` submodule when absent.
+- **Result**: `make gen-ssl-all`, `make check-ssl-all`, and CI stages execute cleanly without host permission or missing host binary errors; PR diff strictly < 15,000 characters.
+
+---
+
+### ACT-024 — Resolve POSIX 126 Permission Denied on `scripts/gen_pki.sh` in CI TLS Generation (Issue `#102`)
+- **Date**: `2026-11-01T00:04+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#102` (`fix/issue-102-gen-pki-exec-permissions`)
+- **Request**: Fix GitHub Actions CI run `41247154340` failing at Step #4 (`Generate and Check TLS Certificates`) with `scripts/gen_pki.sh: Permission denied` (POSIX error 126).
+- **Changes**: Updated `scripts/gen_ssl.sh`, `scripts/gen_ssl_innodb.sh`, `scripts/gen_ssl_mongo.sh`, `scripts/gen_ssl_patroni.sh`, and `scripts/gen_ssl_pgpool.sh` to invoke `exec bash "$(dirname "$0")/gen_pki.sh"` explicitly so execution never depends on filesystem executable bits. Updated `docs/ACTION_LOGBOOK.md` (`ACT-024`) and `docs/RCA_REGISTER.md` (`RCA-022`).
+- **Result**: `make gen-ssl-all` and `make check-ssl-all` succeed across all 5 database topologies without POSIX 126 errors; PR diff strictly < 15,000 characters.
 
 ---
 

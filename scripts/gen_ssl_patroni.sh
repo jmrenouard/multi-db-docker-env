@@ -15,7 +15,7 @@ if [ -f ./scripts/patroni/generate_certs.sh ]; then
         exit 1
     fi
 else
-    exec "$(dirname "$0")/gen_pki.sh" --dir "$SSL_DIR" --cn "Patroni-Cluster" --mode standard "$@"
+    exec bash "$(dirname "$0")/gen_pki.sh" --dir "$SSL_DIR" --cn "Patroni-Cluster" --mode standard "$@"
 fi
 
 if [ -d "certs_patroni" ]; then

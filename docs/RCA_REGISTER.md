@@ -178,8 +178,43 @@
 
 ---
 
-### RCA-022 — Operator Precedence Bug, Subprocess Deadlock, Variable Unbound & PRNG Insecurity
-- **Date / Linked Action**: `2026-11-01` (`ACT-024` / Issue `#108`)
+### RCA-022 — POSIX 126 `Permission denied` on `scripts/gen_pki.sh` During CI TLS Certificate Generation
+- **Date / Linked Action**: `2026-11-01` (`ACT-024` / Issue `#102`)
+- **Observed Symptom**: GitHub Actions run `41247154340` failed at Step #4 (`Generate and Check TLS Certificates`) with `./scripts/gen_ssl.sh: line 31: exec: .../scripts/gen_pki.sh: cannot execute: Permission denied` (`make: *** [Makefile:860: gen-ssl] Error 126`).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `make gen-ssl-all` fail?* Because `gen_ssl.sh` executed `exec "$(dirname "$0")/gen_pki.sh"` directly and Linux returned `EACCES` (POSIX 126).
+  2. *Why did Linux return `EACCES`?* Because `scripts/gen_pki.sh` was stored in the Git tree with mode `100644` (non-executable) rather than `100755`.
+  3. *Why did all 5 `gen_ssl*.sh` wrappers rely on the executable bit?* Because they invoked `gen_pki.sh` directly via `exec` without prefixing `bash`.
+- **Applied Change / Fix**: Updated `scripts/gen_ssl.sh`, `scripts/gen_ssl_innodb.sh`, `scripts/gen_ssl_mongo.sh`, `scripts/gen_ssl_patroni.sh`, and `scripts/gen_ssl_pgpool.sh` to invoke `exec bash "$(dirname "$0")/gen_pki.sh"`, ensuring portable execution regardless of filesystem mode bits, and restored mode `100755` on `scripts/gen_pki.sh` and `scripts/aggregate_reports.sh`.
+- **Result & Non-Regression Test**: Verified via `make gen-ssl-all` and `make check-ssl-all` in CI.
+
+---
+
+### RCA-023 — Post-Chown `rm: Permission denied` on `ssl/pgpool` Temporary Files & Host `mariadb` CLI Assumption in CI
+- **Date / Linked Action**: `2026-11-01` (`ACT-025` / Issue `#104`)
+- **Observed Symptom**: Run `41251104195` failed with `rm: cannot remove './ssl/pgpool/san.cnf': Permission denied` in `gen-ssl-pgpool`, and `up-galera`/`inject-employee-galera` relied on host `mariadb` and pre-initialized `test_db`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `rm -f` fail on `./ssl/pgpool/san.cnf`?* Because `scripts/gen_pki.sh` ran `docker run ... chown -R 999:999 /ssl && chmod 755 /ssl` *before* unlinking temporary `.cnf`/`.csr`/`.srl` files, transferring directory write permissions away from the non-root runner (`uid=1001`).
+  2. *Why did `up-galera` and `inject-employee-galera` risk failure on CI runners?* Because `ubuntu-latest` does not pre-install `mariadb-client` on the host or check out submodules by default.
+- **Applied Change / Fix**: Moved `rm -f "$CFG" "$DIR"/*.csr "$DIR"/*.srl "$DIR"/t.csr` prior to the `CHOWN_U` block in `scripts/gen_pki.sh` and containerized `mariadb` execution in `up-galera` and `inject-employee-galera` with automatic `test_db` submodule initialization in `Makefile`.
+- **Result & Non-Regression Test**: Verified via `make gen-ssl-all`, `make check-ssl-all`, and full CI workflow execution.
+
+---
+
+### RCA-024 — MariaDB Init Failure on Host-Mounted `0600` SSL Key (`uid=1001` vs `uid=999`) & Unbounded Wait Loop in `up-galera`
+- **Date / Linked Action**: `2026-11-01` (`ACT-026` / Issue `#106`)
+- **Observed Symptom**: During `make mysqltuner-galera` in CI, `galera_01` started `supervisord` (`sshd`), but `mariadbd` exited during initialization while `up-galera` waited indefinitely at `Waiting for Node 1 to start...`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `up-galera` wait indefinitely?* Because `mariadbd` failed during initial bootstrap inside `scripts/start_mariadb.sh` and `autorestart=false` left `supervisord` running only `sshd`.
+  2. *Why did temporary `mariadbd` fail during initialization?* Because `start_mariadb.sh` invoked `mariadbd --user=mysql --wsrep-on=OFF` (`uid=999`), which loaded `/etc/mysql/conf.d/ssl.cnf` (`/etc/mysql/ssl/server-key.pem`, mode `0600` owned by host `runner` `uid=1001`) and `/etc/mysql/mariadb.conf.d/999_custom.cnf` (`wsrep_provider`).
+  3. *Why did final startup succeed as `root` while init failed?* Because line 96 used `exec mariadbd --user=root`, whereas lines 18 and 25 used `--user=mysql` without `--wsrep-provider=none`.
+- **Applied Change / Fix**: Aligned `scripts/start_mariadb.sh` init commands to `--user=root` with `--wsrep-provider=none` and `COUNTER=$((COUNTER + 1))`, bounded `up-galera` readiness polling to 60 attempts with supervisor log output, and added fast CI fixture injection for `inject-employee-galera`.
+- **Result & Non-Regression Test**: Verified via `make mysqltuner-galera` and full GitHub Actions CI pipeline.
+
+---
+
+### RCA-025 — Operator Precedence Bug, Subprocess Deadlock, Variable Unbound & PRNG Insecurity
+- **Date / Linked Action**: `2026-11-01` (`ACT-027` / Issue `#108`)
 - **Observed Symptom**: (1) `interactive_runner.py` prompt evaluated `cont != 'o' if L == 'fr' else 'y'` as `'y'` in English, ignoring `'n'`; (2) `run_command` deadlocked on >64KB stderr output; (3) `mysql_docker.py` raised `UnboundLocalError`/`IndexError` on missing/untagged containers and wiped `db10` when removing `db1`; (4) `generate_password` used MT19937 PRNG.
 - **Root Cause Analysis (5 Whys)**:
   1. *Precedence & Deadlock*: `!=` binds tighter than `if...else`, evaluating to `'y'`; reading stdout to EOF before stderr saturated OS pipe buffers.

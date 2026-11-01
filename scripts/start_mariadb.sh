@@ -17,7 +17,7 @@ if [ ! -f "$DATA_DIR/.initialized" ]; then
 
     # Initialisation de la DB system
     echo ">> 🏗️ Running mariadb-install-db..."
-    mariadb-install-db --user=mysql --datadir="$DATA_DIR" --skip-test-db
+    mariadb-install-db --user=root --datadir="$DATA_DIR" --skip-test-db
     
     # Execute initialization scripts
     if [ -d "/docker-entrypoint-initdb.d" ]; then
@@ -26,7 +26,7 @@ if [ ! -f "$DATA_DIR/.initialized" ]; then
         
         SOCKET="/run/mysqld/mysqld_init.sock"
         # Start temporary MariaDB to apply permissions
-        mariadbd --user=mysql --datadir="$DATA_DIR" --skip-networking --wsrep-on=OFF --socket="$SOCKET" &
+        mariadbd --user=root --datadir="$DATA_DIR" --skip-networking --wsrep-on=OFF --wsrep-provider=none --socket="$SOCKET" &
         pid="$!"
         
         # Wait for MariaDB to be ready
@@ -34,7 +34,7 @@ if [ ! -f "$DATA_DIR/.initialized" ]; then
         until mariadb --socket="$SOCKET" -u root -e "SELECT 1" >/dev/null 2>&1 || [ $COUNTER -eq 30 ]; do
             echo ">> ⏳ Waiting for MariaDB for init ($COUNTER/30)..."
             sleep 1
-            let COUNTER=COUNTER+1
+            COUNTER=$((COUNTER + 1))
         done
         
         if [ $COUNTER -eq 30 ]; then
