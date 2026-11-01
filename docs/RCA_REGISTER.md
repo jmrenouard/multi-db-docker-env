@@ -235,6 +235,18 @@
 
 ---
 
+### RCA-027 — Hardcoded Backup Container Prefixes, CLI Password Leak & Python 3.11 Syntax Error
+- **Date / Linked Action**: `2026-11-02` (`ACT-029` / Issue `#112`)
+- **Observed Symptom**: Backup, restore, and failover scripts failed on root Docker Compose runs due to hardcoded container prefixes (`mariadb-`), `backup_physical.sh` exposed passwords in `ps aux`, and `interactive_runner.py:224` crashed on Python <=3.11 with `SyntaxError`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did container checks fail?* Docker Compose names containers with the directory prefix (`multi-db-docker-env-`) when run from root.
+  2. *Why was password exposed on CLI?* `mariabackup` was invoked with `--password` rather than reading `MYSQL_PWD` from the environment.
+  3. *Why did Python 3.11 fail?* Python <=3.11 disallows backslashes inside f-string `{...}` expressions.
+- **Applied Change / Fix**: Dynamically resolved container names with fallback in `scripts/backup_logical.sh`, `scripts/backup_physical.sh`, `scripts/restore_logical.sh`, `scripts/restore_physical.sh`, `tests/test_failover.sh`, and `tests/test_backup_restore.sh`; passed `-e MYSQL_PWD` to `docker exec` in `backup_physical.sh`; removed escaped quote in `interactive_runner.py:224`.
+- **Result & Non-Regression Test**: All tests passed: `python -m unittest discover -s tests -v` (16/16), `go test -v ./...` (63/63), `bash tests/test_secure_password.sh` (34/34), `bash tests/test_backup_restore.sh` (8/8), `bash tests/test_failover.sh`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters

@@ -221,7 +221,7 @@ def get_steps(auto=False):
             {
                 "id": "status",
                 "name": "Check Status" if L == 'en' else "Vérifier l'État",
-                "description": f"{'Shows the current status of the' if L == 'en' else 'Affiche l\'état actuel du conteneur'} {pretty_name} {'container.' if L == 'en' else ''}",
+                "description": f"Shows the current status of the {pretty_name} container." if L == 'en' else f"Affiche l'état actuel du conteneur {pretty_name}",
                 "command": "make status"
             },
             {

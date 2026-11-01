@@ -25,9 +25,11 @@ CLUSTER=$1
 FILENAME=$2
 
 if [ "$CLUSTER" == "galera" ]; then
-    CONTAINER="mariadb-galera_01-1"
+    CONTAINER=$(docker ps --filter "name=galera_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+    CONTAINER="${CONTAINER:-mariadb-galera_01-1}"
 elif [ "$CLUSTER" == "repli" ]; then
-    CONTAINER="mariadb-mariadb_01-1"
+    CONTAINER=$(docker ps --filter "name=mariadb_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+    CONTAINER="${CONTAINER:-mariadb-mariadb_01-1}"
 else
     usage
 fi

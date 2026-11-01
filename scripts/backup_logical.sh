@@ -2,7 +2,9 @@
 
 # Configuration
 if [ -f .env ]; then
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    . ./.env
+    set +a
 fi
 
 DB_USER="root"
@@ -30,11 +32,13 @@ CLUSTER=$1
 DB_TARGET=${2:-"--all-databases"}
 
 if [ "$CLUSTER" == "galera" ]; then
-    CONTAINER="mariadb-galera_01-1"
+    CONTAINER=$(docker ps --filter "name=galera_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+    CONTAINER="${CONTAINER:-mariadb-galera_01-1}"
     FILE_PREFIX="galera_logical"
 elif [ "$CLUSTER" == "repli" ]; then
     # We prefer backing up from a slave (02 or 03) to reduce load on master
-    CONTAINER="mariadb-mariadb_02-1"
+    CONTAINER=$(docker ps --filter "name=mariadb_02" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+    CONTAINER="${CONTAINER:-mariadb-mariadb_02-1}"
     FILE_PREFIX="repli_logical"
 else
     usage

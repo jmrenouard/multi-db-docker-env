@@ -62,8 +62,9 @@ done
 echo ""
 echo "3. 📦 Active Cluster Backup Verification..."
 
-if docker ps --format '{{.Names}}' | grep -q "mariadb-g1"; then
-    echo ">> Testing Galera Logical Backup..."
+GALERA_CONTAINER=$(docker ps --filter "name=galera_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+if [ -n "$GALERA_CONTAINER" ] && docker ps --format '{{.Names}}' 2>/dev/null | grep -q "$GALERA_CONTAINER"; then
+    echo ">> Testing Galera Logical Backup on $GALERA_CONTAINER..."
     if bash "$REPO_ROOT/scripts/backup_logical.sh" galera testdb &>/dev/null; then
         assert_pass "Galera Backup" "Logical backup created successfully"
     else

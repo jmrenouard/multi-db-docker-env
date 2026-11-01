@@ -2,7 +2,9 @@
 
 # Configuration
 if [ -f .env ]; then
-    export "$(grep -v '^#' .env | xargs)"
+    set -a
+    . ./.env
+    set +a
 fi
 
 DB_USER="root"
@@ -30,10 +32,12 @@ FILENAME=$2
 
 if [ "$CLUSTER" == "galera" ]; then
     # Restore can be done on any node in Galera, it will replicate
-    CONTAINER="mariadb-galera_01-1"
+    CONTAINER=$(docker ps --filter "name=galera_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+    CONTAINER="${CONTAINER:-mariadb-galera_01-1}"
 elif [ "$CLUSTER" == "repli" ]; then
     # IMPORTANT: Restore MUST be done on the MASTER in replication
-    CONTAINER="mariadb-mariadb_01-1"
+    CONTAINER=$(docker ps --filter "name=mariadb_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+    CONTAINER="${CONTAINER:-mariadb-mariadb_01-1}"
 else
     usage
 fi

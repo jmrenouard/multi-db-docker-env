@@ -1,3 +1,10 @@
+2.0.5 2026-11-01
+- fix: resolve container names dynamically with fallback across backup, restore, and failover scripts (scripts/backup_logical.sh, scripts/backup_physical.sh, scripts/restore_logical.sh, scripts/restore_physical.sh, tests/test_failover.sh, tests/test_backup_restore.sh) (Closes #112).
+- fix: prevent plaintext credential exposure in mariabackup by passing MYSQL_PWD to docker exec (scripts/backup_physical.sh).
+- fix: correct escaped quote inside f-string in interactive_runner.py for Python <=3.11 CI compatibility.
+- doc: record ACT-029 in docs/ACTION_LOGBOOK.md and RCA-027 in docs/RCA_REGISTER.md.
+- test: verify container resolution, credential protection, and test suite pass (16 unittest, 63 go test, bash tests).
+
 2.0.4 2026-11-02
 - fix: default root user and pass MySQL connection flags in SysbenchRunner (pkg/bench/sysbench.go, cmd/mdb/main.go) (Closes #110).
 - doc: record ACT-028 in docs/ACTION_LOGBOOK.md and RCA-026 in docs/RCA_REGISTER.md.
