@@ -111,10 +111,6 @@ func (r *Report) AddStep(step runner.StepResult) {
 	})
 }
 
-// AddStepSummary appends an explicit StepSummary.
-func (r *Report) AddStepSummary(step StepSummary) {
-	r.Steps = append(r.Steps, step)
-}
 
 // ComputeSummary recalculates summary KPIs based on current data.
 func (r *Report) ComputeSummary() {
@@ -166,14 +162,6 @@ func (r *Report) SaveJSON(filePath string) error {
 	return os.WriteFile(filePath, data, 0644)
 }
 
-// WriteJSONTelemetry writes telemetry JSON to disk (helper function).
-func WriteJSONTelemetry(report *Report, filePath string) error {
-	if report == nil {
-		return fmt.Errorf("report cannot be nil")
-	}
-	return report.SaveJSON(filePath)
-}
-
 // RenderHTML executes the embedded HTML template against the report data.
 func (r *Report) RenderHTML() (string, error) {
 	r.ComputeSummary()
@@ -200,12 +188,4 @@ func (r *Report) SaveHTML(filePath string) error {
 		}
 	}
 	return os.WriteFile(filePath, []byte(htmlStr), 0644)
-}
-
-// RenderHTMLReport renders and writes HTML report to disk (helper function).
-func RenderHTMLReport(report *Report, filePath string) error {
-	if report == nil {
-		return fmt.Errorf("report cannot be nil")
-	}
-	return report.SaveHTML(filePath)
 }

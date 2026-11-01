@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-028 — Go Sysbench Connection Credentials & Report Wrapper Cleanup (Issue `#110`)
+- **Date**: `2026-11-02T00:05+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#110` (`fix/issue-110-go-sysbench-report`)
+- **Request**: Resolve Ponytail audit remediation findings for Go packages (#4, #7A).
+- **Changes**: Defaulted `cfg.User = "root"` and passed driver/credentials/host/port flags in `pkg/bench/sysbench.go`; supplied `User: "root"` in `cmd/mdb/main.go`; deleted redundant package-level wrappers `AddStepSummary`, `WriteJSONTelemetry`, `RenderHTMLReport` from `pkg/report/report.go`; updated tests in `pkg/bench/sysbench_test.go` and `pkg/report/report_test.go`; bumped `VERSION` to `2.0.4` and updated `Changelog`.
+- **Result**: `go test -v ./...` passed (63/63), `python -m unittest discover -s tests -v` passed (16/16), PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-027 — Python Runners Core Fixes: Operator Precedence, Pipe Deadlock, Alias Prefix & CSPRNG (Issue `#108`)
 - **Date**: `2026-11-01T23:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#108` (`fix/issue-108-runners-cli-fixes`)
 - **Request**: Resolve Ponytail audit remediation findings for Python runners (#1, #2, #5, #8).

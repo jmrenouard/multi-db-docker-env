@@ -66,6 +66,7 @@ func NewSysbenchRunner(cfg SysbenchConfig) *SysbenchRunner {
 	if cfg.Threads <= 0 { cfg.Threads = 4 }
 	if cfg.Duration <= 0 { cfg.Duration = 10 * time.Second }
 	if cfg.Database == "" { cfg.Database = "sbtest" }
+	if cfg.User == "" { cfg.User = "root" }
 	return &SysbenchRunner{cfg: cfg}
 }
 
@@ -75,7 +76,29 @@ func (r *SysbenchRunner) Run(ctx context.Context) (*SysbenchResult, error) {
 	}
 	timeSec := strconv.Itoa(int(r.cfg.Duration.Seconds()))
 	threads := strconv.Itoa(r.cfg.Threads)
-	args := []string{"sysbench", r.cfg.Workload, "--threads=" + threads, "--time=" + timeSec, "run"}
+	args := []string{
+		"sysbench",
+		r.cfg.Workload,
+		"--threads=" + threads,
+		"--time=" + timeSec,
+		"--db-driver=mysql",
+	}
+	if r.cfg.User != "" {
+		args = append(args, "--mysql-user="+r.cfg.User)
+	}
+	if r.cfg.Password != "" {
+		args = append(args, "--mysql-password="+r.cfg.Password)
+	}
+	if r.cfg.Host != "" {
+		args = append(args, "--mysql-host="+r.cfg.Host)
+	}
+	if r.cfg.Port > 0 {
+		args = append(args, "--mysql-port="+strconv.Itoa(r.cfg.Port))
+	}
+	if r.cfg.Database != "" {
+		args = append(args, "--mysql-db="+r.cfg.Database)
+	}
+	args = append(args, "run")
 	out, err := r.cfg.Executor.Exec(ctx, r.cfg.Container, nil, args...)
 	if err != nil && out == "" {
 		return nil, fmt.Errorf("sysbench execution failed: %w", err)

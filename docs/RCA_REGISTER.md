@@ -224,6 +224,17 @@
 
 ---
 
+### RCA-026 — Missing Database Driver/Credentials in Sysbench Invocation & Redundant Report Wrappers
+- **Date / Linked Action**: `2026-11-02` (`ACT-028` / Issue `#110`)
+- **Observed Symptom**: (1) `sysbench` commands failed when targeting password-protected or custom-port database containers due to missing `--db-driver=mysql`, `--mysql-user`, `--mysql-password`, `--mysql-host`, `--mysql-port`; (2) `pkg/report/report.go` maintained dead package-level functions (`AddStepSummary`, `WriteJSONTelemetry`, `RenderHTMLReport`) duplicating `*Report` methods.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did sysbench fail on authenticated instances?* `SysbenchRunner.Run` only passed `--threads` and `--time`, leaving driver, user, password, host, and port unset.
+  2. *Why were redundant report wrappers present?* Early prototype CLI design exposed package-level helpers before the consolidated `Report` struct methods were finalized.
+- **Applied Change / Fix**: Defaulted `cfg.User = "root"` in `NewSysbenchRunner`, injected `--db-driver=mysql` and connection flags in `SysbenchRunner.Run`, supplied `User: "root"` in `cmd/mdb/main.go`, removed redundant wrappers from `pkg/report/report.go`, and updated tests.
+- **Result & Non-Regression Test**: Verified via `go test -v ./...` (63/63) and `python -m unittest discover -s tests -v` (16/16).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters

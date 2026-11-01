@@ -93,7 +93,7 @@ func TestReport_AddAndComputeSummary(t *testing.T) {
 		Duration: 500 * time.Millisecond,
 		Error:    errors.New("timeout connecting to node3"),
 	})
-	r.AddStepSummary(StepSummary{
+	r.AddStep(runner.StepResult{
 		Name:     "CustomStep",
 		Success:  true,
 		Duration: 100 * time.Millisecond,
@@ -163,24 +163,6 @@ func TestReport_ToJSON_And_SaveJSON(t *testing.T) {
 	}
 }
 
-func TestWriteJSONTelemetry(t *testing.T) {
-	if err := WriteJSONTelemetry(nil, "some/path"); err == nil {
-		t.Error("expected error when writing nil report")
-	}
-
-	r := NewReport("2.0.0")
-	tempDir := t.TempDir()
-	jPath := filepath.Join(tempDir, "out.json")
-
-	if err := WriteJSONTelemetry(r, jPath); err != nil {
-		t.Errorf("WriteJSONTelemetry failed: %v", err)
-	}
-
-	if _, err := os.Stat(jPath); err != nil {
-		t.Errorf("JSON output file missing: %v", err)
-	}
-}
-
 func TestReport_RenderHTML_And_SaveHTML(t *testing.T) {
 	r := NewReport("2.0.0")
 	r.AddCluster(&dbclient.ClusterHealth{
@@ -240,13 +222,6 @@ func TestReport_RenderHTML_And_SaveHTML(t *testing.T) {
 	}
 	if string(savedBytes) != htmlStr {
 		t.Error("saved HTML content does not match rendered string")
-	}
-
-	if err := RenderHTMLReport(nil, htmlPath); err == nil {
-		t.Error("expected error rendering nil report")
-	}
-	if err := RenderHTMLReport(r, htmlPath); err != nil {
-		t.Errorf("RenderHTMLReport failed: %v", err)
 	}
 }
 

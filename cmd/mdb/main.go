@@ -164,6 +164,7 @@ func main() {
 		sbRunner := bench.NewSysbenchRunner(bench.SysbenchConfig{
 			Workload:  *workload,
 			Container: resolveContainer(ctx, client, name),
+			User:      "root",
 			Password:  loadPassword(),
 			Threads:   *threads,
 			Duration:  *duration,
