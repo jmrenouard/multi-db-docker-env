@@ -9,11 +9,13 @@ import (
 )
 
 type mockExecutor struct {
-	out string
-	err error
+	out     string
+	err     error
+	lastCmd []string
 }
 
 func (m *mockExecutor) Exec(ctx context.Context, container string, env []string, cmd ...string) (string, error) {
+	m.lastCmd = cmd
 	return m.out, m.err
 }
 
@@ -70,16 +72,36 @@ func TestParseSysbenchOutput_Errors(t *testing.T) {
 }
 
 func TestSysbenchRunner_Run(t *testing.T) {
+	mock := &mockExecutor{out: sampleSysbenchOutput}
 	runner := NewSysbenchRunner(SysbenchConfig{
 		Workload:  "oltp_read_write",
 		Container: "node1",
+		User:      "root",
+		Password:  "secret",
+		Host:      "127.0.0.1",
+		Port:      3306,
+		Database:  "sbtest",
 		Threads:   4,
 		Duration:  5 * time.Second,
-		Executor:  &mockExecutor{out: sampleSysbenchOutput},
+		Executor:  mock,
 	})
 	res, err := runner.Run(context.Background())
 	if err != nil || res.Workload != "oltp_read_write" || res.TPS != 99.85 {
 		t.Fatalf("Run failed: %v, res: %+v", err, res)
+	}
+
+	cmdStr := strings.Join(mock.lastCmd, " ")
+	for _, expected := range []string{
+		"--db-driver=mysql",
+		"--mysql-user=root",
+		"--mysql-password=secret",
+		"--mysql-host=127.0.0.1",
+		"--mysql-port=3306",
+		"--mysql-db=sbtest",
+	} {
+		if !strings.Contains(cmdStr, expected) {
+			t.Errorf("expected cmd to contain %q, got: %s", expected, cmdStr)
+		}
 	}
 
 	runnerNil := NewSysbenchRunner(SysbenchConfig{Container: "node1"})

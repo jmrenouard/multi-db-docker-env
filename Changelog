@@ -1,3 +1,9 @@
+2.0.4 2026-11-02
+- fix: default root user and pass MySQL connection flags in SysbenchRunner (pkg/bench/sysbench.go, cmd/mdb/main.go) (Closes #110).
+- doc: record ACT-028 in docs/ACTION_LOGBOOK.md and RCA-026 in docs/RCA_REGISTER.md.
+- refactor: remove redundant package-level wrappers AddStepSummary, WriteJSONTelemetry, and RenderHTMLReport (pkg/report/report.go).
+- test: assert MySQL connection flags in TestSysbenchRunner_Run and update report unit tests (pkg/bench, pkg/report).
+
 2.0.3 2026-11-01
 - fix: correct operator precedence in interactive failure prompt and halt outer loop on refusal (interactive_runner.py) (Closes #108).
 - fix: drain subprocess stderr asynchronously via background thread to prevent buffer deadlock on verbose output (interactive_runner.py).
