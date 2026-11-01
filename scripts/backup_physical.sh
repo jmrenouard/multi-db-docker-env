@@ -2,7 +2,9 @@
 
 # Configuration
 if [ -f .env ]; then
-    export "$(grep -v '^#' .env | xargs)"
+    set -a
+    . ./.env
+    set +a
 fi
 
 DB_USER="root"
@@ -29,12 +31,14 @@ if [ "$#" -ne 1 ]; then usage; fi
 CLUSTER=$1
 
 if [ "$CLUSTER" == "galera" ]; then
-    CONTAINER="mariadb-galera_01-1"
+    CONTAINER=$(docker ps --filter "name=galera_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+    CONTAINER="${CONTAINER:-mariadb-galera_01-1}"
     FILE_PREFIX="galera_physical"
 elif [ "$CLUSTER" == "repli" ]; then
     # We prefer backing up from a slave (02 or 03) to reduce load on master
     # and because mariabackup on slaves handles replication info well
-    CONTAINER="mariadb-mariadb_02-1"
+    CONTAINER=$(docker ps --filter "name=mariadb_02" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+    CONTAINER="${CONTAINER:-mariadb-mariadb_02-1}"
     FILE_PREFIX="repli_physical"
 else
     usage
@@ -56,9 +60,8 @@ echo "Final Archive: ${BACKUP_BASE_DIR}/${FILENAME}"
 
 # 1. Run mariabackup
 echo ">> 📁 Running mariabackup..."
-docker exec "$CONTAINER" mariabackup --backup \
+docker exec -e MYSQL_PWD="$DB_PASS" "$CONTAINER" mariabackup --backup \
     --user="$DB_USER" \
-    --password="$DB_PASS" \
     --target-dir="$BACKUP_DIR"
 
 if [ $? -ne 0 ]; then

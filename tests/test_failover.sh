@@ -27,13 +27,15 @@ echo "=========================================================="
 test_failover_galera() {
     echo ""
     echo "1. 🔄 Galera Cluster Failover Test..."
-    if ! docker ps --format '{{.Names}}' | grep -q "mariadb-g1"; then
-        echo "⏭️ Skipping Galera failover (mariadb-g1 not running)"
+    GALERA_NODE1=$(docker ps --filter "name=galera_01" --format '{{.Names}}' 2>/dev/null | head -n1 || true)
+    GALERA_NODE1="${GALERA_NODE1:-mariadb-galera_01-1}"
+    if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "$GALERA_NODE1"; then
+        echo "⏭️ Skipping Galera failover ($GALERA_NODE1 not running)"
         return 0
     fi
 
-    echo ">> Stopping mariadb-g1..."
-    docker stop mariadb-g1 >/dev/null 2>&1
+    echo ">> Stopping $GALERA_NODE1..."
+    docker stop "$GALERA_NODE1" >/dev/null 2>&1
     sleep 5
 
     # Check Node 2 status
@@ -44,8 +46,8 @@ test_failover_galera() {
         assert_fail "Galera Failover" "Expected cluster size 2, got $W_SIZE"
     fi
 
-    echo ">> Restarting mariadb-g1..."
-    docker start mariadb-g1 >/dev/null 2>&1
+    echo ">> Restarting $GALERA_NODE1..."
+    docker start "$GALERA_NODE1" >/dev/null 2>&1
     sleep 10
 }
 

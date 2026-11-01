@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-029 — Dynamic Container Resolution, Credential Protection & Python 3.11 CI Compatibility (Issue `#112`)
+- **Date**: `2026-11-02T00:20+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#112` (`fix/issue-112-bash-scripts-cleanup`)
+- **Request**: Resolve container prefix mismatch, physical backup credential exposure, and Python 3.11 syntax error (#3, #6).
+- **Changes**: Dynamically resolved container names with fallback in `scripts/backup_logical.sh`, `scripts/backup_physical.sh`, `scripts/restore_logical.sh`, `scripts/restore_physical.sh`, `tests/test_failover.sh`, and `tests/test_backup_restore.sh`; replaced CLI `--password` with `MYSQL_PWD` in `backup_physical.sh`; fixed f-string syntax in `interactive_runner.py:224`; bumped `VERSION` to `2.0.5` and updated `Changelog`.
+- **Result**: `python -m unittest discover -s tests -v` passed (16/16), `go test -v ./...` passed (63/63), all bash test suites passed, PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-028 — Go Sysbench Connection Credentials & Report Wrapper Cleanup (Issue `#110`)
 - **Date**: `2026-11-02T00:05+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#110` (`fix/issue-110-go-sysbench-report`)
 - **Request**: Resolve Ponytail audit remediation findings for Go packages (#4, #7A).
