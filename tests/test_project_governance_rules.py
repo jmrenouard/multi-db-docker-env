@@ -126,6 +126,18 @@ class TestProjectGovernanceRules(unittest.TestCase):
             f"The following bash scripts do not declare 'set -euo pipefail': {missing}",
         )
 
+    def test_no_french_table_headers_remain(self) -> None:
+        """Verify that no legacy French table headers or logs remain in scripts/ or tests/."""
+        targets = list((ROOT / "scripts").rglob("*.sh")) + list((ROOT / "tests").rglob("*.sh"))
+        banned = ["Nature du Test", "Résultat Réel", "Génération de l'autorité"]
+        violations = [
+            f"{p.relative_to(ROOT)}: '{b}'"
+            for p in targets
+            for b in banned
+            if b in p.read_text(encoding="utf-8", errors="replace")
+        ]
+        self.assertEqual(violations, [], f"Legacy French phrases found: {violations}")
+
 
 if __name__ == "__main__":
     unittest.main()

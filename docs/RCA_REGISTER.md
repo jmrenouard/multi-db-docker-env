@@ -386,6 +386,11 @@
 - **Nature & Justification**: Standardized Markdown table headers, HTML summary cards, and visual architecture diagram labels to English across Galera, Replication, and Load Balancer test suites, replacing legacy French phrases ("Nature du Test", "Résultat Réel", "Attendu", "Statut").
 - **Removal Condition**: Permanent governance requirement for repository standardization.
 
+### APP-012 — Automated Verification of English Localization across All Shell Scripts
+- **Target Files**: `tests/test_haproxy_galera.sh`, `tests/test_project_governance_rules.py`
+- **Nature & Justification**: Standardized HAProxy Galera test script and HTML reporting into English, and implemented permanent automated unit test `test_no_french_table_headers_remain` to mechanically guarantee that no legacy French strings ("Nature du Test", "Résultat Réel", "Génération de l'autorité") are introduced in `scripts/` or `tests/`.
+- **Removal Condition**: Permanent governance rule enforcing English-only engineering standards.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)

@@ -48,7 +48,7 @@ echo "=========================================================="
 # 1. 🏥 Initial Backend Health Status
 echo "1. 🏥 Initial Backend Health Status..."
 write_report "## 1. Backend Health Check"
-write_report "| Nœud | Statut |"
+write_report "| Node | Status |"
 write_report "| --- | --- |"
 
 if ! curl -s "http://$LB_IP:$STATS_PORT/stats" > /dev/null; then
@@ -97,33 +97,33 @@ TEST_RESULTS="$TEST_RESULTS{\"test\":\"Performance\",\"nature\":\"LB Overhead\",
 
 echo ""
 
-# 3. 🧩 Vérification de la Persistance (Sticky Sessions)
-echo "3. 🧩 Test de Persistance / Sticky Sessions..."
+# 3. 🧩 Verification of Session Persistence (Sticky Sessions)
+echo "3. 🧩 Session Persistence / Sticky Sessions Test..."
 write_report "\n## 3. Session Persistence"
 H1=$(MYSQL_PWD="$PASS" mariadb -h $LB_IP -P $LB_PORT -u$USER -sN -e "SELECT @@hostname;")
 H2=$(MYSQL_PWD="$PASS" mariadb -h $LB_IP -P $LB_PORT -u$USER -sN -e "SELECT @@hostname;")
 if [ "$H1" == "$H2" ]; then
     MODE="PERSO (Sticky)"
-    echo "   📍 Mode de connexion : $MODE"
+    echo "   📍 Connection mode : $MODE"
 else
-    MODE="ROUND-ROBIN (Distribué)"
-    echo "   🔄 Mode de connexion : $MODE"
+    MODE="ROUND-ROBIN (Distributed)"
+    echo "   🔄 Connection mode : $MODE"
 fi
-write_report "- **Mode détecté :** $MODE"
+write_report "- **Mode detected :** $MODE"
 TEST_RESULTS="$TEST_RESULTS{\"test\":\"Persistence\",\"nature\":\"Connection Mode\",\"expected\":\"Any\",\"status\":\"PASS\",\"details\":\"Detected $MODE\"},"
 
 echo ""
 
-# 4. 🧨 Simulation de Panne & Failover (Stress-failover)
-echo "4. 🧨 Test de Failover (Simulation de panne sur Node 3)..."
+# 4. 🧨 Failure & Failover Simulation (Stress-failover)
+echo "4. 🧨 Failover Test (Failure simulation on Node 3)..."
 write_report "\n## 4. Failover Simulation (Node 3)"
-echo ">> [ACTION] Arrêt du conteneur Node 3..."
+echo ">> [ACTION] Stopping container Node 3..."
 docker stop "$NODE3_NAME" > /dev/null
 
-echo ">> [WAIT] Attente de la détection HAProxy (5s)..."
+echo ">> [WAIT] Waiting for HAProxy detection (5s)..."
 sleep 5
 
-echo ">> [TEST] Vérification de la continuité de service..."
+echo ">> [TEST] Verifying service continuity..."
 declare -A FAILOVER_COUNT=()
 FAILED_REQS=0
 for ((i=1; i<=10; i++)); do
@@ -137,11 +137,11 @@ done
 
 for host in "${!FAILOVER_COUNT[@]}"; do
     if [ "$host" == "DOWN" ]; then
-        echo "   ❌ ÉCHEC : $host (${FAILOVER_COUNT[$host]} requêtes échouées)"
-        write_report "- ❌ Échec sur **$host** : ${FAILOVER_COUNT[$host]} requêtes"
+        echo "   ❌ FAIL : $host (${FAILOVER_COUNT[$host]} failed requests)"
+        write_report "- ❌ Failure on **$host** : ${FAILOVER_COUNT[$host]} requests"
     else
-        echo "   ✅ OK : $host (${FAILOVER_COUNT[$host]} requêtes)"
-        write_report "- ✅ Succès sur **$host** : ${FAILOVER_COUNT[$host]} requêtes"
+        echo "   ✅ OK : $host (${FAILOVER_COUNT[$host]} requests)"
+        write_report "- ✅ Success on **$host** : ${FAILOVER_COUNT[$host]} requests"
     fi
 done
 
@@ -149,7 +149,7 @@ STATUS="PASS"
 [ $FAILED_REQS -gt 2 ] && STATUS="FAIL"
 TEST_RESULTS="$TEST_RESULTS{\"test\":\"Failover\",\"nature\":\"Service Continuity\",\"expected\":\"< 2 drops\",\"status\":\"$STATUS\",\"details\":\"$FAILED_REQS failed requests out of 10\"},"
 
-echo ">> [ACTION] Redémarrage du conteneur Node 3..."
+echo ">> [ACTION] Restarting container Node 3..."
 docker start "$NODE3_NAME" > /dev/null
 
 # Generate HTML Report
@@ -178,7 +178,7 @@ cat <<EOF > "$REPORT_HTML"
                 <p class="text-slate-400 mt-2 font-light">Galera Load Balancer health and performance report</p>
             </div>
             <div class="text-right">
-                <div class="text-slate-500 text-xs uppercase tracking-widest mb-1">Date du test</div>
+                <div class="text-slate-500 text-xs uppercase tracking-widest mb-1">Test date</div>
                 <div class="text-lg font-semibold text-indigo-300 font-mono">$(date "+%Y-%m-%d %H:%M:%S")</div>
             </div>
         </header>
@@ -189,16 +189,16 @@ cat <<EOF > "$REPORT_HTML"
 
         <div class="glass p-8 rounded-3xl mb-12">
             <h3 class="text-xl font-bold mb-6 flex items-center text-blue-400">
-                <i class="fa-solid fa-vial-circle-check mr-3"></i>Résultats des Tests d'Équilibrage
+                <i class="fa-solid fa-vial-circle-check mr-3"></i>Load Balancing Test Results
             </h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead>
                         <tr class="text-slate-500 uppercase text-[10px] font-bold border-b border-slate-700/50">
-                            <th class="pb-4">Nature du Test</th>
-                            <th class="pb-4">Attendu</th>
-                            <th class="pb-4">Statut</th>
-                            <th class="pb-4">Détails de l'exécution</th>
+                            <th class="pb-4">Test Description</th>
+                            <th class="pb-4">Expected</th>
+                            <th class="pb-4">Status</th>
+                            <th class="pb-4">Execution Details</th>
                         </tr>
                     </thead>
                     <tbody id="test-results"></tbody>
@@ -218,7 +218,7 @@ cat <<EOF > "$REPORT_HTML"
             div.innerHTML = \`
                 <div class="text-slate-500 text-xs uppercase font-bold mb-1">\${stat.node}</div>
                 <div class="text-2xl font-bold \${stat.status === 'UP' ? 'text-green-400' : 'text-red-400'}">\${stat.status}</div>
-                <div class="text-xs text-slate-400 mt-2 italic">Sessions actives: \${stat.sessions}</div>
+                <div class="text-xs text-slate-400 mt-2 italic">Active sessions: \${stat.sessions}</div>
             \`;
             backendStatsContainer.appendChild(div);
         });
