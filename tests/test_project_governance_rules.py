@@ -128,11 +128,13 @@ class TestProjectGovernanceRules(unittest.TestCase):
         )
 
     def test_no_french_table_headers_remain(self) -> None:
-        """Verify that no French table headers, UI labels, comments, or accented text remain in scripts/ or tests/."""
+        """Verify that no French table headers, UI labels, comments, or accented text remain in scripts/, tests/, Makefile, or conf/."""
         import re
 
+        conf_exts = {".sh", ".cnf", ".cfg", ".sql", ".yml", ".yaml", ".conf"}
+        conf_files = [p for p in (ROOT / "conf").rglob("*") if p.is_file() and p.suffix.lower() in conf_exts]
         targets = [
-            p for p in (list((ROOT / "scripts").rglob("*.sh")) + list((ROOT / "tests").rglob("*.sh")))
+            p for p in (list((ROOT / "scripts").rglob("*.sh")) + list((ROOT / "tests").rglob("*.sh")) + [ROOT / "Makefile"] + conf_files)
             if p.is_file()
         ]
 
@@ -147,7 +149,7 @@ class TestProjectGovernanceRules(unittest.TestCase):
             r"construction des arguments|construction de la commande|démarrage du service|demarrage du service|"
             r"exécution d.etcd|execution d.etcd|sans par d[eé]faut|fusionner avec|"
             r"identifiants par d[eé]faut|pour [eé]viter|latence haProxy|latence directe|"
-            r"rapport de performance|audit de performance"
+            r"rapport de performance|audit de performance|statut du|votre_mot_de_passe"
             r")\b",
             re.IGNORECASE,
         )
@@ -163,9 +165,41 @@ class TestProjectGovernanceRules(unittest.TestCase):
         self.assertEqual(
             violations,
             [],
-            f"Residual French strings found in scripts/ or tests/ ({len(violations)} violations):\n"
+            f"Residual French strings found in repository files ({len(violations)} violations):\n"
             + "\n".join(violations),
         )
+
+    def test_version_synchronization_and_ldflags_injection(self) -> None:
+        """Verify cmd/mdb/main.go fallback version matches VERSION and Makefile injects main.version."""
+        import re
+
+        version_file = ROOT / "VERSION"
+        self.assertTrue(version_file.is_file(), "VERSION file must exist at repository root")
+        expected_version = version_file.read_text(encoding="utf-8").strip()
+
+        main_go = ROOT / "cmd" / "mdb" / "main.go"
+        self.assertTrue(main_go.is_file(), "cmd/mdb/main.go must exist")
+        main_content = main_go.read_text(encoding="utf-8")
+
+        match = re.search(r'var\s+version\s*=\s*"([^"]+)"', main_content)
+        self.assertIsNotNone(match, "cmd/mdb/main.go must declare 'var version = ...'")
+        declared_version = match.group(1)
+        self.assertEqual(
+            declared_version,
+            expected_version,
+            f"cmd/mdb/main.go static version '{declared_version}' drifted from VERSION file '{expected_version}'",
+        )
+
+        makefile = ROOT / "Makefile"
+        self.assertTrue(makefile.is_file(), "Makefile must exist at repository root")
+        makefile_content = makefile.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "-X main.version=",
+            makefile_content,
+            "Makefile build-go must inject main.version via go build -ldflags",
+        )
+
 
     def test_no_french_strings_in_go_packages(self) -> None:
         """Verify that default French password or French strings do not appear in Go packages."""

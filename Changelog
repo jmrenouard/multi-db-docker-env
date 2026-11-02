@@ -1,3 +1,9 @@
+2.0.23 2026-11-02
+- fix: localize Patroni target echo strings to English (Makefile) (Closes #148).
+- fix: inject build-time version via ldflags in build-go target & sync cmd/mdb fallback version (Makefile, cmd/mdb).
+- doc: record ACT-049 in docs/ACTION_LOGBOOK.md and RCA-046 in docs/RCA_REGISTER.md (docs).
+- test: expand governance tests to scan Makefile and conf/ for French strings & assert Go version synchronization (tests/test_project_governance_rules.py, cmd/mdb).
+
 2.0.22 2026-11-02
 - fix: generate Mongo 8 TLS certs in gen_ssl_mongo.sh & make docker import optional in mysql_docker.py (scripts, root) (Closes #146).
 - fix: export DB_ROOT_PASSWORD in Makefile to propagate credentials across subshells (Makefile).

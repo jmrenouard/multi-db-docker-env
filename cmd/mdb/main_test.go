@@ -27,7 +27,6 @@ func TestDefaultAndResolveContainer(t *testing.T) {
 func TestResolveVersion(t *testing.T) {
 	orig := version
 	defer func() { version = orig }()
-	version = "2.0.20"
 
 	origContent, hadOrig := os.ReadFile("VERSION")
 	defer func() {
@@ -38,19 +37,19 @@ func TestResolveVersion(t *testing.T) {
 		}
 	}()
 
-	// Fallback to static version when VERSION file is absent
+	// Fallback to package-level version when VERSION file is absent
 	_ = os.Remove("VERSION")
-	if got := resolveVersion(); got != "2.0.20" {
-		t.Errorf("expected fallback 2.0.20, got %s", got)
+	if got := resolveVersion(); got != "2.0.23" {
+		t.Errorf("expected fallback 2.0.23, got %s", got)
 	}
 
 	// Reads and trims VERSION file from disk when present
-	if err := os.WriteFile("VERSION", []byte("  2.0.20 \n"), 0644); err != nil {
+	if err := os.WriteFile("VERSION", []byte("  2.0.23 \n"), 0644); err != nil {
 		t.Fatalf("failed to write test VERSION file: %v", err)
 	}
 
-	if got := resolveVersion(); got != "2.0.20" {
-		t.Errorf("expected 2.0.20 from VERSION file, got %s", got)
+	if got := resolveVersion(); got != "2.0.23" {
+		t.Errorf("expected 2.0.23 from VERSION file, got %s", got)
 	}
 
 	// Trim whitespace / custom release version
@@ -59,5 +58,12 @@ func TestResolveVersion(t *testing.T) {
 	}
 	if got := resolveVersion(); got != "2.0.99-custom" {
 		t.Errorf("expected 2.0.99-custom, got %s", got)
+	}
+
+	// Fallback to ldflags-injected version when VERSION file is absent
+	_ = os.Remove("VERSION")
+	version = "2.0.99-injected"
+	if got := resolveVersion(); got != "2.0.99-injected" {
+		t.Errorf("expected injected version 2.0.99-injected, got %s", got)
 	}
 }
