@@ -66,13 +66,13 @@ make innodb-logs
 
 ```bash
 # Via HAProxy Read-Write (recommended)
-mysql -h 127.0.0.1 -P 6446 -uroot -p"$DB_ROOT_PASSWORD"
+MYSQL_PWD="$DB_ROOT_PASSWORD" mysql -h 127.0.0.1 -P 6446 -uroot
 
 # Via HAProxy Read-Only
-mysql -h 127.0.0.1 -P 6447 -uroot -p"$DB_ROOT_PASSWORD"
+MYSQL_PWD="$DB_ROOT_PASSWORD" mysql -h 127.0.0.1 -P 6447 -uroot
 
 # Direct to primary node
-mysql -h 127.0.0.1 -P 4411 -uroot -p"$DB_ROOT_PASSWORD"
+MYSQL_PWD="$DB_ROOT_PASSWORD" mysql -h 127.0.0.1 -P 4411 -uroot
 ```
 
 ## Group Replication Configuration
@@ -91,7 +91,7 @@ mysql -h 127.0.0.1 -P 4411 -uroot -p"$DB_ROOT_PASSWORD"
 make test-innodb
 ```
 
-Test suite validates **15 checks across 10 test groups**:
+Test suite validates **20 checks across 14 test groups**:
 
 | # | Test | Description |
 | :--- | :--- | :--- |
@@ -105,6 +105,10 @@ Test suite validates **15 checks across 10 test groups**:
 | 8 | Concurrent Writes | 30 rows via Router |
 | 9 | Router Routing | RW port routes to primary |
 | 10 | GTID Consistency | GTID active across cluster |
+| 11 | Extended CRUD & Transaction Integrity | CRUD operations: insert, update, delete |
+| 12 | Configuration Consistency | Group replication mode, binlog format, GTID consistent |
+| 13 | TLS/SSL Enforcement Check | require_secure_transport=ON and active TLS cipher |
+| 14 | Performance Micro-Benchmark | 20/20 queries routed via Router |
 
 Reports generated in `./reports/` (Markdown + HTML).
 

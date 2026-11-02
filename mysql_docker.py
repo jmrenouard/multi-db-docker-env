@@ -2,8 +2,13 @@ import argparse
 import secrets
 import string
 import os
-from docker import from_env
-import docker 
+try:
+    import docker
+    from docker import from_env
+except ImportError:
+    docker = None
+    def from_env():
+        raise RuntimeError("The 'docker' package is required (pip install docker)")
 from pathlib import Path
 
 script_dir=Path(__file__).resolve().parent
