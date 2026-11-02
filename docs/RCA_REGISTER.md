@@ -323,6 +323,19 @@
 
 ---
 
+### RCA-044 — Hardcoded Replication Credentials in Cluster Scripts & Omission of Conf Scripts from Governance Audits
+- **Date / Linked Action**: `2026-11-02` (`ACT-047` / Issue `#144`)
+- **Observed Symptom**: `conf/innodb-cluster/setup_cluster.sh` and `scripts/pgpool/setup_replication.sh` hardcoded replication credentials (`'replpass'`, `'replipass'`), preventing custom `.env` overrides; `tests/test_config.sh` did not validate `conf/**/*.sh` scripts; `tests/test_project_governance_rules.py` only scanned `scripts/` and `tests/` for `set -euo pipefail` and did not verify absence of residual French strings in Go packages (`votre_mot_de_passe_super_secret`).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why were replication passwords hardcoded?* Initial setup scripts were created as standalone bootstrapping PoCs without sourcing `.env` or parameterizing replication variables.
+  2. *Why were `conf/**/*.sh` scripts omitted from configuration validation?* `tests/test_config.sh` only listed files under `scripts/` in `SCRIPTS_TO_CHECK`.
+  3. *Why did governance tests not scan `conf/`?* `test_all_bash_scripts_have_set_euo_pipefail` targeted `scripts/` and `tests/`, assuming `conf/` only contained static `.cnf` and `.sql` configuration files.
+  4. *Why did Go packages lack a French string governance test?* `test_no_french_table_headers_remain` only inspected shell scripts.
+- **Applied Change / Fix**: Sourced `.env` at startup and parameterized `REPL_USER` and `REPL_PASS` with default fallbacks in `conf/innodb-cluster/setup_cluster.sh` and `scripts/pgpool/setup_replication.sh`; added `conf/innodb-cluster/setup_cluster.sh`, `conf/mongo-rs/setup_rs.sh`, and `conf/mongo-rs/setup_rs_mongo8.sh` to `tests/test_config.sh` with `set -euo pipefail` verification; extended `test_all_bash_scripts_have_set_euo_pipefail` in `tests/test_project_governance_rules.py` to scan `conf/**/*.sh`; added `test_no_french_strings_in_go_packages` asserting absence of `votre_mot_de_passe_super_secret` across `pkg/` and `cmd/`.
+- **Result & Non-Regression Test**: Verified via `go test -v ./...` (66/66), `python -m unittest discover -s tests -v` (19/19, 6 skipped), `bash tests/test_config.sh`, and `bash tests/test_secure_password.sh` (34/34).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters

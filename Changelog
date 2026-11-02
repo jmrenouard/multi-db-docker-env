@@ -1,3 +1,9 @@
+2.0.21 2026-11-02
+- fix: source .env and parameterize replication credentials in InnoDB and PgPool setup scripts (conf/innodb-cluster, scripts/pgpool) (Closes #144).
+- doc: record ACT-047 in docs/ACTION_LOGBOOK.md and RCA-044 in docs/RCA_REGISTER.md (docs).
+- test: add conf setup scripts and set -euo pipefail validation to config test suite (tests/test_config.sh).
+- test: extend governance rules to scan conf/**/*.sh for strict error mode and assert no French strings in Go code (tests/test_project_governance_rules.py).
+
 2.0.20 2026-11-02
 - fix: pass MYSQL_PWD in container environment during Sysbench execution (pkg/bench) (Closes #142).
 - fix: sync Go mdb CLI version dynamically with VERSION file (cmd/mdb).

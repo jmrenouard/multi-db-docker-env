@@ -4,7 +4,15 @@
 # Installs GR plugin via SQL, resets errant GTIDs, configures replication
 set -euo pipefail
 
+if [ -f .env ]; then
+    set -a
+    . ./.env
+    set +a
+fi
+
 DB_PASS="${DB_ROOT_PASSWORD:-rootpass}"
+REPL_USER="${REPL_USER:-repl_user}"
+REPL_PASS="${REPL_PASS:-repl_password}"
 NODES=("mysql_node1" "mysql_node2" "mysql_node3")
 
 echo "=========================================================="
@@ -54,10 +62,10 @@ echo "4. 👤 Creating replication user on all nodes..."
 for node in "${NODES[@]}"; do
     docker exec -e MYSQL_PWD="$DB_PASS" "$node" mysql -uroot -e "
         SET SQL_LOG_BIN=0;
-        CREATE USER IF NOT EXISTS 'repl_user'@'%' IDENTIFIED BY 'replpass';
-        GRANT REPLICATION SLAVE ON *.* TO 'repl_user'@'%';
-        GRANT CONNECTION_ADMIN ON *.* TO 'repl_user'@'%';
-        GRANT BACKUP_ADMIN ON *.* TO 'repl_user'@'%';
+        CREATE USER IF NOT EXISTS '${REPL_USER}'@'%' IDENTIFIED BY '${REPL_PASS}';
+        GRANT REPLICATION SLAVE ON *.* TO '${REPL_USER}'@'%';
+        GRANT CONNECTION_ADMIN ON *.* TO '${REPL_USER}'@'%';
+        GRANT BACKUP_ADMIN ON *.* TO '${REPL_USER}'@'%';
         FLUSH PRIVILEGES;
         SET SQL_LOG_BIN=1;
     " 2>/dev/null
@@ -68,7 +76,7 @@ done
 echo ""
 echo "5. ⛓️  Starting Group Replication on primary (mysql_node1)..."
 docker exec -e MYSQL_PWD="$DB_PASS" mysql_node1 mysql -uroot -e "
-    CHANGE REPLICATION SOURCE TO SOURCE_USER='repl_user', SOURCE_PASSWORD='replpass' FOR CHANNEL 'group_replication_recovery';
+    CHANGE REPLICATION SOURCE TO SOURCE_USER='${REPL_USER}', SOURCE_PASSWORD='${REPL_PASS}' FOR CHANNEL 'group_replication_recovery';
     SET GLOBAL group_replication_recovery_use_ssl=ON;
     SET GLOBAL group_replication_bootstrap_group=ON;
     START GROUP_REPLICATION;
@@ -83,7 +91,7 @@ echo "6. ⛓️  Joining secondary nodes..."
 for node in "mysql_node2" "mysql_node3"; do
     echo "   >> Joining $node..."
     docker exec -e MYSQL_PWD="$DB_PASS" "$node" mysql -uroot -e "
-        CHANGE REPLICATION SOURCE TO SOURCE_USER='repl_user', SOURCE_PASSWORD='replpass' FOR CHANNEL 'group_replication_recovery';
+        CHANGE REPLICATION SOURCE TO SOURCE_USER='${REPL_USER}', SOURCE_PASSWORD='${REPL_PASS}' FOR CHANNEL 'group_replication_recovery';
         SET GLOBAL group_replication_recovery_use_ssl=ON;
         START GROUP_REPLICATION;
     " 2>/dev/null
