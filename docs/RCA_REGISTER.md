@@ -293,6 +293,17 @@
 
 ---
 
+### RCA-032 — Operator Precedence in Provider Options Subshell & Incomplete French Localization Scan
+- **Date / Linked Action**: `2026-11-02` (`ACT-039` / Issue `#132`)
+- **Observed Symptom**: (1) In `tests/test_galera.sh:290`, `current=$(echo "$PROVIDER_OPTS" | grep -oP "$key = \K[^;]+" || true | xargs)` left trailing whitespace untrimmed when `$key` matched; (2) Residual French comments, UI strings, and HTML labels persisted in `scripts/patroni/entrypoint_etcd.sh`, `scripts/patroni/generate_certs.sh`, `tests/test_galera.sh`, `tests/test_perf_galera.sh`, `tests/test_perf_repli.sh`, and `tests/test_haproxy_galera.sh` because `test_no_french_table_headers_remain` only checked 3 hardcoded table header strings.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Operator Precedence*: In Bash, pipe `|` binds tighter than logical OR `||`. The syntax `grep ... || true | xargs` is parsed as `(grep ...) || (true | xargs)`. When `grep` succeeded, `||` short-circuited and skipped `xargs` completely, leaving extracted values untrimmed.
+  2. *Incomplete Governance Scan*: Early localization PRs checked and translated Markdown table headers and log messages, but missed internal bash comments, HTML UI cards, and search placeholders. The unit test `test_no_french_table_headers_remain` was overly specific and did not scan for French accents or common French terms.
+- **Applied Change / Fix**: Moved `| xargs` before `|| true` in `tests/test_galera.sh:290` (`grep ... | xargs || true`); translated all 26 residual French lines across the 6 affected scripts into English; expanded `test_no_french_table_headers_remain` with regex covering accented characters and French tokens.
+- **Result & Non-Regression Test**: All tests pass cleanly: `tests/test_project_governance_rules.py` (6/6), `bash tests/test_config.sh`, `bash tests/test_secure_password.sh` (34/34), `bash tests/test_profiles.sh`, and `go test -v ./...` (63/63).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
