@@ -99,7 +99,11 @@ func (r *SysbenchRunner) Run(ctx context.Context) (*SysbenchResult, error) {
 		args = append(args, "--mysql-db="+r.cfg.Database)
 	}
 	args = append(args, "run")
-	out, err := r.cfg.Executor.Exec(ctx, r.cfg.Container, nil, args...)
+	var env []string
+	if r.cfg.Password != "" {
+		env = []string{"MYSQL_PWD=" + r.cfg.Password}
+	}
+	out, err := r.cfg.Executor.Exec(ctx, r.cfg.Container, env, args...)
 	if err != nil && out == "" {
 		return nil, fmt.Errorf("sysbench execution failed: %w", err)
 	}

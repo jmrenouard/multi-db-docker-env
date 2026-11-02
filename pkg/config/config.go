@@ -21,7 +21,7 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
-		RootPassword:   "votre_mot_de_passe_super_secret",
+		RootPassword:   "rootpass",
 		DefaultService: "mariadb118",
 		SSLDir:         "ssl",
 		ReportsDir:     "reports",

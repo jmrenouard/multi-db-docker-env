@@ -11,10 +11,12 @@ import (
 type mockExecutor struct {
 	out     string
 	err     error
+	lastEnv []string
 	lastCmd []string
 }
 
 func (m *mockExecutor) Exec(ctx context.Context, container string, env []string, cmd ...string) (string, error) {
+	m.lastEnv = env
 	m.lastCmd = cmd
 	return m.out, m.err
 }
@@ -102,6 +104,24 @@ func TestSysbenchRunner_Run(t *testing.T) {
 		if !strings.Contains(cmdStr, expected) {
 			t.Errorf("expected cmd to contain %q, got: %s", expected, cmdStr)
 		}
+	}
+
+	// Verify MYSQL_PWD is in env
+	if len(mock.lastEnv) == 0 || mock.lastEnv[0] != "MYSQL_PWD=secret" {
+		t.Errorf("expected MYSQL_PWD=secret in env, got: %v", mock.lastEnv)
+	}
+
+	// Verify empty password produces no MYSQL_PWD in env
+	mockNoPwd := &mockExecutor{out: sampleSysbenchOutput}
+	runnerNoPwd := NewSysbenchRunner(SysbenchConfig{
+		Container: "node1",
+		Executor:  mockNoPwd,
+	})
+	if _, err := runnerNoPwd.Run(context.Background()); err != nil {
+		t.Fatalf("Run failed for runnerNoPwd: %v", err)
+	}
+	if len(mockNoPwd.lastEnv) != 0 {
+		t.Errorf("expected empty env when password is not set, got: %v", mockNoPwd.lastEnv)
 	}
 
 	runnerNil := NewSysbenchRunner(SysbenchConfig{Container: "node1"})
