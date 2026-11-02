@@ -134,7 +134,7 @@ write_report "\n## Galera Replication State Information"
 write_report "\`\`\`sql\n$WSREP_STATUS\n\`\`\`"
 
 write_report "\n## Galera Test Results"
-write_report "| Nature du Test | Attendu | Statut | Résultat Réel / Détails |"
+write_report "| Test Description | Expected | Status | Actual Result / Details |"
 write_report "| --- | --- | --- | --- |"
 
 echo -e "\n2. 🧪 Performing Synchronous Replication Test..."
@@ -499,7 +499,7 @@ cat <<EOF > "$REPORT_HTML"
 
         <div class="glass p-8 rounded-3xl">
             <h3 class="text-xl font-bold mb-6 flex items-center text-indigo-400">
-                <i class="fa-solid fa-diagram-project mr-3"></i>Architecture Visuelle
+                <i class="fa-solid fa-diagram-project mr-3"></i>Visual Architecture
             </h3>
             <div class="mermaid flex justify-center py-4">
 graph TD
@@ -525,16 +525,16 @@ graph TD
 
         <div class="glass p-8 rounded-3xl">
             <h3 class="text-xl font-bold mb-6 flex items-center text-blue-400">
-                <i class="fa-solid fa-list-check mr-3"></i>Résultats des Tests
+                <i class="fa-solid fa-list-check mr-3"></i>Test Results
             </h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                 <thead>
                     <tr class="text-slate-500 uppercase text-[10px] font-bold border-b border-slate-700/50">
-                        <th class="pb-4">Nature du Test</th>
-                        <th class="pb-4">Attendu</th>
-                        <th class="pb-4">Statut</th>
-                        <th class="pb-4">Résultat Réel / Détails</th>
+                        <th class="pb-4">Test Description</th>
+                        <th class="pb-4">Expected</th>
+                        <th class="pb-4">Status</th>
+                        <th class="pb-4">Actual Result / Details</th>
                     </tr>
                 </thead>
                     <tbody id="test-results">
