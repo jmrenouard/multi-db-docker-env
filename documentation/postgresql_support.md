@@ -23,7 +23,7 @@ PostgreSQL is supported in the multi-db-docker-env project as standalone instanc
 │                  │ Supervisord          │ Streaming Replication  │
 ├──────────────────┼──────────────────────┼───────────────────────┤
 │ make postgres17  │ make patroni-up      │ make pgpool-up         │
-│ make test-all    │ make test-patroni    │ make test-pgpool       │
+│ make test-all    │ make patroni-test    │ make test-pgpool       │
 └──────────────────┴──────────────────────┴───────────────────────┘
 ```
 
@@ -82,7 +82,7 @@ See [patroni_cluster.md](patroni_cluster.md) for full details.
 ```bash
 make patroni-up        # Start cluster
 make patroni-status    # Check cluster status
-make test-patroni      # Run functional tests
+make patroni-test      # Run functional tests (mdb test patroni)
 make patroni-down      # Stop cluster
 ```
 
@@ -132,10 +132,10 @@ make pgpool-down       # Stop cluster
 | :--- | :--- | :--- | :--- |
 | **Nodes** | 1 | 3 PG + 3 ETCD | 3 PG |
 | **Automatic Failover** | ❌ | ✅ | ❌ |
-| **Connection Pooling** | ❌ | ❌ | ✅ |
+| **Connection Pooling** | ❌ | Supported (PgBouncer: 6432) | ✅ (PgPool-II: 5432 / 9999) |
 | **Load Balancing** | ❌ | ✅ (HAProxy) | ✅ (PgPool + HAProxy) |
 | **Read/Write Splitting** | ❌ | ✅ | ✅ |
 | **Replication** | ❌ | Synchronous | Async Streaming |
-| **TLS/SSL** | ❌ | ✅ Mutual TLS | ❌ (trust in lab) |
-| **Test Count** | 1 | 4 | 20 |
+| **TLS/SSL** | ❌ | ✅ Mutual TLS | ✅ Supported (gen-ssl-pgpool) |
+| **Test Count** | 1 | 11 (8 groups) | 20 |
 | **Use Case** | Dev/Testing | Production HA | Pool + Read Scale |

@@ -42,6 +42,8 @@ patroni-ps:
 test-patroni: ## Run functional tests on the Patroni cluster
 	@bash ./tests/test_patroni.sh
 
+patroni-test: test-patroni ## Alias for test-patroni
+
 # --- PGPOOL-II CLUSTER ---
 PGPOOL_COMPOSE = docker-compose-pgpool.yml
 

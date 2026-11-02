@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-051 — Patroni & PostgreSQL Docs Sync with CLI and Tests (Issue `#152`)
+- **Date**: `2026-11-02T09:15+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#152` (`docs/issue-152-patroni-docs-sync`)
+- **Request**: Sync Patroni & PG docs with ports (5000/5001/6432/7000/8008/2379), PGPASSWORD examples, mdb CLI commands, and 8 test groups; bump to 2.0.25.
+- **Changes**: Updated `patroni_cluster.md`, `postgresql_support.md`, `README.md`, `Makefile`, `VERSION`, `cmd/mdb`; updated `Changelog` and registers.
+- **Result**: `unittest` (21/21), `go test` (67/67), `test_config.sh` pass. Diff < 15k.
+
+---
+
 ### ACT-050 — Mongo 8 TLS Parity & Script Resilience (Issue `#150`)
 - **Date**: `2026-11-02T08:30+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#150` (`feat/issue-150-mongo8-tls-parity`)
 - **Request**: Add Mongo 8 TLS mounts/flags, 3-tier run_mongosh, Makefile prereqs, RequiredCerts, tests.
