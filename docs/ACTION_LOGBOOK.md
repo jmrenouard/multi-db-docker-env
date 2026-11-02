@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-034 — Test Suites Strict Error Handling, Arithmetic Guards & Governance Scanner (Issue `#122`)
+- **Date**: `2026-11-02T02:25+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#122` (`fix/issue-122-tests-strict-mode-and-governance`)
+- **Request**: Enforce `set -euo pipefail` across remaining test suites (`tests/test_galera.sh`, `tests/test_repli.sh`, `tests/test_lb_galera.sh`, `tests/test_haproxy_galera.sh`, `tests/test_mongo_rs.sh`, `tests/test_perf_galera.sh`, `tests/test_perf_repli.sh`, `tests/test_secure_password.sh`), harden arithmetic increments and associative array lookups under strict mode, and add automated governance rule `test_all_bash_scripts_have_set_euo_pipefail` in `tests/test_project_governance_rules.py`.
+- **Changes**: Added `set -euo pipefail` to 8 test suites; guarded associative array lookups `${hosts_count[$host]:-0}` and incremented safely; added `test_all_bash_scripts_have_set_euo_pipefail` asserting 100% shell compliance across `scripts/` and `tests/`; bumped `VERSION` to `2.0.10`; updated `Changelog`.
+- **Result**: `tests/test_project_governance_rules.py` (5/5), `unittest discover` (17/17), `tests/test_secure_password.sh` (34/34), `tests/test_profiles.sh`, `tests/test_config.sh`, and `go test -v ./...` (63/63) passed cleanly. PR diff size < 15,000 characters.
+
+---
+
 ### ACT-033 — Bash Strict Error Handling, Profiles Quoting & Governance Rule (Issue `#120`)
 - **Date**: `2026-11-02T02:00+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#120` (`fix/issue-120-strict-bash-and-profiles-quoting`)
 - **Request**: Enforce `set -euo pipefail` across remaining scripts (Finding 4), fix heredoc quoting in `gen_profiles.sh` (M1 remediation), fix arithmetic increments under strict mode, and add governance rule.

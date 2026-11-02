@@ -1,3 +1,9 @@
+2.0.10 2026-11-02
+- fix: enforce strict error handling set -euo pipefail across remaining test suites (tests/test_galera.sh, tests/test_repli.sh, tests/test_lb_galera.sh, tests/test_haproxy_galera.sh, tests/test_mongo_rs.sh, tests/test_perf_galera.sh, tests/test_perf_repli.sh, tests/test_secure_password.sh) (Closes #122).
+- fix: harden bash arithmetic increments and associative array lookups under strict mode in load balancing and failover tests.
+- test: add automated governance rule test_all_bash_scripts_have_set_euo_pipefail verifying 100% shell compliance in scripts/ and tests/ (tests/test_project_governance_rules.py).
+- doc: record ACT-034 in docs/ACTION_LOGBOOK.md and APP-009 in docs/RCA_REGISTER.md.
+
 2.0.9 2026-11-02
 - fix: resolve heredoc backslash unescaping for MYSQL_PWD in profile generation (scripts/gen_profiles.sh) (Closes #120).
 - fix: enforce strict error handling set -euo pipefail across all 17 remaining Bash scripts.

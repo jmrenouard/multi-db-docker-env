@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Configuration
 if [ -f .env ]; then
@@ -49,14 +50,15 @@ echo "1. ⏳ Iterating through Load Balancer ($ITERATIONS connections)..."
 
 for i in $(seq 1 $ITERATIONS); do
     # Use -sN for robust parsing of single values
-    RESULT=$(MYSQL_PWD="$PASS" mariadb -h "$LB_HOST" -P "$LB_PORT" -u "$USER" -sN -e "SELECT @@hostname, (SELECT VARIABLE_VALUE FROM information_schema.SESSION_STATUS WHERE VARIABLE_NAME='Ssl_cipher');" 2>/dev/null)
-    if [ $? -eq 0 ]; then
+    RESULT=$(MYSQL_PWD="$PASS" mariadb -h "$LB_HOST" -P "$LB_PORT" -u "$USER" -sN -e "SELECT @@hostname, (SELECT VARIABLE_VALUE FROM information_schema.SESSION_STATUS WHERE VARIABLE_NAME='Ssl_cipher');" 2>/dev/null || true)
+    if [ -n "$RESULT" ]; then
         HOSTNAME=$(echo "$RESULT" | awk '{print $1}')
         SSL=$(echo "$RESULT" | awk '{print $2}')
         [ -z "$SSL" ] || [ "$SSL" == "NULL" ] && SSL="DISABLED"
         
         echo "   [Connection $i] -> $HOSTNAME (SSL: $SSL)"
-        ((hosts_count["$HOSTNAME"]++))
+        current_cnt="${hosts_count["$HOSTNAME"]:-0}"
+        hosts_count["$HOSTNAME"]=$((current_cnt + 1))
         RAW_LOGS="$RAW_LOGS[Connection $i] -> $HOSTNAME (SSL: $SSL)\n"
     else
         echo "   [Connection $i] -> ❌ FAILED"

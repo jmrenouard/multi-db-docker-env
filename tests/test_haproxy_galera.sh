@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # test_haproxy_galera.sh - HAProxy Load Balancer Validation for Galera
 
 # Configuration
@@ -127,8 +128,11 @@ declare -A FAILOVER_COUNT
 FAILED_REQS=0
 for ((i=1; i<=10; i++)); do
     HOSTNAME=$(MYSQL_PWD="$PASS" mariadb -h $LB_IP -P $LB_PORT -u$USER -sN -e "SELECT @@hostname;" 2>/dev/null || echo "DOWN")
-    ((FAILOVER_COUNT[$HOSTNAME]++))
-    if [ "$HOSTNAME" == "DOWN" ]; then ((FAILED_REQS++)); fi
+    current_cnt="${FAILOVER_COUNT[$HOSTNAME]:-0}"
+    FAILOVER_COUNT[$HOSTNAME]=$((current_cnt + 1))
+    if [ "$HOSTNAME" == "DOWN" ]; then
+        FAILED_REQS=$((FAILED_REQS + 1))
+    fi
 done
 
 for host in "${!FAILOVER_COUNT[@]}"; do
