@@ -412,6 +412,11 @@
 - **Nature & Justification**: Reconciled historical documentation drifts against actual Compose port mappings (Galera Node 1 SSH 24001, Replication 3411-3413) and synchronized `makefile.md` to document all HA cluster targets (Patroni, PgPool-II, InnoDB Cluster, MongoDB), Go CLI commands, MySQLTuner targets, and E2E verification suites while removing phantom `pgpass`/`pgclient` targets and duplicate `make start`.
 - **Removal Condition**: Permanent documentation baseline aligned with current repository capabilities.
 
+### APP-015 — Go CLI and Automation Scripts Reference (Milestone 3 PR 2)
+- **Target Files**: `README.md`, `documentation/scripts.md`
+- **Nature & Justification**: Added comprehensive documentation for the Go `mdb` CLI orchestrator (v2.0) commands (`version`, `config`, `topologies`, `up`, `down`, `status`, `test`, `bench`, `pki`, `report`), automation utilities (`gen_pki.sh`, `run_mysqltuner.sh`, `aggregate_reports.sh`), and integrated living governance registers (`docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`) into `README.md`.
+- **Removal Condition**: Permanent documentation baseline for v2.0 orchestrator and scripts.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)

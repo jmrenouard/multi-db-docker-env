@@ -1,3 +1,9 @@
+2.0.18 2026-11-02
+- doc: document Go mdb CLI orchestrator, commands, and options in README and scripts reference (README.md, documentation/scripts.md) (Closes #138).
+- doc: document gen_pki.sh, run_mysqltuner.sh, and aggregate_reports.sh with flags and environment options (documentation/scripts.md).
+- doc: add project governance rules, living registers, and updated project structure to README (README.md).
+- doc: record ACT-042 in docs/ACTION_LOGBOOK.md and APP-015 in docs/RCA_REGISTER.md.
+
 2.0.17 2026-11-02
 - fix: correct Galera Node 1 SSH port to 24001 in architecture documentation (documentation/architecture.md) (Closes #136).
 - fix: correct MariaDB replication port range to 3411-3413 in English and French catalogs (documentation/supported_products.md, documentation/supported_products_fr.md).

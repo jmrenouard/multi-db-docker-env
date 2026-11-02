@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-042 — Go mdb CLI, Automation Scripts Reference & README Governance Sync (Issue `#138`)
+- **Date**: `2026-11-02T05:00+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#138` (`doc/issue-138-cli-scripts-readme`)
+- **Request**: Fully document the compiled Go `mdb` CLI (v2.0), utility automation scripts (`gen_pki.sh`, `run_mysqltuner.sh`, `aggregate_reports.sh`), and synchronize `README.md` with living governance registers and updated project directory structure.
+- **Changes**: Added `make build-go` and `make test-go` to General Commands in `README.md`; added `## 🚀 Go mdb CLI Orchestrator (v2.0)` with commands table and `## 📜 Project Governance & Living Registers` in `README.md`; updated Project Structure tree with `cmd/mdb/`, `pkg/`, `go.mod`, and `docs/`; documented `scripts/gen_pki.sh`, `scripts/run_mysqltuner.sh`, `scripts/aggregate_reports.sh`, and Go CLI command reference in `documentation/scripts.md`; bumped `VERSION` to `2.0.18`; updated `Changelog`.
+- **Result**: All test suites pass cleanly (`test_project_governance_rules.py`, `unittest`, `test_secure_password.sh`, `test_config.sh`, `go test -v ./...`). PR diff size strictly < 15,000 characters.
+
+---
+
 ### ACT-041 — Architecture Port Reconciliation, Makefile Parity & Governance Index (Issue `#136`)
 - **Date**: `2026-11-02T04:55+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#136` (`doc/issue-136-ports-makefile-index`)
 - **Request**: Correct documented ports (Galera Node 1 SSH 24001, MariaDB Replication 3411-3413), deduplicate Makefile commands (remove duplicate `make start` and phantom `pgpass`/`pgclient`, add `postgres15`, Go CLI, HA clusters, and E2E targets), and expand Governance table in documentation index.
