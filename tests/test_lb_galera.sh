@@ -98,7 +98,7 @@ else
 fi
 
 write_report "\n## Test Results"
-write_report "| Nature du Test | Attendu | Statut | Résultat Réel / Détails |"
+write_report "| Test Description | Expected | Status | Actual Result / Details |"
 write_report "| --- | --- | --- | --- |"
 write_report "| $LB_NATURE | $LB_EXPECTED | $LB_STATUS | $LB_DETAILS |"
 
@@ -140,7 +140,7 @@ cat <<'EOF' > "$REPORT_HTML"
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             <div class="glass p-8 rounded-3xl">
-                <h3 class="text-xl font-bold mb-2 text-emerald-400">Statut Global</h3>
+                <h3 class="text-xl font-bold mb-2 text-emerald-400">Overall Status</h3>
                 <div class="text-xs text-slate-500 mb-6 uppercase tracking-widest font-bold">Health check</div>
                 <div class="flex items-center space-x-4">
                     <div class="w-4 h-4 rounded-full REPLACE_LB_COLOR animate-pulse"></div>
@@ -156,16 +156,16 @@ cat <<'EOF' > "$REPORT_HTML"
 
         <div class="glass p-8 rounded-3xl mb-12">
             <h3 class="text-xl font-bold mb-6 text-blue-400 flex items-center italic">
-                <i class="fa-solid fa-list-check mr-3"></i>Résultats des Tests
+                <i class="fa-solid fa-list-check mr-3"></i>Test Results
             </h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead>
                         <tr class="text-slate-500 uppercase text-[10px] font-bold border-b border-slate-700/50">
-                            <th class="pb-4">Nature du Test</th>
-                            <th class="pb-4">Attendu</th>
-                            <th class="pb-4">Statut</th>
-                            <th class="pb-4">Résultat Réel / Détails</th>
+                            <th class="pb-4">Test Description</th>
+                            <th class="pb-4">Expected</th>
+                            <th class="pb-4">Status</th>
+                            <th class="pb-4">Actual Result / Details</th>
                         </tr>
                     </thead>
                     <tbody id="test-results"></tbody>

@@ -381,6 +381,11 @@
 - **Nature & Justification**: Standardized comments and startup status logs to English across Patroni cluster orchestrators and MariaDB entrypoint scripts, removing legacy French comments and echo statements.
 - **Removal Condition**: Permanent governance requirement for repository standardization.
 
+### APP-011 — English Localization for Galera and Replication Test Reports
+- **Target Files**: `tests/test_galera.sh`, `tests/test_repli.sh`, `tests/test_lb_galera.sh`
+- **Nature & Justification**: Standardized Markdown table headers, HTML summary cards, and visual architecture diagram labels to English across Galera, Replication, and Load Balancer test suites, replacing legacy French phrases ("Nature du Test", "Résultat Réel", "Attendu", "Statut").
+- **Removal Condition**: Permanent governance requirement for repository standardization.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)

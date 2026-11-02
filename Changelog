@@ -1,3 +1,7 @@
+2.0.13 2026-11-02
+- fix: localize Markdown and HTML report table headers to English in Galera and Replication test suites (tests/test_galera.sh, tests/test_repli.sh, tests/test_lb_galera.sh) (Closes #128).
+- doc: record ACT-037 in docs/ACTION_LOGBOOK.md and APP-011 in docs/RCA_REGISTER.md.
+
 2.0.12 2026-11-02
 - fix: localize all remaining French log messages and comments in Patroni and MariaDB startup scripts to English (scripts/patroni/entrypoint_etcd.sh, scripts/patroni/entrypoint_node.sh, scripts/patroni/generate_certs.sh, scripts/start_mariadb.sh) (Closes #126).
 - doc: record ACT-036 in docs/ACTION_LOGBOOK.md and APP-010 in docs/RCA_REGISTER.md.

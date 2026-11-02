@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-037 — Galera & Replication Test Suites English Localization (Issue `#128`)
+- **Date**: `2026-11-02T03:22+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#128` (`fix/issue-128-galera-repli-localization`)
+- **Request**: Enforce English-only policy across Galera and Replication test suites (Finding 5 remediation part 2).
+- **Changes**: Localized Markdown and HTML report table headers and section titles in `tests/test_galera.sh`, `tests/test_repli.sh`, and `tests/test_lb_galera.sh`; bumped `VERSION` to `2.0.13`; updated `Changelog`.
+- **Result**: `tests/test_project_governance_rules.py` (5/5), `unittest discover` (17/17, 6 skipped), `tests/test_secure_password.sh` (34/34), `tests/test_profiles.sh`, `tests/test_config.sh`, and `go test -v ./...` (63/63) passed cleanly. PR diff size < 15,000 characters.
+
+---
+
 ### ACT-036 — Patroni & MariaDB Scripts English Localization (Issue `#126`)
 - **Date**: `2026-11-02T03:15+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#126` (`fix/issue-126-english-localization`)
 - **Request**: Enforce English-only policy across Patroni and MariaDB startup scripts (Finding 5 remediation part 1).
