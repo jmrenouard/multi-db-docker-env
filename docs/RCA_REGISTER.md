@@ -280,6 +280,19 @@
 
 ---
 
+### RCA-031 — Latent Script Crashes under `set -euo pipefail` (Arithmetic, Pipestatus, and Unbound Arrays)
+- **Date / Linked Action**: `2026-11-02` (`ACT-035` / Issue `#124`)
+- **Observed Symptom**: Adding `set -euo pipefail` to bash scripts without thorough guards introduced latent runtime exits: (1) `tests/test_galera.sh:80` `((MATCH_COUNT++))` returned exit status 1 when `MATCH_COUNT=0`, aborting cluster readiness checks; (2) `tests/test_galera.sh:250` expected duplicate key insert error 1062 to be captured in `ERR_MSG=$(...)`, but non-zero status crashed the script before error validation; (3) `tests/test_galera.sh:290` provider options grep exited with 1 on missing keys, failing the pipeline under `pipefail`; (4) `tests/test_repli.sh:82-83` `grep "Slave_IO_Running:"` failed if replication hadn't initialized yet, killing the wait loop; (5) `tests/test_lb_galera.sh:87` `${#hosts_count[@]}` crashed with `unbound variable` under `set -u` when 0 requests succeeded because `declare -A hosts_count` was uninitialized.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Arithmetic*: In Bash `((expr))`, if expression evaluates to 0, return status is 1. Under `set -e`, this triggers an immediate script exit.
+  2. *Command substitution*: Command substitutions `$(...)` inherit `set -e`; intentional failures must append `|| true`.
+  3. *Pipefail*: Under `pipefail`, any non-zero exit in a pipeline causes the entire pipeline to exit non-zero; optional grep matches must be guarded.
+  4. *Unbound array*: In Bash 5 under `set -u`, querying the length of an associative array declared with bare `declare -A arr` before adding keys raises an unbound variable error.
+- **Applied Change / Fix**: Replaced `((var++))` with `var=$((var + 1))`; appended `|| true` to command substitutions and pipeline greps; initialized associative arrays as `declare -A arr=()`; added `|| true` to `get_latency()` ping.
+- **Result & Non-Regression Test**: All tests pass cleanly without latent traps under `set -euo pipefail`; verified via `bash tests/test_config.sh`, `bash tests/test_profiles.sh`, and `go test -v ./...`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters

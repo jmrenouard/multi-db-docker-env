@@ -78,7 +78,7 @@ function get_latency() {
     local total_time=0
     for ((i=1; i<=5; i++)); do
         local start=$(date +%s%N)
-        MYSQL_PWD="$PASS" mariadb -h $host -P $port -u$USER -e "SELECT 1;" >/dev/null 2>&1
+        MYSQL_PWD="$PASS" mariadb -h $host -P $port -u$USER -e "SELECT 1;" >/dev/null 2>&1 || true
         local end=$(date +%s%N)
         total_time=$((total_time + (end - start)/1000000))
     done
@@ -124,7 +124,7 @@ echo ">> [WAIT] Attente de la détection HAProxy (5s)..."
 sleep 5
 
 echo ">> [TEST] Vérification de la continuité de service..."
-declare -A FAILOVER_COUNT
+declare -A FAILOVER_COUNT=()
 FAILED_REQS=0
 for ((i=1; i<=10; i++)); do
     HOSTNAME=$(MYSQL_PWD="$PASS" mariadb -h $LB_IP -P $LB_PORT -u$USER -sN -e "SELECT @@hostname;" 2>/dev/null || echo "DOWN")
