@@ -357,6 +357,17 @@
 
 ---
 
+### RCA-047 — Mongo 8 TLS Parity & Script Resilience
+- **Date / Linked Action**: `2026-11-02` (`ACT-050` / `#150`)
+- **Observed Symptom**: Mongo 8 compose/setup lacked TLS; mongo8-up lacked gen-ssl-mongo; NewMongo8Topology lacked certs.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why?* Mongo 8 added without TLS parity.
+  2. *Why?* Plain mongosh fails on requireTLS.
+- **Applied Change / Fix**: Added TLS in compose/setup/Makefile/Go topology, tests.
+- **Result & Non-Regression Test**: `unittest`, `go test`, `test_config.sh` pass.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
@@ -474,6 +485,11 @@
 - **Target Files**: `Makefile`, `cmd/mdb/main.go`, `tests/test_project_governance_rules.py`
 - **Nature & Justification**: Standardized Patroni lifecycle echo statements to English in `Makefile`, implemented automated governance test scanning `Makefile` and `conf/` for French strings, and added compile-time `-X main.version=...` injection in `make build-go` with synchronized fallback in `cmd/mdb/main.go` verified by automated unit tests.
 - **Removal Condition**: Permanent governance rule enforcing English localization and version integrity.
+
+### APP-017 — Mongo 8 TLS Fallback & Dedicated PKI
+- **Target Files**: `conf/mongo-rs/setup_rs_mongo8.sh`, `docker-compose-mongo8-rs.yml`
+- **Nature & Justification**: Added cert mounts and 3-tier fallback in setup.
+- **Removal Condition**: Permanent pattern for lab/CI connection resilience.
 
 ---
 

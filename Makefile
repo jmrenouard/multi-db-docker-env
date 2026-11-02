@@ -142,7 +142,7 @@ test-perf-mongo: ## Run performance benchmark suite on MongoDB ReplicaSet
 # --- MONGODB 8 REPLICASET ---
 MONGO8_COMPOSE = docker-compose-mongo8-rs.yml
 
-mongo8-up: ## Start MongoDB 8 ReplicaSet (3 nodes + HAProxy)
+mongo8-up: gen-ssl-mongo ## Start MongoDB 8 ReplicaSet (3 nodes + HAProxy)
 	@echo "🚀 Starting MongoDB 8 ReplicaSet..."
 	docker compose -f $(MONGO8_COMPOSE) up -d
 	@echo "⏳ Waiting for MongoDB 8 nodes to initialize (15s)..."
@@ -927,7 +927,7 @@ check-ssl-all: ## Verify TLS certificate validity for all products
 	@if command -v go >/dev/null 2>&1; then \
 		go run ./cmd/mdb pki verify all; \
 	fi
-	@for d in ssl ssl/innodb ssl/pgpool ssl/mongo ssl/patroni; do \
+	@for d in ssl ssl/innodb ssl/pgpool ssl/mongo ssl/certs/mongo8 ssl/patroni; do \
 		if [ -d "$$d" ]; then \
 			CA=$$(ls $$d/ca-cert.pem $$d/ca.pem 2>/dev/null | head -1); \
 			CERT=$$(ls $$d/server-cert.pem $$d/server.crt 2>/dev/null | head -1); \

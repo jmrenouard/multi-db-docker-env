@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-050 — Mongo 8 TLS Parity & Script Resilience (Issue `#150`)
+- **Date**: `2026-11-02T08:30+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#150` (`feat/issue-150-mongo8-tls-parity`)
+- **Request**: Add Mongo 8 TLS mounts/flags, 3-tier run_mongosh, Makefile prereqs, RequiredCerts, tests.
+- **Changes**: Added 3-tier run_mongosh in setup; mounted certs with requireTLS in compose; updated Makefile/Go topology; added tests; bumped to 2.0.24.
+- **Result**: `unittest` (21/21), `go test` (67/67), `test_config.sh` pass. Diff < 15k.
+
+---
+
 ### ACT-049 — Makefile English Localization, Build-Time Version Injection & Governance Enforcement (Issue `#148`)
 - **Date**: `2026-11-02T07:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#148` (`feat/issue-148-makefile-version-governance`)
 - **Request**: Translate Patroni cluster echoes in Makefile to English; inject main.version at compile-time via ldflags in Makefile build-go; synchronize cmd/mdb/main.go version to 2.0.23; expand governance tests in test_project_governance_rules.py to scan Makefile and conf/ for French strings and verify Go version synchronization.

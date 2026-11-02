@@ -214,6 +214,22 @@ class TestProjectGovernanceRules(unittest.TestCase):
                         violations.append(f"{p.relative_to(ROOT)} contains banned string '{ban}'")
         self.assertEqual(violations, [], f"Found banned French strings in Go code: {violations}")
 
+    def test_mongo8_replica_set_tls_parity_and_governance(self) -> None:
+        """Verify Mongo 8 TLS parity."""
+        t_c = (ROOT / "docker-compose-mongo8-rs.yml").read_text(encoding="utf-8")
+        t_m = (ROOT / "Makefile").read_text(encoding="utf-8")
+        t_s = (ROOT / "conf/mongo-rs/setup_rs_mongo8.sh").read_text(encoding="utf-8")
+        t_t = (ROOT / "pkg/topology/mongo.go").read_text(encoding="utf-8")
+        for txt, exp in (
+            (t_c, ("./ssl/certs/mongo8:/etc/ssl/mongo:ro", "--tlsMode requireTLS")),
+            (t_m, ("mongo8-up: gen-ssl-mongo", "ssl/certs/mongo8")),
+            (t_s, ("run_mongosh()", "/etc/ssl/mongo/mongodb.pem", "WAIT_RETRIES", "[OK]", "[ERROR]", "set -euo pipefail")),
+            (t_t, ("ssl/certs/mongo8/ca.pem", "ssl/certs/mongo8/mongodb.pem", "ssl/mongo/ca.pem", "ssl/mongo/mongodb.pem")),
+        ):
+            for x in exp:
+                self.assertIn(x, txt)
+
 
 if __name__ == "__main__":
     unittest.main()
+
