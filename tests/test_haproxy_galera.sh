@@ -90,8 +90,8 @@ LAT_DIRECT=$(get_latency $LB_IP 3511)
 echo "   - Via HAProxy : ${LAT_LB}ms"
 echo "   - Direct (N1) : ${LAT_DIRECT}ms"
 echo "   - Overhead LB : $((LAT_LB - LAT_DIRECT))ms"
-write_report "- **Latence HAProxy :** ${LAT_LB}ms"
-write_report "- **Latence Directe :** ${LAT_DIRECT}ms"
+write_report "- **HAProxy Latency:** ${LAT_LB}ms"
+write_report "- **Direct Latency:** ${LAT_DIRECT}ms"
 write_report "- **Overhead :** $((LAT_LB - LAT_DIRECT))ms"
 TEST_RESULTS="$TEST_RESULTS{\"test\":\"Performance\",\"nature\":\"LB Overhead\",\"expected\":\"< 15ms\",\"status\":\"PASS\",\"details\":\"Overhead is $((LAT_LB - LAT_DIRECT))ms\"},"
 

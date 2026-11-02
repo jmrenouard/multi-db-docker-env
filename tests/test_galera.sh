@@ -287,7 +287,7 @@ PROVIDER_OPTS=$(run_sql $NODE1_PORT "SELECT @@wsrep_provider_options;")
 AUDIT_LOG=""
 declare -A RECOM=( ["gcache.size"]="128M" ["cert.log_conflicts"]="YES" ["evs.suspect_timeout"]="PT5S" ["evs.inactive_timeout"]="PT15S" )
 for key in "${!RECOM[@]}"; do
-    current=$(echo "$PROVIDER_OPTS" | grep -oP "$key = \K[^;]+" || true | xargs)
+    current=$(echo "$PROVIDER_OPTS" | grep -oP "$key = \K[^;]+" | xargs || true)
     if [ "$current" == "${RECOM[$key]}" ]; then
         AUDIT_LOG+="✅ $key matches recommended value (${RECOM[$key]})\\n"
     else
@@ -548,34 +548,34 @@ graph TD
             <div class="glass p-8 rounded-3xl col-span-1 lg:col-span-2">
                 <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                     <h3 class="text-xl font-bold flex items-center text-indigo-400">
-                        <i class="fa-solid fa-magnifying-glass-chart mr-3"></i>Explorateur de Configuration & Comparaison
+                        <i class="fa-solid fa-magnifying-glass-chart mr-3"></i>Configuration Explorer & Comparison
                     </h3>
                     <div class="flex gap-4 items-center">
                         <div class="relative">
                             <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                            <input type="text" id="global-search" placeholder="Rechercher une variable..." 
+                            <input type="text" id="global-search" placeholder="Search a variable..." 
                                 class="bg-black/40 border border-white/10 rounded-full py-2 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 w-64">
                         </div>
                         <div class="text-xs text-slate-500 font-mono">
-                            Composants filtrés: <span id="filter-count" class="text-indigo-400 font-bold">0</span>
+                            Filtered components: <span id="filter-count" class="text-indigo-400 font-bold">0</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Serveur 1 -->
+                    <!-- Server 1 -->
                     <div class="space-y-6">
                         <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
-                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Serveur</span>
+                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Server</span>
                             <select id="node-a-select" class="bg-indigo-500/20 border border-indigo-500/30 rounded-lg text-xs px-3 py-1 text-indigo-300 focus:outline-none cursor-pointer hover:bg-indigo-500/30 transition-all"></select>
                         </div>
                         <div id="col-a-content" class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar"></div>
                     </div>
 
-                    <!-- Serveur 2 -->
+                    <!-- Server 2 -->
                     <div class="space-y-6">
                         <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
-                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Serveur</span>
+                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Server</span>
                             <select id="node-b-select" class="bg-purple-500/20 border border-purple-500/30 rounded-lg text-xs px-3 py-1 text-purple-300 focus:outline-none cursor-pointer hover:bg-purple-500/30 transition-all"></select>
                         </div>
                         <div id="col-b-content" class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar"></div>

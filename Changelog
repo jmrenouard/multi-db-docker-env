@@ -1,3 +1,8 @@
+2.0.15 2026-11-02
+- fix: fix provider options audit pipeline operator precedence in Galera test suite (tests/test_galera.sh) (Closes #132).
+- fix: localize Configuration Explorer UI and latency report labels to English (tests/test_galera.sh, tests/test_haproxy_galera.sh).
+- doc: record ACT-039 in docs/ACTION_LOGBOOK.md and RCA-032 in docs/RCA_REGISTER.md.
+
 2.0.14 2026-11-02
 - fix: localize Markdown table headers, HTML report strings, and comments to English in HAProxy Galera test suite (tests/test_haproxy_galera.sh) (Closes #130).
 - test: add automated governance rule test_no_french_table_headers_remain asserting zero legacy French strings across scripts/ and tests/ (tests/test_project_governance_rules.py).
