@@ -171,13 +171,15 @@ type topoSpec struct {
 }
 
 var (
-	mariadbSpec = topoSpec{"", "MariaDB", "ca-cert.pem", "server-cert.pem", "client-cert.pem", "", []string{"localhost", "mariadb"}}
+	allTopos    = []string{"mariadb", "innodb", "mongo", "mongo8", "patroni", "pgpool"}
+	mariadbSpec = topoSpec{"", "MariaDB", "ca-cert.pem", "server-cert.pem", "client-cert.pem", "", []string{"localhost", "mariadb", "galera_01", "galera_02", "galera_03", "mariadb_01", "mariadb_02", "mariadb_03"}}
 	topoMap     = map[string]topoSpec{
 		"mariadb": mariadbSpec, "galera": mariadbSpec, "repli": mariadbSpec,
-		"innodb":  {"innodb", "MySQL-InnoDB", "ca-cert.pem", "server-cert.pem", "", "", []string{"localhost", "mysql1", "mysql2", "mysql3"}},
-		"mongo":   {"mongo", "MongoDB-RS", "ca.pem", "server.crt", "", "mongodb.pem", []string{"localhost", "mongo1", "mongo2", "mongo3"}},
+		"innodb":  {"innodb", "MySQL-InnoDB", "ca-cert.pem", "server-cert.pem", "", "", []string{"localhost", "mysql1", "mysql2", "mysql3", "mysql_node1", "mysql_node2", "mysql_node3", "haproxy_innodb"}},
+		"mongo":   {"mongo", "MongoDB-RS", "ca.pem", "server.crt", "", "mongodb.pem", []string{"localhost", "mongo1", "mongo2", "mongo3", "mongo_n1", "mongo_n2", "mongo_n3", "haproxy_mongo"}},
+		"mongo8":  {"certs/mongo8", "MongoDB8-RS", "ca.pem", "server.crt", "", "mongodb.pem", []string{"localhost", "mongo1", "mongo2", "mongo3", "mongo8_n1", "mongo8_n2", "mongo8_n3"}},
 		"patroni": {"patroni", "Patroni-Cluster", "ca-cert.pem", "server.crt", "", "", []string{"localhost", "etcd1", "etcd2", "etcd3", "node1", "node2", "node3", "haproxy", "pgbouncer"}},
-		"pgpool":  {"pgpool", "PostgreSQL-PgPool", "ca-cert.pem", "server.crt", "", "", []string{"localhost", "pgpool", "node1", "node2", "node3"}},
+		"pgpool":  {"pgpool", "PostgreSQL-PgPool", "ca-cert.pem", "server.crt", "", "", []string{"localhost", "pgpool", "node1", "node2", "node3", "pg_node1", "pg_node2", "pg_node3", "haproxy_pgpool"}},
 	}
 )
 
@@ -193,10 +195,8 @@ func keyName(cert string) string {
 
 func (p *PKIEngine) GenerateTopologyCerts(topology string) error {
 	if strings.ToLower(topology) == "all" {
-		for _, t := range []string{"mariadb", "innodb", "mongo", "patroni", "pgpool"} {
-			if err := p.GenerateTopologyCerts(t); err != nil {
-				return err
-			}
+		for _, t := range allTopos {
+			if err := p.GenerateTopologyCerts(t); err != nil { return err }
 		}
 		return nil
 	}
@@ -247,10 +247,8 @@ func (p *PKIEngine) GenerateTopologyCerts(topology string) error {
 
 func (p *PKIEngine) VerifyTopologyCerts(topology string) (bool, error) {
 	if strings.ToLower(topology) == "all" {
-		for _, t := range []string{"mariadb", "innodb", "mongo", "patroni", "pgpool"} {
-			if ok, err := p.VerifyTopologyCerts(t); !ok || err != nil {
-				return false, err
-			}
+		for _, t := range allTopos {
+			if ok, err := p.VerifyTopologyCerts(t); !ok || err != nil { return false, err }
 		}
 		return true, nil
 	}

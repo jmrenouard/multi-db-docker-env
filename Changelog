@@ -1,3 +1,9 @@
+2.0.19 2026-11-02
+- fix: support TLS fallback in MongoVerifier (pkg/dbclient) (Closes #140).
+- fix: add mongo8 & container SANs in PKIEngine (pkg/pki, scripts).
+- test: test Mongo TLS fallback and SAN validation (pkg/dbclient, pkg/pki).
+- doc: add ACT-045 and RCA-042 (docs).
+
 2.0.18 2026-11-02
 - doc: document Go mdb CLI orchestrator, commands, and options in README and scripts reference (README.md, documentation/scripts.md) (Closes #138).
 - doc: document gen_pki.sh, run_mysqltuner.sh, and aggregate_reports.sh with flags and environment options (documentation/scripts.md).

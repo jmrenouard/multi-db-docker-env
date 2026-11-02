@@ -86,8 +86,10 @@ func TestMongoVerifier_VerifyCluster(t *testing.T) {
 	}
 	t.Run("mongo_standalone_fallback", func(t *testing.T) {
 		exec := &mockExecutor{response: func(ctx context.Context, c string, e []string, cmd ...string) (string, error) {
-			if len(cmd) > 2 && cmd[2] == "db.runCommand({ping: 1}).ok" {
-				return "1\n", nil
+			for _, arg := range cmd {
+				if arg == "db.runCommand({ping: 1}).ok" {
+					return "1\n", nil
+				}
 			}
 			return "", fmt.Errorf("not a replicaset")
 		}}
