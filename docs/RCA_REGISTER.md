@@ -345,6 +345,18 @@
 
 ---
 
+### RCA-046 — Residual French Patroni Echoes, Go Binary Version Drift & Missing Ldflags Injection
+- **Date / Linked Action**: `2026-11-02` (`ACT-049` / Issue `#148`)
+- **Observed Symptom**: (1) `Makefile:21,25,29,33` contained French echo messages in Patroni cluster targets; (2) `Makefile` `build-go` target lacked `-X main.version=...` link flag; (3) `cmd/mdb/main.go` `var version` was frozen at `"2.0.20"` instead of tracking the `VERSION` file; (4) `test_no_french_table_headers_remain` did not scan `Makefile` or `conf/`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why were French echoes present in Patroni targets?* When Patroni cluster targets were introduced, UI echo messages were written in French without automated governance linting.
+  2. *Why did governance tests miss them?* `test_no_french_table_headers_remain` only checked `scripts/` and `tests/` shell scripts.
+  3. *Why was cmd/mdb version out of sync?* Release automation bumped root `VERSION` without updating package-level `var version` in `cmd/mdb/main.go`, and `go build` was invoked without compile-time ldflags.
+- **Applied Change / Fix**: Localized Patroni echo strings to English in `Makefile`; updated `build-go` recipe to inject `-X main.version=$$(tr -d '[:space:]' < VERSION)`; synchronized `var version = "2.0.23"` in `cmd/mdb/main.go`; extended `test_no_french_table_headers_remain` to scan `Makefile` and `conf/`; added `test_version_synchronization_and_ldflags_injection` in `tests/test_project_governance_rules.py`.
+- **Result & Non-Regression Test**: Verified via `python -m unittest tests/test_project_governance_rules.py -v` (8/8 pass), `go test -v ./...` (66/66 pass), and `make build-go` verifying `./bin/mdb version` prints `mdb version 2.0.23`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
@@ -457,6 +469,11 @@
 - **Target Files**: `README.md`, `documentation/scripts.md`
 - **Nature & Justification**: Added comprehensive documentation for the Go `mdb` CLI orchestrator (v2.0) commands (`version`, `config`, `topologies`, `up`, `down`, `status`, `test`, `bench`, `pki`, `report`), automation utilities (`gen_pki.sh`, `run_mysqltuner.sh`, `aggregate_reports.sh`), and integrated living governance registers (`docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`) into `README.md`.
 - **Removal Condition**: Permanent documentation baseline for v2.0 orchestrator and scripts.
+
+### APP-016 — Makefile and Configuration Governance Scanning & Build-Time Injection
+- **Target Files**: `Makefile`, `cmd/mdb/main.go`, `tests/test_project_governance_rules.py`
+- **Nature & Justification**: Standardized Patroni lifecycle echo statements to English in `Makefile`, implemented automated governance test scanning `Makefile` and `conf/` for French strings, and added compile-time `-X main.version=...` injection in `make build-go` with synchronized fallback in `cmd/mdb/main.go` verified by automated unit tests.
+- **Removal Condition**: Permanent governance rule enforcing English localization and version integrity.
 
 ---
 

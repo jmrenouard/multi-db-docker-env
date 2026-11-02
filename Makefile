@@ -18,19 +18,19 @@ export DB_ROOT_PASSWORD
 PATRONI_COMPOSE = docker-compose-patroni.yml
 
 patroni-gen-certs:
-	@echo "🔐 Génération des certificats pour le cluster Patroni..."
+	@echo "🔐 Generating certificates for the Patroni cluster..."
 	@CERT_DIR=certs_patroni ./scripts/patroni/generate_certs.sh
 
 patroni-up: patroni-gen-certs
-	@echo "🚀 Démarrage du cluster Patroni..."
+	@echo "🚀 Starting Patroni cluster..."
 	docker compose -f $(PATRONI_COMPOSE) up -d
 
 patroni-down:
-	@echo "🛑 Arrêt du cluster Patroni..."
+	@echo "🛑 Stopping Patroni cluster..."
 	docker compose -f $(PATRONI_COMPOSE) down -v
 
 patroni-status:
-	@echo "📊 Statut du cluster Patroni..."
+	@echo "📊 Patroni cluster status..."
 	docker exec node1 patronictl -c /etc/patroni.yml list
 
 patroni-logs:
@@ -588,7 +588,7 @@ test-config: ## Validate the current orchestration configuration, directory stru
 build-go: ## Compile mdb binary into bin/mdb
 	@echo "🔨 Building mdb binary..."
 	@mkdir -p bin
-	CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/mdb ./cmd/mdb
+	CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=$$(tr -d '[:space:]' < VERSION)" -o bin/mdb ./cmd/mdb
 
 test-go: ## Run complete Go test suite
 	@echo "🧪 Running Go test suite..."

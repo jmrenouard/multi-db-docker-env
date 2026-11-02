@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-049 — Makefile English Localization, Build-Time Version Injection & Governance Enforcement (Issue `#148`)
+- **Date**: `2026-11-02T07:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#148` (`feat/issue-148-makefile-version-governance`)
+- **Request**: Translate Patroni cluster echoes in Makefile to English; inject main.version at compile-time via ldflags in Makefile build-go; synchronize cmd/mdb/main.go version to 2.0.23; expand governance tests in test_project_governance_rules.py to scan Makefile and conf/ for French strings and verify Go version synchronization.
+- **Changes**: Localized 4 Patroni echo messages in `Makefile:21,25,29,33`; added `-X main.version=...` to `Makefile:591` `build-go`; updated `var version = "2.0.23"` in `cmd/mdb/main.go`; updated `TestResolveVersion` in `cmd/mdb/main_test.go`; extended `test_no_french_table_headers_remain` and added `test_version_synchronization_and_ldflags_injection` in `tests/test_project_governance_rules.py`; bumped `VERSION` to `2.0.23`; updated `Changelog`.
+- **Result**: `python -m unittest discover -s tests -v` passed (20/20, 6 skipped); `go test -v ./...` passed (66/66); `make build-go` produced `bin/mdb` printing `mdb version 2.0.23`. PR diff size strictly < 15,000 characters.
+
+---
+
 ### ACT-048 — Cluster Guides Sync, Mongo 8 PKI & Runner Import Hardening (Issue `#146`)
 - **Date**: `2026-11-02T07:15+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#146` (`doc/issue-146-cluster-guides-sync`)
 - **Request**: Sync cluster guides (InnoDB, PgPool, Mongo) with tests & TLS; harden `gen_ssl_mongo.sh`, `mysql_docker.py`, and `Makefile`.
