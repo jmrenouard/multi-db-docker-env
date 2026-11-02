@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-035 — Test Script Strict Mode Safeguards & Runtime Crash Remediation (Issue `#124`)
+- **Date**: `2026-11-02T03:00+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#124` (`fix/issue-124-strict-guards-and-localization`)
+- **Request**: Remediate latent script exits under `set -euo pipefail` identified during Milestone 2 gate review (Finding 4 remediation).
+- **Changes**: Replaced `((MATCH_COUNT++))` with `MATCH_COUNT=$((MATCH_COUNT + 1))` in `tests/test_galera.sh:80`; guarded duplicate key insert command substitution with `|| true` in `tests/test_galera.sh:250`; guarded provider options grep with `|| true` in `tests/test_galera.sh:290`; guarded pre-flight replication grep checks with `|| true` in `tests/test_repli.sh:82-83`; initialized associative arrays with `declare -A hosts_count=()` in `tests/test_lb_galera.sh:45` and `declare -A FAILOVER_COUNT=()` in `tests/test_haproxy_galera.sh:127`; guarded `get_latency()` in `tests/test_haproxy_galera.sh:81`; bumped `VERSION` to `2.0.11`; updated `Changelog`.
+- **Result**: `tests/test_project_governance_rules.py` (5/5), `unittest discover` (17/17, 6 skipped), `tests/test_secure_password.sh` (34/34), `tests/test_profiles.sh`, `tests/test_config.sh`, and `go test -v ./...` (63/63) passed cleanly. PR diff size < 15,000 characters.
+
+---
+
 ### ACT-034 — Test Suites Strict Error Handling, Arithmetic Guards & Governance Scanner (Issue `#122`)
 - **Date**: `2026-11-02T02:25+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#122` (`fix/issue-122-tests-strict-mode-and-governance`)
 - **Request**: Enforce `set -euo pipefail` across remaining test suites (`tests/test_galera.sh`, `tests/test_repli.sh`, `tests/test_lb_galera.sh`, `tests/test_haproxy_galera.sh`, `tests/test_mongo_rs.sh`, `tests/test_perf_galera.sh`, `tests/test_perf_repli.sh`, `tests/test_secure_password.sh`), harden arithmetic increments and associative array lookups under strict mode, and add automated governance rule `test_all_bash_scripts_have_set_euo_pipefail` in `tests/test_project_governance_rules.py`.

@@ -42,7 +42,7 @@ cat <<EOF > "$REPORT_MD"
 EOF
 
 # Data for reports
-declare -A hosts_count
+declare -A hosts_count=()
 RAW_LOGS=""
 TEST_RESULTS=""
 

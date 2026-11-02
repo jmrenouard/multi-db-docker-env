@@ -77,7 +77,7 @@ while [ $(($(date +%s) - START_WAIT)) -lt $MAX_WAIT ]; do
             W_STATE=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -uroot -sN -e "SHOW GLOBAL STATUS LIKE 'wsrep_local_state_comment';" | awk '{print $2}')
             echo "   Node $i (Port $port): Ready=$W_READY, Size=$W_SIZE, State=$W_STATE"
             if [ "$W_READY" = "ON" ] && [ "$W_SIZE" = "3" ] && [ "$W_STATE" = "Synced" ]; then
-                ((MATCH_COUNT++))
+                MATCH_COUNT=$((MATCH_COUNT + 1))
             fi
         else
             echo "   Node $i (Port $port): UNREACHABLE"
@@ -247,7 +247,7 @@ write_report "### Unique Key Constraint Test"
 echo ">> Inserting record ID 500 on Node 1..."
 run_sql $NODE1_PORT "INSERT INTO $DB.sync_test (id, node_id, msg) VALUES (500, 1, 'Initial 500');"
 echo ">> Attempting to insert same ID 500 on Node 2 (Should fail)..."
-ERR_MSG=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $NODE2_PORT -uroot $DB -e "INSERT INTO sync_test (id, node_id, msg) VALUES (500, 2, 'Duplicate 500');" 2>&1)
+ERR_MSG=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $NODE2_PORT -uroot $DB -e "INSERT INTO sync_test (id, node_id, msg) VALUES (500, 2, 'Duplicate 500');" 2>&1 || true)
 if echo "$ERR_MSG" | grep -q "Duplicate entry"; then
     PASS=$((PASS + 1))
     echo "✅ Node 2 correctly rejected duplicate entry"
@@ -287,7 +287,7 @@ PROVIDER_OPTS=$(run_sql $NODE1_PORT "SELECT @@wsrep_provider_options;")
 AUDIT_LOG=""
 declare -A RECOM=( ["gcache.size"]="128M" ["cert.log_conflicts"]="YES" ["evs.suspect_timeout"]="PT5S" ["evs.inactive_timeout"]="PT15S" )
 for key in "${!RECOM[@]}"; do
-    current=$(echo "$PROVIDER_OPTS" | grep -oP "$key = \K[^;]+" | xargs)
+    current=$(echo "$PROVIDER_OPTS" | grep -oP "$key = \K[^;]+" || true | xargs)
     if [ "$current" == "${RECOM[$key]}" ]; then
         AUDIT_LOG+="✅ $key matches recommended value (${RECOM[$key]})\\n"
     else

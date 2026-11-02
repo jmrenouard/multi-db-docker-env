@@ -79,8 +79,8 @@ while [ $(($(date +%s) - START_WAIT)) -lt $MAX_WAIT ]; do
             ALL_UP=false
         else
             # Use raw mariadb to ensure labels are present for grep
-            IO=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u$USER -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_IO_Running:" | awk '{print $2}')
-            SQL=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u$USER -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_SQL_Running:" | awk '{print $2}')
+            IO=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u$USER -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_IO_Running:" | awk '{print $2}' || true)
+            SQL=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u$USER -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_SQL_Running:" | awk '{print $2}' || true)
             if [ "$IO" != "Yes" ] || [ "$SQL" != "Yes" ]; then
                 REPL_OK=false
             fi
