@@ -82,7 +82,7 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 
 | Document | Description |
 | --- | --- |
-| **[MongoDB ReplicaSet](mongo_replicaset.md)** | MongoDB 7.0 ReplicaSet with HAProxy for connection routing. |
+| **[MongoDB ReplicaSet](mongo_replicaset.md)** | MongoDB 7.0 and 8.0 ReplicaSet with HAProxy for connection routing. |
 
 ## 🐬 Standalone Matrix
 

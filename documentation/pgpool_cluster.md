@@ -29,7 +29,7 @@ graph TD
 | `pg_node2` | `postgres:17` | `10.8.0.12` | Standby (read-only) |
 | `pg_node3` | `postgres:17` | `10.8.0.13` | Standby (read-only) |
 | `pgpool` | `pgpool/pgpool:4.6` | `10.8.0.20` | Connection pooling + LB |
-| `haproxy_pgpool` | `haproxy:latest` | `10.8.0.100` | External routing |
+| `haproxy_pgpool` | `haproxy:lts` | `10.8.0.100` | External routing |
 
 ## Quick Start
 
@@ -119,7 +119,7 @@ psql -h 127.0.0.1 -p 9999 -U postgres -c "SHOW pool_processes;"
 make test-pgpool
 ```
 
-The test suite validates **22 checks across 15 test groups**:
+The test suite validates **24 checks across 18 test groups**:
 
 | # | Test | Description |
 | :--- | :--- | :--- |
@@ -139,6 +139,8 @@ The test suite validates **22 checks across 15 test groups**:
 | 14 | HAProxy Stats | Stats dashboard availability |
 | 15 | Connection Pools | Inspect PgPool-II Connection Pooling |
 | 16 | Client Processes | View PgPool-II client processes active states |
+| 17 | TLS/SSL Status Check | TLS/SSL active on Primary (pg_node1) |
+| 18 | Performance Micro-Benchmark | 20/20 queries routed via PgPool |
 
 Reports are generated in `./reports/` (Markdown + HTML).
 

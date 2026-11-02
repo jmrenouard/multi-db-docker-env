@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-048 — Cluster Guides Sync, Mongo 8 PKI & Runner Import Hardening (Issue `#146`)
+- **Date**: `2026-11-02T07:15+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#146` (`doc/issue-146-cluster-guides-sync`)
+- **Request**: Sync cluster guides (InnoDB, PgPool, Mongo) with tests & TLS; harden `gen_ssl_mongo.sh`, `mysql_docker.py`, and `Makefile`.
+- **Changes**: Updated `innodb_cluster.md`, `pgpool_cluster.md`, `mongo_replicaset.md`, `INDEX.md`, `gen_ssl_mongo.sh`, `mysql_docker.py`, `Makefile`, `VERSION` (2.0.22), and `Changelog`.
+- **Result**: All tests passed: `go test` (66/66), `unittest` (19/19), `test_config.sh`, `test_secure_password.sh` (34/34), `mdb pki verify all`. Diff < 15K.
+
+---
+
 ### ACT-047 — Parameterize Cluster Replication Credentials, Audit Conf Scripts & Enforce Go English Governance (Issue `#144`)
 - **Date**: `2026-11-02T06:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#144` (`fix/issue-144-cluster-creds-conf-audit`)
 - **Request**: Source `.env` and parameterize `REPL_USER`/`REPL_PASS` in `conf/innodb-cluster/setup_cluster.sh` and `scripts/pgpool/setup_replication.sh`; add `conf/**/*.sh` scripts to `tests/test_config.sh` with `set -euo pipefail` checks; extend `tests/test_project_governance_rules.py` to audit `conf/**/*.sh` and assert no French strings remain in Go packages.

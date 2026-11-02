@@ -1,3 +1,9 @@
+2.0.22 2026-11-02
+- fix: generate Mongo 8 TLS certs in gen_ssl_mongo.sh & make docker import optional in mysql_docker.py (scripts, root) (Closes #146).
+- fix: export DB_ROOT_PASSWORD in Makefile to propagate credentials across subshells (Makefile).
+- doc: synchronize cluster guides with TLS, MYSQL_PWD, and full test suites (documentation).
+- doc: record ACT-048 in docs/ACTION_LOGBOOK.md and RCA-045 in docs/RCA_REGISTER.md (docs).
+
 2.0.21 2026-11-02
 - fix: source .env and parameterize replication credentials in InnoDB and PgPool setup scripts (conf/innodb-cluster, scripts/pgpool) (Closes #144).
 - doc: record ACT-047 in docs/ACTION_LOGBOOK.md and RCA-044 in docs/RCA_REGISTER.md (docs).

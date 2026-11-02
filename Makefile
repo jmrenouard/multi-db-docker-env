@@ -12,6 +12,7 @@ endif
 
 # Default root password if not set in .env
 DB_ROOT_PASSWORD ?= rootpass
+export DB_ROOT_PASSWORD
 
 # --- PATRONI CLUSTER ---
 PATRONI_COMPOSE = docker-compose-patroni.yml

@@ -336,6 +336,15 @@
 
 ---
 
+### RCA-045 — Cluster Guides Test Drift, CLI Credentials, Mongo 8 PKI & Docker Fallback
+- **Date / Linked Action**: `2026-11-02` (`ACT-048` / Issue `#146`)
+- **Observed Symptom**: (1) Cluster guides lagged behind 14/18/12 test groups; (2) `mdb pki` lacked `ssl/certs/mongo8`; (3) `mysql_docker.py` lacked `ImportError` guard; (4) `Makefile` omitted `export DB_ROOT_PASSWORD`.
+- **Root Cause Analysis (5 Whys)**: Guides drifted from test suites; Mongo 8 PKI target lacked generator coverage; top-level python imports failed without docker.
+- **Applied Change / Fix**: Synchronized InnoDB, PgPool, and Mongo guides; updated `gen_ssl_mongo.sh`; added `ImportError` fallback in `mysql_docker.py`; exported `DB_ROOT_PASSWORD` in `Makefile`.
+- **Result & Non-Regression Test**: Verified via `go test -v ./...` (66/66), `unittest` (19/19), `test_config.sh`, `test_secure_password.sh` (34/34), and `mdb pki verify all`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
