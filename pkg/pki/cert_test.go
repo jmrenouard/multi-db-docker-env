@@ -2,6 +2,7 @@ package pki
 
 import (
 	"crypto/x509"
+	"encoding/pem"
 	"net"
 	"os"
 	"path/filepath"
@@ -41,7 +42,7 @@ func TestPKIEngine_Lifecycle(t *testing.T) {
 func TestPKIEngine_Topologies(t *testing.T) {
 	d := t.TempDir()
 	e := NewPKIEngine(d)
-	for _, topo := range []string{"mariadb", "innodb", "mongo", "patroni", "pgpool"} {
+	for _, topo := range allTopos {
 		if err := e.GenerateTopologyCerts(topo); err != nil {
 			t.Fatalf("gen %s: %v", topo, err)
 		}
@@ -78,3 +79,32 @@ func TestPKIEngine_Topologies(t *testing.T) {
 		t.Fatal("expected error when writing to invalid directory")
 	}
 }
+
+func TestPKIEngine_SANDNSNames(t *testing.T) {
+	d := t.TempDir()
+	e := NewPKIEngine(d)
+	for topo, exp := range map[string][]string{
+		"mongo8": {"localhost", "mongo8_n1", "mongo8_n2", "mongo8_n3"},
+		"innodb": {"mysql_node1", "mysql_node2", "mysql_node3", "haproxy_innodb"},
+		"pgpool": {"pg_node1", "pg_node2", "pg_node3", "haproxy_pgpool"},
+		"mongo":  {"mongo_n1", "mongo_n2", "mongo_n3", "haproxy_mongo"},
+		"galera": {"galera_01", "galera_02", "galera_03", "mariadb_01", "mariadb_02", "mariadb_03"},
+	} {
+		if err := e.GenerateTopologyCerts(topo); err != nil {
+			t.Fatal(err)
+		}
+		raw, _ := os.ReadFile(filepath.Join(d, topoMap[topo].sub, topoMap[topo].srvCert))
+		b, _ := pem.Decode(raw)
+		cert, _ := x509.ParseCertificate(b.Bytes)
+		m := make(map[string]bool)
+		for _, dns := range cert.DNSNames {
+			m[dns] = true
+		}
+		for _, s := range exp {
+			if !m[s] {
+				t.Fatalf("%s missing %s", topo, s)
+			}
+		}
+	}
+}
+

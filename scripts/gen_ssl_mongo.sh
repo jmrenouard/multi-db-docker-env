@@ -20,4 +20,4 @@ if [ "${1:-}" != "--force" ] && check_certificates; then
     exit 0
 fi
 
-exec bash "$(dirname "$0")/gen_pki.sh" --dir "$SSL_DIR" --cn "MongoDB-RS" --mode single --combine mongodb.pem --san "DNS:localhost,DNS:mongo1,DNS:mongo2,DNS:mongo3,IP:127.0.0.1" "$@"
+exec bash "$(dirname "$0")/gen_pki.sh" --dir "$SSL_DIR" --cn "MongoDB-RS" --mode single --combine mongodb.pem --san "DNS:localhost,DNS:mongo1,DNS:mongo2,DNS:mongo3,DNS:mongo_n1,DNS:mongo_n2,DNS:mongo_n3,DNS:haproxy_mongo,IP:127.0.0.1" "$@"

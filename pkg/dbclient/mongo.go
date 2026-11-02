@@ -22,13 +22,17 @@ func NewMongoVerifier(cfg Config) *MongoVerifier {
 }
 
 func (m *MongoVerifier) execEval(ctx context.Context, expr string) (string, error) {
-	var out string
-	var err error
-	for _, bin := range []string{"mongosh", "mongo"} {
-		out, err = m.cfg.Executor.Exec(ctx, m.cfg.Container, nil, bin, "--eval", expr, "--quiet")
-		if err == nil { return out, nil }
+	for _, cmd := range [][]string{
+		{"mongosh", "--tls", "--tlsAllowInvalidCertificates", "--tlsCertificateKeyFile", "/etc/ssl/mongo/mongodb.pem", "--quiet", "--eval", expr},
+		{"mongosh", "--tls", "--tlsAllowInvalidCertificates", "--quiet", "--eval", expr},
+		{"mongosh", "--quiet", "--eval", expr},
+		{"mongo", "--quiet", "--eval", expr},
+	} {
+		if out, err := m.cfg.Executor.Exec(ctx, m.cfg.Container, nil, cmd...); err == nil {
+			return out, nil
+		}
 	}
-	return out, err
+	return "", fmt.Errorf("mongo eval failed in %s", m.cfg.Container)
 }
 
 func (m *MongoVerifier) Ping(ctx context.Context) error {

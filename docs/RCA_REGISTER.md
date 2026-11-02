@@ -302,6 +302,13 @@
 - **Applied Change / Fix**: Moved `| xargs` before `|| true` in `tests/test_galera.sh:290` (`grep ... | xargs || true`); translated all 26 residual French lines across the 6 affected scripts into English; expanded `test_no_french_table_headers_remain` with regex covering accented characters and French tokens.
 - **Result & Non-Regression Test**: All tests pass cleanly: `tests/test_project_governance_rules.py` (6/6), `bash tests/test_config.sh`, `bash tests/test_secure_password.sh` (34/34), `bash tests/test_profiles.sh`, and `go test -v ./...` (63/63).
 
+### RCA-042 — MongoVerifier TLS Fallback & PKIEngine Container SANs
+- **Date / Linked Action**: `2026-11-02` (`ACT-045` / Issue `#140`)
+- **Observed Symptom**: `mdb test mongo` failed on TLS ReplicaSets; `mdb pki` rejected `mongo8`; Compose container names (`mysql_node1-3`, `mongo_n1-3`, `pg_node1-3`, `galera_01-03`) were missing from SANs.
+- **Root Cause Analysis**: `MongoVerifier.execEval` lacked TLS flags; `topoMap`/`allTopos` lacked `mongo8`; PKIEngine SANs only had user aliases.
+- **Applied Change / Fix**: Added 4-tier TLS fallback in `MongoVerifier.execEval`; added `mongo8` and container SANs in `pkg/pki/cert.go` and `scripts/gen_ssl*.sh`; added tests in `dbclient_test.go` and `cert_test.go`.
+- **Result & Non-Regression Test**: `go test` (76/76 pass), `unittest` (18/18), `test_config.sh` pass.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

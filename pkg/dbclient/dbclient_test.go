@@ -101,3 +101,43 @@ func TestNewVerifier_Factory(t *testing.T) {
 		t.Fatal("expected err")
 	}
 }
+
+func TestMongoVerifier_ExecEval_TLSFallback(t *testing.T) {
+	ctx := context.Background()
+	for _, tc := range []struct {
+		arg   string
+		calls int
+	}{{"", 1}, {"--tlsCertificateKeyFile", 2}, {"--tls", 3}} {
+		calls := 0
+		v := NewMongoVerifier(Config{Container: "m", Executor: &mockExecutor{response: func(ctx context.Context, c string, e []string, cmd ...string) (string, error) {
+			calls++
+			for _, c := range cmd {
+				if c == tc.arg {
+					return "", fmt.Errorf("fail")
+				}
+			}
+			return "ok\n", nil
+		}}})
+		if out, err := v.execEval(ctx, "ping"); err != nil || out != "ok\n" || calls != tc.calls {
+			t.Fatalf("calls=%d exp=%d", calls, tc.calls)
+		}
+	}
+	v := NewMongoVerifier(Config{Container: "m", Executor: &mockExecutor{response: func(ctx context.Context, c string, e []string, cmd ...string) (string, error) {
+		for _, c := range cmd {
+			if c == "--tlsCertificateKeyFile" {
+				return "", fmt.Errorf("err")
+			}
+		}
+		return "1\n", nil
+	}}})
+	if err := v.Ping(ctx); err != nil {
+		t.Fatal(err)
+	}
+	bad := NewMongoVerifier(Config{Container: "m", Executor: &mockExecutor{response: func(ctx context.Context, c string, e []string, cmd ...string) (string, error) {
+		return "", fmt.Errorf("fail")
+	}}})
+	if _, err := bad.execEval(ctx, "ping"); err == nil {
+		t.Fatal("expected err")
+	}
+}
+

@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-045 — MongoVerifier TLS Fallback, Mongo8 PKI & Container SANs (Issue `#140`)
+- **Date**: `2026-11-02T05:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#140` (`fix/issue-140-mongo-tls-pki-mongo8`)
+- **Request**: Add TLS fallback in MongoVerifier, add mongo8 and Compose container SANs in PKIEngine and scripts, and add unit tests.
+- **Changes**: Added 4-tier TLS fallback in `pkg/dbclient/mongo.go`; decoupled arg check in `postgres_mongo_test.go`; added tests in `dbclient_test.go` and `cert_test.go`; added `mongo8` and container SANs in `cert.go` and `scripts/gen_ssl*.sh`; bumped `VERSION` to `2.0.19`; updated `Changelog`.
+- **Result**: `go test` (76/76), `unittest` (18/18), `test_config` pass. PR diff < 15k.
+
+---
+
 ### ACT-042 — Go mdb CLI, Automation Scripts Reference & README Governance Sync (Issue `#138`)
 - **Date**: `2026-11-02T05:00+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#138` (`doc/issue-138-cli-scripts-readme`)
 - **Request**: Fully document the compiled Go `mdb` CLI (v2.0), utility automation scripts (`gen_pki.sh`, `run_mysqltuner.sh`, `aggregate_reports.sh`), and synchronize `README.md` with living governance registers and updated project directory structure.
