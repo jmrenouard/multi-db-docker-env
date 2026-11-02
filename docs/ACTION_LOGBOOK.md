@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-038 — HAProxy Galera Localization & English Governance Rule (Issue `#130`)
+- **Date**: `2026-11-02T03:28+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#130` (`fix/issue-130-haproxy-governance-rule`)
+- **Request**: Enforce English-only policy across HAProxy Galera test suite and add automated governance rule `test_no_french_table_headers_remain` (Finding 5 completion).
+- **Changes**: Localized Markdown and HTML report table headers, status cards, and comments in `tests/test_haproxy_galera.sh`; added `test_no_french_table_headers_remain` in `tests/test_project_governance_rules.py`; bumped `VERSION` to `2.0.14`; updated `Changelog`.
+- **Result**: `tests/test_project_governance_rules.py` (6/6), `unittest discover` (17/17, 6 skipped), `tests/test_secure_password.sh` (34/34), `tests/test_profiles.sh`, `tests/test_config.sh`, and `go test -v ./...` (63/63) passed cleanly. PR diff size < 15,000 characters.
+
+---
+
 ### ACT-037 — Galera & Replication Test Suites English Localization (Issue `#128`)
 - **Date**: `2026-11-02T03:22+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#128` (`fix/issue-128-galera-repli-localization`)
 - **Request**: Enforce English-only policy across Galera and Replication test suites (Finding 5 remediation part 2).

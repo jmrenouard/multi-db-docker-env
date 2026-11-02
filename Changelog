@@ -1,3 +1,8 @@
+2.0.14 2026-11-02
+- fix: localize Markdown table headers, HTML report strings, and comments to English in HAProxy Galera test suite (tests/test_haproxy_galera.sh) (Closes #130).
+- test: add automated governance rule test_no_french_table_headers_remain asserting zero legacy French strings across scripts/ and tests/ (tests/test_project_governance_rules.py).
+- doc: record ACT-038 in docs/ACTION_LOGBOOK.md and APP-012 in docs/RCA_REGISTER.md.
+
 2.0.13 2026-11-02
 - fix: localize Markdown and HTML report table headers to English in Galera and Replication test suites (tests/test_galera.sh, tests/test_repli.sh, tests/test_lb_galera.sh) (Closes #128).
 - doc: record ACT-037 in docs/ACTION_LOGBOOK.md and APP-011 in docs/RCA_REGISTER.md.
