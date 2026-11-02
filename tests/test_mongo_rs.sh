@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # test_mongo_rs.sh
 # Functional test suite for MongoDB ReplicaSet (lab context, no auth)
 # Supports MongoDB 7 and 8 via MONGO_NODES env var

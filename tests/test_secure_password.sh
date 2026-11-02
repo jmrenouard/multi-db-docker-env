@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_secure_password.sh — Security regression tests for issue #2
-set -uo pipefail
+set -euo pipefail
 PASS=0; FAIL=0
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -120,5 +120,9 @@ check_uses       "mysql_docker.py" "MYSQL_PWD" "Uses MYSQL_PWD"
 echo ""
 echo "================================================="
 echo "Results: $PASS passed / $FAIL failed"
-[[ $FAIL -eq 0 ]] && echo "All security checks passed!" && exit 0
-exit 1
+if [[ $FAIL -eq 0 ]]; then
+    echo "All security checks passed!"
+    exit 0
+else
+    exit 1
+fi

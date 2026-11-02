@@ -102,6 +102,30 @@ class TestProjectGovernanceRules(unittest.TestCase):
         self.assertIn("Strategic Roadmap & Milestones", logbook_content)
         self.assertIn("English", agents_content)
 
+    def test_all_bash_scripts_have_set_euo_pipefail(self) -> None:
+        """Verify that every bash script in scripts/ and tests/ declares set -euo pipefail."""
+        scripts_dir = ROOT / "scripts"
+        tests_dir = ROOT / "tests"
+
+        sh_files = [
+            p
+            for p in list(scripts_dir.rglob("*.sh")) + list(tests_dir.rglob("*.sh"))
+            if p.resolve() != (tests_dir / "lib" / "common.sh").resolve()
+        ]
+        self.assertTrue(len(sh_files) > 0, "Expected non-empty list of shell scripts")
+
+        missing = []
+        for sh_path in sh_files:
+            content = sh_path.read_text(encoding="utf-8")
+            if "set -euo pipefail" not in content:
+                missing.append(str(sh_path.relative_to(ROOT)))
+
+        self.assertEqual(
+            missing,
+            [],
+            f"The following bash scripts do not declare 'set -euo pipefail': {missing}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
