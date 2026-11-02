@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 # entrypoint_etcd.sh
-# Gère le démarrage dynamique d'ETCD (new vs existing) pour assurer la HA.
+# Manages dynamic startup of ETCD (new vs existing) to ensure HA.
 
 ETCD_DATA_DIR="${ETCD_DATA_DIR:-/etcd-data}"
 ETCD_NAME="${ETCD_NAME:-etcd1}"
@@ -9,10 +9,10 @@ INT_ETCD_CLIENT_PORT="${INT_ETCD_CLIENT_PORT:-2379}"
 INT_ETCD_PEER_PORT="${INT_ETCD_PEER_PORT:-2380}"
 VERIFY_CLIENT_CERT="${VERIFY_CLIENT_CERT:-true}"
 
-# Détection de l'état du cluster
+# Detect cluster state
 STATE="new"
 if [ -d "${ETCD_DATA_DIR}/member" ]; then
-    echo "🔄 Répertoire de données détecté. Passage en état 'existing'."
+    echo "🔄 Data directory detected. Switching to 'existing' state."
     STATE="existing"
 fi
 
@@ -58,4 +58,4 @@ fi
     --peer-cert-file "/certs/etcd-server.crt" \
     --peer-key-file "/certs/etcd-server.key" \
     --peer-trusted-ca-file "/certs/ca.crt" \
-    $AUTH_FLAGS || { echo "⚠️ ETCD a échoué. Maintien du conteneur..."; tail -f /dev/null; }
+    $AUTH_FLAGS || { echo "⚠️ ETCD failed. Keeping container alive..."; tail -f /dev/null; }

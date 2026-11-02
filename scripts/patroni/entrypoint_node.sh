@@ -1,30 +1,30 @@
 #!/bin/bash
 # entrypoint_node.sh
-# Prépare les certificats et lance la commande demandée (supervisord ou pgbouncer)
-# Adapté pour multi-db-docker-env
+# Prepare certificates and launch requested command (supervisord or pgbouncer)
+# Adapted for multi-db-docker-env
 
 set -euo pipefail
 
-# Dossier local pour les certificats
+# Local directory for certificates
 LOCAL_CERT_DIR="/etc/patroni/certs"
 mkdir -p "$LOCAL_CERT_DIR"
 
-# Démarrage du service SSH pour la gestion Ansible (uniquement si root)
+# Start SSH service for Ansible management (root only)
 if [ "$(id -u)" = "0" ] && [ -x /usr/sbin/sshd ]; then
     /usr/sbin/sshd 2>/dev/null || true
 fi
 
-echo "🔐 [ENTRYPOINT] Préparation des certificats..."
+echo "🔐 [ENTRYPOINT] Preparing certificates..."
 
-# Copier les certificats du montage /certs vers le dossier local
+# Copy certificates from /certs mount to local directory
 if [ -d "/certs" ]; then
     cp /certs/*.crt "$LOCAL_CERT_DIR/" 2>/dev/null || true
     cp /certs/*.key "$LOCAL_CERT_DIR/" 2>/dev/null || true
     
-    # On chown le dossier et les fichiers pour l'utilisateur cible
+    # Change ownership of directory and files for target user
     TARGET_USER="${RUN_AS_USER:-root}"
     chown -R "$TARGET_USER:$TARGET_USER" "$LOCAL_CERT_DIR"
-    # Toujours s'assurer que postgres peut lire les certificats
+    # Always ensure postgres can read certificates
     if id "postgres" &>/dev/null; then
         chown -R postgres:postgres /etc/patroni/certs
     fi
@@ -32,16 +32,16 @@ if [ -d "/certs" ]; then
     chmod 600 /etc/patroni/certs/*.key 2>/dev/null || true
     chmod 644 /etc/patroni/certs/*.crt 2>/dev/null || true
 
-    echo "✅ [ENTRYPOINT] Certificats préparés dans /etc/patroni/certs"
+    echo "✅ [ENTRYPOINT] Certificates prepared in /etc/patroni/certs"
 else
-    echo "⚠️  [ENTRYPOINT] Dossier /certs non trouvé."
+    echo "⚠️  [ENTRYPOINT] Directory /certs not found."
 fi
 
-# Switcher d'utilisateur si nécessaire pour lancer la commande finale
+# Switch user if necessary to run final command
 if [ -n "${RUN_AS_USER:-}" ] && [ "$RUN_AS_USER" != "root" ]; then
-    echo "👤 [ENTRYPOINT] Exécution en tant que $RUN_AS_USER..."
+    echo "👤 [ENTRYPOINT] Executing as $RUN_AS_USER..."
     exec su -s /bin/bash "$RUN_AS_USER" -c "$*"
 else
-    echo "👤 [ENTRYPOINT] Exécution en tant que root..."
+    echo "👤 [ENTRYPOINT] Executing as root..."
     exec "$@"
 fi

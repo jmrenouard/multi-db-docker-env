@@ -15,7 +15,7 @@ if [ ! -f "$DATA_DIR/.initialized" ]; then
         rm -rf "$DATA_DIR"/*
     fi
 
-    # Initialisation de la DB system
+    # System database initialization
     echo ">> 🏗️ Running mariadb-install-db..."
     mariadb-install-db --user=root --datadir="$DATA_DIR" --skip-test-db
     
@@ -75,7 +75,7 @@ fi
 
 # 2. Starting daemon in 'safe' mode
 # Note: We let mysqld_safe manage the process.
-# Supervisor s'attend à ce que le script ne rende pas la main (foreground),
+# Supervisor expects the script to remain in foreground,
 # mysqld_safe launches a background process by default.
 # For Supervisor, it's better to launch mariadbd directly or use exec.
 

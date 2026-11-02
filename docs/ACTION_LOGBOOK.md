@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-036 — Patroni & MariaDB Scripts English Localization (Issue `#126`)
+- **Date**: `2026-11-02T03:15+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#126` (`fix/issue-126-english-localization`)
+- **Request**: Enforce English-only policy across Patroni and MariaDB startup scripts (Finding 5 remediation part 1).
+- **Changes**: Localized French comments and echo messages in `scripts/patroni/entrypoint_etcd.sh`, `scripts/patroni/entrypoint_node.sh`, `scripts/patroni/generate_certs.sh`, `scripts/start_mariadb.sh`; bumped `VERSION` to `2.0.12`; updated `Changelog`.
+- **Result**: `tests/test_project_governance_rules.py` (5/5), `unittest discover` (17/17, 6 skipped), `tests/test_secure_password.sh` (34/34), `tests/test_profiles.sh`, `tests/test_config.sh`, and `go test -v ./...` (63/63) passed cleanly. PR diff size < 15,000 characters.
+
+---
+
 ### ACT-035 — Test Script Strict Mode Safeguards & Runtime Crash Remediation (Issue `#124`)
 - **Date**: `2026-11-02T03:00+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#124` (`fix/issue-124-strict-guards-and-localization`)
 - **Request**: Remediate latent script exits under `set -euo pipefail` identified during Milestone 2 gate review (Finding 4 remediation).

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 # generate_certs.sh
-# Génération de certificats TLS avec SAN (Subject Alternative Names) pour le cluster.
+# TLS certificate generation with SAN (Subject Alternative Names) for cluster.
 
 CERT_DIR="${CERT_DIR:-./certs_patroni}"
 mkdir -p "$CERT_DIR"
@@ -49,14 +49,14 @@ subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid:always,issuer
 EOF
 
-echo "🔐 Génération de l'autorité de certification (CA)..."
+echo "🔐 Generating Certificate Authority (CA)..."
 openssl genrsa -out $CERT_DIR/ca.key 2048
 openssl req -x509 -new -nodes -key $CERT_DIR/ca.key -subj "/CN=Patroni-Cluster-CA" -days 3650 -out $CERT_DIR/ca.crt -config $CERT_DIR/openssl.cnf -extensions v3_ca
 
 generate_cert_with_cn() {
     local name=$1
     local cn="${2:-$1}"
-    echo "📜 Génération du certificat pour $name (CN=$cn)..."
+    echo "📜 Generating certificate for $name (CN=$cn)..."
     openssl genrsa -out $CERT_DIR/$name.key 2048
     openssl req -new -key $CERT_DIR/$name.key -subj "/CN=$cn" -out $CERT_DIR/$name.csr -config $CERT_DIR/openssl.cnf
     openssl x509 -req -in $CERT_DIR/$name.csr -CA $CERT_DIR/ca.crt -CAkey $CERT_DIR/ca.key -CAcreateserial -out $CERT_DIR/$name.crt -days 365 -sha256 -extfile $CERT_DIR/openssl.cnf -extensions v3_req
@@ -81,10 +81,10 @@ generate_cert_with_cn "postgresql-client" "${REPLICATOR_USER}"
 generate_cert "pgbouncer"
 
 # Fichier PEM combiné pour HAProxy (Certificat + Clé)
-echo "📜 Génération du PEM combiné pour HAProxy..."
+echo "📜 Generating combined PEM for HAProxy..."
 cat $CERT_DIR/postgresql-server.crt $CERT_DIR/postgresql-server.key > $CERT_DIR/haproxy.pem
 
-echo "✅ Certificats générés dans $CERT_DIR"
+echo "✅ Certificates generated in $CERT_DIR"
 
 chmod 700 $CERT_DIR
 chmod 600 $CERT_DIR/*.key
