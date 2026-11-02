@@ -32,7 +32,7 @@ graph TD
 
 | Logical Name | Node | Role | IP Address | MariaDB Port | SSH Port |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `mariadb-g1` | Node 1 | Multi-Master | `10.6.0.11` | 3511 | 22001 |
+| `mariadb-g1` | Node 1 | Multi-Master | `10.6.0.11` | 3511 | 24001 |
 | `mariadb-g2` | Node 2 | Multi-Master | `10.6.0.12` | 3512 | 24002 |
 | `mariadb-g3` | Node 3 | Multi-Master | `10.6.0.13` | 3513 | 24003 |
 | `haproxy_galera`| LB | Load Balancer | `10.6.0.100` | 3306 | N/A |

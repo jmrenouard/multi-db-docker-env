@@ -7,17 +7,22 @@ The `Makefile` is the main entry point for managing database environments (Stand
 | Command | Description |
 | :--- | :--- |
 | `make stop` | 🛑 Stop and remove all containers and networks. |
-| `make start` | 🚀 Start the default database service (MariaDB 11.8). |
 | `make status` | 📊 Display the status of active containers. |
 | `make info` | ℹ️ Provide information about the active DB service. |
 | `make logs` | 📄 Display logs for the active database service. |
 | `make mycnf` | 🔑 Generate the `.my.cnf` file for password-less connections. |
 | `make client` | 💻 Start a MySQL client on the active database. |
-| `make pgpass` | 🔑 Generate the `.pgpass` file for password-less PostgreSQL connections. |
-| `make pgclient` | 💻 Start a PostgreSQL client on the active database. |
 | `make verify` | ✅ Runs complete environment validation (`test-config`). |
 | `make start` | 🚀 Starts the default service (`mariadb114`). |
 | `make help` | Show help message for all available tasks. |
+| `make build-go` | 🔨 Compile native Go `mdb` binary into `bin/mdb`. |
+| `make test-go` | 🧪 Run complete Go unit test suite (`go test -v ./...`). |
+| `make test-all-topologies` | 🧪 Run E2E tests across all standalone DBs and HA topologies. |
+| `make test-all-report` | 📊 Aggregate individual test reports into consolidated HTML report. |
+| `make test-failover` | 🧪 Run primary failover & resilience verification tests. |
+| `make test-backup-restore` | 🧪 Run backup and restore verification tests. |
+| `make gen-ssl-all` | 🔐 Generate TLS certificates for all HA topologies. |
+| `make check-ssl-all` | 🔍 Verify TLS certificate validity for all topologies. |
 | `make build-image` | Build the base `mariadb_ssh:004` image. |
 | `make install-client` | Install MariaDB client on the host (Ubuntu/Debian). |
 | `make gen-ssl` | Generate SSL certificates in `ssl/` directory. |
@@ -54,6 +59,7 @@ The `Makefile` is the main entry point for managing database environments (Stand
 | `make percona80` | Starts Percona Server 8.0 |
 | `make postgres17` | Starts PostgreSQL 17 |
 | `make postgres16` | Starts PostgreSQL 16 |
+| `make postgres15` | Starts PostgreSQL 15 |
 
 ## 🌐 Galera Cluster Commands
 
@@ -118,3 +124,59 @@ These commands allow targeted access to logs within nodes without using `docker 
 | `make follow-slow-repli` | Follow (tail -f) the slow query log on a Replication node. |
 
 > **Pro Tip**: Use `NODE=2` or `NODE=3` (e.g., `make logs-error-galera NODE=2`) to target a specific node. Default is Node 1.
+
+## 🐘 Patroni PostgreSQL HA Cluster Commands
+
+| Command | Description |
+| :--- | :--- |
+| `make patroni-up` | Start 3-node PostgreSQL 17 + ETCD + HAProxy cluster. |
+| `make patroni-down` | Stop Patroni cluster and remove volumes. |
+| `make patroni-status` | Display Patroni node status via `patronictl`. |
+| `make patroni-logs` | Follow real-time logs for Patroni cluster. |
+| `make patroni-ps` | List running Patroni containers. |
+| `make test-patroni` | Run Patroni functional test suite. |
+
+## 🐘 PgPool-II Cluster Commands
+
+| Command | Description |
+| :--- | :--- |
+| `make pgpool-up` | Start PostgreSQL 17 + PgPool-II load balancer cluster. |
+| `make pgpool-down` | Stop PgPool-II cluster and remove volumes. |
+| `make pgpool-status` | Show PgPool-II node status via `SHOW pool_nodes`. |
+| `make pgpool-logs` | Follow real-time logs for PgPool-II cluster. |
+| `make pgpool-ps` | List running PgPool-II containers. |
+| `make test-pgpool` | Run PgPool-II functional test suite. |
+
+## 🐬 MySQL InnoDB Cluster Commands
+
+| Command | Description |
+| :--- | :--- |
+| `make innodb-up` | Start MySQL 8.4 InnoDB Cluster (3 nodes + Router). |
+| `make innodb-down` | Stop InnoDB Cluster and remove volumes. |
+| `make innodb-status` | Display Group Replication members status. |
+| `make innodb-logs` | Follow real-time logs for InnoDB Cluster. |
+| `make innodb-ps` | List running InnoDB Cluster containers. |
+| `make test-innodb` | Run InnoDB Cluster functional test suite. |
+
+## 🍃 MongoDB ReplicaSet Commands
+
+| Command | Description |
+| :--- | :--- |
+| `make mongo-up` | Start MongoDB 7 ReplicaSet (3 nodes + HAProxy). |
+| `make mongo-down` | Stop MongoDB 7 ReplicaSet and remove volumes. |
+| `make mongo-status` | Display ReplicaSet member health and status. |
+| `make test-mongo` | Run MongoDB 7 functional test suite. |
+| `make test-perf-mongo` | Run performance benchmark on MongoDB ReplicaSet. |
+| `make mongo8-up` | Start MongoDB 8 ReplicaSet (3 nodes + HAProxy). |
+| `make mongo8-down` | Stop MongoDB 8 ReplicaSet and remove volumes. |
+| `make mongo8-status` | Display MongoDB 8 ReplicaSet member status. |
+| `make test-mongo8` | Run MongoDB 8 functional test suite. |
+
+## 🔍 MySQLTuner Integration Commands
+
+| Command | Description |
+| :--- | :--- |
+| `make mysqltuner-galera` | Run MySQLTuner audit against Galera Cluster. |
+| `make mysqltuner-innodb` | Run MySQLTuner audit against InnoDB Cluster. |
+| `make mysqltuner-repli` | Run MySQLTuner audit against MariaDB Replication. |
+| `make mysqltuner-all` | Run MySQLTuner audit across all HA topologies. |

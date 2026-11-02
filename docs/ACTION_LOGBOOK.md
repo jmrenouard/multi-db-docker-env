@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-041 — Architecture Port Reconciliation, Makefile Parity & Governance Index (Issue `#136`)
+- **Date**: `2026-11-02T04:55+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#136` (`doc/issue-136-ports-makefile-index`)
+- **Request**: Correct documented ports (Galera Node 1 SSH 24001, MariaDB Replication 3411-3413), deduplicate Makefile commands (remove duplicate `make start` and phantom `pgpass`/`pgclient`, add `postgres15`, Go CLI, HA clusters, and E2E targets), and expand Governance table in documentation index.
+- **Changes**: Replaced `22001` with `24001` in `documentation/architecture.md`; replaced `3611-3613` with `3411-3413` in `documentation/supported_products.md` and `documentation/supported_products_fr.md`; cleaned `documentation/makefile.md` (removed line 10 duplicate `make start` and phantom `pgpass`/`pgclient`, added `postgres15`, Go CLI, HA cluster targets, and E2E targets); expanded Governance table in `documentation/INDEX.md` with links to `AGENTS.md`, `ACTION_LOGBOOK.md`, `RCA_REGISTER.md`, and project governance rules; bumped `VERSION` to `2.0.17`; updated `Changelog`.
+- **Result**: All test suites pass cleanly (`test_project_governance_rules.py`, `unittest`, `test_secure_password.sh`, `test_config.sh`, `go test -v ./...`). PR diff size strictly < 15,000 characters.
+
+---
+
 ### ACT-040 — Patroni Scripts, Perf Reports Localization & Governance Rule Expansion (Issue `#134`)
 - **Date**: `2026-11-02T04:20+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#134` (`fix/issue-134-patroni-perf-french-cleanup`)
 - **Request**: Localize French comments in Patroni scripts and HTML cards in Galera/Replication perf tests; expand governance rule `test_no_french_table_headers_remain`.

@@ -24,7 +24,7 @@ Référence complète de tous les moteurs de bases de données et composants d'i
 
 **Modes HA** :
 - Cluster Galera (3 nœuds, réplication synchrone, ports 3511-3513)
-- Réplication Maître/Esclave (1 maître + 2 esclaves, ports 3611-3613)
+- Réplication Maître/Esclave (1 maître + 2 esclaves, ports 3411-3413)
 
 ## 🐬 Percona Server
 

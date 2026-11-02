@@ -1,3 +1,10 @@
+2.0.17 2026-11-02
+- fix: correct Galera Node 1 SSH port to 24001 in architecture documentation (documentation/architecture.md) (Closes #136).
+- fix: correct MariaDB replication port range to 3411-3413 in English and French catalogs (documentation/supported_products.md, documentation/supported_products_fr.md).
+- doc: deduplicate make start, remove phantom PostgreSQL targets, and document HA cluster, Go CLI, MySQLTuner, and E2E targets in Makefile reference (documentation/makefile.md).
+- doc: expand governance and orchestration directory in documentation index (documentation/INDEX.md).
+- doc: record ACT-041 in docs/ACTION_LOGBOOK.md and APP-014 in docs/RCA_REGISTER.md.
+
 2.0.16 2026-11-02
 - fix: localize French comments to English in Patroni startup and cert generation scripts (scripts/patroni/entrypoint_etcd.sh, scripts/patroni/generate_certs.sh) (Closes #134).
 - fix: localize HTML performance report titles, subtitles, and summary card captions to English (tests/test_perf_galera.sh, tests/test_perf_repli.sh).
