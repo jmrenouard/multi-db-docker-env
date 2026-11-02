@@ -376,6 +376,11 @@
 - **Nature & Justification**: `tests/lib/common.sh` is a sourced helper library that initializes environment, assertions, and reporting functions across test suites. While it sets `set -euo pipefail` at line 5, it is explicitly exempted from standalone script execution requirements.
 - **Removal Condition**: Maintained permanently as an explicit architectural design pattern for sourced bash libraries.
 
+### APP-010 — English Localization for Patroni and MariaDB Startup Scripts
+- **Target Files**: `scripts/patroni/entrypoint_etcd.sh`, `scripts/patroni/entrypoint_node.sh`, `scripts/patroni/generate_certs.sh`, `scripts/start_mariadb.sh`
+- **Nature & Justification**: Standardized comments and startup status logs to English across Patroni cluster orchestrators and MariaDB entrypoint scripts, removing legacy French comments and echo statements.
+- **Removal Condition**: Permanent governance requirement for repository standardization.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
