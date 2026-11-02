@@ -22,22 +22,24 @@ These rules apply **without exception** to every session and every agent working
 
 For **every user request** (new feature, bug fix, CI/CD, documentation, or refactoring), the agent **MUST systematically** execute the complete GitHub lifecycle below:
 
-1. **Open a GitHub Issue**:
-   - Create an issue using `gh issue create --title "<type>: <title>" --body "<context, objectives, and acceptance criteria>"` and retrieve `#<id>`.
-2. **Create a Dedicated Branch**:
+0. **Open a GitHub Issue (`gh issue create`)**:
+   - Create an issue using `gh issue create --title "<type>: <title>" --body "<context, objectives, and acceptance criteria>"` (strictly in English) and retrieve `#<id>`.
+1. **Create a Dedicated Branch**:
    - Create `<type>/issue-<id>-<slug>` from `main` (use `git worktree` when parallel work exists in the main working directory).
-3. **TDD Implementation & Unit Tests**:
-   - Implement minimal required changes and verify test targets pass locally (`make test-config`, `python -m unittest discover -s tests -v`, or topology test targets).
-4. **Update Governance Registers (`docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`)**:
-   - Systematically update `docs/ACTION_LOGBOOK.md` and `docs/RCA_REGISTER.md` before committing (see Sections 3 and 4 below).
-5. **Commit & Push**:
-   - Make atomic Conventional Commits (`feat:`, `fix:`, `ci:`, `docs:`, `test:`, `chore:`) referencing `Refs #<id>` or `Closes #<id>`, keeping PR diff `< 15,000` characters, and push (`git push -u origin <branch>`).
-6. **Create a Pull Request (PR)**:
-   - Open a PR targeting `main` via `gh pr create --base main --head <branch> --title "<type>: <title> (#<id>)" --body "Closes #<id> ..."`.
-7. **Merge the Pull Request**:
-   - Merge into `main` via `gh pr merge <pr-id> --merge --delete-branch` and synchronize `main` (`git pull --ff-only origin main`).
-8. **Close Issue with Comment**:
-   - Explicitly close the corresponding GitHub Issue with a summary comment detailing the changes, verification results, and merge status (`gh issue comment <id> --body "..."` followed by `gh issue close <id>`).
+2. **TDD Implementation & Unit Tests**:
+   - Implement minimal required changes and verify test targets pass locally (`make test-config`, `python -m unittest discover -s tests -v`, or topology test targets). All code, shell, Makefile, and SQL comments must strictly be written in English. Update governance registers (`docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`).
+3. **Rigorous Staging (`git add`)**:
+   - Stage only tracked project files via `git add`; exclude untracked artifacts, temporary dumps, or logs.
+4. **Structured Commit (`git commit`)**:
+   - Make atomic Conventional Commits (`feat:`, `fix:`, `ci:`, `docs:`, `test:`, `chore:`) in English referencing `Refs #<id>` or `Closes #<id>`, keeping PR diff `< 15,000` characters.
+5. **Branch Push (`git push`)**:
+   - Push branch to remote: `git push -u origin <branch>`.
+6. **Create a Pull Request (`gh pr create`)**:
+   - Open a PR targeting `main` via `gh pr create --base main --head <branch> --title "<type>: <title> (#<id>)" --body "Closes #<id> ..."` (strictly in English).
+7. **Merge the Pull Request (`gh pr merge`)**:
+   - Merge into `main` via `gh pr merge <pr-id> --merge --delete-branch` with a merge commit message strictly in English, and synchronize `main` (`git pull --ff-only origin main`).
+8. **Close Issue with Comment (`gh issue close`)**:
+   - Explicitly close the corresponding GitHub Issue with a summary comment in English detailing the changes, verification results, and merge status (`gh issue comment <id> --body "..."` followed by `gh issue close <id>`).
 
 ---
 
@@ -66,3 +68,15 @@ The agent **MUST systematically update** [`docs/RCA_REGISTER.md`](docs/RCA_REGIS
    - Declare every simplification compared to live production environments (default `.env` passwords for lab isolation, port routing heuristics) with its impact and removal condition.
 4. **Unimplemented Ideas & Future Roadmap (`IDEA-XXX`)**:
    - Log every feature, optimization, or extension identified outside the immediate scope with its priority and target module.
+
+---
+
+## 5. Mandatory English-Only Policy for GitHub and Code
+
+All GitHub artifacts, messages, and source code across the Multi-DB Docker Environment repository MUST be strictly in English:
+1. **GitHub Issues**: Every issue title, description, and discussion comment (`gh issue create`) MUST be strictly in English.
+2. **Pull Requests (PRs)**: Every PR title, description, and review comment (`gh pr create`) MUST be strictly in English.
+3. **PR Merges & Issue Comments**: Every PR merge commit message (`gh pr merge`) and issue closing comment (`gh issue close --comment "..."` or `gh issue comment`) MUST be strictly in English.
+4. **Git Commit Messages**: All commit messages (Conventional Commits) MUST be strictly in English.
+5. **Source Code & Script Comments**: All comments in Python, Bash, SQL, Makefiles, Dockerfiles, and compose configurations MUST be strictly written in English. French code and script comments are strictly forbidden.
+6. **Zero French on GitHub**: Zero French is allowed in any GitHub interactions, issue discussions, PR reviews, merge messages, or issue closing comments.
