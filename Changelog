@@ -1,3 +1,11 @@
+2.0.25 2026-11-02
+- fix: add patroni-test alias target for test-patroni (Makefile) (Closes #152).
+- fix: bump fallback version in cmd/mdb to 2.0.25 and update unit tests (cmd/mdb).
+- doc: synchronize Patroni cluster and PostgreSQL support documentation with actual ports, auth, and 8 test groups (documentation).
+- doc: synchronize README.md with 67+ Go tests, HA cluster ports, mdb CLI commands, and v2.0.25 reference (README.md).
+- doc: record ACT-051 in ACTION_LOGBOOK.md and RCA-048 / APP-018 / IDEA-006 in RCA_REGISTER.md (docs).
+- test: update TestResolveVersion assertions to 2.0.25 (cmd/mdb).
+
 2.0.24 2026-11-02
 - feat: Mongo 8 ReplicaSet TLS parity with cert mounts & requireTLS (docker-compose-mongo8-rs.yml) (Closes #150).
 - fix: 3-tier run_mongosh, WAIT_RETRIES, and [OK]/[ERROR] markers (conf/mongo-rs).

@@ -368,6 +368,17 @@
 
 ---
 
+### RCA-048 — Patroni & PostgreSQL Docs Drift against Topologies and Tests
+- **Date / Linked Action**: `2026-11-02` (`ACT-051` / Issue `#152`)
+- **Observed Symptom**: Patroni docs lacked ports (6432, 8008, 2379), PGPASSWORD auth, mdb CLI commands, and 8 test groups; postgresql_support.md had outdated test counts (4 vs 11) and missing pooling/TLS; README.md referenced 63+ tests and 2.0.2.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why?* Early documentation was authored prior to PgBouncer, REST API, test enrichment, and v2.0 Go CLI.
+  2. *Why?* Lacked automated documentation-to-compose port verification.
+- **Applied Change / Fix**: Synchronized patroni_cluster.md, postgresql_support.md, README.md, Makefile, VERSION, cmd/mdb.
+- **Result & Non-Regression Test**: `unittest` (21/21), `go test` (67/67), `test_config.sh` pass.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
@@ -491,6 +502,11 @@
 - **Nature & Justification**: Added cert mounts and 3-tier fallback in setup.
 - **Removal Condition**: Permanent pattern for lab/CI connection resilience.
 
+### APP-018 — Patroni HAProxy Client TLS & PgBouncer Port Exposure
+- **Target Files**: `docker-compose-patroni.yml`, `documentation/patroni_cluster.md`
+- **Nature & Justification**: Mutual TLS is active internally across nodes/ETCD; HAProxy (5000/5001) and PgBouncer (6432) allow plaintext client connections in lab mode.
+- **Removal Condition**: Enforce client TLS termination at HAProxy in production.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
@@ -514,4 +530,8 @@
 ### IDEA-005 — Automated Performance Regression Gate via Sysbench Metrics
 - **Priority / Target**: `High` · `pkg/bench/sysbench.go`, `cmd/mdb`
 - **Description**: Automatically compare parsed sysbench TPS and 95th percentile latency against historical baseline thresholds, failing CI on performance degradation.
+
+### IDEA-006 — Documentation-to-Compose Port and Target Drift Linter
+- **Priority / Target**: `Medium` · `tests/test_documentation_drift.py`
+- **Description**: Static governance test asserting compose ports and Makefile targets are documented in `documentation/*.md`.
 

@@ -33,7 +33,7 @@ graph TD
 - **PostgreSQL Nodes**: 3 nodes (`node1`, `node2`, `node3`) managed by Patroni.
 - **HAProxy**: Load balancer providing a single entry point for read-write and read-only traffic.
 
-## Quick Start
+## Quick Start (or use `mdb up patroni` / `mdb status patroni`)
 
 ### 1. Generate Certificates
 
@@ -61,33 +61,45 @@ make patroni-status
 | :--- | :--- | :--- |
 | Read-Write | `5000` | Traffic routed to the current Leader node. |
 | Read-Only | `5001` | Traffic balanced across all healthy Replicas. |
+| PgBouncer | `6432` | Client connection pooling on PostgreSQL nodes. |
 | Stats | `7000` | HAProxy statistics dashboard. |
+| Patroni REST API | `8008` | Internal health check, config, and DCS election endpoint. |
+| etcd | `2379` | Distributed consensus store client endpoint (`etcd1`). |
 
-### Example connection
+### Authenticated Connection Examples
 
 ```bash
-psql -h 127.0.0.1 -p 5000 -U postgres
+export PGPASSWORD="${DB_ROOT_PASSWORD:-postgres}"
+psql -h 127.0.0.1 -p 5000 -U postgres -d postgres  # Primary RW (HAProxy)
+psql -h 127.0.0.1 -p 5001 -U postgres -d postgres  # Standby RO (HAProxy)
+psql -h 127.0.0.1 -p 6432 -U postgres -d postgres  # PgBouncer pooler
+curl -s http://127.0.0.1:7000/                     # HAProxy Stats
+docker exec node1 curl -s http://localhost:8008/cluster # Patroni REST API
 ```
 
 ## Automated Testing
 
-A functional test suite is available to validate cluster health, replication, and HAProxy routing.
+A functional test suite validates cluster health, consensus, replication, and failover across **8 test groups** (11 assertions in `tests/test_patroni.sh`).
 
 ### Run Tests
 
-Ensure the cluster is running, then execute:
-
 ```bash
-make test-patroni
+make patroni-test          # (or: make test-patroni / mdb test patroni)
 ```
 
-The test script will:
-- Check overall cluster status (`patronictl list`).
-- Verify Read-Write and Read-Only connectivity via HAProxy.
-- Validate synchronous replication by creating test data on the Leader and verifying it on Replicas.
+### 8 Test Groups Breakdown
+
+1. **ETCD Cluster Health**: Consensus quorum and DCS health across etcd nodes.
+2. **Patroni REST API**: REST API endpoints (`:8008`) and DCS leader status query.
+3. **PostgreSQL Topology & Replication**: Leader election and streaming replication to standbys.
+4. **HAProxy Routing**: RW port 5000 leader routing and RO port 5001 replica balancing.
+5. **PgBouncer Connection Pooling**: Client connection pooling through port 6432.
+6. **Automatic Failover Simulation**: Leader stepdown/promotion and dynamic HAProxy routing updates.
+7. **Configuration Audit**: `patronictl show-config`, node parameter parity, and TLS certificates.
+8. **Sysbench Performance**: Transactional benchmark under concurrent OLTP workloads.
 
 ## Cleanup
 
 ```bash
-make patroni-down
+make patroni-down          # (or: mdb down patroni)
 ```

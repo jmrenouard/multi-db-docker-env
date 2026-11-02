@@ -66,7 +66,7 @@ These commands help you manage and interact with the overall environment.
 | `make client`   | 💻   | Starts a MySQL client connected to the active database.                     | `make client`         |
 | `make verify`   | ✅   | Runs complete environment and configuration validation (test-config).       | `make verify`         |
 | `make build-go` | 🔨   | Compiles the native Go `mdb` CLI binary into `bin/mdb`.                     | `make build-go`       |
-| `make test-go`  | 🧪   | Runs the complete Go unit test suite (63+ tests).                           | `make test-go`        |
+| `make test-go`  | 🧪   | Runs the complete Go unit test suite (67+ tests).                           | `make test-go`        |
 | `python3 interactive_runner.py` | 🚀 | Starts the interactive test runner for guided setup and testing. | `python3 interactive_runner.py` |
 
 ### Data Management
@@ -160,17 +160,17 @@ Advanced PostgreSQL architectures with automatic failover or connection pooling.
 
 | Command              | Icon | Description                                        |
 | :------------------- | :--- | :------------------------------------------------- |
-| `make patroni-up`    | 🐘   | Starts Patroni HA Cluster (3 PG + 3 ETCD + HAProxy) |
-| `make patroni-status`| 📊   | Shows Patroni cluster status                       |
-| `make test-patroni`  | 🧪   | Runs Patroni functional tests                      |
-| `make patroni-down`  | 🛑   | Stops Patroni cluster                              |
+| `make patroni-up`    | 🐘   | Starts Patroni HA Cluster (`mdb up patroni`)       |
+| `make patroni-status`| 📊   | Shows Patroni cluster status (`mdb status patroni`)|
+| `make patroni-test`  | 🧪   | Runs Patroni functional tests (`mdb test patroni`) |
+| `make patroni-down`  | 🛑   | Stops Patroni cluster (`mdb down patroni`)         |
 | `make pgpool-up`     | 🐘   | Starts PgPool-II Cluster (3 PG + PgPool + HAProxy)  |
 | `make pgpool-status` | 📊   | Shows PgPool-II node status                        |
 | `make test-pgpool`   | 🧪   | Runs PgPool-II functional tests (20 tests)         |
 | `make pgpool-down`   | 🛑   | Stops PgPool-II cluster                            |
 
 > [!NOTE]
-> Patroni uses ports 5000 (RW) / 5001 (RO) / 7000 (Stats). PgPool-II uses ports 5100 (RW) / 5101 (RO) / 8406 (Stats).
+> Patroni uses ports 5000 (Primary RW), 5001 (Replicas RO), 6432 (PgBouncer), 7000 (Stats), 8008 (REST API), and 2379 (etcd). PgPool-II uses ports 5100 (RW) / 5101 (RO) / 8406 (Stats).
 
 **MySQL InnoDB Cluster (Group Replication & HAProxy)**
 
@@ -352,12 +352,12 @@ A native compiled CLI (`cmd/mdb`, `bin/mdb`) written in pure Go (zero external d
 
 ```bash
 make build-go    # Build binary into bin/mdb
-make test-go     # Run Go test suite (63+ tests)
+make test-go     # Run Go test suite (67+ tests)
 ```
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| `version` | `mdb version` | Prints CLI version (`2.0.2`). |
+| `version` | `mdb version` | Prints CLI version (`2.0.25`). |
 | `config` | `mdb config [-env <path>]` | Dumps configuration as JSON. |
 | `topologies` | `mdb topologies` | Lists all 8 supported topologies. |
 | `up` | `mdb up <topology>` | Deploys topology with bootstrap & setup. |
