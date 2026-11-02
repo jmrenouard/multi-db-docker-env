@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-040 — Patroni Scripts, Perf Reports Localization & Governance Rule Expansion (Issue `#134`)
+- **Date**: `2026-11-02T04:20+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#134` (`fix/issue-134-patroni-perf-french-cleanup`)
+- **Request**: Localize French comments in Patroni scripts and HTML cards in Galera/Replication perf tests; expand governance rule `test_no_french_table_headers_remain`.
+- **Changes**: Localized comments in `scripts/patroni/entrypoint_etcd.sh` and `generate_certs.sh`; localized HTML titles and captions in `tests/test_perf_galera.sh` and `test_perf_repli.sh`; expanded `test_no_french_table_headers_remain` regex; bumped `VERSION` to `2.0.16`; updated `Changelog`.
+- **Result**: All test suites pass cleanly (`test_project_governance_rules.py`, `unittest`, `test_secure_password.sh`, `test_profiles.sh`, `test_config.sh`, `go test`). PR diff < 15,000 chars.
+
+---
+
 ### ACT-039 — Provider Options Pipeline Operator Precedence & Test Suites English Localization (Part 1) (Issue `#132`)
 - **Date**: `2026-11-02T04:10+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#132` (`fix/issue-132-complete-english-localization`)
 - **Request**: Fix operator precedence in `tests/test_galera.sh:290` and translate French HTML labels in Galera and HAProxy test suites while respecting the strict < 15,000 diff character limit.

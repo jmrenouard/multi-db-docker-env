@@ -127,16 +127,44 @@ class TestProjectGovernanceRules(unittest.TestCase):
         )
 
     def test_no_french_table_headers_remain(self) -> None:
-        """Verify that no legacy French table headers or logs remain in scripts/ or tests/."""
-        targets = list((ROOT / "scripts").rglob("*.sh")) + list((ROOT / "tests").rglob("*.sh"))
-        banned = ["Nature du Test", "Résultat Réel", "Génération de l'autorité"]
-        violations = [
-            f"{p.relative_to(ROOT)}: '{b}'"
-            for p in targets
-            for b in banned
-            if b in p.read_text(encoding="utf-8", errors="replace")
+        """Verify that no French table headers, UI labels, comments, or accented text remain in scripts/ or tests/."""
+        import re
+
+        targets = [
+            p for p in (list((ROOT / "scripts").rglob("*.sh")) + list((ROOT / "tests").rglob("*.sh")))
+            if p.is_file()
         ]
-        self.assertEqual(violations, [], f"Legacy French phrases found: {violations}")
+
+        french_accent_pattern = re.compile(r"[éèêëàâçîïôûùÉÈÊËÀÂÇÎÏÔÛÙ]")
+        banned_patterns = re.compile(
+            r"\b("
+            r"nature du test|résultat réel|resultat reel|génération de l.autorité|generation de l.autorite|"
+            r"attendu|arrêt du conteneur|arret du conteneur|serveur|serveurs|"
+            r"explorateur de configuration|rechercher une variable|composants filtr[eé]s|"
+            r"deltas mesur[eé]s|retard maximal|esclaves|"
+            r"charger les variables|fichier de config|fichier pem|certificats pour|"
+            r"construction des arguments|construction de la commande|démarrage du service|demarrage du service|"
+            r"exécution d.etcd|execution d.etcd|sans par d[eé]faut|fusionner avec|"
+            r"identifiants par d[eé]faut|pour [eé]viter|latence haProxy|latence directe|"
+            r"rapport de performance|audit de performance"
+            r")\b",
+            re.IGNORECASE,
+        )
+
+        violations = []
+        for p in targets:
+            rel = p.relative_to(ROOT)
+            content = p.read_text(encoding="utf-8", errors="replace")
+            for i, line in enumerate(content.splitlines(), 1):
+                if french_accent_pattern.search(line) or banned_patterns.search(line):
+                    violations.append(f"{rel}:{i}: {line.strip()[:80]}")
+
+        self.assertEqual(
+            violations,
+            [],
+            f"Residual French strings found in scripts/ or tests/ ({len(violations)} violations):\n"
+            + "\n".join(violations),
+        )
 
 
 if __name__ == "__main__":
