@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-046 — Sysbench MYSQL_PWD Env Injection, Go CLI Version Sync & Default Password Alignment (Issue `#142`)
+- **Date**: `2026-11-02T06:15+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#142` (`fix/issue-142-sysbench-pwd-version-sync`)
+- **Request**: Pass `MYSQL_PWD` via `env` slice in `SysbenchRunner.Run`, replace French fallback password in `pkg/config/config.go` with `"rootpass"`, synchronize `cmd/mdb/main.go` version with `VERSION` via `resolveVersion()`, and add unit tests.
+- **Changes**: Injected `MYSQL_PWD` in `env` in `pkg/bench/sysbench.go`; updated `mockExecutor` and added env assertion in `pkg/bench/sysbench_test.go`; replaced default password with `"rootpass"` in `pkg/config/config.go` and asserted in `pkg/config/config_test.go`; bumped `version = "2.0.20"` and added `resolveVersion()` in `cmd/mdb/main.go`; added `TestResolveVersion` in `cmd/mdb/main_test.go`; bumped `VERSION` to `2.0.20`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (66/66), `python -m unittest discover -s tests -v` passed (18/18, 6 skipped), `bash tests/test_config.sh` passed, `bash tests/test_secure_password.sh` passed (34/34). PR diff size strictly < 15,000 characters.
+
+---
+
 ### ACT-045 — MongoVerifier TLS Fallback, Mongo8 PKI & Container SANs (Issue `#140`)
 - **Date**: `2026-11-02T05:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#140` (`fix/issue-140-mongo-tls-pki-mongo8`)
 - **Request**: Add TLS fallback in MongoVerifier, add mongo8 and Compose container SANs in PKIEngine and scripts, and add unit tests.

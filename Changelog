@@ -1,3 +1,10 @@
+2.0.20 2026-11-02
+- fix: pass MYSQL_PWD in container environment during Sysbench execution (pkg/bench) (Closes #142).
+- fix: sync Go mdb CLI version dynamically with VERSION file (cmd/mdb).
+- fix: replace French default root password with rootpass (pkg/config).
+- test: add unit tests for Sysbench MYSQL_PWD env injection and version resolution (pkg/bench, cmd/mdb, pkg/config).
+- doc: record ACT-046 in ACTION_LOGBOOK.md and RCA-043 in RCA_REGISTER.md (docs).
+
 2.0.19 2026-11-02
 - fix: support TLS fallback in MongoVerifier (pkg/dbclient) (Closes #140).
 - fix: add mongo8 & container SANs in PKIEngine (pkg/pki, scripts).

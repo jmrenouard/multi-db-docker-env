@@ -20,7 +20,16 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-var version = "2.0.2"
+var version = "2.0.20"
+
+func resolveVersion() string {
+	if data, err := os.ReadFile("VERSION"); err == nil {
+		if v := strings.TrimSpace(string(data)); v != "" {
+			return v
+		}
+	}
+	return version
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -30,7 +39,7 @@ func main() {
 
 	switch os.Args[1] {
 	case "version", "--version", "-v":
-		fmt.Printf("mdb version %s\n", version)
+		fmt.Printf("mdb version %s\n", resolveVersion())
 	case "config":
 		fs := flag.NewFlagSet("config", flag.ExitOnError)
 		envPath := fs.String("env", "", "Path to .env file")
@@ -184,7 +193,7 @@ func main() {
 		_ = fs.Parse(os.Args[2:])
 
 		pass := loadPassword()
-		rep := report.NewReport(version)
+		rep := report.NewReport(resolveVersion())
 		client, ctx := docker.NewClient(), context.Background()
 
 		topos := fs.Args()

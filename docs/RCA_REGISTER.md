@@ -311,6 +311,18 @@
 
 ---
 
+### RCA-043 — Sysbench Executor Missing MYSQL_PWD Environment, CLI Version Drift & French Default Password
+- **Date / Linked Action**: `2026-11-02` (`ACT-046` / Issue `#142`)
+- **Observed Symptom**: (1) `SysbenchRunner.Run` passed `nil` for `env` to `Executor.Exec`, preventing container environments from receiving `MYSQL_PWD`; (2) `cmd/mdb/main.go` hardcoded `var version = "2.0.2"`, drifting from project `VERSION` (`2.0.19`); (3) `pkg/config/config.go` defaulted `RootPassword` to French `"votre_mot_de_passe_super_secret"`, violating project English and standard `"rootpass"` credentials.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did Sysbench lack MYSQL_PWD in env?* Early implementation passed credentials solely via CLI arguments (`--mysql-password`) without populating container process environment slice.
+  2. *Why did mdb version drift?* `cmd/mdb/main.go` initialized a static string constant from early v2.0 development without reading dynamic repository release tags or `VERSION` file.
+  3. *Why was French default password present?* Legacy prototype configuration originated from initial French proof-of-concept before English-only standardization.
+- **Applied Change / Fix**: Injected `MYSQL_PWD` in the `env` slice when `r.cfg.Password != ""` in `pkg/bench/sysbench.go:102`; implemented `resolveVersion()` in `cmd/mdb/main.go` reading and trimming `VERSION` from disk with fallback to `version = "2.0.20"`; updated `pkg/config/config.go` default to `"rootpass"`; expanded test suites in `pkg/bench/sysbench_test.go`, `cmd/mdb/main_test.go`, and `pkg/config/config_test.go`.
+- **Result & Non-Regression Test**: Verified via `go test -v ./...` (66/66 pass across 9 packages), `python -m unittest discover -s tests -v` (18/18), `bash tests/test_config.sh`, and `bash tests/test_secure_password.sh` (34/34).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
