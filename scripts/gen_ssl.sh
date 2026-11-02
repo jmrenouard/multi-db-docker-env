@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Script to generate SSL certificates for MariaDB Cluster
 # Highly inspired by MariaDB documentation and best practices

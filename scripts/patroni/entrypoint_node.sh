@@ -3,15 +3,15 @@
 # Prépare les certificats et lance la commande demandée (supervisord ou pgbouncer)
 # Adapté pour multi-db-docker-env
 
-set -e
+set -euo pipefail
 
 # Dossier local pour les certificats
 LOCAL_CERT_DIR="/etc/patroni/certs"
 mkdir -p "$LOCAL_CERT_DIR"
 
 # Démarrage du service SSH pour la gestion Ansible (uniquement si root)
-if [ "$(id -u)" = "0" ]; then
-    /usr/sbin/sshd
+if [ "$(id -u)" = "0" ] && [ -x /usr/sbin/sshd ]; then
+    /usr/sbin/sshd 2>/dev/null || true
 fi
 
 echo "🔐 [ENTRYPOINT] Préparation des certificats..."

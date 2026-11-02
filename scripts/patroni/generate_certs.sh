@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # generate_certs.sh
 # Génération de certificats TLS avec SAN (Subject Alternative Names) pour le cluster.
 
@@ -54,7 +55,7 @@ openssl req -x509 -new -nodes -key $CERT_DIR/ca.key -subj "/CN=Patroni-Cluster-C
 
 generate_cert_with_cn() {
     local name=$1
-    local cn=$2
+    local cn="${2:-$1}"
     echo "📜 Génération du certificat pour $name (CN=$cn)..."
     openssl genrsa -out $CERT_DIR/$name.key 2048
     openssl req -new -key $CERT_DIR/$name.key -subj "/CN=$cn" -out $CERT_DIR/$name.csr -config $CERT_DIR/openssl.cnf
