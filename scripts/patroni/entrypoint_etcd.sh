@@ -1,6 +1,13 @@
 #!/bin/bash
+set -euo pipefail
 # entrypoint_etcd.sh
 # Gère le démarrage dynamique d'ETCD (new vs existing) pour assurer la HA.
+
+ETCD_DATA_DIR="${ETCD_DATA_DIR:-/etcd-data}"
+ETCD_NAME="${ETCD_NAME:-etcd1}"
+INT_ETCD_CLIENT_PORT="${INT_ETCD_CLIENT_PORT:-2379}"
+INT_ETCD_PEER_PORT="${INT_ETCD_PEER_PORT:-2380}"
+VERIFY_CLIENT_CERT="${VERIFY_CLIENT_CERT:-true}"
 
 # Détection de l'état du cluster
 STATE="new"
@@ -29,7 +36,9 @@ if [ "${VERIFY_CLIENT_CERT}" = "true" ]; then
 fi
 
 # Démarrage du service SSH pour la gestion Ansible
-/usr/sbin/sshd
+if [ -x /usr/sbin/sshd ]; then
+    /usr/sbin/sshd 2>/dev/null || true
+fi
 
 # Construction de la commande ETCD avec les variables d'environnement
 # Exécution d'ETCD

@@ -271,6 +271,15 @@
 
 ---
 
+### RCA-030 — Missing Strict Error Handling in Scripts & Profiles Heredoc Quoting Bug
+- **Date / Linked Action**: `2026-11-02` (`ACT-033` / Issue `#120`)
+- **Observed Symptom**: Shell scripts lacked `set -euo pipefail`; `gen_profiles.sh` heredoc wrote literal backslashes into profile aliases (`\"rootpass\"`), breaking MariaDB client authentication.
+- **Root Cause Analysis (5 Whys)**: Unquoted heredoc `\"` retains literal backslashes in POSIX bash; scripts lacked strict flags permitting silent error propagation.
+- **Applied Change / Fix**: Replaced `\"` with `"` in `gen_profiles.sh`; added `set -euo pipefail` across 9 shell scripts; added Patroni defaults and sshd guards.
+- **Result & Non-Regression Test**: `test_profiles.sh`, `test_secure_password.sh` (34/34), `test_config.sh`, `unittest` (16/16), and `go test` (63/63) pass cleanly.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
@@ -348,6 +357,11 @@
 - **Target Files**: `docker-compose-galera.yml`, `scripts/gen_profiles.sh`, `documentation/architecture.md`
 - **Nature & Justification**: Clustered topologies assign static host port ranges for node SSH access (Replication: 23001-23003; Galera: 24001-24003) to enable direct container inspection and debugging without collision.
 - **Removal Condition**: Dynamic port allocation via SDN or container orchestrator (Kubernetes/Nomad) when deploying in production.
+
+### APP-009 — Sourced Test Library Exemption from Standalone Strict Mode Assertion
+- **Target Files**: `tests/lib/common.sh`, `tests/test_project_governance_rules.py`
+- **Nature & Justification**: `tests/lib/common.sh` is a sourced helper library that initializes environment, assertions, and reporting functions across test suites. While it sets `set -euo pipefail` at line 5, it is explicitly exempted from standalone script execution requirements.
+- **Removal Condition**: Maintained permanently as an explicit architectural design pattern for sourced bash libraries.
 
 ---
 

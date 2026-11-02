@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Configuration defaults
 BACKUP_BASE_DIR="/backups"

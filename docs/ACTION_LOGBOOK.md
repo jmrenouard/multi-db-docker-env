@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-033 — Bash Strict Error Handling, Profiles Quoting & Governance Rule (Issue `#120`)
+- **Date**: `2026-11-02T02:00+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#120` (`fix/issue-120-strict-bash-and-profiles-quoting`)
+- **Request**: Enforce `set -euo pipefail` across remaining scripts (Finding 4), fix heredoc quoting in `gen_profiles.sh` (M1 remediation), fix arithmetic increments under strict mode, and add governance rule.
+- **Changes**: Fixed heredoc unescaping bug in `gen_profiles.sh`; added strict mode across 17 scripts; converted `((var++))` and guarded array indexing in tests; added `test_all_bash_scripts_have_set_euo_pipefail` in `tests/test_project_governance_rules.py`; bumped `VERSION` to `2.0.9`.
+- **Result**: `test_project_governance_rules.py` (5/5), `test_config.sh`, `test_profiles.sh`, `test_secure_password.sh` (34/34), `unittest` (17/17), and `go test` (63/63) passed cleanly.
+
+---
+
 ### ACT-032 (ACT-015) — Core Test Suite and Script Fixes (Issue `#118`)
 - **Date**: `2026-11-02T01:25+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#118` (`fix/issue-118-core-test-script-fixes`)
 - **Request**: Remediate Cycle 1 Findings 1, 2A, 3, and 7 across core test suite and scripts (unauthenticated mariadb conflict call, mongo perf TLS fallback, Galera SSH port 24001 and quoted aliases, test_config subshell loss & compose validation, duplicate .env parser).

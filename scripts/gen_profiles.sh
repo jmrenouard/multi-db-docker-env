@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Configuration
 if [ -f .env ]; then
@@ -23,15 +24,15 @@ if [ -f "./id_rsa" ]; then
 fi
 
 # --- Replication Profile ---
-cat << EOF > $REPLI_PROFILE
+cat << EOF > "$REPLI_PROFILE"
 # Replication Environment Aliases
 # Source this file: source $REPLI_PROFILE
 
-alias mariadb-m1='MYSQL_PWD=\"$PASS\" mariadb -h 127.0.0.1 -P 3411 -u$USER'
-alias mariadb-s1='MYSQL_PWD=\"$PASS\" mariadb -h 127.0.0.1 -P 3412 -u$USER'
-alias mariadb-s2='MYSQL_PWD=\"$PASS\" mariadb -h 127.0.0.1 -P 3413 -u$USER'
-alias mariadb-repli-lb-rw='MYSQL_PWD=\"$PASS\" mariadb -h 127.0.0.1 -P 3406 -u$USER'
-alias mariadb-repli-lb-ro='MYSQL_PWD=\"$PASS\" mariadb -h 127.0.0.1 -P 3407 -u$USER'
+alias mariadb-m1='MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P 3411 -u$USER'
+alias mariadb-s1='MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P 3412 -u$USER'
+alias mariadb-s2='MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P 3413 -u$USER'
+alias mariadb-repli-lb-rw='MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P 3406 -u$USER'
+alias mariadb-repli-lb-ro='MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P 3407 -u$USER'
 alias ssh-m1='ssh -i ./id_rsa -p 23001 root@127.0.0.1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 alias ssh-s1='ssh -i ./id_rsa -p 23002 root@127.0.0.1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 alias ssh-s2='ssh -i ./id_rsa -p 23003 root@127.0.0.1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
@@ -40,14 +41,14 @@ echo "✅ Replication aliases loaded (mariadb-m1, mariadb-s1, mariadb-s2, mariad
 EOF
 
 # --- Galera Profile ---
-cat << EOF > $GALERA_PROFILE
+cat << EOF > "$GALERA_PROFILE"
 # Galera Environment Aliases
 # Source this file: source $GALERA_PROFILE
 
-alias mariadb-g1='MYSQL_PWD=\"$PASS\" mariadb -h 127.0.0.1 -P 3511 -u$USER'
-alias mariadb-g2='MYSQL_PWD=\"$PASS\" mariadb -h 127.0.0.1 -P 3512 -u$USER'
-alias mariadb-g3='MYSQL_PWD=\"$PASS\" mariadb -h 127.0.0.1 -P 3513 -u$USER'
-alias mariadb-galera-lb='MYSQL_PWD=\"$PASS\" mariadb -h 127.0.0.1 -P 3306 -u$USER'
+alias mariadb-g1='MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P 3511 -u$USER'
+alias mariadb-g2='MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P 3512 -u$USER'
+alias mariadb-g3='MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P 3513 -u$USER'
+alias mariadb-galera-lb='MYSQL_PWD="$PASS" mariadb -h 127.0.0.1 -P 3306 -u$USER'
 alias ssh-g1='ssh -i ./id_rsa -p 24001 root@127.0.0.1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 alias ssh-g2='ssh -i ./id_rsa -p 24002 root@127.0.0.1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 alias ssh-g3='ssh -i ./id_rsa -p 24003 root@127.0.0.1 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
@@ -55,6 +56,6 @@ alias ssh-g3='ssh -i ./id_rsa -p 24003 root@127.0.0.1 -o StrictHostKeyChecking=n
 echo "✅ Galera aliases loaded (mariadb-g1, mariadb-g2, mariadb-g3, mariadb-galera-lb, ssh-g1, ssh-g2, ssh-g3)"
 EOF
 
-chmod +x $REPLI_PROFILE $GALERA_PROFILE
+chmod +x "$REPLI_PROFILE" "$GALERA_PROFILE"
 echo "✨ Profiles generated: $REPLI_PROFILE, $GALERA_PROFILE"
 echo "👉 Use 'source <profile_name>' to activate them."
