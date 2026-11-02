@@ -60,3 +60,16 @@ func TestBaseTopology_Lifecycle(t *testing.T) {
 		t.Fatal("expected err")
 	}
 }
+
+func TestMongoTopologies_RequiredCerts(t *testing.T) {
+	for name, want := range map[string][]string{
+		"mongo":  {"ssl/mongo/ca.pem", "ssl/mongo/mongodb.pem"},
+		"mongo8": {"ssl/certs/mongo8/ca.pem", "ssl/certs/mongo8/mongodb.pem"},
+	} {
+		topo, _ := DefaultRegistry().Get(name)
+		if got := topo.RequiredCerts(); got[0] != want[0] || got[1] != want[1] {
+			t.Fatalf("%s: %v != %v", name, got, want)
+		}
+	}
+}
+

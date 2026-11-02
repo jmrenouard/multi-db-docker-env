@@ -1,3 +1,11 @@
+2.0.24 2026-11-02
+- feat: Mongo 8 ReplicaSet TLS parity with cert mounts & requireTLS (docker-compose-mongo8-rs.yml) (Closes #150).
+- fix: 3-tier run_mongosh, WAIT_RETRIES, and [OK]/[ERROR] markers (conf/mongo-rs).
+- fix: add gen-ssl-mongo to mongo8-up and ssl/certs/mongo8 to check-ssl-all (Makefile).
+- fix: declare RequiredCerts in NewMongo8Topology and NewMongoTopology (pkg/topology).
+- doc: record ACT-050 in ACTION_LOGBOOK.md and RCA-047 / APP-017 in RCA_REGISTER.md (docs).
+- test: add RequiredCerts Go test & Mongo 8 TLS governance test in Python (pkg/topology, tests).
+
 2.0.23 2026-11-02
 - fix: localize Patroni target echo strings to English (Makefile) (Closes #148).
 - fix: inject build-time version via ldflags in build-go target & sync cmd/mdb fallback version (Makefile, cmd/mdb).

@@ -8,7 +8,7 @@ func NewMongoTopology() *MongoTopology {
 			"mongo",
 			"MongoDB 7 3-node ReplicaSet cluster with HAProxy",
 			[]string{"docker-compose-mongo-rs.yml"},
-			[]string{"mongo"},
+			[]string{"ssl/mongo/ca.pem", "ssl/mongo/mongodb.pem"},
 		),
 	}
 }
@@ -19,7 +19,7 @@ func NewMongo8Topology() *MongoTopology {
 			"mongo8",
 			"MongoDB 8 3-node ReplicaSet cluster with HAProxy",
 			[]string{"docker-compose-mongo8-rs.yml"},
-			[]string{"mongo"},
+			[]string{"ssl/certs/mongo8/ca.pem", "ssl/certs/mongo8/mongodb.pem"},
 		),
 	}
 }
