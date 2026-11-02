@@ -407,6 +407,11 @@
 - **Nature & Justification**: Expanded `test_no_french_table_headers_remain` with dual scanning (French accented character set `[éèêëàâçîïôûù...]` and word-bounded regex covering all known French UI, log, and comment patterns).
 - **Removal Condition**: Permanent governance rule enforcing English-only repository policy.
 
+### APP-014 — Documentation Parity and Port Reconciliation (Milestone 3 PR 1)
+- **Target Files**: `documentation/architecture.md`, `documentation/supported_products.md`, `documentation/supported_products_fr.md`, `documentation/makefile.md`, `documentation/INDEX.md`
+- **Nature & Justification**: Reconciled historical documentation drifts against actual Compose port mappings (Galera Node 1 SSH 24001, Replication 3411-3413) and synchronized `makefile.md` to document all HA cluster targets (Patroni, PgPool-II, InnoDB Cluster, MongoDB), Go CLI commands, MySQLTuner targets, and E2E verification suites while removing phantom `pgpass`/`pgclient` targets and duplicate `make start`.
+- **Removal Condition**: Permanent documentation baseline aligned with current repository capabilities.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)

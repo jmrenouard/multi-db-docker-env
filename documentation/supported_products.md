@@ -24,7 +24,7 @@ Comprehensive reference of all database engines and infrastructure components su
 
 **HA Modes**:
 - Galera Cluster (3-node synchronous replication, ports 3511-3513)
-- Master/Slave Replication (1 master + 2 slaves, ports 3611-3613)
+- Master/Slave Replication (1 master + 2 slaves, ports 3411-3413)
 
 ## 🐬 Percona Server
 

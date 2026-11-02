@@ -40,8 +40,13 @@ Welcome to the MariaDB Docker environment documentation. This index provides a s
 
 | Document | Description |
 | --- | --- |
-| **[Constitution](../.agent/rules/00_constitution.md)** | Absolute source of truth for project principles and Operational Authority. |
-| **[Super Manager](../.agent/workflows/go-agent.md)** | Orchestration protocol for coordinating skills, rules, and workflows. |
+| **[Project Rules (AGENTS.md)](../AGENTS.md)** | Core project architecture, PR diff limits (<15K chars), and mandatory GitHub workflow. |
+| **[Action Logbook & Roadmap](../docs/ACTION_LOGBOOK.md)** | Living record of ongoing/completed actions and executive phase progress dashboard. |
+| **[RCA Register](../docs/RCA_REGISTER.md)** | Living register of Root Cause Analyses, dead-ends (IMP), approximations (APP), and roadmap (IDEA). |
+| **[Project Governance](../.agents/rules/project-governance.md)** | Mandatory protocol for systematic Action Logbook and RCA Register updates. |
+| **[GitHub Lifecycle Workflow](../.agents/rules/github-workflow.md)** | Standard operating procedure for Issue creation, dedicated branching, PR, and merge. |
+| **[Constitution](../.agent/rules/00_constitution.md)** | Absolute source of truth for project foundation principles and Operational Authority. |
+| **[Super Manager Workflow](../.agent/workflows/go-agent.md)** | Orchestration protocol for coordinating skills, rules, and workflows. |
 
 ## 🛠️ Management & Automation
 
