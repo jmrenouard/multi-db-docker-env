@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-047 — Parameterize Cluster Replication Credentials, Audit Conf Scripts & Enforce Go English Governance (Issue `#144`)
+- **Date**: `2026-11-02T06:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#144` (`fix/issue-144-cluster-creds-conf-audit`)
+- **Request**: Source `.env` and parameterize `REPL_USER`/`REPL_PASS` in `conf/innodb-cluster/setup_cluster.sh` and `scripts/pgpool/setup_replication.sh`; add `conf/**/*.sh` scripts to `tests/test_config.sh` with `set -euo pipefail` checks; extend `tests/test_project_governance_rules.py` to audit `conf/**/*.sh` and assert no French strings remain in Go packages.
+- **Changes**: Sourced `.env` and parameterized credentials in `conf/innodb-cluster/setup_cluster.sh` and `scripts/pgpool/setup_replication.sh`; added conf scripts and strict error handling check to `tests/test_config.sh`; added `conf` directory to `test_all_bash_scripts_have_set_euo_pipefail` and added `test_no_french_strings_in_go_packages` in `tests/test_project_governance_rules.py`; bumped `VERSION` to `2.0.21`; updated `Changelog`.
+- **Result**: `go test -v ./...` passed (66/66), `python -m unittest discover -s tests -v` passed (19/19, 6 skipped), `bash tests/test_config.sh` passed, `bash tests/test_secure_password.sh` passed (34/34). PR diff size strictly < 15,000 characters.
+
+---
+
 ### ACT-046 — Sysbench MYSQL_PWD Env Injection, Go CLI Version Sync & Default Password Alignment (Issue `#142`)
 - **Date**: `2026-11-02T06:15+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#142` (`fix/issue-142-sysbench-pwd-version-sync`)
 - **Request**: Pass `MYSQL_PWD` via `env` slice in `SysbenchRunner.Run`, replace French fallback password in `pkg/config/config.go` with `"rootpass"`, synchronize `cmd/mdb/main.go` version with `VERSION` via `resolveVersion()`, and add unit tests.

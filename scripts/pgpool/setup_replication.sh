@@ -3,10 +3,18 @@
 # Sets up PostgreSQL streaming replication from pg_node1 to pg_node2 and pg_node3
 set -euo pipefail
 
+if [ -f .env ]; then
+    set -a
+    . ./.env
+    set +a
+fi
+
 PRIMARY_HOST="pg_node1"
 PRIMARY_PORT=5432
-REPLI_USER="repli_user"
-REPLI_PASS="replipass"
+REPL_USER="${REPL_USER:-repl_user}"
+REPL_PASS="${REPL_PASS:-repl_pass}"
+REPLI_USER="$REPL_USER"
+REPLI_PASS="$REPL_PASS"
 STANDBYS=("pg_node2" "pg_node3")
 
 echo "=========================================================="
@@ -41,11 +49,11 @@ else
 fi
 
 # Ensure pg_hba.conf allows replication
-if docker exec "$PRIMARY_HOST" grep -q "repli_user" /var/lib/postgresql/data/pg_hba.conf 2>/dev/null; then
+if docker exec "$PRIMARY_HOST" grep -q "$REPLI_USER" /var/lib/postgresql/data/pg_hba.conf 2>/dev/null; then
     echo "✅ pg_hba.conf already configured for replication."
 else
     echo ">> Configuring pg_hba.conf for replication access..."
-    docker exec "$PRIMARY_HOST" bash -c "echo 'host replication repli_user 10.8.0.0/24 md5' >> /var/lib/postgresql/data/pg_hba.conf"
+    docker exec "$PRIMARY_HOST" bash -c "echo 'host replication $REPLI_USER 10.8.0.0/24 md5' >> /var/lib/postgresql/data/pg_hba.conf"
     docker exec "$PRIMARY_HOST" bash -c "echo 'host all all 10.8.0.0/24 md5' >> /var/lib/postgresql/data/pg_hba.conf"
     docker exec "$PRIMARY_HOST" psql -U postgres -c "SELECT pg_reload_conf();"
 fi

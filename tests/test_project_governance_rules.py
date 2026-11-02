@@ -103,13 +103,14 @@ class TestProjectGovernanceRules(unittest.TestCase):
         self.assertIn("English", agents_content)
 
     def test_all_bash_scripts_have_set_euo_pipefail(self) -> None:
-        """Verify that every bash script in scripts/ and tests/ declares set -euo pipefail."""
+        """Verify that every bash script in scripts/, conf/, and tests/ declares set -euo pipefail."""
         scripts_dir = ROOT / "scripts"
         tests_dir = ROOT / "tests"
+        conf_dir = ROOT / "conf"
 
         sh_files = [
             p
-            for p in list(scripts_dir.rglob("*.sh")) + list(tests_dir.rglob("*.sh"))
+            for p in list(scripts_dir.rglob("*.sh")) + list(tests_dir.rglob("*.sh")) + list(conf_dir.rglob("*.sh"))
             if p.resolve() != (tests_dir / "lib" / "common.sh").resolve()
         ]
         self.assertTrue(len(sh_files) > 0, "Expected non-empty list of shell scripts")
@@ -165,6 +166,19 @@ class TestProjectGovernanceRules(unittest.TestCase):
             f"Residual French strings found in scripts/ or tests/ ({len(violations)} violations):\n"
             + "\n".join(violations),
         )
+
+    def test_no_french_strings_in_go_packages(self) -> None:
+        """Verify that default French password or French strings do not appear in Go packages."""
+        go_dirs = [ROOT / "pkg", ROOT / "cmd"]
+        banned = ["votre_mot_de_passe_super_secret"]
+        violations = []
+        for d in go_dirs:
+            for p in d.rglob("*.go"):
+                content = p.read_text(encoding="utf-8", errors="replace")
+                for ban in banned:
+                    if ban in content:
+                        violations.append(f"{p.relative_to(ROOT)} contains banned string '{ban}'")
+        self.assertEqual(violations, [], f"Found banned French strings in Go code: {violations}")
 
 
 if __name__ == "__main__":

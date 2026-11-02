@@ -77,12 +77,15 @@ for f in "${FILES_TO_CHECK[@]}"; do
     check_file "$f"
 done
 
-echo -e "\n4. Checking scripts in scripts/..."
+echo -e "\n4. Checking scripts in scripts/ and conf/..."
 SCRIPTS_TO_CHECK=(
     "scripts/backup_logical.sh" "scripts/backup_physical.sh"
     "scripts/gen_profiles.sh" "scripts/gen_ssl.sh"
     "scripts/restore_logical.sh" "scripts/restore_physical.sh"
     "scripts/setup_repli.sh" "scripts/start_mariadb.sh"
+    "conf/innodb-cluster/setup_cluster.sh"
+    "conf/mongo-rs/setup_rs.sh"
+    "conf/mongo-rs/setup_rs_mongo8.sh"
 )
 
 for s in "${SCRIPTS_TO_CHECK[@]}"; do
@@ -98,6 +101,18 @@ for s in "${SCRIPTS_TO_CHECK[@]}"; do
         echo "❌ Missing script: $s"
         add_result "Script Permissions" "$s" "FAIL" "Script is missing"
         RET=1
+    fi
+
+    # Verify set -euo pipefail
+    if [ -f "$s" ]; then
+        if grep -q "set -euo pipefail" "$s"; then
+            echo "✅ Script declares set -euo pipefail: $s"
+            add_result "Script Robustness" "$s" "PASS" "Declares set -euo pipefail"
+        else
+            echo "❌ Script missing set -euo pipefail: $s"
+            add_result "Script Robustness" "$s" "FAIL" "Missing set -euo pipefail"
+            RET=1
+        fi
     fi
 done
 
