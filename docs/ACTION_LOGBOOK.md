@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-052 — Enforce Systematic 9-Step GitHub Workflow and English-Only Policy (Issue `#154`)
+- **Date**: `2026-11-02T10:10+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#154` (`docs/issue-154-enforce-9step-workflow-english-policy`)
+- **Request**: Enforce systematic 9-step GitHub workflow (Steps 0-8) with literal `git add` and `git commit`, plus Section 5 English-only policy in AGENTS.md and .agents/AGENTS.md to satisfy project governance and adversarial tests.
+- **Changes**: Updated `AGENTS.md` and `.agents/AGENTS.md` with explicit 9 steps (0 to 8) and strict English-only policy; updated registers.
+- **Result**: `unittest` (21/21) and governance rules pass. PR diff strictly < 15,000 characters.
+
+---
+
 ### ACT-051 — Patroni & PostgreSQL Docs Sync with CLI and Tests (Issue `#152`)
 - **Date**: `2026-11-02T09:15+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#152` (`docs/issue-152-patroni-docs-sync`)
 - **Request**: Sync Patroni & PG docs with ports (5000/5001/6432/7000/8008/2379), PGPASSWORD examples, mdb CLI commands, and 8 test groups; bump to 2.0.25.
