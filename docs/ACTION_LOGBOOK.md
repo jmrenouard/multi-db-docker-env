@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-032 (ACT-015) — Core Test Suite and Script Fixes (Issue `#118`)
+- **Date**: `2026-11-02T01:25+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#118` (`fix/issue-118-core-test-script-fixes`)
+- **Request**: Remediate Cycle 1 Findings 1, 2A, 3, and 7 across core test suite and scripts (unauthenticated mariadb conflict call, mongo perf TLS fallback, Galera SSH port 24001 and quoted aliases, test_config subshell loss & compose validation, duplicate .env parser).
+- **Changes**: Authenticated conflict test and guarded `wait $PID1 || true` in `test_galera.sh`; standard POSIX `.env` sourcing in `test_galera.sh` and `test_repli.sh`; 3-tier TLS fallback in `test_perf_mongo.sh`; synced Galera SSH port 24001 and quoted `MYSQL_PWD` in `gen_profiles.sh` and `docker-compose-galera.yml`; process substitution, `RET=1` on missing scripts, and 8 compose files check in `test_config.sh`; bumped `VERSION` to `2.0.8` and updated `Changelog`.
+- **Result**: `tests/test_config.sh` passed (41 checks), `tests/test_profiles.sh` passed, `tests/test_secure_password.sh` passed (34/34), `python -m unittest discover -s tests -v` passed (16/16), `go test -v ./...` passed (63/63), PR diff < 15,000 characters.
+
+---
+
 ### ACT-031 — Obsolete Legacy Scripts Cleanup (Issue `#116`)
 - **Date**: `2026-11-02T00:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#116` (`chore/issue-116-remove-dead-scripts`)
 - **Request**: Remove obsolete temporary workaround scripts `scripts/apply_fix_2.sh` and `scripts/fix_issue.sh` (#7B).

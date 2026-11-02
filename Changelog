@@ -1,3 +1,12 @@
+2.0.8 2026-11-02
+- fix: authenticate concurrent Galera conflict test and safeguard wait process (tests/test_galera.sh) (Closes #118).
+- fix: add 3-tier TLS fallback chain to Mongo perf runner (tests/test_perf_mongo.sh).
+- fix: synchronize Galera Node 1 SSH port to 24001 and quote MYSQL_PWD in generated aliases (scripts/gen_profiles.sh, docker-compose-galera.yml).
+- fix: resolve subshell variable loss, enforce RET=1 on missing scripts, and validate all 8 compose files (tests/test_config.sh).
+- fix: replace duplicate custom .env parser with standard POSIX sourcing (tests/test_galera.sh, tests/test_repli.sh).
+- doc: record ACT-032 in docs/ACTION_LOGBOOK.md and RCA-029 in docs/RCA_REGISTER.md.
+- test: verify configuration validator, profile generation, Python unit tests, and Go tests pass cleanly.
+
 2.0.7 2026-11-01
 - doc: record ACT-031 in docs/ACTION_LOGBOOK.md.
 - chore: remove obsolete legacy scripts apply_fix_2.sh and fix_issue.sh (scripts/apply_fix_2.sh, scripts/fix_issue.sh) (Closes #116).

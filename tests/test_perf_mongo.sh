@@ -58,7 +58,9 @@ esac
 
 run_mongo_js() {
     local js_code="$1"
-    docker exec "$NODE" mongosh --quiet --eval "$js_code"
+    docker exec "$NODE" mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --quiet --eval "$js_code" 2>/dev/null || \
+        docker exec "$NODE" mongosh --tls --tlsAllowInvalidCertificates --quiet --eval "$js_code" 2>/dev/null || \
+        docker exec "$NODE" mongosh --quiet --eval "$js_code"
 }
 
 case $ACTION in

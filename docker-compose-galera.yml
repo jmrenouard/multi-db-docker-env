@@ -24,7 +24,7 @@ services:
     <<: *template
     hostname: galera01
     ports:
-      - "22001:22"
+      - "24001:22"
       - "3511:3306"
     volumes:
       - "./gdatadir_01:/var/lib/mysql"

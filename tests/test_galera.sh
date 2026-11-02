@@ -2,17 +2,9 @@
 
 # Configuration
 if [ -f .env ]; then
-    while IFS= read -r line || [ -n "$line" ]; do
-        trimmed=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-        [[ -z "$trimmed" || "$trimmed" =~ ^# ]] && continue
-        if [[ "$trimmed" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
-            key="${BASH_REMATCH[1]}"
-            val="${BASH_REMATCH[2]}"
-            val="${val%\"}"; val="${val#\"}"
-            val="${val%\'}"; val="${val#\'}"
-            export "$key=$val"
-        fi
-    done < .env
+    set -a
+    . ./.env
+    set +a
 fi
 
 NODE1_PORT=3511
@@ -219,14 +211,14 @@ echo ">> Setting up a record for conflict..."
 run_sql $NODE1_PORT "INSERT INTO $DB.sync_test (id, node_id, msg) VALUES (100, 1, 'Conflict base');"
 
 echo ">> Simulating concurrent updates on Node 1 and Node 2..."
-mariadb -h 127.0.0.1 -P $NODE1_PORT -uroot $DB -e "SET AUTOCOMMIT=0; UPDATE sync_test SET msg='Updated by Node 1' WHERE id=100; SELECT SLEEP(2); COMMIT;" >/dev/null 2>&1 &
+MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $NODE1_PORT -uroot $DB -e "SET AUTOCOMMIT=0; UPDATE sync_test SET msg='Updated by Node 1' WHERE id=100; SELECT SLEEP(2); COMMIT;" >/dev/null 2>&1 &
 PID1=$!
 
 sleep 0.5
 echo ">> Node 2 attempts to update the same record while Node 1 is sleeping..."
 run_sql $NODE2_PORT "UPDATE $DB.sync_test SET msg='Updated by Node 2' WHERE id=100;"
 
-wait $PID1
+wait $PID1 || true
 FINAL_MSG=$(run_sql $NODE3_PORT "SELECT msg FROM $DB.sync_test WHERE id=100;" | tr -d '\n\r' | sed 's/"/\\"/g')
 echo "   Final Message: '$FINAL_MSG'"
 write_report "- Final record message after concurrent update: '$FINAL_MSG'"

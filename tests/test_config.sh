@@ -46,7 +46,8 @@ for d in scripts conf tests documentation; do
 done
 
 echo -e "\n2. Checking Docker Compose files..."
-for f in docker-compose.yml docker-compose-galera.yml docker-compose-repli.yml; do
+COMPOSE_FILES=(docker-compose.yml docker-compose-galera.yml docker-compose-innodb-cluster.yml docker-compose-mongo-rs.yml docker-compose-mongo8-rs.yml docker-compose-patroni.yml docker-compose-pgpool.yml docker-compose-repli.yml)
+for f in "${COMPOSE_FILES[@]}"; do
     if [ -f "$f" ]; then
         echo "⏳ Validating syntax for $f..."
         if docker compose -f "$f" config > /dev/null 2>&1; then
@@ -102,7 +103,7 @@ done
 
 echo -e "\n5. Checking Makefile targets consistency..."
 # Ensure all referenced scripts in Makefile exist
-awk -F' ' '/\.\/scripts\// {print $NF}' Makefile | sed 's|^./||' | sort -u | while read s; do
+while read -r s; do
     s_clean=$(echo "$s" | sed 's/\$(.*)//g' | sed 's|/ \.\/|/|')
     if [[ "$s_clean" == scripts/* ]]; then
        if [ ! -f "$s_clean" ]; then
@@ -110,12 +111,13 @@ awk -F' ' '/\.\/scripts\// {print $NF}' Makefile | sed 's|^./||' | sort -u | whi
            if [ ! -f "$s_base" ]; then
                echo "❌ Makefile references missing script: $s_base"
                add_result "Makefile Consistency" "$s_base" "FAIL" "Referenced script missing"
+               RET=1
            fi
        else 
            add_result "Makefile Consistency" "$s_clean" "PASS" "Script referenced exists"
        fi
     fi
-done
+done < <(awk -F' ' '/\.\/scripts\// {print $NF}' Makefile | sed 's|^./||' | sort -u)
 
 # Generate HTML Report
 cat <<EOF > "$REPORT_HTML"
