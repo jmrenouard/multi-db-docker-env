@@ -258,6 +258,19 @@
 
 ---
 
+### RCA-029 (RCA-012) — Unauthenticated MariaDB Conflict Call, Missing Mongo Perf TLS Fallback & Config Subshell Loss
+- **Date / Linked Action**: `2026-11-02` (`ACT-032` / Issue `#118`)
+- **Observed Symptom**: (1) `test_galera.sh:222` omitted credentials/SSL flags, failing with silent `Access denied`; (2) `test_perf_mongo.sh:59` failed on TLS-enabled Mongo; (3) `test_config.sh:105` subshell loop lost `add_result` calls and omitted `RET=1`; (4) `docker-compose-galera.yml:27` mapped SSH to 22001 instead of 24001, and unquoted passwords broke profile aliases.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Galera conflict failure*: Background `mariadb` lacked credentials, exiting immediately rather than holding an open transaction.
+  2. *Mongo perf failure*: `run_mongo_js` lacked the 3-tier fallback chain (cert keyfile -> TLS -> plaintext).
+  3. *Config report omission*: Pipeline `awk | while` ran in a subshell, losing results and `RET=1`.
+  4. *SSH port mismatch*: Node 1 used 22001 while Nodes 2/3 used 24002/24003.
+- **Applied Change / Fix**: Authenticated line 222 in `test_galera.sh` and added `wait $PID1 || true`; added 3-tier TLS fallback to `run_mongo_js` in `test_perf_mongo.sh`; used process substitution and set `RET=1` in `test_config.sh`; validated all 8 compose files; synchronized port 24001 and quoted `MYSQL_PWD` in `gen_profiles.sh` and `docker-compose-galera.yml`; simplified `.env` parsing in `test_galera.sh` and `test_repli.sh`.
+- **Result & Non-Regression Test**: `tests/test_config.sh` passed (41 checks); `tests/test_profiles.sh` passed; `tests/test_secure_password.sh` passed (34/34); `python -m unittest discover -s tests -v` (16/16); `go test -v ./...` (63/63).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
@@ -330,6 +343,11 @@
 - **Target Files**: `pkg/report/report.go`, `pkg/report/templates/report.html`
 - **Nature & Justification**: Standalone HTML reporting bundles styles and layout into Go binary via `embed.FS` without external node/npm build chains or remote CDN script loading for offline lab reproducibility.
 - **Removal Condition**: Standalone SPA front-end if interactive web UI is requested in future phases.
+
+### APP-008 (APP-010) — Static SSH Port Mapping Scheme Across Clustered Topologies
+- **Target Files**: `docker-compose-galera.yml`, `scripts/gen_profiles.sh`, `documentation/architecture.md`
+- **Nature & Justification**: Clustered topologies assign static host port ranges for node SSH access (Replication: 23001-23003; Galera: 24001-24003) to enable direct container inspection and debugging without collision.
+- **Removal Condition**: Dynamic port allocation via SDN or container orchestrator (Kubernetes/Nomad) when deploying in production.
 
 ---
 

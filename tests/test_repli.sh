@@ -2,17 +2,9 @@
 
 # Configuration
 if [ -f .env ]; then
-    while IFS= read -r line || [ -n "$line" ]; do
-        trimmed=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-        [[ -z "$trimmed" || "$trimmed" =~ ^# ]] && continue
-        if [[ "$trimmed" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
-            key="${BASH_REMATCH[1]}"
-            val="${BASH_REMATCH[2]}"
-            val="${val%\"}"; val="${val#\"}"
-            val="${val%\'}"; val="${val#\'}"
-            export "$key=$val"
-        fi
-    done < .env
+    set -a
+    . ./.env
+    set +a
 fi
 
 MASTER_PORT=3411
