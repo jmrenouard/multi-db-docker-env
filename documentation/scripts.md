@@ -27,6 +27,10 @@ This document describes the various shell scripts available in the root director
 - **[gen_ssl.sh](../scripts/gen_ssl.sh)**: Generates a complete SSL certificate chain (CA, Server, and Client).
   - Outputs are stored in the `ssl/` directory.
   - Certificates are automatically used by containers via volume mounts.
+- **[gen_pki.sh](../scripts/gen_pki.sh)**: Unified PKI & SAN X.509 certificate generator for all database topologies.
+  - **Usage**: `bash ./scripts/gen_pki.sh [--dir PATH] [--cn NAME] [--san SAN_LIST] [--mode MODE] [--combine FILE] [--chown UID:GID] [--force]`
+  - **Options**: `--dir` (output dir), `--cn` (Common Name), `--san` (SAN list), `--mode` (`mariadb|single|standard`), `--combine` (bundled PEM), `--chown` (`uid:gid`), `--force`. Enforces `0600` keys and `0644` certs.
+- **Topology SSL Scripts**: `gen_ssl_innodb.sh` (InnoDB), `gen_ssl_pgpool.sh` (PgPool-II), `gen_ssl_mongo.sh` (MongoDB), `scripts/patroni/generate_certs.sh` (Patroni).
 
 ## ⚙️ Configuration & Setup
 
@@ -55,3 +59,23 @@ This document describes the various shell scripts available in the root director
   - Features: Connection distribution analysis, SSL verification, and sleek HTML report.
   - Usage: `./test_lb_galera.sh`
 - **[test_perf_galera.sh](../tests/test_perf_galera.sh)** / **[test_perf_repli.sh](../tests/test_perf_repli.sh)**: Performance benchmarks using Sysbench.
+- **[aggregate_reports.sh](../scripts/aggregate_reports.sh)**: Consolidates test reports into an executive HTML summary (`make test-all-report`).
+  - Outputs: `reports/test_all_aggregated_<timestamp>.html` and `reports/latest_aggregated_report.html`.
+
+## 🔍 Database Performance & Tuning Audit
+
+- **[run_mysqltuner.sh](../scripts/run_mysqltuner.sh)**: Automated MySQLTuner auditing script supporting all MySQL/MariaDB topologies.
+  - **Usage**: `bash ./scripts/run_mysqltuner.sh [--topology NAME] [--port PORT] [EXTRA_ARGS...]`
+  - **Options**: `--topology, -t` (target cluster), `--port, -p` (port). Env: `MYSQLTUNER_PATH`, `DB_ROOT_PASSWORD`. Output: `reports/mysqltuner_<topo>_<ts>.txt`.
+
+## 🚀 Go `mdb` CLI Orchestrator
+
+Compiled pure-Go CLI (`cmd/mdb`, `bin/mdb` with zero external dependencies):
+- `mdb version`: Display binary version (`2.0.2`).
+- `mdb config [-env <path>]`: Dump active environment settings as JSON.
+- `mdb topologies`: List registered topologies.
+- `mdb up <topo>` / `mdb down <topo>` / `mdb status <topo>`: Orchestrate database topologies.
+- `mdb test <topo>`: Run cluster health verification assertions.
+- `mdb bench <topo> [-workload <w>] [-threads <n>] [-duration <d>]`: Run Sysbench OLTP benchmarks.
+- `mdb pki <generate|verify> [topo] [--dir <dir>]`: Generate or verify TLS/SSL certificates natively.
+- `mdb report [topos...] [-json <path>] [-html <path>]`: Execute multi-cluster verification and export reports.

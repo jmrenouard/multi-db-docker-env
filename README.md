@@ -57,16 +57,16 @@ These commands help you manage and interact with the overall environment.
 | Command         | Icon | Description                                                                 | Example Usage         |
 | :-------------- | :--- | :-------------------------------------------------------------------------- | :-------------------- |
 | `make help`     | 📜   | Displays the full list of all available commands.                           | `make help`           |
-| `make start`    | 🚀   | Starts the default database service (MariaDB 11.8).                         | `make start`          |
+| `make start`    | 🚀   | Starts the default database service (`mariadb114`).                         | `make start`          |
 | `make stop`     | 🛑   | Stops and properly removes all containers and networks for this project.    | `make stop`           |
 | `make status`   | 📊   | Shows the status of the project's active containers (Traefik + DB).         | `make status`         |
 | `make info`     | ℹ️   | Provides information about the active DB service and recent logs.           | `make info`           |
 | `make logs`     | 📄   | Displays logs for the currently active database service (or all if none).   | `make logs`           |
 | `make mycnf`    | 🔑   | Generates a `~/.my.cnf` file for password-less MySQL connections.          | `make mycnf`          |
 | `make client`   | 💻   | Starts a MySQL client connected to the active database.                     | `make client`         |
-| `make pgpass`   | 🔑   | Generates a `~/.pgpass` file for password-less PostgreSQL connections.     | `make pgpass`         |
-| `make pgclient` | 💻   | Starts a PostgreSQL client connected to the active database.                | `make pgclient`       |
 | `make verify`   | ✅   | Runs complete environment and configuration validation (test-config).       | `make verify`         |
+| `make build-go` | 🔨   | Compiles the native Go `mdb` CLI binary into `bin/mdb`.                     | `make build-go`       |
+| `make test-go`  | 🧪   | Runs the complete Go unit test suite (63+ tests).                           | `make test-go`        |
 | `python3 interactive_runner.py` | 🚀 | Starts the interactive test runner for guided setup and testing. | `python3 interactive_runner.py` |
 
 ### Data Management
@@ -256,6 +256,10 @@ graph TD
 ├── 🐳 docker-compose-pgpool.yml  # PgPool-II PostgreSQL Cluster
 ├── 🐳 docker-compose-innodb-cluster.yml # MySQL InnoDB Cluster
 ├── 🐳 docker-compose-mongo-rs.yml  # MongoDB ReplicaSet
+├── 🚀 cmd/mdb/             # Native Go CLI entrypoint (main.go)
+├── 📦 pkg/                 # Pure-Go orchestration modules (bench, pki, dbclient, report)
+├── 📜 go.mod               # Go module definition (zero external dependencies)
+├── 🏛️ docs/                # Project governance registers (ACTION_LOGBOOK, RCA_REGISTER)
 ├── 🛠️ Makefile             # Unified management of single DBs and clusters
 ├── 📂 documentation/      # Detailed guides for clusters and scripts
 ├── 📂 reports/            # Performance and test reports
@@ -280,6 +284,8 @@ For detailed information on specific components, please refer to the following g
 * **[Test Scenarios](documentation/tests.md)**: Specific test cases and reporting instructions.
 * **[Galera Bootstrap](documentation/galera_bootstrap.md)**: Detailed steps for Galera clustering.
 * **[Replication Setup](documentation/replication_setup.md)**: Master/Slave configuration guide.
+* **[Action Logbook](docs/ACTION_LOGBOOK.md)**: Living register of ongoing actions, completed requests, and phase milestones.
+* **[RCA Register](docs/RCA_REGISTER.md)**: Transparent engineering register of RCAs, dead-ends, approximations, and future roadmap.
 
 ## 💡 Typical Workflow
 
@@ -339,6 +345,36 @@ graph TD
     ```bash
     make stop
     ```
+
+## 🚀 Go mdb CLI Orchestrator (v2.0)
+
+A native compiled CLI (`cmd/mdb`, `bin/mdb`) written in pure Go (zero external dependencies).
+
+```bash
+make build-go    # Build binary into bin/mdb
+make test-go     # Run Go test suite (63+ tests)
+```
+
+| Command | Usage | Description |
+| :--- | :--- | :--- |
+| `version` | `mdb version` | Prints CLI version (`2.0.2`). |
+| `config` | `mdb config [-env <path>]` | Dumps configuration as JSON. |
+| `topologies` | `mdb topologies` | Lists all 8 supported topologies. |
+| `up` | `mdb up <topology>` | Deploys topology with bootstrap & setup. |
+| `down` | `mdb down <topology>` | Tears down containers and volumes. |
+| `status` | `mdb status <topology>` | Returns JSON running status. |
+| `test` | `mdb test <topology>` | Executes cluster health verification. |
+| `bench` | `mdb bench <topology> [flags]` | Runs Sysbench benchmarks (`-workload`, `-threads`, `-duration`). |
+| `pki` | `mdb pki <generate\|verify> [topo]` | Generates or verifies TLS certificates natively. |
+| `report` | `mdb report [topos...] [flags]` | Aggregates health & exports telemetry reports. |
+
+## 📜 Project Governance & Living Registers
+
+Maintenance follows strict governance rules in [`AGENTS.md`](AGENTS.md):
+- **English-Only Policy**: All code, docs, commits, PRs, and issues in English.
+- **PR Diff Limit**: Strictly under 15,000 characters per PR.
+- **Action Logbook ([`docs/ACTION_LOGBOOK.md`](docs/ACTION_LOGBOOK.md))**: Every action tracked under Ongoing or Completed.
+- **RCA Register ([`docs/RCA_REGISTER.md`](docs/RCA_REGISTER.md))**: Traceability for Errors (RCA), Dead-Ends (IMP), Approximations (APP), Roadmap (IDEA).
 
 ## 🔧 Troubleshooting & Performance Notes
 
