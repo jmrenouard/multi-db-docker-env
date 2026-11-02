@@ -141,7 +141,7 @@ $node_logs
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tester Replication - Rapport de Performance</title>
+    <title>Replication Benchmark - Performance Report</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -156,12 +156,12 @@ $node_logs
         <header class="glass p-8 rounded-3xl flex justify-between items-center">
             <div>
                 <h1 class="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-teal-500 bg-clip-text text-transparent italic">
-                    <i class="fa-solid fa-link mr-3"></i>Tester Replication
+                    <i class="fa-solid fa-link mr-3"></i>Replication Benchmark
                 </h1>
-                <p class="text-slate-400 mt-2 font-light italic">Audit de performance MariaDB Master/Slave via HAProxy</p>
+                <p class="text-slate-400 mt-2 font-light italic">MariaDB Primary/Replica performance audit via HAProxy</p>
             </div>
             <div class="text-right">
-                <span class="px-4 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-sm font-semibold mb-2 block lowercase">Profil: $PROFILE</span>
+                <span class="px-4 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-sm font-semibold mb-2 block lowercase">Profile: $PROFILE</span>
                 <span class="text-slate-500 text-xs font-mono">$(date)</span>
             </div>
         </header>
@@ -238,7 +238,7 @@ $node_logs
                         <div class="text-3xl font-bold text-emerald-400">$REPLI_LAG <span class="text-xs font-normal">s</span></div>
                     </div>
                 </div>
-                <p class="mt-4 text-[10px] text-slate-400 italic">Retard maximal constaté sur les esclaves après le test.</p>
+                <p class="mt-4 text-[10px] text-slate-400 italic">Maximum replication lag observed on replicas after the test.</p>
             </div>
 
             <div class="glass p-8 rounded-3xl">

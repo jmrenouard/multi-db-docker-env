@@ -402,6 +402,11 @@
 - **Nature & Justification**: Standardized HAProxy Galera test script and HTML reporting into English, and implemented permanent automated unit test `test_no_french_table_headers_remain` to mechanically guarantee that no legacy French strings ("Nature du Test", "Résultat Réel", "Génération de l'autorité") are introduced in `scripts/` or `tests/`.
 - **Removal Condition**: Permanent governance rule enforcing English-only engineering standards.
 
+### APP-013 — Comprehensive Automated Detection of Residual French Strings
+- **Target Files**: `tests/test_project_governance_rules.py`, all `scripts/**/*.sh`, `tests/**/*.sh`
+- **Nature & Justification**: Expanded `test_no_french_table_headers_remain` with dual scanning (French accented character set `[éèêëàâçîïôûù...]` and word-bounded regex covering all known French UI, log, and comment patterns).
+- **Removal Condition**: Permanent governance rule enforcing English-only repository policy.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)

@@ -16,7 +16,7 @@ if [ -d "${ETCD_DATA_DIR}/member" ]; then
     STATE="existing"
 fi
 
-# Pour éviter le conflit entre variables d'environnement et flags (ETCD 3.6+)
+# Prevent conflict between environment variables and flags (ETCD 3.6+)
 SAVED_DATA_DIR="${ETCD_DATA_DIR}"
 SAVED_NAME="${ETCD_NAME}"
 unset ETCD_DATA_DIR
@@ -29,19 +29,19 @@ unset ETCD_INITIAL_CLUSTER
 unset ETCD_INITIAL_CLUSTER_TOKEN
 unset ETCD_INITIAL_CLUSTER_STATE
 
-# Construction des arguments de sécurité
+# Build security arguments
 AUTH_FLAGS=""
 if [ "${VERIFY_CLIENT_CERT}" = "true" ]; then
     AUTH_FLAGS="--peer-client-cert-auth"
 fi
 
-# Démarrage du service SSH pour la gestion Ansible
+# Start SSH service for Ansible management
 if [ -x /usr/sbin/sshd ]; then
     /usr/sbin/sshd 2>/dev/null || true
 fi
 
-# Construction de la commande ETCD avec les variables d'environnement
-# Exécution d'ETCD
+# Build ETCD command with environment variables
+# Execute ETCD
 /usr/bin/etcd \
     --name "${SAVED_NAME}" \
     --data-dir "${SAVED_DATA_DIR}" \

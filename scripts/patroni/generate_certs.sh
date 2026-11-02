@@ -6,28 +6,28 @@ set -euo pipefail
 CERT_DIR="${CERT_DIR:-./certs_patroni}"
 mkdir -p "$CERT_DIR"
 
-# Charger les variables d'environnement si le fichier .env existe
+# Load environment variables if .env file exists
 if [ -f .env ]; then
     set -a
     . ./.env
     set +a
 fi
 
-# SANs par défaut
+# Default SANs
 DEFAULT_SANS="DNS:localhost,DNS:etcd1,DNS:etcd2,DNS:etcd3,DNS:node1,DNS:node2,DNS:node3,DNS:haproxy,DNS:pgbouncer,IP:127.0.0.1"
 
-# Fusionner avec EXTRA_SANS si défini
+# Merge with EXTRA_SANS if defined
 if [ -n "${EXTRA_SANS:-}" ]; then
     SANS="${DEFAULT_SANS},${EXTRA_SANS}"
 else
     SANS="${DEFAULT_SANS}"
 fi
 
-# Identifiants par défaut s'ils ne sont pas dans .env
+# Default credentials if not in .env
 ETCD_PATRONI_USER="${ETCD_PATRONI_USER:-patroni}"
 REPLICATOR_USER="${REPLICATOR_USER:-replicator}"
 
-# Fichier de config OpenSSL temporaire pour les SAN
+# Temporary OpenSSL config file for SANs
 cat > $CERT_DIR/openssl.cnf <<EOF
 [req]
 distinguished_name = req_distinguished_name
@@ -66,21 +66,21 @@ generate_cert() {
     generate_cert_with_cn "$1" "$1"
 }
 
-# Certificats pour ETCD
+# Certificates for ETCD
 generate_cert "etcd-server"
 generate_cert_with_cn "etcd-client" "${ETCD_PATRONI_USER}"
 
-# Certificats pour Patroni API
+# Certificates for Patroni API
 generate_cert "patroni-api"
 
-# Certificats pour PostgreSQL
+# Certificates for PostgreSQL
 generate_cert "postgresql-server"
 generate_cert_with_cn "postgresql-client" "${REPLICATOR_USER}"
 
-# Certificats pour PgBouncer
+# Certificates for PgBouncer
 generate_cert "pgbouncer"
 
-# Fichier PEM combiné pour HAProxy (Certificat + Clé)
+# Combined PEM file for HAProxy (Certificate + Key)
 echo "📜 Generating combined PEM for HAProxy..."
 cat $CERT_DIR/postgresql-server.crt $CERT_DIR/postgresql-server.key > $CERT_DIR/haproxy.pem
 

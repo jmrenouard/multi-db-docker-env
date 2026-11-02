@@ -1,3 +1,9 @@
+2.0.16 2026-11-02
+- fix: localize French comments to English in Patroni startup and cert generation scripts (scripts/patroni/entrypoint_etcd.sh, scripts/patroni/generate_certs.sh) (Closes #134).
+- fix: localize HTML performance report titles, subtitles, and summary card captions to English (tests/test_perf_galera.sh, tests/test_perf_repli.sh).
+- test: expand test_no_french_table_headers_remain with comprehensive accented characters and French phrase regex (tests/test_project_governance_rules.py).
+- doc: record ACT-040 in docs/ACTION_LOGBOOK.md and APP-013 in docs/RCA_REGISTER.md.
+
 2.0.15 2026-11-02
 - fix: fix provider options audit pipeline operator precedence in Galera test suite (tests/test_galera.sh) (Closes #132).
 - fix: localize Configuration Explorer UI and latency report labels to English (tests/test_galera.sh, tests/test_haproxy_galera.sh).

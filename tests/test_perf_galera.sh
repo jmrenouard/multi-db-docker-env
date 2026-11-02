@@ -159,7 +159,7 @@ $node_logs
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Tester Galera - Rapport de Performance</title>
+    <title>Galera Benchmark - Performance Report</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -174,12 +174,12 @@ $node_logs
         <header class="glass p-8 rounded-3xl flex justify-between items-center">
             <div>
                 <h1 class="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent italic">
-                    <i class="fa-solid fa-bolt-lightning mr-3"></i>Tester Galera
+                    <i class="fa-solid fa-bolt-lightning mr-3"></i>Galera Benchmark
                 </h1>
-                <p class="text-slate-400 mt-2 font-light italic">Audit de performance du cluster Galera via HAProxy</p>
+                <p class="text-slate-400 mt-2 font-light italic">Galera cluster performance audit via HAProxy</p>
             </div>
             <div class="text-right">
-                <span class="px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-sm font-semibold mb-2 block lowercase">Profil: $PROFILE</span>
+                <span class="px-4 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-sm font-semibold mb-2 block lowercase">Profile: $PROFILE</span>
                 <span class="text-slate-500 text-xs font-mono">$(date)</span>
             </div>
         </header>
@@ -260,7 +260,7 @@ $node_logs
                         <div class="text-2xl font-bold text-orange-400">$BF_DIFF</div>
                     </div>
                 </div>
-                <p class="mt-4 text-[10px] text-slate-400 italic">Deltas mesurés sur l'ensemble du cluster pendant le test.</p>
+                <p class="mt-4 text-[10px] text-slate-400 italic">Deltas measured across the cluster during the test.</p>
             </div>
 
             <div class="glass p-8 rounded-3xl">
