@@ -74,6 +74,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-053 — Security Leaks Remediation & Automated Release Distribution (Issue `#156`)
+- **Date**: `2026-11-10T00:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#156` (`fix/issue-156-security-remediation-and-release-automation`)
+- **Request**: Remediate leaked PAT in documentation/sourcery_ai_audit.md, remove hardcoded root password and SSH private key copying in Dockerfile and Makefile, untrack .env and supply .env.example, add .dockerignore, and deploy GitHub Actions release workflow with multi-arch Docker Hub publishing and package archives.
+- **Changes**: Redacted 4 occurrences of leaked PAT in `documentation/sourcery_ai_audit.md`; removed `root:rootpass` and `COPY id_rsa*` from `Dockerfile`; removed `id_rsa` key generation in `Makefile`; untracked `.env` via `git rm --cached` and created `.env.example`; created `.dockerignore`; created `.github/workflows/release.yml`; added release & Docker Hub badges in `README.md` and `README_fr.md`.
+- **Result**: `test_project_governance_rules.py` (5/5), `unittest` (21/21), `go test` (67/67), and `test_env.sh` passed cleanly. Zero plaintext tokens or hardcoded private keys remaining.
+
+---
+
 ### ACT-052 — Enforce Systematic 9-Step GitHub Workflow and English-Only Policy (Issue `#154`)
 - **Date**: `2026-11-02T10:10+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#154` (`docs/issue-154-enforce-9step-workflow-english-policy`)
 - **Request**: Enforce systematic 9-step GitHub workflow (Steps 0-8) with literal `git add` and `git commit`, plus Section 5 English-only policy in AGENTS.md and .agents/AGENTS.md to satisfy project governance and adversarial tests.

@@ -31,11 +31,10 @@ RUN apt-get update && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# 🔐 SSH Configuration (root password - Use for DEV only)
-# Note: For production, prefer SSH keys
-RUN echo 'root:rootpass' | chpasswd && \
-  sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-  sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+# 🔐 SSH Configuration
+# Note: Credentials and keys are NOT baked into the image.
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+  sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
 
 # ⚙️ Configuration
 # Copying the MariaDB conditional startup script
@@ -52,18 +51,12 @@ EXPOSE 22 3306
 VOLUME ["/datas"]
 WORKDIR /datas
 
-# 1. SSH directory creation
-# 2. Copying public key from build context to image
-# 3. Applying STRICT permissions (Essential for SSH)
-
-RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
-
-COPY id_rsa.pub /root/.ssh/authorized_keys
-COPY id_rsa.pub /root/.ssh/id_rsa.pub
-COPY id_rsa /root/.ssh/id_rsa
-
-RUN chmod 600 /root/.ssh/authorized_keys /root/.ssh/id_rsa \
-  && chown -R root:root /root/.ssh
+# 🔐 SSH Service & Key Directory Setup
+# Host keys are generated, and /root/.ssh is secured with strict permissions.
+# Public keys should be mounted at runtime (e.g. -v ./id_rsa.pub:/root/.ssh/authorized_keys:ro).
+RUN ssh-keygen -A && \
+  mkdir -p /root/.ssh && \
+  chmod 700 /root/.ssh
 
 # Startup via Supervisor which manages SSH and MariaDB
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

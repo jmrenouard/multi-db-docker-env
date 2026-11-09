@@ -5043,7 +5043,7 @@ fi
 ### Comment 2
 <location path="scripts/fix_issue.sh" line_range="6" />
 <code_context>
-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
+ghp_REDACTED_TOKEN_SECRET
 </code_context>
 <issue_to_address>
 **security (github-pat):** Uncovered a GitHub Personal Access Token, potentially leading to unauthorized repository access and sensitive content exposure.
@@ -5314,7 +5314,7 @@ Please address the comments from this code review:
 +# Usage: bash scripts/fix_issue.sh <github-issue-url> [--dry-run]
 +set -euo pipefail
 +
-+GH_TOKEN="${GH_TOKEN:-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}"
++GH_TOKEN="${GH_TOKEN:-ghp_REDACTED_TOKEN_SECRET}"
 +REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 +BASE_BRANCH="main"
 </code_context>
@@ -5327,7 +5327,7 @@ Even as a default, this PAT is effectively compromised once committed and can le
 ### Comment 2
 <location path="scripts/fix_issue.sh" line_range="9-11" />
 <code_context>
-+GH_TOKEN="${GH_TOKEN:-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}"
++GH_TOKEN="${GH_TOKEN:-ghp_REDACTED_TOKEN_SECRET}"
 +REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 +BASE_BRANCH="main"
 +DRY_RUN=false
@@ -5419,7 +5419,7 @@ sed -i \
 ### Comment 5
 <location path="scripts/fix_issue.sh" line_range="6" />
 <code_context>
-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
+ghp_REDACTED_TOKEN_SECRET
 </code_context>
 <issue_to_address>
 **security (github-pat):** Uncovered a GitHub Personal Access Token, potentially leading to unauthorized repository access and sensitive content exposure.

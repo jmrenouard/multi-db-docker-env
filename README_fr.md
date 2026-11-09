@@ -12,6 +12,12 @@
 
 [!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
 
+<p align="center">
+  <a href="https://github.com/jmrenouard/multi-db-docker-env/releases/latest"><img src="https://img.shields.io/github/v/release/jmrenouard/multi-db-docker-env?style=flat-square&logo=github" alt="GitHub Release"></a>
+  <a href="https://hub.docker.com/r/jmrenouard/multi-db-docker-env"><img src="https://img.shields.io/docker/v/jmrenouard/multi-db-docker-env?sort=semver&style=flat-square&logo=docker&logoColor=white" alt="Docker Image Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square" alt="License"></a>
+</p>
+
 Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que toutes les instances de base de données sont accessibles via des ports stables sur votre machine hôte (`localhost:3306` pour MySQL/MariaDB et `localhost:5432` pour PostgreSQL), quelle que soit la version spécifique de la base de données que vous choisissez d'exécuter.
 
 > [!IMPORTANT]
