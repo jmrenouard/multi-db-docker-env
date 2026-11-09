@@ -1,0 +1,37 @@
+# Git & IDE metadata
+.git
+.github
+.agents
+.agent
+.vscode
+.idea
+
+# Secrets and local environments
+.env*
+!.env.example
+id_rsa*
+*.pem
+*.key
+*.crt
+
+# Test suites and reports
+tests/
+reports/
+documentation/
+docs/
+
+# Python and temp caches
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+*.err
+*.swp
+.DS_Store
+
+# Go and binary artifacts
+bin/
+*.exe

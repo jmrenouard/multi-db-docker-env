@@ -1,6 +1,17 @@
 #!/bin/bash
 set -euo pipefail
 
+# Configure runtime SSH access if provided via environment
+if [ -n "${SSH_ROOT_PASSWORD:-}" ]; then
+    echo "root:${SSH_ROOT_PASSWORD}" | chpasswd
+    sed -i 's/#*PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+fi
+if [ -n "${SSH_PUBLIC_KEY:-}" ]; then
+    mkdir -p /root/.ssh && chmod 700 /root/.ssh
+    echo "${SSH_PUBLIC_KEY}" >> /root/.ssh/authorized_keys
+    chmod 600 /root/.ssh/authorized_keys
+fi
+
 DATA_DIR="/var/lib/mysql"
 
 echo ">> Checking database state in $DATA_DIR..."

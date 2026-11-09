@@ -12,6 +12,12 @@
 
 [!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
 
+<p align="center">
+  <a href="https://github.com/jmrenouard/multi-db-docker-env/releases/latest"><img src="https://img.shields.io/github/v/release/jmrenouard/multi-db-docker-env?style=flat-square&logo=github" alt="GitHub Release"></a>
+  <a href="https://hub.docker.com/r/jmrenouard/multi-db-docker-env"><img src="https://img.shields.io/docker/v/jmrenouard/multi-db-docker-env?sort=semver&style=flat-square&logo=docker&logoColor=white" alt="Docker Image Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square" alt="License"></a>
+</p>
+
 A key feature is the **Traefik reverse proxy**, which ensures all database instances are accessible through stable ports on your host machine (`localhost:3306` for MySQL/MariaDB and `localhost:5432` for PostgreSQL), regardless of which specific database version you choose to run.
 
 > [!IMPORTANT]
@@ -36,8 +42,8 @@ Before you begin, ensure you have the following tools installed:
 
 The only required configuration step is to set the root password for your databases.
 
-1. Create a file named `.env` in the project's root directory.
-2. Add the following line, replacing `your_super_secret_password` with a strong password of your choice (do not use quotes around the password):
+1. Copy `.env.example` to `.env` in the project's root directory (`cp .env.example .env`).
+2. Adjust `DB_ROOT_PASSWORD` with a strong password of your choice (do not use quotes around the password):
 
     ```env
     # File: .env
