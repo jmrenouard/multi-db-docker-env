@@ -172,7 +172,37 @@ mongo8-ps: ## Show MongoDB 8 ReplicaSet running containers
 test-mongo8: ## Run functional tests on MongoDB 8 ReplicaSet
 	@MONGO_NODES="mongo8_n1 mongo8_n2 mongo8_n3" bash ./tests/test_mongo_rs.sh
 
-# --- POSTGRESQL MULTI-MASTER CLUSTERS ---
+# --- POSTGRESQL REPLICATION & MULTI-MASTER CLUSTERS ---
+PG_STREAMING_COMPOSE = docker-compose-pg-streaming.yml
+pg-streaming-up: ## Start 2-node PG 17 physical streaming replication cluster (async/sync)
+	docker compose -f $(PG_STREAMING_COMPOSE) up -d && PG_STREAM_MODE=$${PG_STREAM_MODE:-async} bash ./scripts/pg_streaming/setup_pg_streaming.sh
+pg-streaming-down: ## Stop pg-streaming cluster and remove volumes
+	docker compose -f $(PG_STREAMING_COMPOSE) down -v
+pg-streaming-status: ## Show pg-streaming replication status and containers
+	docker compose -f $(PG_STREAMING_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg_stream_primary psql -U postgres -d labdb -c "SELECT application_name, state, sync_state FROM pg_stat_replication;"
+pg-streaming-logs: ## Follow pg-streaming cluster logs
+	docker compose -f $(PG_STREAMING_COMPOSE) logs -f
+pg-streaming-ps: ## List pg-streaming containers
+	docker compose -f $(PG_STREAMING_COMPOSE) ps
+test-pg-streaming: ## Run pg-streaming functional, limits, and failover tests
+	@bash ./tests/test_pg_streaming.sh
+pg-streaming-test: test-pg-streaming
+
+PG_LOGICAL_COMPOSE = docker-compose-pg-logical.yml
+pg-logical-up: ## Start 2-node PG 17 native uni-directional logical replication cluster
+	docker compose -f $(PG_LOGICAL_COMPOSE) up -d && bash ./scripts/pg_logical/setup_pg_logical.sh
+pg-logical-down: ## Stop pg-logical cluster and remove volumes
+	docker compose -f $(PG_LOGICAL_COMPOSE) down -v
+pg-logical-status: ## Show pg-logical subscription status and containers
+	docker compose -f $(PG_LOGICAL_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg_logical_sub psql -U postgres -d labdb -c "SELECT subname, subenabled FROM pg_subscription;"
+pg-logical-logs: ## Follow pg-logical cluster logs
+	docker compose -f $(PG_LOGICAL_COMPOSE) logs -f
+pg-logical-ps: ## List pg-logical containers
+	docker compose -f $(PG_LOGICAL_COMPOSE) ps
+test-pg-logical: ## Run pg-logical functional and empirical limits tests
+	@bash ./tests/test_pg_logical.sh
+pg-logical-test: test-pg-logical
+
 PG_BIREP_COMPOSE = docker-compose-pg-birep.yml
 pg-birep-up: ## Start 2-node PG 17 bidirectional logical replication cluster
 	docker compose -f $(PG_BIREP_COMPOSE) up -d && bash ./scripts/pg_birep/setup_birep.sh
@@ -266,6 +296,12 @@ yugabyte-test: test-yugabyte
 bench-pg-multimaster: ## Run sequential empirical benchmarks across 8 PostgreSQL topologies
 	@bash ./scripts/bench_pg_multimaster.sh
 
+test-pg-extended: ## Run sequential extended empirical test matrix (T11-T18) across 10 PG topologies
+	@bash ./scripts/test_pg_extended_matrix.sh
+
+bench-pg-v2: ## Run sequential V2 empirical benchmark suite (Suites A-H, WAN & concurrency sweeps)
+	@bash ./scripts/bench_pg_v2_runner.sh
+
 # --- Main Targets ---
 .PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 postgres15 stop status logs \
         build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera test-patroni \
@@ -273,13 +309,15 @@ bench-pg-multimaster: ## Run sequential empirical benchmarks across 8 PostgreSQL
         innodb-up innodb-down innodb-status innodb-logs innodb-ps test-innodb \
         mongo-up mongo-down mongo-status mongo-logs mongo-ps test-mongo \
         mongo8-up mongo8-down mongo8-status mongo8-logs mongo8-ps test-mongo8 \
+        pg-streaming-up pg-streaming-down pg-streaming-status pg-streaming-logs pg-streaming-ps test-pg-streaming pg-streaming-test \
+        pg-logical-up pg-logical-down pg-logical-status pg-logical-logs pg-logical-ps test-pg-logical pg-logical-test \
         pg-birep-up pg-birep-down pg-birep-status pg-birep-logs pg-birep-ps test-pg-birep pg-birep-test \
         pgedge-up pgedge-down pgedge-status pgedge-logs pgedge-ps test-pgedge pgedge-test \
         bucardo-up bucardo-down bucardo-status bucardo-logs bucardo-ps test-bucardo bucardo-test \
         citus-up citus-down citus-status citus-logs citus-ps test-citus citus-test \
         cockroach-up cockroach-down cockroach-status cockroach-logs cockroach-ps test-cockroach cockroach-test \
         yugabyte-up yugabyte-down yugabyte-status yugabyte-logs yugabyte-ps test-yugabyte yugabyte-test \
-        bench-pg-multimaster \
+        bench-pg-multimaster test-pg-extended bench-pg-v2 \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
@@ -374,6 +412,8 @@ help:
 	@printf "    \033[1mtest-all-topologies\033[0m- 🧪 Runs E2E tests across ALL standalone DBs and HA topologies\n"
 	@printf "\n"
 	@printf "  \033[1;32mPostgreSQL Multi-Master Clusters:\033[0m\n"
+	@printf "    \033[1mpg-streaming-up / test-pg-streaming\033[0m - PG 17 Physical Streaming (Async/Sync)\n"
+	@printf "    \033[1mpg-logical-up / test-pg-logical\033[0m     - PG 17 Native Uni-Directional Logical\n"
 	@printf "    \033[1mpg-birep-up / test-pg-birep\033[0m   - PG 17 Bidirectional Logical + HAProxy\n"
 	@printf "    \033[1mpgedge-up / test-pgedge\033[0m       - PG 17 pgEdge Spock 5 + Snowflake Mesh\n"
 	@printf "    \033[1mbucardo-up / test-bucardo\033[0m     - PG 17 Bucardo 5 Trigger Multi-Master\n"
@@ -381,8 +421,9 @@ help:
 	@printf "    \033[1mcockroach-up / test-cockroach\033[0m - CockroachDB v24.3.0 3-Node Raft\n"
 	@printf "    \033[1myugabyte-up / test-yugabyte\033[0m   - YugabyteDB 2026.1.3 3-Node Raft\n"
 	@printf "    \033[1mbench-pg-multimaster\033[0m          - Sequential pgbench/sysbench suite\n"
+	@printf "    \033[1mtest-pg-extended / bench-pg-v2\033[0m - Extended T11-T18 matrix & V2 benchmarks\n"
 	@printf "\n"
-	@printf "  \033[1;32mGolang Orchestrator (v2.1.0):\033[0m\n"
+	@printf "  \033[1;32mGolang Orchestrator (v2.2.0):\033[0m\n"
 	@printf "    \033[1mbuild-go\033[0m           - 🔨 Compiles mdb CLI binary into bin/mdb\n"
 	@printf "    \033[1mtest-go\033[0m            - 🧪 Runs complete Go unit test suite\n"
 	@printf "\n"

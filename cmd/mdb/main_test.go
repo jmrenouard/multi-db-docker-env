@@ -12,6 +12,7 @@ func TestDefaultAndResolveContainer(t *testing.T) {
 	cases := map[string]string{
 		"galera": "galera_01", "repli": "mariadb_02", "innodb": "mysql_node1",
 		"patroni": "node1", "pgpool": "pgpool", "mongo": "mongo1", "mongo8": "mongo8_n1",
+		"pg-streaming": "pg_stream_primary", "pg-logical": "pg_logical_pub",
 		"pg-birep": "pg_birep_node1", "pgedge": "pgedge_node1", "bucardo": "bucardo_node1",
 		"citus": "citus_coord", "cockroach": "crdb_node1", "yugabyte": "yb_node1",
 		"x": "mariadb-11.8",
@@ -42,17 +43,17 @@ func TestResolveVersion(t *testing.T) {
 
 	// Fallback to package-level version when VERSION file is absent
 	_ = os.Remove("VERSION")
-	if got := resolveVersion(); got != "2.1.0" {
-		t.Errorf("expected fallback 2.1.0, got %s", got)
+	if got := resolveVersion(); got != "2.2.0" {
+		t.Errorf("expected fallback 2.2.0, got %s", got)
 	}
 
 	// Reads and trims VERSION file from disk when present
-	if err := os.WriteFile("VERSION", []byte("  2.1.0 \n"), 0644); err != nil {
+	if err := os.WriteFile("VERSION", []byte("  2.2.0 \n"), 0644); err != nil {
 		t.Fatalf("failed to write test VERSION file: %v", err)
 	}
 
-	if got := resolveVersion(); got != "2.1.0" {
-		t.Errorf("expected 2.1.0 from VERSION file, got %s", got)
+	if got := resolveVersion(); got != "2.2.0" {
+		t.Errorf("expected 2.2.0 from VERSION file, got %s", got)
 	}
 
 	// Trim whitespace / custom release version

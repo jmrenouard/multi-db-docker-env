@@ -34,17 +34,19 @@ type BaseTopology struct {
 }
 
 var setupScripts = map[string]string{
-	"repli":     "scripts/setup_repli.sh",
-	"innodb":    "conf/innodb-cluster/setup_cluster.sh",
-	"pgpool":    "scripts/pgpool/setup_replication.sh",
-	"mongo":     "conf/mongo-rs/setup_rs.sh",
-	"mongo8":    "conf/mongo-rs/setup_rs_mongo8.sh",
-	"pg-birep":  "scripts/pg_birep/setup_birep.sh",
-	"pgedge":    "scripts/pgedge/setup_pgedge.sh",
-	"bucardo":   "scripts/bucardo/setup_bucardo.sh",
-	"citus":     "scripts/citus/setup_citus.sh",
-	"cockroach": "scripts/cockroach/setup_cockroach.sh",
-	"yugabyte":  "scripts/yugabyte/setup_yugabyte.sh",
+	"repli":        "scripts/setup_repli.sh",
+	"innodb":       "conf/innodb-cluster/setup_cluster.sh",
+	"pgpool":       "scripts/pgpool/setup_replication.sh",
+	"mongo":        "conf/mongo-rs/setup_rs.sh",
+	"mongo8":       "conf/mongo-rs/setup_rs_mongo8.sh",
+	"pg-streaming": "scripts/pg_streaming/setup_pg_streaming.sh",
+	"pg-logical":   "scripts/pg_logical/setup_pg_logical.sh",
+	"pg-birep":     "scripts/pg_birep/setup_birep.sh",
+	"pgedge":       "scripts/pgedge/setup_pgedge.sh",
+	"bucardo":      "scripts/bucardo/setup_bucardo.sh",
+	"citus":        "scripts/citus/setup_citus.sh",
+	"cockroach":    "scripts/cockroach/setup_cockroach.sh",
+	"yugabyte":     "scripts/yugabyte/setup_yugabyte.sh",
 }
 
 func NewBaseTopology(name, description string, composeFiles, requiredCerts []string) *BaseTopology {
@@ -152,6 +154,8 @@ func DefaultRegistry() *Registry {
 	r.Register(NewInnoDBTopology())
 	r.Register(NewMongoTopology())
 	r.Register(NewMongo8Topology())
+	r.Register(NewPgStreamingTopology())
+	r.Register(NewPgLogicalTopology())
 	r.Register(NewPgBirepTopology())
 	r.Register(NewPgEdgeTopology())
 	r.Register(NewBucardoTopology())

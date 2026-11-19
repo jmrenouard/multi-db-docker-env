@@ -1,5 +1,35 @@
 package topology
 
+// PgStreamingTopology manages the 2-node PG 17 physical streaming replication stack.
+type PgStreamingTopology struct{ *BaseTopology }
+
+// NewPgStreamingTopology returns the pg-streaming topology definition.
+func NewPgStreamingTopology() *PgStreamingTopology {
+	return &PgStreamingTopology{
+		BaseTopology: NewBaseTopology(
+			"pg-streaming",
+			"PostgreSQL 17 2-node physical streaming replication cluster (async/sync)",
+			[]string{"docker-compose-pg-streaming.yml"},
+			nil,
+		),
+	}
+}
+
+// PgLogicalTopology manages the 2-node PG 17 native uni-directional logical stack.
+type PgLogicalTopology struct{ *BaseTopology }
+
+// NewPgLogicalTopology returns the pg-logical topology definition.
+func NewPgLogicalTopology() *PgLogicalTopology {
+	return &PgLogicalTopology{
+		BaseTopology: NewBaseTopology(
+			"pg-logical",
+			"PostgreSQL 17 2-node native uni-directional logical replication cluster",
+			[]string{"docker-compose-pg-logical.yml"},
+			nil,
+		),
+	}
+}
+
 // PgBirepTopology manages the 2-node PG 17 bidirectional logical replication stack.
 type PgBirepTopology struct{ *BaseTopology }
 
