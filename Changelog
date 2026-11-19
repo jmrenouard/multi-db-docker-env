@@ -1,3 +1,8 @@
+2.2.0 2026-11-19
+- feat: add PostgreSQL 17 physical streaming (pg-streaming) and native uni-directional logical (pg-logical) topologies, extended T11-T18 test matrix, and V2 benchmark harness (Makefile, pkg/topology, cmd/mdb, scripts) (Closes #214).
+- feat: register pg-streaming and pg-logical in Go mdb CLI (16 topologies) and bump release version to 2.2.0 (pkg/topology, cmd/mdb, VERSION).
+- test: add pg-streaming and pg-logical functional/limits suites plus Go registry and CLI unit tests (tests, pkg/topology, cmd/mdb).
+
 2.1.0 2026-11-19
 - feat: register 6 PostgreSQL multi-master topologies (pg-birep, pgedge, bucardo, citus, cockroach, yugabyte) in Go mdb CLI (pkg/topology, cmd/mdb) (Closes #190).
 - feat: add Makefile orchestration targets and sequential pgbench/sysbench/netem benchmark harness across 8 PostgreSQL topologies (Makefile, scripts).
