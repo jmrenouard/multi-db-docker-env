@@ -410,6 +410,34 @@
 - **Applied Change / Fix**: Proved `40001` retry convergence and `1/3` vs `2/3` quorum boundaries in `tests/test_{cockroach,yugabyte}.sh`; documented `685` ignored errors in non-retrying `sysbench` on CockroachDB; removed transient `cmd/mdb/VERSION` and re-verified `go test -v ./cmd/mdb`.
 - **Result & Non-Regression Test**: `go test ./...` passes 100%; `tests/test_cockroach.sh` and `tests/test_yugabyte.sh` passed 100%.
 
+### RCA-054 -- `pg-logical` Sequence Non-Synchronization Trap (`SQLSTATE 23505` Post-Failover)
+- **Date / Linked Action**: `2026-11-19` (`ACT-063`, `ACT-064` / `#204`, `#206`)
+- **Observed Symptom**: After replicating 50 rows into `seq_trap` / `ext_t18` from `pg_logical_pub` (`last_value=50|true`), `pg_logical_sub` sequence state remained stuck at `1|false`, causing the first post-failover `INSERT` on the subscriber to fail with `SQLSTATE 23505`.
+- **Root Cause Analysis**: Native PostgreSQL 17 logical replication (`pgoutput`) streams table row changes but does not synchronize sequence state (`nextval` / `setval`), unlike physical WAL streaming (`pg-streaming`), which preserved `last_value=66|true` across `pg_promote()` with zero `23505`.
+- **Applied Change / Fix**: Verified both the `23505` trap and manual `SELECT setval('seq_trap_id_seq', (SELECT max(id) FROM seq_trap))` remediation (`next id=51`) in `tests/test_pg_logical.sh` and `scripts/test_pg_extended_matrix.sh` (`T18`).
+- **Result & Non-Regression Test**: Reproducibly verified in `tests/test_pg_logical.sh` and across all 10 topologies in `T18`.
+
+### RCA-055 -- `pgedge` Minimal Image `SQL_ASCII` Server Encoding Failure (`SQLSTATE 54000`)
+- **Date / Linked Action**: `2026-11-19` (`ACT-064` / `#208`)
+- **Observed Symptom**: `T14` rich-data fidelity probe calling `chr(233)||chr(20013)||chr(128640)` failed on `pgedge` with `SQLSTATE 54000` (`requested character too large for encoding`).
+- **Root Cause Analysis**: `ghcr.io/pgedge/pgedge-postgres:17-spock5-minimal` initializes `labdb` with `SQL_ASCII` encoding rather than `UTF8`, rejecting multi-byte `chr()` codepoints above 127.
+- **Applied Change / Fix**: Added defensive `SQL_ASCII` fallback in `scripts/test_pg_extended_lib.py` (`run_t14_fidelity`) capturing `SQL_ASCII chr()=54000` and inserting escaped UTF-8 bytes via `encode(decode('c3a9e4b8adf09f9a80','hex'),'escape')`.
+- **Result & Non-Regression Test**: Verified 3/3 identical MD5 (`f798eb5a`, `65536B BYTEA`) across all 3 pgEdge nodes while recording `54000` in `verified_sqlstates`.
+
+### RCA-056 -- `pg-birep` & `pg-logical` `FOR ALL TABLES` Sysbench Schema Propagation & Refresh
+- **Date / Linked Action**: `2026-11-19` (`ACT-064` / `#212`)
+- **Observed Symptom**: Running `sysbench prepare` (`sbtest1`..`sbtest4`) on node 1 against `FOR ALL TABLES` logical publications did not create target tables on peer nodes, breaking logical replication apply during `E2`-`E4` sysbench runs.
+- **Root Cause Analysis**: Native PostgreSQL logical replication does not auto-propagate DDL (`CREATE TABLE`) and requires explicit `ALTER SUBSCRIPTION ... REFRESH PUBLICATION` once schemas exist on subscribers.
+- **Applied Change / Fix**: Implemented `pg_dump -s -t 'sbtest*' | psql` peer schema propagation, `ALTER SUBSCRIPTION ... REFRESH PUBLICATION WITH (copy_data=true)`, `srsubstate='r'` readiness polling, and post-suite `_drop_sb_sub()` cleanup in `scripts/bench_pg_v2_lib.py`.
+- **Result & Non-Regression Test**: `E2_sysbench_oltp_ro`, `E3_sysbench_oltp_wo`, and `E4_sysbench_point_select` passed cleanly on `pg17-logical` (`146,564.77 TPS` point-select) and `pg-birep` (`141,203.99 TPS`).
+
+### RCA-057 -- Bucardo 5 `T13` Cross-Node FK Race (`SQLSTATE 23503`) & `T16` Metadata-Node `SIGKILL` Loss
+- **Date / Linked Action**: `2026-11-19` (`ACT-064` / `#206`, `#208`)
+- **Observed Symptom**: (1) Immediate cross-node child inserts in `T13` failed `0/10` (`23503x10`) on `bucardo`; (2) `SIGKILL` on `bucardo_node1` in `T16` permitted peer write `id=21` on `bucardo_node2`, yet post-restart state remained `20/21` (outage peer row not synchronized back).
+- **Root Cause Analysis**: (1) Trigger/daemon async polling introduces `p50=548.74 ms` (`p95=1,275.25 ms`) visibility lag (`T15`), causing cross-node child inserts to precede parent arrival; (2) `bucardo_node1` hosts the `bucardo` metadata database itself, making it a single point of failure for sync coordination under hard `SIGKILL` crashes.
+- **Applied Change / Fix**: Documented both operational limits in `scripts/test_pg_extended_lib.py`, `scripts/test_pg_extended_matrix.sh`, and `documentation/pg_multimaster{,_fr}.md`.
+- **Result & Non-Regression Test**: Reproducibly verified `23503;23505`, `p50=548.74 ms`, and `post_restart=20/21` in `extended_functional_matrix.csv`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
@@ -449,6 +477,10 @@
 ### IMP-009 — Uncoordinated `SERIAL` & LWW for Non-Commutative Balance Increments (`balance = balance + delta`)
 - **Why It Is a Dead-End**: Live Suite D hot-row contention proved async LWW loses or diverges balances (`pg-birep` `-71,063` diverged, `pgedge` LWW `-278,698`, `bucardo` `-531,620`).
 - **Adopted Decision**: Require `spock.delta_apply` (`log_old_value=true`, achieving `0` drift at `1,837.64 TPS`) or `40001`-retried consensus engines (`yugabyte`, `cockroach`, `citus`).
+
+### IMP-010 -- Promoting a `pg-logical` Subscriber Without `setval()` or Relying on Co-Located Bucardo Metadata for HA
+- **Why It Is a Dead-End**: `T18` proved native logical subscribers leave sequences at `1|false` (`SQLSTATE 23505` on first post-failover insert), while `T16` proved `SIGKILL` on the Bucardo metadata-hosting node drops synchronization of peer writes made during the outage (`20/21`).
+- **Adopted Decision**: Use physical streaming (`pg-streaming` / `patroni`) or Raft consensus (`yugabyte` / `cockroach`) for transparent HA failover, or enforce scripted `setval()` promotion runbooks for logical replicas.
 
 ---
 
@@ -549,6 +581,11 @@
 - **Nature & Justification**: Sequential execution on a single 20-vCPU / 16.4 GiB host at `PG_SCALE=2` with `tc netem 25ms` models symmetric WAN RTT without hardware multi-region NIC contention.
 - **Removal Condition**: Re-run Suites A–F across dedicated multi-AZ VMs at higher scale factors (`PG_SCALE >= 50`).
 
+### APP-020 -- V2 Extended Matrix (`T11`-`T18`) & V2 Sweep Single-Host Laboratory Execution
+- **Target Files**: `scripts/test_pg_extended_matrix.sh`, `scripts/test_pg_extended_lib.py`, `scripts/bench_pg_v2_runner.sh`, `scripts/bench_pg_v2_lib.py`
+- **Nature & Justification**: `T11`-`T18` probes, concurrency sweep (`G_conc_c1..c32`), extended sysbench (`E2`-`E4`), append-only inserts (`H`), and WAN sweep (`10/25/50ms` via `tc netem`) execute sequentially on one Docker host for clean cross-engine isolation.
+- **Removal Condition**: Re-execute V2 sweeps across dedicated multi-node VMs with physical inter-AZ RTT and NVMe storage.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
@@ -580,5 +617,9 @@
 ### IDEA-007 — Native Go Verifiers for Multi-Master Topologies in `pkg/dbclient/`
 - **Priority / Target**: `Medium` · `pkg/dbclient/`
 - **Description**: Extend `NewVerifier()` to inspect `spock.sub_show_status()`, `pg_subscription`, `bucardo status`, `pg_dist_node`, CockroachDB `gossip_nodes`, and YugabyteDB `yb_servers()`.
+
+### IDEA-008 -- Native Go Verifiers for `pg-streaming` and `pg-logical` in `pkg/dbclient/`
+- **Priority / Target**: `Medium` | `pkg/dbclient/`
+- **Description**: Add dedicated verifier branches inspecting `pg_stat_replication` (`state='streaming'`, `sync_state`) for `pg-streaming` and `pg_subscription` / `pg_stat_subscription_stats` for `pg-logical`.
 
 
