@@ -45,6 +45,7 @@ Bienvenue dans la documentation de l'environnement Docker MariaDB. Cet index fou
 | Document | Description |
 | --- | --- |
 | **[Support PostgreSQL](postgresql_support_fr.md)** | Guide complet : standalone (15/16/17), Patroni HA, et clusters PgPool-II. |
+| **[PostgreSQL Multi-Maître & SQL Distribué](pg_multimaster_fr.md)** | Guide et benchmarks pg-birep, pgEdge Spock 5, Bucardo 5, Citus 14.2, YugabyteDB 2026.1 et CockroachDB v24.3. |
 | **[Cluster Patroni](patroni_cluster.md)** | Cluster PostgreSQL 17 HA à 3 noeuds avec ETCD et failover automatique. |
 | **[Cluster PgPool-II](pgpool_cluster.md)** | Pooling de connexions + load balancing avec réplication streaming. |
 
