@@ -21,6 +21,7 @@
 | **Phase 5** | Sourcery AI Code & Security Hardening | 99 code review findings resolved across 36 PRs | ✅ Complete | `documentation/sourcery_ai_audit.md` |
 | **Phase 6** | Governance & Engineering Standards | CIS Benchmarks rules, `< 15K` diff limit, registers | ✅ Complete | `python -m unittest discover -s tests -v` |
 | **Phase 7** | Golang v2.0.0 Migration & Orchestrator | Statically compiled CLI, native PKI, verifiers, reports | ✅ Complete | `make test-go` |
+| **Phase 8** | PostgreSQL Multi-Master & Distributed SQL (`v2.1.0`) | `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`, benchmarks | ✅ Complete | `make bench-pg-multimaster` |
 
 ---
 
@@ -73,6 +74,46 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-062 — Governance Registers & Empirical RCA Consolidation (Issue `#196`)
+- **Date**: `2026-11-19T13:21+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#196` (`docs/issue-196-registers-v210`)
+- **Request**: Record all v2.1.0 PostgreSQL multi-master actions (`ACT-054`–`ACT-062`), Phase 8 milestone, and all empirically verified RCAs (`RCA-049`–`RCA-053`), dead-ends (`IMP-009`), approximations (`APP-019`), and ideas (`IDEA-007`).
+- **Changes**: Updated `docs/ACTION_LOGBOOK.md` and `docs/RCA_REGISTER.md`.
+- **Result**: `unittest` (21 tests), `test_config.sh`, `go test ./...`, and `make build-go` pass.
+
+---
+
+### ACT-061 — Bilingual Multi-Master Documentation (`documentation/pg_multimaster{,_fr}.md`) (Issues `#192`, `#194`)
+- **Date**: `2026-11-19T13:20+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#192`, `#194` (PRs `#193`, `#195`)
+- **Request**: Document all 6 multi-master/distributed PostgreSQL topologies, `pg17-baseline`, empirical benchmark tables (`PG_SCALE=2`, Suites A–F), and observed SQLSTATE failure modes in English and French.
+- **Changes**: Added `documentation/pg_multimaster.md`, `documentation/pg_multimaster_fr.md`, and links in `documentation/INDEX.md` and `documentation/INDEX_fr.md`.
+- **Result**: Merged PRs `#193` (`1c68591`) and `#195` (`a2216e8`). All tests pass.
+
+---
+
+### ACT-060 — Makefile Targets, Go Topology Registry & `v2.1.0` Bump (Issues `#188`, `#190`)
+- **Date**: `2026-11-19T13:18+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#188`, `#190` (PRs `#189`, `#191`)
+- **Request**: Wire `<topo>-{up,down,status,logs,ps}`, `test-<topo>`, and `bench-pg-multimaster` in `Makefile`, register the 6 new topologies in `pkg/topology`, sync `cmd/mdb`, and release `2.1.0`.
+- **Changes**: Updated `Makefile` (PR `#189`, `de204ec`); added `pkg/topology/pg_multimaster.go`, updated `topology.go`, `topology_test.go` (14 topologies), `VERSION` (`2.1.0`), `cmd/mdb/main.go`, `main_test.go`, and `Changelog` (PR `#191`, `3dc1419`).
+- **Result**: `mdb version 2.1.0`, 14 topologies listed, `unittest`, `test_config.sh`, `go test`, and `make build-go` pass.
+
+---
+
+### ACT-059 — PG17 Baseline & Sequential Benchmark Harness (`PG_SCALE=2`) (Issues `#184`, `#186`)
+- **Date**: `2026-11-19T13:13+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#184`, `#186` (PRs `#185`, `#187`)
+- **Request**: Land `scripts/bench_pg_lib.py`, `scripts/bench_pg_multimaster.sh`, and `docker-compose-pg17-baseline.yml` executing Suites A–F (`pgbench`, `sysbench`, `tc netem 25ms`) sequentially across 8 topologies.
+- **Changes**: Added `scripts/bench_pg_lib.py` (PR `#185`, `a44f96f`), `docker-compose-pg17-baseline.yml` and `scripts/bench_pg_multimaster.sh` (PR `#187`, `f1f254b`).
+- **Result**: 56 empirical benchmark rows validated (`spock.delta_apply` 1,837.64 TPS / 0 drift; `tc netem 25ms` WAN collapse verified).
+
+---
+
+### ACT-054..058 — Six PostgreSQL Multi-Master & Distributed SQL PoCs + Limit Test Suites (Issues `#160`–`#182`)
+- **Date**: `2026-11-19T13:11+01:00` · **Status**: `COMPLETED` · **Issues / PRs**: `#160`/`#161`, `#162`/`#163`, `#164`/`#165`, `#166`/`#167`, `#168`/`#169`, `#170`/`#171`, `#172`/`#173`, `#174`/`#175`, `#176`/`#177`, `#178`/`#179`, `#180`/`#181`, `#182`/`#183`
+- **Request**: Land compose stacks, setup scripts, and live-verified functional + empirical limit test suites for `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, and `yugabyte` via atomic `<15K` PRs.
+- **Changes**: Added `docker-compose-{pg-birep,pgedge,bucardo,citus,cockroach,yugabyte}.yml`, `scripts/{pg_birep,pgedge,bucardo,citus,cockroach,yugabyte}/*`, and `tests/test_{pg_birep,pgedge,bucardo,citus,cockroach,yugabyte}.sh`.
+- **Result**: All 12 PRs merged onto `main` (`0c56c65`), live limit tests captured exact SQLSTATEs (`23505`, `55000`, `0A000`, `40001`, `XCEXF`, `42601`, `57014`, `42501`), and zero orphan containers/scratch dumps left.
+
+---
 
 ### ACT-053 — Security Leaks Remediation & Automated Release Distribution (Issue `#156`)
 - **Date**: `2026-11-10T00:45+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#156` (`fix/issue-156-security-remediation-and-release-automation`)
