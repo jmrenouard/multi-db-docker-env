@@ -1,0 +1,5 @@
+FROM postgres:17
+RUN apt-get update && ( \
+    apt-get install -y --no-install-recommends "postgresql-plperl-17=$(dpkg-query -W -f='${Version}' postgresql-17)" libdbi-perl libdbd-pg-perl \
+    || apt-get install -y --no-install-recommends postgresql-17 postgresql-plperl-17 libdbi-perl libdbd-pg-perl \
+    ) && rm -rf /var/lib/apt/lists/*

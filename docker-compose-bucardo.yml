@@ -1,0 +1,58 @@
+networks:
+  bucardo_net:
+    driver: bridge
+
+x-bucardo-pg: &bucardo-pg
+  build:
+    context: ./scripts/bucardo
+    dockerfile: Dockerfile.pg
+  image: multi-db-bucardo-pg17:latest
+  restart: unless-stopped
+  environment:
+    POSTGRES_USER: ${PG_USER:-postgres}
+    POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
+    POSTGRES_DB: ${PG_DB:-labdb}
+  command: ["postgres", "-c", "shared_buffers=128MB", "-c", "log_error_verbosity=verbose"]
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+    interval: 3s
+    timeout: 3s
+    retries: 20
+  networks:
+    - bucardo_net
+
+services:
+  bucardo_node1:
+    <<: *bucardo-pg
+    container_name: bucardo_node1
+    hostname: bucardo_node1
+    ports: ["127.0.0.1:15461:5432"]
+    volumes: ["bucardo_data1:/var/lib/postgresql/data"]
+
+  bucardo_node2:
+    <<: *bucardo-pg
+    container_name: bucardo_node2
+    hostname: bucardo_node2
+    ports: ["127.0.0.1:15462:5432"]
+    volumes: ["bucardo_data2:/var/lib/postgresql/data"]
+
+  bucardo_daemon:
+    build:
+      context: ./scripts/bucardo
+      dockerfile: Dockerfile
+    image: multi-db-bucardo-daemon:latest
+    container_name: bucardo_daemon
+    hostname: bucardo_daemon
+    restart: unless-stopped
+    environment:
+      PGUSER: ${PG_USER:-postgres}
+      PGPASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
+    depends_on:
+      bucardo_node1: {condition: service_healthy}
+      bucardo_node2: {condition: service_healthy}
+    networks:
+      - bucardo_net
+
+volumes:
+  bucardo_data1:
+  bucardo_data2:
