@@ -22,6 +22,7 @@
 | **Phase 6** | Governance & Engineering Standards | CIS Benchmarks rules, `< 15K` diff limit, registers | ✅ Complete | `python -m unittest discover -s tests -v` |
 | **Phase 7** | Golang v2.0.0 Migration & Orchestrator | Statically compiled CLI, native PKI, verifiers, reports | ✅ Complete | `make test-go` |
 | **Phase 8** | PostgreSQL Multi-Master & Distributed SQL (`v2.1.0`) | `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`, benchmarks | ✅ Complete | `make bench-pg-multimaster` |
+| **Phase 9** | PostgreSQL Streaming, Logical, Extended Matrix & V2 Benchmarks (`v2.2.0`) | `pg-streaming`, `pg-logical`, `T11`-`T18` matrix, V2 suites (`E2`-`E4`, `H`, `G`, WAN `10/25/50ms`) | Complete | `make test-pg-extended`, `make bench-pg-v2` |
 
 ---
 
@@ -74,6 +75,46 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-067 -- Governance Registers & V2 Empirical RCA Consolidation (Issue `#220`)
+- **Date**: `2026-11-19T16:58+01:00` | **Status**: `COMPLETED` | **Issue / Branch**: `#220` (`docs/issue-220-registers-v220`)
+- **Request**: Record all `v2.2.0` PostgreSQL streaming, logical, extended matrix, and V2 benchmark actions (`ACT-063`-`ACT-067`), Phase 9 milestone, and verified V2 RCAs (`RCA-054`-`RCA-057`), dead-end (`IMP-010`), approximation (`APP-020`), and idea (`IDEA-008`).
+- **Changes**: Updated `docs/ACTION_LOGBOOK.md` and `docs/RCA_REGISTER.md` in pure ASCII English.
+- **Result**: `unittest` (21 tests), `go test -count=1 ./...`, and `make build-go` pass.
+
+---
+
+### ACT-066 -- Bilingual V2 Documentation Sync (Issues `#216`, `#218`)
+- **Date**: `2026-11-19T16:57+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#216`/`#217` (`da8307a`), `#218`/`#219` (`af37c27`)
+- **Request**: Document `pg-streaming`, `pg-logical`, `make test-pg-extended` (`T11`-`T18`), `make bench-pg-v2`, and the companion `ClusterPostgreSQL-Series` study in English and French guides.
+- **Changes**: Updated `documentation/pg_multimaster.md` (PR `#217`, 8,893 B) and `documentation/pg_multimaster_fr.md` (PR `#219`, 9,248 B).
+- **Result**: Both PRs merged onto `main`; all tests pass.
+
+---
+
+### ACT-065 -- Makefile Targets, Go CLI 16-Topology Registry & `v2.2.0` Release (Issue `#214`)
+- **Date**: `2026-11-19T16:52+01:00` | **Status**: `COMPLETED` | **Issue / PR**: `#214` / `#215` (`5e2de6c`)
+- **Request**: Wire `pg-streaming-{up,down,status,logs,ps,test}`, `pg-logical-{up,down,status,logs,ps,test}`, `test-pg-extended`, and `bench-pg-v2` in `Makefile`, register `pg-streaming` and `pg-logical` in `pkg/topology` and `cmd/mdb`, and release `v2.2.0`.
+- **Changes**: Updated `Makefile`, `pkg/topology/pg_multimaster.go`, `pkg/topology/topology.go`, `pkg/topology/topology_test.go`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, `VERSION` (`2.2.0`), and `Changelog` (PR `#215`, 14,037 B).
+- **Result**: `./bin/mdb version` -> `mdb version 2.2.0`; `./bin/mdb topologies` -> 16 alphabetical topologies; `unittest`, `test_config.sh`, `go test`, and `make build-go` pass.
+
+---
+
+### ACT-064 -- Extended `T11`-`T18` Empirical Matrix & V2 Sequential Benchmark Harness (Issues `#206`, `#208`, `#210`, `#212`)
+- **Date**: `2026-11-19T16:48+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#206`/`#207` (`ec88a73`), `#208`/`#209` (`ef47255`), `#210`/`#211` (`8113975`), `#212`/`#213` (`1756412`)
+- **Request**: Land the sequential `T11`-`T18` extended test matrix and V2 benchmark harness (`E2`-`E4`, `H_append_only_insert`, `G_conc_c1..c32`, WAN `10/25/50ms`) across all 10 PostgreSQL topologies via atomic `< 15K` PRs.
+- **Changes**: Added `scripts/test_pg_extended_matrix.sh` (13,161 B), `scripts/test_pg_extended_lib.py` (13,409 B), `scripts/bench_pg_v2_runner.sh` (11,080 B), and `scripts/bench_pg_v2_lib.py` (12,889 B).
+- **Result**: All 4 PRs merged onto `main`; all shell scripts declare `set -euo pipefail` (mode `100755`); `unittest`, `go test`, and `make build-go` pass.
+
+---
+
+### ACT-063 -- PostgreSQL 17 Physical Streaming & Native Logical Topologies + Test Suites (Issues `#198`, `#200`, `#202`, `#204`)
+- **Date**: `2026-11-19T16:43+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#198`/`#199` (`4226130`), `#200`/`#201` (`d93ba3d`), `#202`/`#203` (`d430ee6`), `#204`/`#205` (`31e9f51`)
+- **Request**: Land `pg-streaming` (async/sync physical WAL + `pg_promote()`) and `pg-logical` (uni-directional `pub_logical` -> `sub_logical`) compose stacks, setup scripts, and live-verified test suites.
+- **Changes**: Added `docker-compose-pg-streaming.yml`, `scripts/pg_streaming/setup_pg_streaming.sh`, `tests/test_pg_streaming.sh`, `docker-compose-pg-logical.yml`, `scripts/pg_logical/setup_pg_logical.sh`, and `tests/test_pg_logical.sh`; purged scratch `reports/test_*_20261119_*` dumps.
+- **Result**: All 4 PRs merged cleanly (`< 10 KB` each); `unittest`, `go test`, and `make build-go` pass.
+
+---
 
 ### ACT-062 — Governance Registers & Empirical RCA Consolidation (Issue `#196`)
 - **Date**: `2026-11-19T13:21+01:00` · **Status**: `COMPLETED` · **Issue / Branch**: `#196` (`docs/issue-196-registers-v210`)
