@@ -1,0 +1,62 @@
+networks:
+  pg_logical_net:
+    driver: bridge
+
+x-pg-logical-common: &pg-logical-common
+  image: postgres:17
+  restart: unless-stopped
+  environment:
+    POSTGRES_USER: ${PG_USER:-postgres}
+    POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
+    POSTGRES_DB: ${PG_DB:-labdb}
+  command:
+    - postgres
+    - -c
+    - wal_level=logical
+    - -c
+    - max_wal_senders=10
+    - -c
+    - max_replication_slots=10
+    - -c
+    - max_logical_replication_workers=8
+    - -c
+    - max_worker_processes=12
+    - -c
+    - wal_keep_size=128MB
+    - -c
+    - shared_buffers=128MB
+    - -c
+    - log_error_verbosity=verbose
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+    interval: 3s
+    timeout: 3s
+    retries: 15
+  networks:
+    - pg_logical_net
+
+services:
+  pg_logical_pub:
+    <<: *pg-logical-common
+    container_name: pg_logical_pub
+    hostname: pg_logical_pub
+    ports:
+      - "127.0.0.1:15436:5432"
+    volumes:
+      - pg_logical_pub_data:/var/lib/postgresql/data
+
+  pg_logical_sub:
+    <<: *pg-logical-common
+    container_name: pg_logical_sub
+    hostname: pg_logical_sub
+    ports:
+      - "127.0.0.1:15437:5432"
+    volumes:
+      - pg_logical_sub_data:/var/lib/postgresql/data
+    depends_on:
+      pg_logical_pub:
+        condition: service_healthy
+
+volumes:
+  pg_logical_pub_data:
+  pg_logical_sub_data:
