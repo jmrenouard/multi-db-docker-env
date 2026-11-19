@@ -1,0 +1,73 @@
+networks:
+  pgedge_net:
+    driver: bridge
+
+x-pgedge-common: &pgedge-common
+  image: ghcr.io/pgedge/pgedge-postgres:17-spock5-minimal
+  restart: unless-stopped
+  entrypoint:
+    - bash
+    - -c
+    - exec /usr/local/bin/docker-entrypoint.sh postgres -c listen_addresses=* -c logging_collector=off -c output_plugin_libraries=pgoutput,spock_output -c wal_level=logical -c track_commit_timestamp=on -c shared_preload_libraries=spock,snowflake -c spock.conflict_resolution=last_update_wins -c spock.enable_ddl_replication=on -c spock.include_ddl_repset=on -c spock.save_resolutions=on -c max_wal_senders=12 -c max_replication_slots=12 -c max_worker_processes=16 -c max_logical_replication_workers=12 -c shared_buffers=128MB -c log_error_verbosity=verbose -c snowflake.node=$${SNOWFLAKE_NODE}
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+    interval: 3s
+    timeout: 3s
+    retries: 20
+  networks:
+    - pgedge_net
+
+services:
+  pgedge_node1:
+    <<: *pgedge-common
+    container_name: pgedge_node1
+    hostname: pgedge_node1
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
+      POSTGRES_DB: ${PG_DB:-labdb}
+      SNOWFLAKE_NODE: "1"
+    ports: ["127.0.0.1:15451:5432"]
+    volumes: ["pgedge_data1:/var/lib/pgsql/17/data"]
+
+  pgedge_node2:
+    <<: *pgedge-common
+    container_name: pgedge_node2
+    hostname: pgedge_node2
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
+      POSTGRES_DB: ${PG_DB:-labdb}
+      SNOWFLAKE_NODE: "2"
+    ports: ["127.0.0.1:15452:5432"]
+    volumes: ["pgedge_data2:/var/lib/pgsql/17/data"]
+
+  pgedge_node3:
+    <<: *pgedge-common
+    container_name: pgedge_node3
+    hostname: pgedge_node3
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
+      POSTGRES_DB: ${PG_DB:-labdb}
+      SNOWFLAKE_NODE: "3"
+    ports: ["127.0.0.1:15453:5432"]
+    volumes: ["pgedge_data3:/var/lib/pgsql/17/data"]
+
+  haproxy_pgedge:
+    image: haproxy:2.9-alpine
+    container_name: haproxy_pgedge
+    hostname: haproxy_pgedge
+    restart: unless-stopped
+    ports: ["127.0.0.1:15450:5432"]
+    volumes: ["./scripts/pgedge/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro"]
+    depends_on:
+      pgedge_node1: {condition: service_healthy}
+      pgedge_node2: {condition: service_healthy}
+      pgedge_node3: {condition: service_healthy}
+    networks: [pgedge_net]
+
+volumes:
+  pgedge_data1:
+  pgedge_data2:
+  pgedge_data3:
