@@ -171,6 +171,101 @@ mongo8-ps: ## Show MongoDB 8 ReplicaSet running containers
 
 test-mongo8: ## Run functional tests on MongoDB 8 ReplicaSet
 	@MONGO_NODES="mongo8_n1 mongo8_n2 mongo8_n3" bash ./tests/test_mongo_rs.sh
+
+# --- POSTGRESQL MULTI-MASTER CLUSTERS ---
+PG_BIREP_COMPOSE = docker-compose-pg-birep.yml
+pg-birep-up: ## Start 2-node PG 17 bidirectional logical replication cluster
+	docker compose -f $(PG_BIREP_COMPOSE) up -d && bash ./scripts/pg_birep/setup_birep.sh
+pg-birep-down: ## Stop pg-birep cluster and remove volumes
+	docker compose -f $(PG_BIREP_COMPOSE) down -v
+pg-birep-status: ## Show pg-birep subscriptions and containers
+	docker compose -f $(PG_BIREP_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg_birep_node1 psql -U postgres -d labdb -c "SELECT subname, subenabled FROM pg_subscription;"
+pg-birep-logs: ## Follow pg-birep cluster logs
+	docker compose -f $(PG_BIREP_COMPOSE) logs -f
+pg-birep-ps: ## List pg-birep containers
+	docker compose -f $(PG_BIREP_COMPOSE) ps
+test-pg-birep: ## Run pg-birep functional and empirical limits tests
+	@bash ./tests/test_pg_birep.sh
+pg-birep-test: test-pg-birep
+
+PGEDGE_COMPOSE = docker-compose-pgedge.yml
+pgedge-up: ## Start 3-node pgEdge Spock 5 + Snowflake mesh
+	docker compose -f $(PGEDGE_COMPOSE) up -d && bash ./scripts/pgedge/setup_pgedge.sh
+pgedge-down: ## Stop pgEdge cluster and remove volumes
+	docker compose -f $(PGEDGE_COMPOSE) down -v
+pgedge-status: ## Show pgEdge Spock subscription status
+	docker compose -f $(PGEDGE_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pgedge_node1 psql -U postgres -d labdb -c "SELECT sub_name, status FROM spock.sub_show_status();"
+pgedge-logs: ## Follow pgEdge cluster logs
+	docker compose -f $(PGEDGE_COMPOSE) logs -f
+pgedge-ps: ## List pgEdge containers
+	docker compose -f $(PGEDGE_COMPOSE) ps
+test-pgedge: ## Run pgEdge functional and empirical limits tests
+	@bash ./tests/test_pgedge.sh
+pgedge-test: test-pgedge
+
+BUCARDO_COMPOSE = docker-compose-bucardo.yml
+bucardo-up: ## Start 2-node PG 17 + Bucardo 5 multi-master stack
+	docker compose -f $(BUCARDO_COMPOSE) up -d --build && bash ./scripts/bucardo/setup_bucardo.sh
+bucardo-down: ## Stop Bucardo cluster and remove volumes
+	docker compose -f $(BUCARDO_COMPOSE) down -v
+bucardo-status: ## Show Bucardo multi-master sync status
+	docker compose -f $(BUCARDO_COMPOSE) ps && docker exec bucardo_daemon bucardo status sync_mm
+bucardo-logs: ## Follow Bucardo cluster logs
+	docker compose -f $(BUCARDO_COMPOSE) logs -f
+bucardo-ps: ## List Bucardo containers
+	docker compose -f $(BUCARDO_COMPOSE) ps
+test-bucardo: ## Run Bucardo functional and empirical limits tests
+	@bash ./tests/test_bucardo.sh
+bucardo-test: test-bucardo
+
+CITUS_COMPOSE = docker-compose-citus.yml
+citus-up: ## Start 3-node Citus 14.2 distributed PostgreSQL 17 cluster
+	docker compose -f $(CITUS_COMPOSE) up -d && bash ./scripts/citus/setup_citus.sh
+citus-down: ## Stop Citus cluster and remove volumes
+	docker compose -f $(CITUS_COMPOSE) down -v
+citus-status: ## Show Citus worker membership
+	docker compose -f $(CITUS_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" citus_coord psql -U postgres -d labdb -c "SELECT nodeid, nodename, isactive FROM pg_dist_node ORDER BY nodeid;"
+citus-logs: ## Follow Citus cluster logs
+	docker compose -f $(CITUS_COMPOSE) logs -f
+citus-ps: ## List Citus containers
+	docker compose -f $(CITUS_COMPOSE) ps
+test-citus: ## Run Citus functional and empirical limits tests
+	@bash ./tests/test_citus.sh
+citus-test: test-citus
+
+COCKROACH_COMPOSE = docker-compose-cockroach.yml
+cockroach-up: ## Start 3-node CockroachDB v24.3.0 Raft cluster
+	docker compose -f $(COCKROACH_COMPOSE) up -d && bash ./scripts/cockroach/setup_cockroach.sh
+cockroach-down: ## Stop CockroachDB cluster and remove volumes
+	docker compose -f $(COCKROACH_COMPOSE) down -v
+cockroach-status: ## Show CockroachDB cluster node status
+	docker exec crdb_node1 /cockroach/cockroach node status --insecure --host=crdb_node1:26257
+cockroach-logs: ## Follow CockroachDB cluster logs
+	docker compose -f $(COCKROACH_COMPOSE) logs -f
+cockroach-ps: ## List CockroachDB containers
+	docker compose -f $(COCKROACH_COMPOSE) ps
+test-cockroach: ## Run CockroachDB functional and empirical limits tests
+	@bash ./tests/test_cockroach.sh
+cockroach-test: test-cockroach
+
+YUGABYTE_COMPOSE = docker-compose-yugabyte.yml
+yugabyte-up: ## Start 3-node YugabyteDB 2026.1.3 RF=3 cluster
+	docker compose -f $(YUGABYTE_COMPOSE) up -d && bash ./scripts/yugabyte/setup_yugabyte.sh
+yugabyte-down: ## Stop YugabyteDB cluster and remove volumes
+	docker compose -f $(YUGABYTE_COMPOSE) down -v
+yugabyte-status: ## Show YugabyteDB node and YSQL status
+	docker exec yb_node1 /home/yugabyte/bin/yugabyted status --base_dir=/home/yugabyte/var
+yugabyte-logs: ## Follow YugabyteDB cluster logs
+	docker compose -f $(YUGABYTE_COMPOSE) logs -f
+yugabyte-ps: ## List YugabyteDB containers
+	docker compose -f $(YUGABYTE_COMPOSE) ps
+test-yugabyte: ## Run YugabyteDB functional and empirical limits tests
+	@bash ./tests/test_yugabyte.sh
+yugabyte-test: test-yugabyte
+
+bench-pg-multimaster: ## Run sequential empirical benchmarks across 8 PostgreSQL topologies
+	@bash ./scripts/bench_pg_multimaster.sh
+
 # --- Main Targets ---
 .PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 postgres15 stop status logs \
         build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera test-patroni \
@@ -178,6 +273,13 @@ test-mongo8: ## Run functional tests on MongoDB 8 ReplicaSet
         innodb-up innodb-down innodb-status innodb-logs innodb-ps test-innodb \
         mongo-up mongo-down mongo-status mongo-logs mongo-ps test-mongo \
         mongo8-up mongo8-down mongo8-status mongo8-logs mongo8-ps test-mongo8 \
+        pg-birep-up pg-birep-down pg-birep-status pg-birep-logs pg-birep-ps test-pg-birep pg-birep-test \
+        pgedge-up pgedge-down pgedge-status pgedge-logs pgedge-ps test-pgedge pgedge-test \
+        bucardo-up bucardo-down bucardo-status bucardo-logs bucardo-ps test-bucardo bucardo-test \
+        citus-up citus-down citus-status citus-logs citus-ps test-citus citus-test \
+        cockroach-up cockroach-down cockroach-status cockroach-logs cockroach-ps test-cockroach cockroach-test \
+        yugabyte-up yugabyte-down yugabyte-status yugabyte-logs yugabyte-ps test-yugabyte yugabyte-test \
+        bench-pg-multimaster \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
@@ -271,7 +373,16 @@ help:
 	@printf "    \033[1mtest-all\033[0m           - 🧪 Runs functional tests on all standalone databases\n"
 	@printf "    \033[1mtest-all-topologies\033[0m- 🧪 Runs E2E tests across ALL standalone DBs and HA topologies\n"
 	@printf "\n"
-	@printf "  \033[1;32mGolang Orchestrator (v2.0.0):\033[0m\n"
+	@printf "  \033[1;32mPostgreSQL Multi-Master Clusters:\033[0m\n"
+	@printf "    \033[1mpg-birep-up / test-pg-birep\033[0m   - PG 17 Bidirectional Logical + HAProxy\n"
+	@printf "    \033[1mpgedge-up / test-pgedge\033[0m       - PG 17 pgEdge Spock 5 + Snowflake Mesh\n"
+	@printf "    \033[1mbucardo-up / test-bucardo\033[0m     - PG 17 Bucardo 5 Trigger Multi-Master\n"
+	@printf "    \033[1mcitus-up / test-citus\033[0m         - Citus 14.2 Distributed PG 17\n"
+	@printf "    \033[1mcockroach-up / test-cockroach\033[0m - CockroachDB v24.3.0 3-Node Raft\n"
+	@printf "    \033[1myugabyte-up / test-yugabyte\033[0m   - YugabyteDB 2026.1.3 3-Node Raft\n"
+	@printf "    \033[1mbench-pg-multimaster\033[0m          - Sequential pgbench/sysbench suite\n"
+	@printf "\n"
+	@printf "  \033[1;32mGolang Orchestrator (v2.1.0):\033[0m\n"
 	@printf "    \033[1mbuild-go\033[0m           - 🔨 Compiles mdb CLI binary into bin/mdb\n"
 	@printf "    \033[1mtest-go\033[0m            - 🧪 Runs complete Go unit test suite\n"
 	@printf "\n"
