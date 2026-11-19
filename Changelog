@@ -1,3 +1,8 @@
+2.1.0 2026-11-19
+- feat: register 6 PostgreSQL multi-master topologies (pg-birep, pgedge, bucardo, citus, cockroach, yugabyte) in Go mdb CLI (pkg/topology, cmd/mdb) (Closes #190).
+- feat: add Makefile orchestration targets and sequential pgbench/sysbench/netem benchmark harness across 8 PostgreSQL topologies (Makefile, scripts).
+- test: add functional and empirical limits test suites plus Go registry and CLI unit test coverage (tests, pkg/topology, cmd/mdb).
+
 2.0.25 2026-11-02
 - fix: add patroni-test alias target for test-patroni (Makefile) (Closes #152).
 - fix: bump fallback version in cmd/mdb to 2.0.25 and update unit tests (cmd/mdb).

@@ -20,7 +20,7 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-var version = "2.0.25"
+var version = "2.1.0"
 
 func resolveVersion() string {
 	if data, err := os.ReadFile("VERSION"); err == nil {
@@ -273,6 +273,12 @@ func defaultContainer(topo string) string {
 	case "pgpool": return "pgpool"
 	case "mongo": return "mongo1"
 	case "mongo8": return "mongo8_n1"
+	case "pg-birep": return "pg_birep_node1"
+	case "pgedge": return "pgedge_node1"
+	case "bucardo": return "bucardo_node1"
+	case "citus": return "citus_coord"
+	case "cockroach": return "crdb_node1"
+	case "yugabyte": return "yb_node1"
 	default: return "mariadb-11.8"
 	}
 }
