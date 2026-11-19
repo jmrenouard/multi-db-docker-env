@@ -1,0 +1,89 @@
+networks:
+  pg_streaming_net:
+    driver: bridge
+
+services:
+  pg_stream_primary:
+    image: postgres:17
+    container_name: pg_stream_primary
+    hostname: pg_stream_primary
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
+      POSTGRES_DB: ${PG_DB:-labdb}
+    entrypoint:
+      - bash
+      - -c
+      - |
+        mkdir -p /docker-entrypoint-initdb.d
+        printf 'echo "host replication all all scram-sha-256" >> "$$PGDATA/pg_hba.conf"\n' > /docker-entrypoint-initdb.d/01_rep_hba.sh
+        chmod +x /docker-entrypoint-initdb.d/01_rep_hba.sh
+        exec /usr/local/bin/docker-entrypoint.sh postgres \
+          -c wal_level=replica \
+          -c max_wal_senders=10 \
+          -c max_replication_slots=10 \
+          -c hot_standby=on \
+          -c wal_keep_size=64MB \
+          -c shared_buffers=128MB \
+          -c max_connections=100 \
+          -c log_error_verbosity=verbose
+    ports:
+      - "127.0.0.1:15434:5432"
+    volumes:
+      - pg_stream_primary_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+    networks:
+      - pg_streaming_net
+
+  pg_stream_standby:
+    image: postgres:17
+    container_name: pg_stream_standby
+    hostname: pg_stream_standby
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
+      POSTGRES_DB: ${PG_DB:-labdb}
+    entrypoint:
+      - bash
+      - -c
+      - |
+        if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
+          rm -rf /var/lib/postgresql/data/*
+          until pg_isready -h pg_stream_primary -p 5432 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"; do sleep 1; done
+          until PGPASSWORD="$$POSTGRES_PASSWORD" psql -h pg_stream_primary -p 5432 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -tAc \
+            "SELECT pg_create_physical_replication_slot('slot_stream_standby') WHERE NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name='slot_stream_standby');" >/dev/null 2>&1; do sleep 1; done
+          until PGPASSWORD="$$POSTGRES_PASSWORD" pg_basebackup -h pg_stream_primary -p 5432 -U "$$POSTGRES_USER" -D /var/lib/postgresql/data -Fp -Xs -P -R -S slot_stream_standby; do sleep 1; done
+          printf "primary_conninfo = 'host=pg_stream_primary port=5432 user=%s password=%s application_name=pg_stream_standby'\n" "$$POSTGRES_USER" "$$POSTGRES_PASSWORD" >> /var/lib/postgresql/data/postgresql.auto.conf
+          printf "primary_slot_name = 'slot_stream_standby'\n" >> /var/lib/postgresql/data/postgresql.auto.conf
+          chown -R postgres:postgres /var/lib/postgresql/data
+          chmod 700 /var/lib/postgresql/data
+        fi
+        exec /usr/local/bin/docker-entrypoint.sh postgres \
+          -c hot_standby=on \
+          -c shared_buffers=128MB \
+          -c max_connections=100 \
+          -c log_error_verbosity=verbose
+    ports:
+      - "127.0.0.1:15435:5432"
+    volumes:
+      - pg_stream_standby_data:/var/lib/postgresql/data
+    depends_on:
+      pg_stream_primary:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    networks:
+      - pg_streaming_net
+
+volumes:
+  pg_stream_primary_data:
+  pg_stream_standby_data:
