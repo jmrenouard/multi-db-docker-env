@@ -1,0 +1,79 @@
+networks:
+  pg_birep_net:
+    driver: bridge
+
+x-pg-birep-common: &pg-birep-common
+  image: postgres:17
+  restart: unless-stopped
+  environment:
+    POSTGRES_USER: ${PG_USER:-postgres}
+    POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
+    POSTGRES_DB: ${PG_DB:-labdb}
+  command:
+    - postgres
+    - -c
+    - wal_level=logical
+    - -c
+    - track_commit_timestamp=on
+    - -c
+    - max_wal_senders=10
+    - -c
+    - max_replication_slots=10
+    - -c
+    - max_logical_replication_workers=8
+    - -c
+    - max_worker_processes=12
+    - -c
+    - wal_keep_size=128MB
+    - -c
+    - shared_buffers=128MB
+    - -c
+    - log_error_verbosity=verbose
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+    interval: 3s
+    timeout: 3s
+    retries: 15
+  networks:
+    - pg_birep_net
+
+services:
+  pg_birep_node1:
+    <<: *pg-birep-common
+    container_name: pg_birep_node1
+    hostname: pg_birep_node1
+    ports:
+      - "127.0.0.1:15441:5432"
+    volumes:
+      - pg_birep_data1:/var/lib/postgresql/data
+
+  pg_birep_node2:
+    <<: *pg-birep-common
+    container_name: pg_birep_node2
+    hostname: pg_birep_node2
+    ports:
+      - "127.0.0.1:15442:5432"
+    volumes:
+      - pg_birep_data2:/var/lib/postgresql/data
+
+  haproxy_pg_birep:
+    image: haproxy:2.9-alpine
+    container_name: haproxy_pg_birep
+    hostname: haproxy_pg_birep
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:15440:5432"
+      - "127.0.0.1:15449:8404"
+    volumes:
+      - ./scripts/pg_birep/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      pg_birep_node1:
+        condition: service_healthy
+      pg_birep_node2:
+        condition: service_healthy
+    networks:
+      - pg_birep_net
+
+volumes:
+  pg_birep_data1:
+  pg_birep_data2:
