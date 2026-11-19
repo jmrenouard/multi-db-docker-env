@@ -1,0 +1,71 @@
+networks:
+  crdb_net:
+    driver: bridge
+
+x-crdb-node: &crdb-node
+  image: cockroachdb/cockroach:v24.3.0
+  restart: unless-stopped
+  mem_limit: 1280m
+  networks:
+    - crdb_net
+
+services:
+  crdb_node1:
+    <<: *crdb-node
+    container_name: crdb_node1
+    hostname: crdb_node1
+    command: >
+      start --insecure
+      --advertise-addr=crdb_node1:26257
+      --listen-addr=0.0.0.0:26257
+      --http-addr=0.0.0.0:8080
+      --join=crdb_node1:26257,crdb_node2:26257,crdb_node3:26257
+      --cache=256MiB
+      --max-sql-memory=256MiB
+      --store=/cockroach/cockroach-data
+    ports:
+      - "127.0.0.1:15481:26257"
+      - "127.0.0.1:18081:8080"
+    volumes:
+      - crdb_data1:/cockroach/cockroach-data
+
+  crdb_node2:
+    <<: *crdb-node
+    container_name: crdb_node2
+    hostname: crdb_node2
+    command: >
+      start --insecure
+      --advertise-addr=crdb_node2:26257
+      --listen-addr=0.0.0.0:26257
+      --http-addr=0.0.0.0:8080
+      --join=crdb_node1:26257,crdb_node2:26257,crdb_node3:26257
+      --cache=256MiB
+      --max-sql-memory=256MiB
+      --store=/cockroach/cockroach-data
+    ports:
+      - "127.0.0.1:15482:26257"
+    volumes:
+      - crdb_data2:/cockroach/cockroach-data
+
+  crdb_node3:
+    <<: *crdb-node
+    container_name: crdb_node3
+    hostname: crdb_node3
+    command: >
+      start --insecure
+      --advertise-addr=crdb_node3:26257
+      --listen-addr=0.0.0.0:26257
+      --http-addr=0.0.0.0:8080
+      --join=crdb_node1:26257,crdb_node2:26257,crdb_node3:26257
+      --cache=256MiB
+      --max-sql-memory=256MiB
+      --store=/cockroach/cockroach-data
+    ports:
+      - "127.0.0.1:15483:26257"
+    volumes:
+      - crdb_data3:/cockroach/cockroach-data
+
+volumes:
+  crdb_data1:
+  crdb_data2:
+  crdb_data3:
