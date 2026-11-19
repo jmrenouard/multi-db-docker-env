@@ -379,6 +379,39 @@
 
 ---
 
+### RCA-049 — pgEdge Spock 5 `spock_output` `SQLSTATE 42501`, Localhost Binding & `pg_hba.conf` Rejection
+- **Date / Linked Action**: `2026-11-19` (`ACT-055` / `#164`, `#166`)
+- **Observed Symptom**: `ghcr.io/pgedge/pgedge-postgres:17-spock5-minimal` rejected logical slot creation (`SQLSTATE 42501`) on `spock_output`, bound only to `localhost`, and lacked replication HBA rules.
+- **Root Cause Analysis**: Rocky UBI image defaults to `output_plugin_libraries='pgoutput, test_decoding'`, `listen_addresses=localhost`, and `logging_collector=on`.
+- **Applied Change / Fix**: Overrode postgres flags (`listen_addresses=*`, `logging_collector=off`, `output_plugin_libraries=pgoutput,spock_output`) in `docker-compose-pgedge.yml` and appended `host replication all all scram-sha-256` in `scripts/pgedge/setup_pgedge.sh`.
+- **Result & Non-Regression Test**: `tests/test_pgedge.sh` passed (`11` PASS, `0` FAIL, `6` EXPECTED_LIMITATION) with 3-node full mesh active.
+
+### RCA-050 — Bucardo `db_getconn` `PL/PerlU` Failure on Stock `postgres:17` Image
+- **Date / Linked Action**: `2026-11-19` (`ACT-056` / `#168`, `#170`)
+- **Observed Symptom**: `bucardo install` failed against stock `postgres:17` because `bucardo.schema` creates `db_getconn()` in `plperlu` using Perl `DBI` / `DBD::Pg`.
+- **Applied Change / Fix**: Added `scripts/bucardo/Dockerfile.pg` installing `postgresql-plperl-17`, `libdbi-perl`, and `libdbd-pg-perl` on the database containers alongside `scripts/bucardo/Dockerfile` (`bucardo` 5.6.0-4).
+- **Result & Non-Regression Test**: `tests/test_bucardo.sh` passed (`7` PASS, `0` FAIL, `7` EXPECTED_LIMITATION) with `plperlu=1` and `sync_mm` active.
+
+### RCA-051 — Keyless `pgbench_history` `SQLSTATE 55000` / Silent Skip Across Logical & Trigger Replication
+- **Date / Linked Action**: `2026-11-19` (`ACT-054..059` / `#162`, `#166`, `#170`, `#184`)
+- **Observed Symptom**: `pg-birep` raised `SQLSTATE 55000` on `UPDATE`/`DELETE` of keyless `pgbench_history_nokey`; `pgedge` assigned keyless tables to `default_insert_only` (skipping `UPDATE` silently); `bucardo` `validate_sync` rejected tables without a PK; `citus` blocked post-distribution `ADD PRIMARY KEY` / `SERIAL` with `0A000`.
+- **Applied Change / Fix**: Added explicit surrogate PK `hid` (`INCREMENT BY 2` on `pg-birep`/`bucardo`, `snowflake.nextval()` on `pgedge`, `PRIMARY KEY(aid, hid)` on `citus`, `unique_rowid()` on `cockroach`) in `scripts/bench_pg_lib.py` and verified surrogate PK fixes in `tests/test_*.sh`.
+- **Result & Non-Regression Test**: Cross-node `UPDATE` convergence passed across all engines.
+
+### RCA-052 — Citus `SQLSTATE 0A000` on Non-Distribution-Key `UNIQUE` Indexes & Missing `pgvector`
+- **Date / Linked Action**: `2026-11-19` (`ACT-057` / `#172`, `#174`)
+- **Observed Symptom**: Creating `UNIQUE(email)` on distributed `citus_accounts` or `CREATE EXTENSION vector` on `citusdata/citus:14.2.0-pg17` failed with `SQLSTATE 0A000`.
+- **Applied Change / Fix**: Documented composite `UNIQUE(tenant_id, email)` requirement in `tests/test_citus.sh` and `documentation/pg_multimaster.md`, and recorded `vector=ERR(0A000)` cleanly.
+- **Result & Non-Regression Test**: `tests/test_citus.sh` verified both the `0A000` boundary and composite unique key convergence.
+
+### RCA-053 — Distributed Raft `40001` Serialization Retries, `2/3` Quorum Halt (`57014`), and `TestResolveVersion` File Lock
+- **Date / Linked Action**: `2026-11-19` (`ACT-058`, `ACT-060` / `#178`, `#182`, `#190`)
+- **Observed Symptom**: (1) Concurrent updates hit `SQLSTATE 40001` (`WriteTooOldError`) on CockroachDB/YugabyteDB; CockroachDB raised `XCEXF` on `TEMP TABLE` and `42601` on `LISTEN`; YugabyteDB raised `0A000` on `LISTEN/NOTIFY`; `2/3` node loss halted both clusters (`cockroach` `57014`, `yugabyte` timeout). (2) `TestResolveVersion` once left a transient `cmd/mdb/VERSION` file under sync-client lock on `/mnt/c`.
+- **Applied Change / Fix**: Proved `40001` retry convergence and `1/3` vs `2/3` quorum boundaries in `tests/test_{cockroach,yugabyte}.sh`; documented `685` ignored errors in non-retrying `sysbench` on CockroachDB; removed transient `cmd/mdb/VERSION` and re-verified `go test -v ./cmd/mdb`.
+- **Result & Non-Regression Test**: `go test ./...` passes 100%; `tests/test_cockroach.sh` and `tests/test_yugabyte.sh` passed 100%.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
@@ -412,6 +445,10 @@
 ### IMP-008 — Direct Modification of `.github/workflows/*.yml` via OAuth Token Without `workflow` Scope
 - **Why It Is a Dead-End**: GitHub rejects pushes modifying `.github/workflows/ci.yml` when authenticated via an OAuth App token lacking the `workflow` scope.
 - **Adopted Decision**: Wire new CI test suites (`make test-go`, `python3 -m unittest`) directly into the `Makefile` targets (`make test-config`, `make check-ssl-all`) already invoked by `.github/workflows/ci.yml`.
+
+### IMP-009 — Uncoordinated `SERIAL` & LWW for Non-Commutative Balance Increments (`balance = balance + delta`)
+- **Why It Is a Dead-End**: Live Suite D hot-row contention proved async LWW loses or diverges balances (`pg-birep` `-71,063` diverged, `pgedge` LWW `-278,698`, `bucardo` `-531,620`).
+- **Adopted Decision**: Require `spock.delta_apply` (`log_old_value=true`, achieving `0` drift at `1,837.64 TPS`) or `40001`-retried consensus engines (`yugabyte`, `cockroach`, `citus`).
 
 ---
 
@@ -507,6 +544,11 @@
 - **Nature & Justification**: Mutual TLS is active internally across nodes/ETCD; HAProxy (5000/5001) and PgBouncer (6432) allow plaintext client connections in lab mode.
 - **Removal Condition**: Enforce client TLS termination at HAProxy in production.
 
+### APP-019 — Single-Host `tc netem 25ms` WAN Approximation & `PG_SCALE=2` Lab Scaling
+- **Target Files**: `scripts/bench_pg_multimaster.sh`, `scripts/bench_pg_lib.py`
+- **Nature & Justification**: Sequential execution on a single 20-vCPU / 16.4 GiB host at `PG_SCALE=2` with `tc netem 25ms` models symmetric WAN RTT without hardware multi-region NIC contention.
+- **Removal Condition**: Re-run Suites A–F across dedicated multi-AZ VMs at higher scale factors (`PG_SCALE >= 50`).
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
@@ -534,4 +576,9 @@
 ### IDEA-006 — Documentation-to-Compose Port and Target Drift Linter
 - **Priority / Target**: `Medium` · `tests/test_documentation_drift.py`
 - **Description**: Static governance test asserting compose ports and Makefile targets are documented in `documentation/*.md`.
+
+### IDEA-007 — Native Go Verifiers for Multi-Master Topologies in `pkg/dbclient/`
+- **Priority / Target**: `Medium` · `pkg/dbclient/`
+- **Description**: Extend `NewVerifier()` to inspect `spock.sub_show_status()`, `pg_subscription`, `bucardo status`, `pg_dist_node`, CockroachDB `gossip_nodes`, and YugabyteDB `yb_servers()`.
+
 
