@@ -438,6 +438,41 @@
 - **Applied Change / Fix**: Documented both operational limits in `scripts/test_pg_extended_lib.py`, `scripts/test_pg_extended_matrix.sh`, and `documentation/pg_multimaster{,_fr}.md`.
 - **Result & Non-Regression Test**: Reproducibly verified `23503;23505`, `p50=548.74 ms`, and `post_restart=20/21` in `extended_functional_matrix.csv`.
 
+### RCA-058 -- Go PKI Expiry Bypass, Missing `NewVerifier` Topologies & Sysbench CLI Password Exposure
+- **Date / Linked Action**: `2026-11-20` (`ACT-071` / `#225`, PR `#234`)
+- **Observed Symptom**: (1) `VerifyCertBytes` passed expired certificates; (2) `mdb test`/`mdb report` rejected `standalone` and all 8 PostgreSQL v2.1–v2.2 topologies; (3) `pkg/dbclient/mysql.go` lacked `Seconds_Behind_Source` fallback; (4) `pkg/bench/sysbench.go` passed `--mysql-password=` on CLI and swallowed errors.
+- **Root Cause Analysis**: `VerifyCertBytes` pinned `CurrentTime: cert.NotBefore.Add(time.Minute)` instead of `time.Now()`; `NewVerifier` switch lagged behind `DefaultRegistry()`; MySQL 8.4+ renamed slave status fields; sysbench command builder leaked credentials via argv.
+- **Applied Change / Fix**: Removed `CurrentTime` override (`pkg/pki/cert.go`), added `standalone` + 8 Postgres topologies to `NewVerifier` (`pkg/dbclient/dbclient.go`), added `Seconds_Behind_Source` fallback (`pkg/dbclient/mysql.go`), and removed `--mysql-password=` CLI arg & error masking (`pkg/bench/sysbench.go`).
+- **Result & Non-Regression Test**: `go test -v ./...` passes 9/9 packages including 4 dedicated regression tests.
+
+### RCA-059 -- Python `bench_pg_lib.py` Positional `chk=False` Password Bug & Runner Hardening
+- **Date / Linked Action**: `2026-11-20` (`ACT-071` / `#237`, PR `#241`)
+- **Observed Symptom**: (1) Seven `bc([...], False)` calls in `scripts/bench_pg_lib.py` passed `PGPASSWORD=False` with `chk=True`, crashing instead of retrying/logging unsupported topologies; (2) `interactive_runner.py` misrouted `PostgreSQL`, omitted `RUNNING` output, and lacked HTML escaping; (3) `mysql_docker.py` printed passwords to stdout, left `mysql.bashrc` world-readable, and deleted shared images on `rm`.
+- **Root Cause Analysis**: Positional argument mismatch in `bc(a, pw="", chk=True)`; missing target mapping and HTML sanitization in `interactive_runner.py`; missing `chmod 600` and overly aggressive image cleanup in `mysql_docker.py`.
+- **Applied Change / Fix**: Switched all 7 calls to `chk=False`, mapped `PostgreSQL`->`postgres` with `html.escape`, enforced `chmod 600` on `mysql.bashrc`, suppressed stdout password, fixed `--status stopped` / `Ports or {}`, and preserved shared images on `rm`.
+- **Result & Non-Regression Test**: `tests/test_python_audit_fixes.py` + `tests/test_python_runners.py` pass 100%.
+
+### RCA-060 -- Shell Backup `pipefail` Masking, Broken Makefile Syntax & Unchecked Exit Codes
+- **Date / Linked Action**: `2026-11-20` (`ACT-071` / `#227`, PR `#240`)
+- **Observed Symptom**: (1) `mariadb-dump | pigz` and `unpigz | mariadb` inside `bash -c` returned 0 on dump/decompress failure; (2) `Makefile` `check-galera`/`check-repli` executed `$$( (NODE:-1) )`; (3) `mongo-status`/`mongo8-status` failed against `--tlsMode requireTLS`; (4) `test-all` used `employees` on `mysql96`; (5) `check-ssl-all` and `run_mysqltuner.sh` masked failures; (6) `make logs` ignored `service=`.
+- **Root Cause Analysis**: Missing `set -o pipefail` and unquoted interpolation inside inner `bash -c`; typo in Make variable expansion; missing `--tls` flags on `mongosh`; swallowed non-zero statuses.
+- **Applied Change / Fix**: Added `set -o pipefail` + positional args in `backup_logical.sh`/`restore_logical.sh`, fixed `$${NODE:-1}`, added TLS flags to Mongo status targets, set `PRIMARY_DB=sakila` for `mysql96`, propagated non-zero exits in `check-ssl-all`/`run_mysqltuner.sh`, and honored `$(service)` in `make logs`.
+- **Result & Non-Regression Test**: `bash -n` (all tracked `.sh`) and `make -n` dry-runs pass 100%.
+
+### RCA-061 -- Baked SSH Host Keys, `privileged: true` Containers & Duplicate Scripts/Files
+- **Date / Linked Action**: `2026-11-20` (`ACT-071` / `#242`, PR `#243`)
+- **Observed Symptom**: `Dockerfile` baked static SSH host keys into image layers; Galera/Replication compose files requested `privileged: true`; `gen_profiles.sh` and `haproxy.pem` lacked `chmod 600`; `setup_rs_mongo8.sh` duplicated `setup_rs.sh`; unused `conf/mongo-rs/keyfile`, `.code-workspace.bak`, and invalid `requirements.txt` polluted the repo; `mysql57` was missing from Traefik profiles.
+- **Root Cause Analysis**: Legacy prototype shortcuts carried forward without periodic lean/security audit.
+- **Applied Change / Fix**: Moved `ssh-keygen -A` to runtime (`scripts/start_mariadb.sh`), dropped `privileged: true`, enforced `chmod 600`, parameterized `conf/mongo-rs/setup_rs.sh` (`MONGO_NODES`), deleted dead/duplicate files, renamed `requirements.txt` -> `PREREQUISITES.txt`, and added `mysql57` to Traefik profiles (`-107` net lines).
+- **Result & Non-Regression Test**: `python -m unittest discover -s tests -v` (46 tests) and `go test ./...` (9/9) pass.
+
+### RCA-062 -- CI `ModuleNotFoundError: yaml` in Static Compose Validation
+- **Date / Linked Action**: `2026-11-20` (`ACT-070` / `#228`, PR `#233`)
+- **Observed Symptom**: `tests/test_repo_static.py` failed on bare `ubuntu-latest` CI runners without `PyYAML` installed.
+- **Root Cause Analysis**: Unconditional `import yaml` assumed `PyYAML` was preinstalled in the CI Python environment.
+- **Applied Change / Fix**: Guarded `import yaml` with `try/except ImportError` and added a stdlib regex fallback verifying `services:` and `image:`/`build:` keys when `PyYAML` is absent.
+- **Result & Non-Regression Test**: `test_repo_static.py` passes both with `PyYAML` and with `sys.modules['yaml'] = None`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
@@ -481,6 +516,10 @@
 ### IMP-010 -- Promoting a `pg-logical` Subscriber Without `setval()` or Relying on Co-Located Bucardo Metadata for HA
 - **Why It Is a Dead-End**: `T18` proved native logical subscribers leave sequences at `1|false` (`SQLSTATE 23505` on first post-failover insert), while `T16` proved `SIGKILL` on the Bucardo metadata-hosting node drops synchronization of peer writes made during the outage (`20/21`).
 - **Adopted Decision**: Use physical streaming (`pg-streaming` / `patroni`) or Raft consensus (`yugabyte` / `cockroach`) for transparent HA failover, or enforce scripted `setval()` promotion runbooks for logical replicas.
+
+### IMP-011 -- Image-Baked SSH Host Keys, `privileged: true` Lab Containers & Per-Version Mongo Setup Copies
+- **Why It Is a Dead-End**: Baking `ssh-keygen -A` into `Dockerfile` distributes identical private host keys to every image consumer; `privileged: true` over-grants host capabilities to MariaDB containers; duplicating `setup_rs.sh` into `setup_rs_mongo8.sh` caused drift.
+- **Adopted Decision**: Generate SSH host keys lazily at container startup (`scripts/start_mariadb.sh`), drop `privileged: true`, and parameterize `conf/mongo-rs/setup_rs.sh` via `MONGO_NODES` (PR `#243`).
 
 ---
 
@@ -567,7 +606,7 @@
 - **Removal Condition**: Permanent governance rule enforcing English localization and version integrity.
 
 ### APP-017 — Mongo 8 TLS Fallback & Dedicated PKI
-- **Target Files**: `conf/mongo-rs/setup_rs_mongo8.sh`, `docker-compose-mongo8-rs.yml`
+- **Target Files**: `conf/mongo-rs/setup_rs.sh` (unified from `setup_rs_mongo8.sh` in PR `#243`), `docker-compose-mongo8-rs.yml`
 - **Nature & Justification**: Added cert mounts and 3-tier fallback in setup.
 - **Removal Condition**: Permanent pattern for lab/CI connection resilience.
 
@@ -585,6 +624,11 @@
 - **Target Files**: `scripts/test_pg_extended_matrix.sh`, `scripts/test_pg_extended_lib.py`, `scripts/bench_pg_v2_runner.sh`, `scripts/bench_pg_v2_lib.py`
 - **Nature & Justification**: `T11`-`T18` probes, concurrency sweep (`G_conc_c1..c32`), extended sysbench (`E2`-`E4`), append-only inserts (`H`), and WAN sweep (`10/25/50ms` via `tc netem`) execute sequentially on one Docker host for clean cross-engine isolation.
 - **Removal Condition**: Re-execute V2 sweeps across dedicated multi-node VMs with physical inter-AZ RTT and NVMe storage.
+
+### APP-021 -- Stdlib Regex Compose Fallback in Bare CI & Dry-Run Release Dispatch Default
+- **Target Files**: `tests/test_repo_static.py`, `.github/workflows/release.yml`
+- **Nature & Justification**: When `PyYAML` is absent on bare CI runners, `test_repo_static.py` falls back to stdlib regex checks (`services:` + `image:`/`build:`) to keep zero-dependency CI fast; manual `workflow_dispatch` defaults to dry-run (`publish=false`) to prevent accidental releases.
+- **Removal Condition**: Install `PyYAML` in CI if deep schema linting is added; keep dry-run default permanently.
 
 ---
 
@@ -621,5 +665,9 @@
 ### IDEA-008 -- Native Go Verifiers for `pg-streaming` and `pg-logical` in `pkg/dbclient/`
 - **Priority / Target**: `Medium` | `pkg/dbclient/`
 - **Description**: Add dedicated verifier branches inspecting `pg_stat_replication` (`state='streaming'`, `sync_state`) for `pg-streaming` and `pg_subscription` / `pg_stat_subscription_stats` for `pg-logical`.
+
+### IDEA-009 -- Scheduled Live Multi-Node Docker E2E Matrix on Self-Hosted CI Runners
+- **Priority / Target**: `Medium` | `.github/workflows/ci.yml`
+- **Description**: Run live cluster E2E suites (`test_lab.py`, `test_failover.sh`, `make test-all-topologies`) on a scheduled self-hosted runner with Docker daemon capacity so live container paths are verified continuously alongside deterministic unit/static tests.
 
 
