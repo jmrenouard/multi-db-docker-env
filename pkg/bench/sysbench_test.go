@@ -96,7 +96,6 @@ func TestSysbenchRunner_Run(t *testing.T) {
 	for _, expected := range []string{
 		"--db-driver=mysql",
 		"--mysql-user=root",
-		"--mysql-password=secret",
 		"--mysql-host=127.0.0.1",
 		"--mysql-port=3306",
 		"--mysql-db=sbtest",
@@ -104,6 +103,9 @@ func TestSysbenchRunner_Run(t *testing.T) {
 		if !strings.Contains(cmdStr, expected) {
 			t.Errorf("expected cmd to contain %q, got: %s", expected, cmdStr)
 		}
+	}
+	if strings.Contains(cmdStr, "--mysql-password") {
+		t.Errorf("password must not be passed via CLI args, got: %s", cmdStr)
 	}
 
 	// Verify MYSQL_PWD is in env
@@ -135,5 +137,13 @@ func TestSysbenchRunner_Run(t *testing.T) {
 	})
 	if _, err := runnerErr.Run(context.Background()); err == nil {
 		t.Fatal("expected error on exec failure")
+	}
+
+	runnerErrWithOut := NewSysbenchRunner(SysbenchConfig{
+		Container: "node1",
+		Executor:  &mockExecutor{out: sampleSysbenchOutput, err: fmt.Errorf("exit status 1")},
+	})
+	if _, err := runnerErrWithOut.Run(context.Background()); err == nil {
+		t.Fatal("expected error on exec failure even when output is non-empty")
 	}
 }

@@ -31,6 +31,7 @@ func TestMySQLVerifier_VerifyCluster(t *testing.T) {
 		{"galera_unhealthy", "galera", "wsrep_cluster_size 0\nwsrep_ready OFF\n", StatusUnhealthy, 3},
 		{"repli_healthy", "repli", "Slave_IO_Running: Yes\nSlave_SQL_Running: Yes\nSeconds_Behind_Master: 0\n", StatusHealthy, 2},
 		{"repli_degraded", "repli", "Slave_IO_Running: Yes\nSlave_SQL_Running: Yes\nSeconds_Behind_Master: 120\n", StatusDegraded, 2},
+		{"repli_source_degraded", "repli", "Replica_IO_Running: Yes\nReplica_SQL_Running: Yes\nSeconds_Behind_Source: 120\n", StatusDegraded, 2},
 		{"repli_unhealthy", "repli", "Slave_IO_Running: No\n", StatusUnhealthy, 2},
 		{"innodb_healthy", "innodb", "ONLINE 3\n", StatusHealthy, 3},
 		{"innodb_degraded", "innodb", "ONLINE 1\n", StatusDegraded, 3},
@@ -92,9 +93,13 @@ func TestTCPPing(t *testing.T) {
 }
 
 func TestNewVerifier_Factory(t *testing.T) {
-	for _, vt := range []string{"galera", "repli", "mysql", "mariadb", "innodb"} {
+	for _, vt := range []string{
+		"galera", "repli", "mysql", "mariadb", "innodb", "standalone",
+		"patroni", "pgpool", "postgres", "postgresql",
+		"pg-streaming", "pg-logical", "pg-birep", "pgedge", "bucardo", "citus", "cockroach", "yugabyte",
+	} {
 		if v, err := NewVerifier(vt, Config{}); err != nil || v == nil {
-			t.Fatalf("err: %v", err)
+			t.Fatalf("%s err: %v", vt, err)
 		}
 	}
 	if _, err := NewVerifier("unknown", Config{}); err == nil {

@@ -65,7 +65,11 @@ func (m *MySQLVerifier) verifyRepli(ctx context.Context, h *ClusterHealth) error
 	kv := parseVertical(out)
 	io, sql := kv["Slave_IO_Running"], kv["Slave_SQL_Running"]
 	if io == "" { io, sql = kv["Replica_IO_Running"], kv["Replica_SQL_Running"] }
-	lag, _ := strconv.ParseInt(kv["Seconds_Behind_Master"], 10, 64)
+	lagStr := kv["Seconds_Behind_Master"]
+	if lagStr == "" {
+		lagStr = kv["Seconds_Behind_Source"]
+	}
+	lag, _ := strconv.ParseInt(lagStr, 10, 64)
 	if strings.EqualFold(io, "Yes") && strings.EqualFold(sql, "Yes") {
 		h.NodesActive = m.cfg.ExpectedNodes
 		if lag < 60 { h.Status = StatusHealthy } else { h.Status = StatusDegraded }
