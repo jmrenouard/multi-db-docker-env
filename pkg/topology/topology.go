@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -202,9 +201,8 @@ func DefaultRegistry() *Registry {
 	r.Register(NewCitusTopology())
 	r.Register(NewCockroachTopology())
 	r.Register(NewYugabyteTopology())
-	if hasRepoComposeFile("docker-compose-yt-cluster.yml") {
-		r.Register(NewYtClusterTopology())
-	}
+	r.Register(NewPg17BaselineTopology())
+	r.Register(NewYtClusterTopology())
 	return r
 }
 
@@ -215,20 +213,6 @@ func filesExist(paths ...string) bool {
 		}
 	}
 	return true
-}
-
-func hasRepoComposeFile(name string) bool {
-	if filesExist(name) {
-		return true
-	}
-	dir := "."
-	for i := 0; i < 4; i++ {
-		if filesExist(filepath.Join(dir, "go.mod")) {
-			return filesExist(filepath.Join(dir, name))
-		}
-		dir = filepath.Join("..", dir)
-	}
-	return false
 }
 
 func rootPassword() string {

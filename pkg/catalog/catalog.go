@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
 	"slices"
 	"strings"
 	"text/tabwriter"
@@ -103,6 +102,7 @@ var baseEnvs = []Environment{
 	pgC("pgpool", "17", "pgpool", "pgpool/setup_replication.sh", "PG 17 HA + PgPool-II", 9999, ppCerts),
 	cEnv("mongo", "mongodb", "7.0", "docker-compose-mongo-rs.yml", "mongo1", "conf/mongo-rs/setup_rs.sh", "MongoDB 7 ReplicaSet + HAProxy", 27100, mgCerts),
 	cEnv("mongo8", "mongodb", "8.0", "docker-compose-mongo8-rs.yml", "mongo8_n1", "conf/mongo-rs/setup_rs.sh", "MongoDB 8 ReplicaSet + HAProxy", 27200, mg8Cert),
+	pgC("pg17-baseline", "17", "pg17_standalone", "", "PG 17 baseline standalone + sync standby", 15431, nil),
 	pgC("pg-streaming", "17", "pg_stream_primary", "pg_streaming/setup_pg_streaming.sh", "PG 17 physical streaming", 15434, nil),
 	pgC("pg-logical", "17", "pg_logical_pub", "pg_logical/setup_pg_logical.sh", "PG 17 uni-directional logical", 15436, nil),
 	pgC("pg-birep", "17", "pg_birep_node1", "pg_birep/setup_birep.sh", "PG 17 bidirectional + HAProxy", 15440, nil),
@@ -114,6 +114,7 @@ var baseEnvs = []Environment{
 	pgC("citus", "17", "citus_coord", "citus/setup_citus.sh", "Citus 14.2 distributed PG 17", 15490, nil),
 	cEnv("cockroach", "cockroachdb", "25.4", "", "crdb_node1", "cockroach/setup_cockroach.sh", "CockroachDB v25.4 3-node Raft", 15481, nil),
 	cEnv("yugabyte", "yugabytedb", "2026.1.3", "", "yb_node1", "yugabyte/setup_yugabyte.sh", "YugabyteDB 2026.1.3 3-node Raft", 15471, nil),
+	pgC("yt-cluster", "18.7", "yt1", "yt_cluster/setup_yt_cluster.sh", "YT Cluster 1.21.3 (PG 18.7) active-active", 5491, nil),
 
 	eEnv("mysql57", "mysql", "5.7", "2023-10-31", "mysql84, mysql97", "MySQL 5.7 (EOL)"),
 	eEnv("mysql80", "mysql", "8.0", "2026-04-30", "mysql84, mysql97", "MySQL 8.0 (EOL)"),
@@ -122,25 +123,17 @@ var baseEnvs = []Environment{
 	eEnv("percona80", "percona", "8.0", "2026-04-30", "percona84", "Percona 8.0 (EOL)"),
 }
 
-var ytEnv = pgC("yt-cluster", "18.7", "yt1", "yt_cluster/setup_yt_cluster.sh", "YT Cluster 1.21.3 (PG 18.7) active-active", 5491, nil)
-
-// NewCatalog builds a Catalog, optionally including yt-cluster.
-func NewCatalog(includeYT bool) *Catalog {
-	envs := make([]Environment, 0, len(baseEnvs)+1)
+// NewCatalog builds a Catalog with all standalone, cluster (including yt-cluster and pg17-baseline), and EOL environments.
+func NewCatalog(_ bool) *Catalog {
+	envs := make([]Environment, 0, len(baseEnvs))
 	for _, e := range baseEnvs {
 		envs = append(envs, cloneEnv(e))
-		if includeYT && e.ID == "yugabyte" {
-			envs = append(envs, cloneEnv(ytEnv))
-		}
 	}
 	return &Catalog{envs: envs}
 }
 
-// DefaultCatalog builds the catalog, including yt-cluster only when its compose file exists.
-func DefaultCatalog() *Catalog {
-	_, err := os.Stat("docker-compose-yt-cluster.yml")
-	return NewCatalog(err == nil)
-}
+// DefaultCatalog builds the full repository catalog unconditionally.
+func DefaultCatalog() *Catalog { return NewCatalog(true) }
 
 func cloneEnv(e Environment) Environment {
 	e.ComposeFiles, e.RequiredCerts = slices.Clone(e.ComposeFiles), slices.Clone(e.RequiredCerts)
