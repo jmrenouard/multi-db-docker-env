@@ -27,7 +27,7 @@ A key feature is the **Traefik reverse proxy**, which ensures all database insta
 | Tier | Tier Name | Last Verified | Status |
 | :--- | :--- | :--- | :--- |
 | **T2** | **Standalone Matrix** | 2026-11-19 | ✅ 100% Passed |
-| **T3** | **Cluster, HA & Multi-Master (`v2.2.0`)** | 2026-11-19 | ✅ 16 Topologies Verified |
+| **T3** | **Cluster, HA & Multi-Master (`v2.3.0`)** | 2026-11-20 | ✅ 19 Topologies Verified |
 
 ## 📋 Prerequisites
 
