@@ -94,35 +94,37 @@ To start a specific database instance, use the `make <database_version>` command
 
 ### <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="25" height="25"> MySQL
 
-| Command         | Icon | Description          |
-| :-------------- | :--- | :------------------- |
-| `make mysql96`  | 🐬   | Starts MySQL 9.6     |
-| `make mysql84`  | 🐬   | Starts MySQL 8.4     |
-| `make mysql80`  | 🐬   | Starts MySQL 8.0     |
-| `make mysql57`  | 🐬   | Starts MySQL 5.7     |
+| Command         | Icon | Description              |
+| :-------------- | :--- | :----------------------- |
+| `make mysql97`  | 🐬   | Starts MySQL 9.7 LTS     |
+| `make mysql84`  | 🐬   | Starts MySQL 8.4 LTS     |
 
 ### <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="25" height="25"> MariaDB
 
-| Command           | Icon | Description            |
-| :---------------- | :--- | :--------------------- |
-| `make mariadb118` | 🐧   | Starts MariaDB 11.8    |
-| `make mariadb114` | 🐧   | Starts MariaDB 11.4    |
-| `make mariadb1011`| 🐧   | Starts MariaDB 10.11   |
-| `make mariadb106` | 🐧   | Starts MariaDB 10.6    |
+| Command            | Icon | Description                |
+| :----------------- | :--- | :------------------------- |
+| `make mariadb123`  | 🐧   | Starts MariaDB 12.3 LTS    |
+| `make mariadb118`  | 🐧   | Starts MariaDB 11.8 LTS    |
+| `make mariadb114`  | 🐧   | Starts MariaDB 11.4 LTS    |
+| `make mariadb1011` | 🐧   | Starts MariaDB 10.11 LTS   |
 
 ### <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/percona.svg" alt="Percona" width="25" height="25"> Percona Server
 
-| Command           | Icon | Description            |
-| :---------------- | :--- | :--------------------- |
-| `make percona80` | ⚡   | Starts Percona Server 8.0 |
+| Command          | Icon | Description                   |
+| :--------------- | :--- | :---------------------------- |
+| `make percona84` | ⚡   | Starts Percona Server 8.4 LTS |
 
 ### <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="25" height="25"> PostgreSQL
 
 | Command           | Icon | Description            |
 | :---------------- | :--- | :--------------------- |
+| `make postgres18` | 🐘   | Starts PostgreSQL 18   |
 | `make postgres17` | 🐘   | Starts PostgreSQL 17   |
 | `make postgres16` | 🐘   | Starts PostgreSQL 16   |
 | `make postgres15` | 🐘   | Starts PostgreSQL 15   |
+
+> [!NOTE]
+> **End-of-Life (EOL) Decommissioning**: MySQL 5.7, MySQL 8.0, MySQL 9.6, MariaDB 10.6, Percona Server 8.0, Traefik v2.11, and HAProxy 2.9 have reached official community EOL and have been decommissioned. See the full [Supported Products & Decommissioned EOL Matrix](documentation/supported_products.md#decommissioned-versions-end-of-life) for official EOL dates and recommended replacements.
 
 ## 🏗️ Technical Environment
 
@@ -216,12 +218,12 @@ Eight additional PostgreSQL topologies (`pg-streaming`, `pg-logical`, `pg-birep`
 **Example: Switching Databases**
 
 ```bash
-# 1. You are working with MySQL 8.0
-make mysql80
+# 1. You are working with MySQL 8.4 LTS
+make mysql84
 
-# 2. You want to switch to Percona 8.0. No need to stop manually.
-make percona80
-# This will stop mysql80 and then start percona80.
+# 2. You want to switch to Percona 8.4 LTS. No need to stop manually.
+make percona84
+# This will stop mysql84 and then start percona84.
 
 # 3. Verify environment
 make verify
@@ -295,7 +297,7 @@ For detailed information on specific components, please refer to the following g
 * **[PostgreSQL Multi-Master & Distributed SQL](documentation/pg_multimaster.md)**: `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`, T11–T18 matrix, and V2 benchmarks.
 * **[Patroni Cluster](documentation/patroni_cluster.md)**: PostgreSQL 17 HA with ETCD and automatic failover.
 * **[PgPool-II Cluster](documentation/pgpool_cluster.md)**: Connection pooling + load balancing.
-* **[InnoDB Cluster](documentation/innodb_cluster.md)**: MySQL 8.0 Group Replication + HAProxy.
+* **[InnoDB Cluster](documentation/innodb_cluster.md)**: MySQL 8.4 LTS Group Replication + HAProxy.
 * **[MongoDB ReplicaSet](documentation/mongo_replicaset.md)**: MongoDB 7.0 & 8.0 ReplicaSet + HAProxy + TLS.
 * **[Test Scenarios](documentation/tests.md)**: Specific test cases and reporting instructions.
 * **[Galera Bootstrap](documentation/galera_bootstrap.md)**: Detailed steps for Galera clustering.
