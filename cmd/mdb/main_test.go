@@ -449,3 +449,38 @@ func TestAdminCommands(t *testing.T) {
 		t.Fatalf("expected report removed")
 	}
 }
+
+func TestBenchRouting(t *testing.T) {
+	cat := catalog.NewCatalog(true)
+	for _, tc := range []struct{ id, wantStrat, wantArg, wantEnv string }{
+		{"mariadb114", "sysbench", "", ""},
+		{"galera", "sysbench", "", ""},
+		{"mongo", "mongo-script", "", "MONGO_NODE1=mongo1"},
+		{"mongo8", "mongo-script", "", "MONGO_NODE1=mongo8_n1"},
+		{"postgres17", "pg-v2-script", "pg17-standalone", ""},
+		{"pg-birep", "pg-v2-script", "pg-birep", ""},
+		{"pg18-streaming", "pg18-script", "pg18-async-streaming", ""},
+		{"yt-cluster", "yt-script", "", ""},
+		{"postgres18", "pgbench", "", ""},
+	} {
+		env, ok := cat.Lookup(tc.id)
+		if !ok {
+			t.Fatalf("missing %s", tc.id)
+		}
+		p := planBenchmark(env)
+		if p.Strategy != tc.wantStrat || p.Arg != tc.wantArg {
+			t.Fatalf("%s: got %s/%s, want %s/%s", tc.id, p.Strategy, p.Arg, tc.wantStrat, tc.wantArg)
+		}
+		if tc.wantEnv != "" && (len(p.Env) == 0 || p.Env[0] != tc.wantEnv) {
+			t.Fatalf("%s: got env %v, want %s", tc.id, p.Env, tc.wantEnv)
+		}
+	}
+
+	client, ctx := docker.NewClientWithRunner(&docker.MockCommandRunner{}), context.Background()
+	if err := runBenchCmd(ctx, client, cat, []string{"mysql80"}); err == nil || !strings.Contains(err.Error(), "2026-04-30") {
+		t.Fatalf("expected EOL error for mysql80 bench, got %v", err)
+	}
+	if err := runBenchCmd(ctx, client, cat, nil); err == nil {
+		t.Fatalf("expected usage error when env omitted")
+	}
+}

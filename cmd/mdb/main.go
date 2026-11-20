@@ -10,9 +10,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/jmrenouard/multi-db-docker-env/pkg/bench"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/config"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/dbclient"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
@@ -177,38 +175,7 @@ func main() {
 			os.Exit(1)
 		}
 	case "bench":
-		if len(os.Args) < 3 {
-			fmt.Println("Usage: mdb bench <topology> [--workload <w>] [--threads <n>] [--duration <d>]")
-			os.Exit(1)
-		}
-		name := os.Args[2]
-		if _, err := topology.DefaultRegistry().Get(name); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
-		fs := flag.NewFlagSet("bench", flag.ExitOnError)
-		workload := fs.String("workload", "oltp_read_write", "Sysbench workload")
-		threads := fs.Int("threads", 4, "Number of threads")
-		duration := fs.Duration("duration", 10*time.Second, "Benchmark duration")
-		_ = fs.Parse(os.Args[3:])
-
-		client, ctx := docker.NewClient(), context.Background()
-		sbRunner := bench.NewSysbenchRunner(bench.SysbenchConfig{
-			Workload:  *workload,
-			Container: resolveContainer(ctx, client, name),
-			User:      "root",
-			Password:  loadPassword(),
-			Threads:   *threads,
-			Duration:  *duration,
-			Executor:  client,
-		})
-		res, err := sbRunner.Run(ctx)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Benchmark failed: %v\n", err)
-			os.Exit(1)
-		}
-		data, _ := res.ToJSON()
-		fmt.Println(data)
+		runOrExit(runBenchCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:]))
 	case "report":
 		fs := flag.NewFlagSet("report", flag.ExitOnError)
 		jsonOut := fs.String("json", "", "Path to export JSON telemetry report")
