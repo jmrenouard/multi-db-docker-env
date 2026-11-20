@@ -87,10 +87,20 @@ while true; do
     fi
 done
 
-# 4. Wait for secondaries to sync
+# 4. Wait for secondaries to sync (max 30s)
 echo ""
-echo "4. ⏳ Waiting for secondaries to sync (10s)..."
-sleep 10
+echo "4. ⏳ Waiting for secondaries to sync (max 30s)..."
+TIMEOUT=30
+ELAPSED=0
+while [ "$ELAPSED" -lt "$TIMEOUT" ]; do
+    HEALTHY=$(run_mongosh "$PRIMARY_NODE" --eval "print(rs.status().members.filter(function(m){return m.health===1 && (m.stateStr==='PRIMARY'||m.stateStr==='SECONDARY');}).length)" 2>/dev/null || echo "0")
+    if [ "${HEALTHY:-0}" -ge "${#NODES[@]}" ] 2>/dev/null; then
+        echo "   ✅ [OK] All ${#NODES[@]} ReplicaSet members synchronized."
+        break
+    fi
+    sleep 2
+    ELAPSED=$((ELAPSED + 2))
+done
 
 # 5. Verify ReplicaSet status
 echo ""
