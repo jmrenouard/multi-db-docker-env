@@ -253,5 +253,22 @@ class TestMySQLDocker(unittest.TestCase):
             finally:
                 os.chdir(orig)
 
+class TestMakefileUsability(unittest.TestCase):
+    def test_makefile_usability_fixes_and_delegation(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        with open(os.path.join(root, "Makefile"), encoding="utf-8") as f:
+            mk = f.read()
+        self.assertNotIn("timeout 120s", mk)
+        self.assertNotIn("pg_poc_ephemeral", mk)
+        self.assertIn('docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pgpool psql -h 127.0.0.1 -p 9999 -U postgres -c "SHOW pool_nodes;"', mk)
+        for alias in ("galera-up: up-galera", "galera-down: down-galera", "galera-status: check-galera", "galera-logs: logs-galera", "repli-up: up-repli", "repli-down: down-repli", "repli-status: check-repli", "repli-logs: logs-repli"):
+            self.assertIn(alias, mk)
+        for sub in ("help", "catalog", "status", "info", "client", "mycnf", "stop", "doctor", "interactive"):
+            self.assertIn(f"./mdb {sub}", mk)
+        for fixed_sleep in ("sleep 20", "sleep 30", "sleep 15"):
+            self.assertNotIn(fixed_sleep, mk)
+        self.assertIn('if [ -f "$(YT_CLUSTER_COMPOSE)" ]', mk)
+        self.assertIn('.my.cnf.bak', mk)
+
 if __name__ == '__main__':
     unittest.main()

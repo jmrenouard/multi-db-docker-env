@@ -179,7 +179,7 @@ pg-streaming-up: ## Start 2-node PG 17 physical streaming replication cluster (a
 pg-streaming-down: ## Stop pg-streaming cluster and remove volumes
 	docker compose -f $(PG_STREAMING_COMPOSE) down -v
 pg-streaming-status: ## Show pg-streaming replication status and containers
-	docker compose -f $(PG_STREAMING_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg_stream_primary psql -U postgres -d labdb -c "SELECT application_name, state, sync_state FROM pg_stat_replication;"
+	docker compose -f $(PG_STREAMING_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pg_stream_primary psql -U postgres -d labdb -c "SELECT application_name, state, sync_state FROM pg_stat_replication;"
 pg-streaming-logs: ## Follow pg-streaming cluster logs
 	docker compose -f $(PG_STREAMING_COMPOSE) logs -f
 pg-streaming-ps: ## List pg-streaming containers
@@ -194,7 +194,7 @@ pg-logical-up: ## Start 2-node PG 17 native uni-directional logical replication 
 pg-logical-down: ## Stop pg-logical cluster and remove volumes
 	docker compose -f $(PG_LOGICAL_COMPOSE) down -v
 pg-logical-status: ## Show pg-logical subscription status and containers
-	docker compose -f $(PG_LOGICAL_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg_logical_sub psql -U postgres -d labdb -c "SELECT subname, subenabled FROM pg_subscription;"
+	docker compose -f $(PG_LOGICAL_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pg_logical_sub psql -U postgres -d labdb -c "SELECT subname, subenabled FROM pg_subscription;"
 pg-logical-logs: ## Follow pg-logical cluster logs
 	docker compose -f $(PG_LOGICAL_COMPOSE) logs -f
 pg-logical-ps: ## List pg-logical containers
@@ -209,7 +209,7 @@ pg-birep-up: ## Start 2-node PG 17 bidirectional logical replication cluster
 pg-birep-down: ## Stop pg-birep cluster and remove volumes
 	docker compose -f $(PG_BIREP_COMPOSE) down -v
 pg-birep-status: ## Show pg-birep subscriptions and containers
-	docker compose -f $(PG_BIREP_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg_birep_node1 psql -U postgres -d labdb -c "SELECT subname, subenabled FROM pg_subscription;"
+	docker compose -f $(PG_BIREP_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pg_birep_node1 psql -U postgres -d labdb -c "SELECT subname, subenabled FROM pg_subscription;"
 pg-birep-logs: ## Follow pg-birep cluster logs
 	docker compose -f $(PG_BIREP_COMPOSE) logs -f
 pg-birep-ps: ## List pg-birep containers
@@ -224,7 +224,7 @@ pgedge-up: ## Start 3-node pgEdge Spock 5 + Snowflake mesh
 pgedge-down: ## Stop pgEdge cluster and remove volumes
 	docker compose -f $(PGEDGE_COMPOSE) down -v
 pgedge-status: ## Show pgEdge Spock subscription status
-	docker compose -f $(PGEDGE_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pgedge_node1 psql -U postgres -d labdb -c "SELECT sub_name, status FROM spock.sub_show_status();"
+	docker compose -f $(PGEDGE_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pgedge_node1 psql -U postgres -d labdb -c "SELECT sub_name, status FROM spock.sub_show_status();"
 pgedge-logs: ## Follow pgEdge cluster logs
 	docker compose -f $(PGEDGE_COMPOSE) logs -f
 pgedge-ps: ## List pgEdge containers
@@ -254,7 +254,7 @@ citus-up: ## Start 3-node Citus 14.2 distributed PostgreSQL 17 cluster
 citus-down: ## Stop Citus cluster and remove volumes
 	docker compose -f $(CITUS_COMPOSE) down -v
 citus-status: ## Show Citus worker membership
-	docker compose -f $(CITUS_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" citus_coord psql -U postgres -d labdb -c "SELECT nodeid, nodename, isactive FROM pg_dist_node ORDER BY nodeid;"
+	docker compose -f $(CITUS_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" citus_coord psql -U postgres -d labdb -c "SELECT nodeid, nodename, isactive FROM pg_dist_node ORDER BY nodeid;"
 citus-logs: ## Follow Citus cluster logs
 	docker compose -f $(CITUS_COMPOSE) logs -f
 citus-ps: ## List Citus containers
@@ -309,7 +309,7 @@ pg18-streaming-up: ## Start PG 18.6 standalone + physical streaming cluster (asy
 pg18-streaming-down: ## Stop pg18-streaming cluster and remove volumes
 	docker compose -f $(PG18_STREAMING_COMPOSE) down -v
 pg18-streaming-status: ## Show pg18-streaming replication status and containers
-	docker compose -f $(PG18_STREAMING_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg18_stream_primary psql -U postgres -d labdb -c "SELECT application_name, state, sync_state FROM pg_stat_replication;"
+	docker compose -f $(PG18_STREAMING_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pg18_stream_primary psql -U postgres -d labdb -c "SELECT application_name, state, sync_state FROM pg_stat_replication;"
 pg18-streaming-logs: ## Follow pg18-streaming cluster logs
 	docker compose -f $(PG18_STREAMING_COMPOSE) logs -f
 pg18-streaming-ps: ## List pg18-streaming containers
@@ -324,7 +324,7 @@ pg18-logical-up: ## Start 2-node PG 18.6 native uni-directional logical replicat
 pg18-logical-down: ## Stop pg18-logical cluster and remove volumes
 	docker compose -f $(PG18_LOGICAL_COMPOSE) down -v
 pg18-logical-status: ## Show pg18-logical subscription status and containers
-	docker compose -f $(PG18_LOGICAL_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg18_logical_sub psql -U postgres -d labdb -c "SELECT subname, subenabled, substream FROM pg_subscription;"
+	docker compose -f $(PG18_LOGICAL_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pg18_logical_sub psql -U postgres -d labdb -c "SELECT subname, subenabled, substream FROM pg_subscription;"
 pg18-logical-logs: ## Follow pg18-logical cluster logs
 	docker compose -f $(PG18_LOGICAL_COMPOSE) logs -f
 pg18-logical-ps: ## List pg18-logical containers
@@ -339,7 +339,7 @@ pg18-birep-up: ## Start 2-node PG 18.6 bidirectional logical cluster (uuidv7 + H
 pg18-birep-down: ## Stop pg18-birep cluster and remove volumes
 	docker compose -f $(PG18_BIREP_COMPOSE) down -v
 pg18-birep-status: ## Show pg18-birep subscriptions and containers
-	docker compose -f $(PG18_BIREP_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg18_birep_node1 psql -U postgres -d labdb -c "SELECT subname, subenabled, substream FROM pg_subscription;"
+	docker compose -f $(PG18_BIREP_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pg18_birep_node1 psql -U postgres -d labdb -c "SELECT subname, subenabled, substream FROM pg_subscription;"
 pg18-birep-logs: ## Follow pg18-birep cluster logs
 	docker compose -f $(PG18_BIREP_COMPOSE) logs -f
 pg18-birep-ps: ## List pg18-birep containers
@@ -357,7 +357,7 @@ yt-cluster-up: ## Start 3-node YT Cluster 1.21.3 (PG 18.7) active-active cluster
 yt-cluster-down: ## Stop YT Cluster 1.21.3 and remove volumes
 	docker compose -f $(YT_CLUSTER_COMPOSE) down -v
 yt-cluster-status: ## Show YT Cluster 1.21.3 node roles and containers
-	docker compose -f $(YT_CLUSTER_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" yt1 psql -U postgres -d postgres -c "SELECT yt_info('o');"
+	docker compose -f $(YT_CLUSTER_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" yt1 psql -U postgres -d postgres -c "SELECT yt_info('o');"
 yt-cluster-logs: ## Follow YT Cluster 1.21.3 logs
 	docker compose -f $(YT_CLUSTER_COMPOSE) logs -f
 yt-cluster-ps: ## List YT Cluster 1.21.3 containers
