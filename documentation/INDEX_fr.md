@@ -1,4 +1,4 @@
-# Index de la Documentation MariaDB 📚
+# Index de la Documentation Multi-DB Docker Environment 📚
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="50" height="50">
@@ -10,7 +10,7 @@
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" width="50" height="50">
 </p>
 
-Bienvenue dans la documentation de l'environnement Docker MariaDB. Cet index fournit une vue d'ensemble structurée de tous les guides et références techniques disponibles.
+Bienvenue dans la documentation de Multi-DB Docker Environment. Cet index fournit une vue d'ensemble structurée de tous les guides et références techniques disponibles.
 
 ---
 
@@ -36,7 +36,10 @@ Bienvenue dans la documentation de l'environnement Docker MariaDB. Cet index fou
 ## 🏛️ Gouvernance & Orchestration
 
 | Document | Description |
-| --- | ---|
+| --- | --- |
+| **[Règles du Projet (AGENTS.md)](../AGENTS.md)** | Architecture, limite de diff PR (< 15K caractères) et workflow GitHub obligatoire. |
+| **[Action Logbook & Roadmap](../docs/ACTION_LOGBOOK.md)** | Registre vivant des actions en cours/terminées et feuille de route stratégique. |
+| **[RCA Register](../docs/RCA_REGISTER.md)** | Registre des analyses RCA, impasses (IMP), approximations (APP) et idées (IDEA). |
 | **[Constitution](../.agent/rules/00_constitution.md)** | Source unique de vérité pour les principes du projet et l'autorité opérationnelle. |
 | **[Super Manager](../.agent/workflows/go-agent.md)** | Protocole d'orchestration pour coordonner les compétences, règles et workflows. |
 
@@ -59,7 +62,7 @@ Bienvenue dans la documentation de l'environnement Docker MariaDB. Cet index fou
 
 | Document | Description |
 | --- | --- |
-| **[MongoDB ReplicaSet](mongo_replicaset_fr.md)** | MongoDB 7.0 ReplicaSet avec HAProxy pour le routage des connexions. |
+| **[MongoDB ReplicaSet](mongo_replicaset_fr.md)** | MongoDB 7.0 et 8.0 ReplicaSet avec HAProxy et TLS pour le routage des connexions. |
 
 ## 🐬 Matrice Standalone
 
@@ -81,6 +84,7 @@ Bienvenue dans la documentation de l'environnement Docker MariaDB. Cet index fou
 | **[Bootstrap Galera](galera_bootstrap.md)** | Guide étape par étape pour initialiser les clusters Galera. |
 | **[Configuration Réplication](replication_setup.md)** | Comment configurer et automatiser la réplication Maître/Esclave. |
 | **[SSL & Sécurité](replication_ssl.md)** | Configuration SSL pour les connexions chiffrées. |
+| **[Architecture TLS/SSL](tls_setup.md)** | Guide unifié TLS/SSL pour toutes les technologies de bases de données. |
 
 ## 🧪 Tests & Performance
 
