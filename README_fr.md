@@ -37,6 +37,7 @@ Avant de commencer, assurez-vous d'avoir installé les outils suivants :
 * [Docker](https://docs.docker.com/get-docker/)
 * [Docker Compose](https://docs.docker.com/compose/install/) (généralement inclus avec Docker Desktop)
 * `make` (disponible sur la plupart des systèmes Linux/macOS. Pour Windows, vous pouvez utiliser Chocolatey : `choco install make`)
+* Liste complète des outils clients recommandés : voir [`PREREQUISITES.txt`](PREREQUISITES.txt).
 
 ## ⚙️ Configuration Initiale
 
@@ -351,6 +352,10 @@ graph TD
     ```bash
     make stop
     ```
+
+## 🚀 Pipeline de Release (GitHub Actions)
+
+Les releases sont automatisées via [`.github/workflows/release.yml`](.github/workflows/release.yml) sur push de tag `v*.*.*` ou `workflow_dispatch` (mode dry-run par défaut ; `publish=true` pour publier) : validation `VERSION`/`Changelog` ([`scripts/release_notes.py`](scripts/release_notes.py)), tests Python/Go/config, cross-compilation de `cmd/mdb` (6 cibles + `SHA256SUMS.txt`), publication GitHub Release et push Docker Hub multi-arch conditionné aux secrets.
 
 ## 🔧 Dépannage & Notes de Performance
 

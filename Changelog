@@ -1,7 +1,10 @@
-2.2.0 2026-11-19
+2.2.0 2026-11-20
 - feat: add PostgreSQL 17 physical streaming (pg-streaming) and native uni-directional logical (pg-logical) topologies, extended T11-T18 test matrix, and V2 benchmark harness (Makefile, pkg/topology, cmd/mdb, scripts) (Closes #214).
 - feat: register pg-streaming and pg-logical in Go mdb CLI (16 topologies) and bump release version to 2.2.0 (pkg/topology, cmd/mdb, VERSION).
-- test: add pg-streaming and pg-logical functional/limits suites plus Go registry and CLI unit tests (tests, pkg/topology, cmd/mdb).
+- fix: resolve Ponytail audit findings across Go PKI/dbclient/sysbench, Python runners/bench libs, Makefile/backup/audit scripts, and Docker/SSH/Mongo/file permissions (Closes #225, #227, #237, #242).
+- doc: synchronize EN/FR documentation stack with v2.2.0, document release pipeline and PREREQUISITES.txt, and consolidate governance registers (Closes #224, #231, #232, #244, #245).
+- ci: automate tag-triggered and workflow_dispatch release pipeline with 6-target mdb cross-compilation, SHA256SUMS, Changelog extraction, and test gate (.github/workflows/release.yml, scripts/release_notes.py) (Closes #222).
+- test: expand Python runner, PostgreSQL lib, repo static, release workflow, and Go cmd/mdb test suites (46 Python tests, 9/9 Go packages) (Closes #223, #228, #229).
 
 2.1.0 2026-11-19
 - feat: register 6 PostgreSQL multi-master topologies (pg-birep, pgedge, bucardo, citus, cockroach, yugabyte) in Go mdb CLI (pkg/topology, cmd/mdb) (Closes #190).

@@ -79,3 +79,7 @@ Compiled pure-Go CLI (`cmd/mdb`, `bin/mdb` with zero external dependencies):
 - `mdb bench <topo> [-workload <w>] [-threads <n>] [-duration <d>]`: Run Sysbench OLTP benchmarks.
 - `mdb pki <generate|verify> [topo] [--dir <dir>]`: Generate or verify TLS/SSL certificates natively.
 - `mdb report [topos...] [-json <path>] [-html <path>]`: Execute multi-cluster verification and export reports.
+
+## 📦 Release Automation
+
+- **[release_notes.py](../scripts/release_notes.py)**: Stdlib-only release validator and `Changelog` note extractor used by [`.github/workflows/release.yml`](../.github/workflows/release.yml) to verify `VERSION`/`Changelog`/tag alignment and generate GitHub Release notes.
