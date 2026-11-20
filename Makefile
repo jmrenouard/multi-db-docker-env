@@ -302,6 +302,57 @@ test-pg-extended: ## Run sequential extended empirical test matrix (T11-T18) acr
 bench-pg-v2: ## Run sequential V2 empirical benchmark suite (Suites A-H, WAN & concurrency sweeps)
 	@bash ./scripts/bench_pg_v2_runner.sh
 
+# --- POSTGRESQL 18.6 NATIVE CLUSTERING & BENCHMARK SUITE ---
+PG18_STREAMING_COMPOSE = docker-compose-pg18-streaming.yml
+pg18-streaming-up: ## Start PG 18.6 standalone + physical streaming cluster (async/sync)
+	docker compose -f $(PG18_STREAMING_COMPOSE) up -d && PG_STREAM_MODE=$${PG_STREAM_MODE:-async} bash ./scripts/pg18_streaming/setup_pg18_streaming.sh
+pg18-streaming-down: ## Stop pg18-streaming cluster and remove volumes
+	docker compose -f $(PG18_STREAMING_COMPOSE) down -v
+pg18-streaming-status: ## Show pg18-streaming replication status and containers
+	docker compose -f $(PG18_STREAMING_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg18_stream_primary psql -U postgres -d labdb -c "SELECT application_name, state, sync_state FROM pg_stat_replication;"
+pg18-streaming-logs: ## Follow pg18-streaming cluster logs
+	docker compose -f $(PG18_STREAMING_COMPOSE) logs -f
+pg18-streaming-ps: ## List pg18-streaming containers
+	docker compose -f $(PG18_STREAMING_COMPOSE) ps
+test-pg18-streaming: ## Run pg18-streaming AIO, checksums, failover, and T11-T18 tests
+	@bash ./tests/test_pg18_streaming.sh
+pg18-streaming-test: test-pg18-streaming
+
+PG18_LOGICAL_COMPOSE = docker-compose-pg18-logical.yml
+pg18-logical-up: ## Start 2-node PG 18.6 native uni-directional logical replication cluster
+	docker compose -f $(PG18_LOGICAL_COMPOSE) up -d && bash ./scripts/pg18_logical/setup_pg18_logical.sh
+pg18-logical-down: ## Stop pg18-logical cluster and remove volumes
+	docker compose -f $(PG18_LOGICAL_COMPOSE) down -v
+pg18-logical-status: ## Show pg18-logical subscription status and containers
+	docker compose -f $(PG18_LOGICAL_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg18_logical_sub psql -U postgres -d labdb -c "SELECT subname, subenabled, substream FROM pg_subscription;"
+pg18-logical-logs: ## Follow pg18-logical cluster logs
+	docker compose -f $(PG18_LOGICAL_COMPOSE) logs -f
+pg18-logical-ps: ## List pg18-logical containers
+	docker compose -f $(PG18_LOGICAL_COMPOSE) ps
+test-pg18-logical: ## Run pg18-logical functional, generated columns, and T11-T18 tests
+	@bash ./tests/test_pg18_logical.sh
+pg18-logical-test: test-pg18-logical
+
+PG18_BIREP_COMPOSE = docker-compose-pg18-birep.yml
+pg18-birep-up: ## Start 2-node PG 18.6 bidirectional logical cluster (uuidv7 + HAProxy)
+	docker compose -f $(PG18_BIREP_COMPOSE) up -d && bash ./scripts/pg18_birep/setup_pg18_birep.sh
+pg18-birep-down: ## Stop pg18-birep cluster and remove volumes
+	docker compose -f $(PG18_BIREP_COMPOSE) down -v
+pg18-birep-status: ## Show pg18-birep subscriptions and containers
+	docker compose -f $(PG18_BIREP_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" pg18_birep_node1 psql -U postgres -d labdb -c "SELECT subname, subenabled, substream FROM pg_subscription;"
+pg18-birep-logs: ## Follow pg18-birep cluster logs
+	docker compose -f $(PG18_BIREP_COMPOSE) logs -f
+pg18-birep-ps: ## List pg18-birep containers
+	docker compose -f $(PG18_BIREP_COMPOSE) ps
+test-pg18-birep: ## Run pg18-birep uuidv7, conflict counters, and T11-T18 tests
+	@bash ./tests/test_pg18_birep.sh
+pg18-birep-test: test-pg18-birep
+
+bench-pg18: ## Run sequential empirical benchmarks across all 5 PG 18.6 topologies
+	@bash ./scripts/bench_pg18_runner.sh
+
+clean-pg18: pg18-streaming-down pg18-logical-down pg18-birep-down ## Stop and remove all PG 18.6 stacks and volumes
+
 # --- Main Targets ---
 .PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 postgres15 stop status logs \
         build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera test-patroni \
@@ -317,7 +368,10 @@ bench-pg-v2: ## Run sequential V2 empirical benchmark suite (Suites A-H, WAN & c
         citus-up citus-down citus-status citus-logs citus-ps test-citus citus-test \
         cockroach-up cockroach-down cockroach-status cockroach-logs cockroach-ps test-cockroach cockroach-test \
         yugabyte-up yugabyte-down yugabyte-status yugabyte-logs yugabyte-ps test-yugabyte yugabyte-test \
-        bench-pg-multimaster test-pg-extended bench-pg-v2 \
+        pg18-streaming-up pg18-streaming-down pg18-streaming-status pg18-streaming-logs pg18-streaming-ps test-pg18-streaming pg18-streaming-test \
+        pg18-logical-up pg18-logical-down pg18-logical-status pg18-logical-logs pg18-logical-ps test-pg18-logical pg18-logical-test \
+        pg18-birep-up pg18-birep-down pg18-birep-status pg18-birep-logs pg18-birep-ps test-pg18-birep pg18-birep-test \
+        bench-pg-multimaster test-pg-extended bench-pg-v2 bench-pg18 clean-pg18 \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
@@ -422,6 +476,10 @@ help:
 	@printf "    \033[1myugabyte-up / test-yugabyte\033[0m   - YugabyteDB 2026.1.3 3-Node Raft\n"
 	@printf "    \033[1mbench-pg-multimaster\033[0m          - Sequential pgbench/sysbench suite\n"
 	@printf "    \033[1mtest-pg-extended / bench-pg-v2\033[0m - Extended T11-T18 matrix & V2 benchmarks\n"
+	@printf "    \033[1mpg18-streaming-up / pg18-streaming-test\033[0m - PG 18.6 Streaming (AIO worker)\n"
+	@printf "    \033[1mpg18-logical-up / pg18-logical-test\033[0m     - PG 18.6 Native Logical\n"
+	@printf "    \033[1mpg18-birep-up / pg18-birep-test\033[0m         - PG 18.6 Bidirectional (uuidv7)\n"
+	@printf "    \033[1mbench-pg18 / clean-pg18\033[0m                 - PG 18.6 Benchmark & Cleanup\n"
 	@printf "\n"
 	@printf "  \033[1;32mGolang Orchestrator (v2.2.0):\033[0m\n"
 	@printf "    \033[1mbuild-go\033[0m           - 🔨 Compiles mdb CLI binary into bin/mdb\n"
@@ -1101,7 +1159,7 @@ check-ssl-all: ## Verify TLS certificate validity for all products
 	done; \
 	exit $$RET
 
-clean-data: clean-galera clean-repli clean-ssl ## Remove ALL data, backup, and SSL directories (CAUTION!)
+clean-data: clean-galera clean-repli clean-pg18 clean-ssl ## Remove ALL data, backup, and SSL directories (CAUTION!)
 
 ## Logs & Troubleshooting
 logs-error-galera: ## Read last 100 lines of error logs for Galera (Usage: make logs-error-galera [NODE=1|2|3])

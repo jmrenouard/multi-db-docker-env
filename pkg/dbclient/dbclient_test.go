@@ -96,7 +96,7 @@ func TestNewVerifier_Factory(t *testing.T) {
 	for _, vt := range []string{
 		"galera", "repli", "mysql", "mariadb", "innodb", "standalone",
 		"patroni", "pgpool", "postgres", "postgresql",
-		"pg-streaming", "pg-logical", "pg-birep", "pgedge", "bucardo", "citus", "cockroach", "yugabyte",
+		"pg-streaming", "pg-logical", "pg-birep", "pg18-streaming", "pg18-logical", "pg18-birep", "pgedge", "bucardo", "citus", "cockroach", "yugabyte",
 	} {
 		if v, err := NewVerifier(vt, Config{}); err != nil || v == nil {
 			t.Fatalf("%s err: %v", vt, err)
