@@ -21,9 +21,10 @@ func printUsage(w io.Writer) {
 Lifecycle:
   up <env> | start [env]   Start profile or cluster (rejects EOL; default: mariadb114)
   down [env|all] | stop    Stop specified env or all active containers
-  status <topology>        Show topology status
+  status [env|all] | info  Show active containers, status, and recent logs
+  logs [env|svc] [flags]   Stream or tail logs (--tail N, -f)
 
-Discovery & Operations:
+Client, Diagnostics & Operations:
   catalog [flags]          List environments (--category, --engine, --eol, --all, --json)
                            Aliases: list, envs, environments, topologies
   config | pki | test | bench | report | version | help

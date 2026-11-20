@@ -280,3 +280,44 @@ func TestLifecycleUpAndDown(t *testing.T) {
 		t.Fatalf("want postgres18, got %s", got)
 	}
 }
+
+func TestStatusInfoAndLogs(t *testing.T) {
+	cat := activeCatalog()
+	mock := &docker.MockCommandRunner{
+		Custom: func(_ context.Context, name string, args ...string) ([]byte, []byte, int, error) {
+			line := strings.Join(args, " ")
+			if strings.Contains(line, "ps --format") {
+				return []byte("mysql-9.7\tmysql97\trunning\tUp 5s\t3306/tcp\n"), nil, 0, nil
+			}
+			if len(args) > 0 && args[0] == "logs" {
+				return []byte("ready for connections\n"), nil, 0, nil
+			}
+			return nil, nil, 0, nil
+		},
+	}
+	client, ctx := docker.NewClientWithRunner(mock), context.Background()
+
+	wd, _ := os.Getwd()
+	tmp := t.TempDir()
+	_ = os.WriteFile(filepath.Join(tmp, "docker-compose.yml"), []byte("services:\n  traefik:\n    image: traefik:v3\n"), 0644)
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Chdir(wd) }()
+
+	var out bytes.Buffer
+	if err := runStatusCmd(ctx, client, cat, []string{"--json"}, &out); err != nil || !strings.Contains(out.String(), `"service": "mysql97"`) {
+		t.Fatalf("status json err=%v out=%s", err, out.String())
+	}
+	out.Reset()
+	if err := runStatusCmd(ctx, client, cat, []string{"mysql97"}, &out); err != nil || !strings.Contains(out.String(), "mysql-9.7") {
+		t.Fatalf("status standalone err=%v out=%s", err, out.String())
+	}
+	out.Reset()
+	if err := runInfoCmd(ctx, client, &out); err != nil || !strings.Contains(out.String(), "Active service: mysql97") || !strings.Contains(out.String(), "ready for connections") {
+		t.Fatalf("info err=%v out=%s", err, out.String())
+	}
+	if err := runStatusCmd(ctx, client, cat, []string{"unknown-env"}, &out); err == nil {
+		t.Fatalf("expected error for unknown env")
+	}
+}
