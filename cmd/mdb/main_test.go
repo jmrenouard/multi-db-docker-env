@@ -320,4 +320,18 @@ func TestStatusInfoAndLogs(t *testing.T) {
 	if err := runStatusCmd(ctx, client, cat, []string{"unknown-env"}, &out); err == nil {
 		t.Fatalf("expected error for unknown env")
 	}
+	for _, tc := range []struct {
+		args []string
+		want string
+	}{
+		{[]string{"mysql97"}, "compose -f docker-compose.yml --profile mysql97 logs --tail 100 mysql97"},
+		{[]string{"standalone"}, "compose -f docker-compose.yml --profile * logs --tail 100"},
+		{[]string{"galera", "--tail", "25", "-f"}, "compose -f docker-compose-galera.yml logs --tail 25 -f"},
+		{nil, "logs --tail 100 mysql-9.7"},
+	} {
+		got, err := buildLogsArgs(ctx, client, cat, tc.args)
+		if err != nil || strings.Join(got, " ") != tc.want {
+			t.Fatalf("logs %v: got %q err=%v, want %q", tc.args, strings.Join(got, " "), err, tc.want)
+		}
+	}
 }

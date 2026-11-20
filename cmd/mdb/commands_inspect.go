@@ -149,47 +149,54 @@ func runInfoCmd(ctx context.Context, client *docker.Client, stdout io.Writer) er
 	return nil
 }
 
-func runLogsCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalog, args []string) error {
+func buildLogsArgs(ctx context.Context, client *docker.Client, cat *catalog.Catalog, args []string) ([]string, error) {
 	fs := flag.NewFlagSet("logs", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	tail := fs.Int("tail", 100, "")
 	follow := fs.Bool("f", false, "")
 	flags, pos := splitFlagsAndArgs(args, map[string]bool{"f": true})
 	if err := fs.Parse(flags); err != nil {
-		return err
+		return nil, err
 	}
 	tailArg := fmt.Sprintf("%d", *tail)
-	composeLogs := func(files []string, svc ...string) error {
+	composeLogs := func(files, profiles, svcs []string) []string {
 		cArgs := []string{"compose"}
 		for _, f := range files {
 			cArgs = append(cArgs, "-f", f)
+		}
+		for _, p := range profiles {
+			cArgs = append(cArgs, "--profile", p)
 		}
 		cArgs = append(cArgs, "logs", "--tail", tailArg)
 		if *follow {
 			cArgs = append(cArgs, "-f")
 		}
-		return streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", append(cArgs, svc...)...)
+		return append(cArgs, svcs...)
 	}
 	target := ""
 	if len(pos) > 0 {
 		target = pos[0]
 		if env, ok := cat.Lookup(target); ok {
 			if env.Category == catalog.CategoryStandalone {
-				return composeLogs(env.ComposeFiles, env.ID)
+				return composeLogs(env.ComposeFiles, []string{env.Profile}, []string{env.ID}), nil
 			}
-			return composeLogs(env.ComposeFiles)
+			return composeLogs(env.ComposeFiles, nil, nil), nil
 		}
 		if topo, err := topology.DefaultRegistry().Get(target); err == nil {
-			return composeLogs(topo.ComposeFiles())
+			var profiles []string
+			if target == "standalone" {
+				profiles = []string{"*"}
+			}
+			return composeLogs(topo.ComposeFiles(), profiles, nil), nil
 		}
 	} else {
 		items, err := client.ComposePSStatusAll(ctx, nil)
 		if err != nil && len(items) == 0 {
-			return err
+			return nil, err
 		}
 		primary, ok := pickPrimaryContainer(items)
 		if !ok {
-			return errors.New("no running container found")
+			return nil, errors.New("no running container found")
 		}
 		target = primary.Name
 	}
@@ -197,5 +204,13 @@ func runLogsCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalog
 	if *follow {
 		dArgs = append(dArgs, "-f")
 	}
-	return streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", append(dArgs, target)...)
+	return append(dArgs, target), nil
+}
+
+func runLogsCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalog, args []string) error {
+	dArgs, err := buildLogsArgs(ctx, client, cat, args)
+	if err != nil {
+		return err
+	}
+	return streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", dArgs...)
 }
