@@ -335,3 +335,75 @@ func TestStatusInfoAndLogs(t *testing.T) {
 		}
 	}
 }
+
+func TestClientMyCnfAndDoctor(t *testing.T) {
+	cat := activeCatalog()
+	t.Setenv("DB_ROOT_PASSWORD", "")
+	wd, _ := os.Getwd()
+	tmp := t.TempDir()
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Chdir(wd) }()
+
+	// mycnf backup + warning without .env
+	var warn bytes.Buffer
+	home := t.TempDir()
+	_ = os.WriteFile(filepath.Join(home, ".my.cnf"), []byte("old-cnf"), 0600)
+	backed, err := writeMyCnf(home, loadPasswordWarn(&warn))
+	if err != nil || !backed || !strings.Contains(warn.String(), "rootpass") {
+		t.Fatalf("mycnf backed=%v err=%v warn=%q", backed, err, warn.String())
+	}
+	if bak, err := os.ReadFile(filepath.Join(home, ".my.cnf.bak")); err != nil || string(bak) != "old-cnf" {
+		t.Fatalf("backup mismatch: %q err=%v", string(bak), err)
+	}
+	if cnf, err := os.ReadFile(filepath.Join(home, ".my.cnf")); err != nil || !strings.Contains(string(cnf), "password=rootpass") {
+		t.Fatalf("mycnf mismatch: %q err=%v", string(cnf), err)
+	}
+
+	// client engine command selection
+	for _, tc := range []struct{ eng, id, ctr, want string }{
+		{"postgres", "postgres17", "postgres-17", "psql -U postgres"},
+		{"postgres", "pgpool", "pgpool", "psql -h 127.0.0.1 -p 9999 -U postgres"},
+		{"postgres", "pgpool", "pg_node1", "psql -U postgres"},
+		{"mongodb", "mongo8", "mongo8_n1", "mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem"},
+		{"mariadb", "galera", "galera_01", "command -v mariadb"},
+		{"mysql", "mysql97", "mysql-9.7", "command -v mariadb"},
+		{"cockroachdb", "cockroach", "crdb_node1", "/cockroach/cockroach sql"},
+		{"yugabytedb", "yugabyte", "yb_node1", "ysqlsh"},
+	} {
+		env, cmd := buildClientCommand(tc.eng, tc.id, tc.ctr, "rootpass")
+		if got := strings.Join(append(env, cmd...), " "); !strings.Contains(got, tc.want) {
+			t.Fatalf("%s/%s: got %q, want %q", tc.eng, tc.id, got, tc.want)
+		}
+	}
+	if eng, id := inferEngineAndID(cat, docker.ContainerStatus{Service: "pg_node1", Name: "pg_node1", File: "docker-compose-pgpool.yml"}); eng != "postgres" || id != "pgpool" {
+		t.Fatalf("infer pgpool: got %s/%s", eng, id)
+	}
+
+	// doctor healthy & missing docker
+	mock := &docker.MockCommandRunner{
+		Custom: func(_ context.Context, _ string, args ...string) ([]byte, []byte, int, error) {
+			if len(args) > 0 && args[0] == "compose" {
+				return []byte("Docker Compose version v2.29.0"), nil, 0, nil
+			}
+			return []byte("27.0.0"), nil, 0, nil
+		},
+	}
+	client, ctx := docker.NewClientWithRunner(mock), context.Background()
+	var out bytes.Buffer
+	okLook := func(b string) (string, error) { return "/bin/" + b, nil }
+	noEnv := func(p string) (os.FileInfo, error) {
+		if p == ".env" {
+			return nil, os.ErrNotExist
+		}
+		return os.Stat(tmp)
+	}
+	if err := runDoctorCmd(ctx, &out, "windows", okLook, noEnv, client); err != nil || !strings.Contains(out.String(), "mdb.cmd") || !strings.Contains(out.String(), "Docker Compose") {
+		t.Fatalf("doctor healthy err=%v out=%s", err, out.String())
+	}
+	out.Reset()
+	if err := runDoctorCmd(ctx, &out, "linux", func(string) (string, error) { return "", errors.New("missing") }, noEnv, client); err == nil {
+		t.Fatalf("expected error when docker missing")
+	}
+}
