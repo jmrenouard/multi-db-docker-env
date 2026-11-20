@@ -31,13 +31,23 @@ func resolveVersion() string {
 	return version
 }
 
+func runOrExit(err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: mdb <version|config|pki|up|down|status|topologies|test|bench|report> [options]")
+		printUsage(os.Stdout)
 		os.Exit(1)
 	}
 
+	ctx := context.Background()
 	switch os.Args[1] {
+	case "help", "--help", "-h":
+		printUsage(os.Stdout)
 	case "version", "--version", "-v":
 		fmt.Printf("mdb version %s\n", resolveVersion())
 	case "config":
@@ -82,43 +92,41 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Unknown PKI action: %s\nUsage: mdb pki <generate|verify> [topology] [--dir <dir>]\n", action)
 			os.Exit(1)
 		}
-	case "topologies":
-		for _, t := range topology.DefaultRegistry().List() {
-			fmt.Printf("%-14s - %s\n", t.Name(), t.Description())
-		}
-	case "up", "down", "status":
-		cmd := os.Args[1]
+	case "catalog", "list", "envs", "environments", "topologies":
+		runOrExit(runCatalogCmd(os.Args[2:], activeCatalog(), os.Stdout))
+	case "up":
 		if len(os.Args) < 3 {
-			fmt.Printf("Usage: mdb %s <topology>\n", cmd)
+			fmt.Println("Usage: mdb up <env>")
 			os.Exit(1)
 		}
-		name := os.Args[2]
-		topo, err := topology.DefaultRegistry().Get(name)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		target := os.Args[2]
+		runOrExit(runUpCmd(ctx, docker.NewClient(), activeCatalog(), target))
+		fmt.Printf("Environment %s up successful\n", target)
+	case "start":
+		target := resolveDefaultEnv()
+		if len(os.Args) >= 3 {
+			target = os.Args[2]
+		}
+		runOrExit(runUpCmd(ctx, docker.NewClient(), activeCatalog(), target))
+		fmt.Printf("Environment %s started\n", target)
+	case "down", "stop":
+		target := ""
+		if os.Args[1] == "down" && len(os.Args) >= 3 {
+			target = os.Args[2]
+		}
+		runOrExit(runDownCmd(ctx, docker.NewClient(), activeCatalog(), target))
+		fmt.Println("Stop completed successfully")
+	case "status":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: mdb status <topology>")
 			os.Exit(1)
 		}
-		client, ctx := docker.NewClient(), context.Background()
-		var actionErr error
-		if cmd == "up" {
-			actionErr = topo.Up(ctx, client)
-		} else if cmd == "down" {
-			actionErr = topo.Down(ctx, client)
-		} else {
-			st, err := topo.Status(ctx, client)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Status failed: %v\n", err)
-				os.Exit(1)
-			}
-			data, _ := json.MarshalIndent(st, "", "  ")
-			fmt.Println(string(data))
-			return
-		}
-		if actionErr != nil {
-			fmt.Fprintf(os.Stderr, "%s failed: %v\n", cmd, actionErr)
-			os.Exit(1)
-		}
-		fmt.Printf("Topology %s %s successful\n", name, cmd)
+		topo, err := topology.DefaultRegistry().Get(os.Args[2])
+		runOrExit(err)
+		st, err := topo.Status(ctx, docker.NewClient())
+		runOrExit(err)
+		data, _ := json.MarshalIndent(st, "", "  ")
+		fmt.Println(string(data))
 	case "test":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: mdb test <topology>")
@@ -266,26 +274,46 @@ func loadPassword() string {
 
 func defaultContainer(topo string) string {
 	switch strings.ToLower(topo) {
-	case "galera": return "galera_01"
-	case "repli": return "mariadb_02"
-	case "innodb": return "mysql_node1"
-	case "patroni": return "node1"
-	case "pgpool": return "pgpool"
-	case "mongo": return "mongo1"
-	case "mongo8": return "mongo8_n1"
-	case "pg-streaming": return "pg_stream_primary"
-	case "pg-logical": return "pg_logical_pub"
-	case "pg-birep": return "pg_birep_node1"
-	case "pg18-streaming": return "pg18_stream_primary"
-	case "pg18-logical": return "pg18_logical_pub"
-	case "pg18-birep": return "pg18_birep_node1"
-	case "pgedge": return "pgedge_node1"
-	case "bucardo": return "bucardo_node1"
-	case "citus": return "citus_coord"
-	case "cockroach": return "crdb_node1"
-	case "yugabyte": return "yb_node1"
-	case "yt-cluster": return "yt1"
-	default: return "mariadb-11.8"
+	case "galera":
+		return "galera_01"
+	case "repli":
+		return "mariadb_02"
+	case "innodb":
+		return "mysql_node1"
+	case "patroni":
+		return "node1"
+	case "pgpool":
+		return "pgpool"
+	case "mongo":
+		return "mongo1"
+	case "mongo8":
+		return "mongo8_n1"
+	case "pg-streaming":
+		return "pg_stream_primary"
+	case "pg-logical":
+		return "pg_logical_pub"
+	case "pg-birep":
+		return "pg_birep_node1"
+	case "pg18-streaming":
+		return "pg18_stream_primary"
+	case "pg18-logical":
+		return "pg18_logical_pub"
+	case "pg18-birep":
+		return "pg18_birep_node1"
+	case "pgedge":
+		return "pgedge_node1"
+	case "bucardo":
+		return "bucardo_node1"
+	case "citus":
+		return "citus_coord"
+	case "cockroach":
+		return "crdb_node1"
+	case "yugabyte":
+		return "yb_node1"
+	case "yt-cluster":
+		return "yt1"
+	default:
+		return "mariadb-11.8"
 	}
 }
 
@@ -298,4 +326,3 @@ func resolveContainer(ctx context.Context, client *docker.Client, topo string) s
 	}
 	return base
 }
-

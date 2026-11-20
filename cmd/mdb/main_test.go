@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jmrenouard/multi-db-docker-env/pkg/catalog"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/config"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
 )
@@ -26,7 +27,7 @@ func TestDefaultAndResolveContainer(t *testing.T) {
 		"pgedge": "pgedge_node1", "bucardo": "bucardo_node1",
 		"citus": "citus_coord", "cockroach": "crdb_node1", "yugabyte": "yb_node1",
 		"yt-cluster": "yt1",
-		"x": "mariadb-11.8",
+		"x":          "mariadb-11.8",
 	}
 	for topo, want := range cases {
 		if got := defaultContainer(topo); got != want {
@@ -215,5 +216,67 @@ func TestMain_ExitErrors(t *testing.T) {
 				t.Errorf("expected output containing %q, got %q", tc.want, string(out))
 			}
 		})
+	}
+}
+
+func TestHelpAndCatalogCommands(t *testing.T) {
+	for _, h := range []string{"help", "--help", "-h"} {
+		cmd := exec.Command(os.Args[0], "-test.run=TestHelperProcess", "--", h)
+		cmd.Env = append(os.Environ(), "GO_WANT_HELPER_PROCESS=1")
+		if out, err := cmd.CombinedOutput(); err != nil || !strings.Contains(string(out), "catalog") {
+			t.Fatalf("%s failed err=%v out=%s", h, err, string(out))
+		}
+	}
+
+	cat := activeCatalog()
+	var buf bytes.Buffer
+	if err := runCatalogCmd([]string{"--category", "standalone", "--engine", "pg", "--json"}, cat, &buf); err != nil {
+		t.Fatalf("catalog json: %v", err)
+	}
+	var envs []catalog.Environment
+	if err := json.Unmarshal(buf.Bytes(), &envs); err != nil || len(envs) != 4 {
+		t.Fatalf("expected 4 pg envs, got %d err=%v", len(envs), err)
+	}
+
+	buf.Reset()
+	if err := runCatalogCmd([]string{"--eol"}, cat, &buf); err != nil {
+		t.Fatalf("catalog eol: %v", err)
+	}
+	for _, id := range []string{"mysql57", "mysql80", "mysql96", "mariadb106", "percona80"} {
+		if !strings.Contains(buf.String(), id) {
+			t.Fatalf("missing EOL %s", id)
+		}
+	}
+}
+
+func TestLifecycleUpAndDown(t *testing.T) {
+	cat := activeCatalog()
+	mock := &docker.MockCommandRunner{}
+	client, ctx := docker.NewClientWithRunner(mock), context.Background()
+
+	for id, date := range map[string]string{
+		"mysql57": "2023-10-31", "mysql80": "2026-04-30", "mysql96": "2026-04-21",
+		"mariadb106": "2026-07-06", "percona80": "2026-04-30",
+	} {
+		if err := runUpCmd(ctx, client, cat, id); err == nil || !strings.Contains(err.Error(), date) {
+			t.Fatalf("%s: want EOL %s, got %v", id, date, err)
+		}
+	}
+
+	if err := runUpCmd(ctx, client, cat, "mysql97"); err != nil {
+		t.Fatalf("up mysql97: %v", err)
+	}
+	if got := strings.Join(mock.Calls[len(mock.Calls)-1], " "); !strings.Contains(got, "--profile traefik --profile mysql97") {
+		t.Fatalf("unexpected up args: %s", got)
+	}
+	if err := runDownCmd(ctx, client, cat, "mysql97"); err != nil {
+		t.Fatalf("down mysql97: %v", err)
+	}
+	if err := runDownCmd(ctx, client, cat, "all"); err != nil {
+		t.Fatalf("down all: %v", err)
+	}
+	t.Setenv("DEFAULT_SERVICE", "postgres18")
+	if got := resolveDefaultEnv(); got != "postgres18" {
+		t.Fatalf("want postgres18, got %s", got)
 	}
 }
