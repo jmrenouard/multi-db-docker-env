@@ -77,6 +77,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-073 -- Pin MySQLTuner `v2.9.4` in CI & Print Failure Tail in `run_mysqltuner.sh` (Issue `#250`)
+- **Date**: `2026-11-20T15:18+01:00` | **Status**: `COMPLETED` | **Issue / Branch**: `#250` (`fix/issue-250-ci-mysqltuner`)
+- **Request**: Diagnose and fix `test-and-validate` CI failure in `Run MySQLTuner E2E Integration Audit` (`make mysqltuner-galera`, exit 255 on all 3 Galera nodes) exposed after PR `#240`, and surface `$OUTPUT_FILE` failure diagnostics to stderr.
+- **Changes**: Upgraded pinned MySQLTuner download in `.github/workflows/ci.yml` from `v2.6.0` to `v2.9.4` (fixes division by zero on MariaDB 11.8 `innodb_buffer_pool_chunk_size=0`); updated `scripts/run_mysqltuner.sh` to print the last 30 lines of `$OUTPUT_FILE` to stderr on node failure; logged `RCA-063`.
+- **Result**: Local `bash -n scripts/run_mysqltuner.sh` and `python -m unittest discover -s tests -v` pass; GitHub Actions `test-and-validate` verified green on PR.
+
+---
+
 ### ACT-072 -- Release Pipeline Docs, `Changelog` & Governance Register Consolidation (Issues `#244`, `#245`)
 - **Date**: `2026-11-20T15:10+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#244`/`#246`, `#245` (`docs/issue-245-governance-consolidation`)
 - **Request**: Document `.github/workflows/release.yml`, `scripts/release_notes.py`, and `PREREQUISITES.txt`; update `Changelog`; consolidate `docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`, `ROADMAP.md`, and `POTENTIAL_ISSUES.md` with zero drifting tracking lists.

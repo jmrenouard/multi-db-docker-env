@@ -473,6 +473,13 @@
 - **Applied Change / Fix**: Guarded `import yaml` with `try/except ImportError` and added a stdlib regex fallback verifying `services:` and `image:`/`build:` keys when `PyYAML` is absent.
 - **Result & Non-Regression Test**: `test_repo_static.py` passes both with `PyYAML` and with `sys.modules['yaml'] = None`.
 
+### RCA-063 -- CI MySQLTuner `v2.6.0` Division by Zero on MariaDB 11.8 Galera (`exit 255`) & Hidden Failure Output
+- **Date / Linked Action**: `2026-11-20` (`ACT-073` / Issue `#250`)
+- **Observed Symptom**: After PR `#240` removed `|| true` in `scripts/run_mysqltuner.sh`, GitHub Actions `test-and-validate` (run `44750937954`) failed in `make mysqltuner-galera` with `exit code: 255` on all 3 Galera nodes, with no error text printed in CI logs.
+- **Root Cause Analysis**: `.github/workflows/ci.yml` pinned `MySQLTuner v2.6.0`, which divides by `innodb_buffer_pool_chunk_size` at line 6547 (`main::mysql_innodb()`). MariaDB >= 10.8 (including Galera MariaDB 11.8.9) defaults `innodb_buffer_pool_chunk_size` to `0` (`autosize`), raising `Illegal division by zero` (`exit 255`). Redirecting stdout/stderr solely to `$OUTPUT_FILE` hid the exception from CI logs.
+- **Applied Change / Fix**: Upgraded the pinned MySQLTuner version in `.github/workflows/ci.yml` from `v2.6.0` to `v2.9.4` (which explicitly skips chunk-size division when `innodb_buffer_pool_chunk_size == 0`) and printed the last 30 lines of `$OUTPUT_FILE` to stderr on failure in `scripts/run_mysqltuner.sh`.
+- **Result & Non-Regression Test**: `bash -n scripts/run_mysqltuner.sh`, `python -m unittest discover -s tests -v`, and GitHub Actions `test-and-validate` E2E `make mysqltuner-galera` pass green.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
