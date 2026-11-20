@@ -4,23 +4,21 @@ Comprehensive reference of all database engines and infrastructure components su
 
 ## 🐬 MySQL
 
-| Version | Docker Image | Standalone Port | TLS | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| 9.6 | `mysql:9.6` | `3306` (via Traefik) | ❌ | ✅ Verified |
-| 8.4 | `mysql:8.4` | `3306` (via Traefik) | ❌ | ✅ Verified |
-| 8.0 | `mysql:8.0` | `3306` (via Traefik) | ❌ | ✅ Verified |
-| 5.7 | `mysql:5.7` | `3306` (via Traefik) | ❌ | ✅ Verified |
+| Version | Docker Image | Standalone Port | TLS | Support Window / EOL | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 9.7 LTS | `mysql:9.7` | `3306` (via Traefik) | ❌ | 2031-04-30 (Ext. 2034-04-30) | ✅ Supported |
+| 8.4 LTS | `mysql:8.4` | `3306` (via Traefik) | ❌ | 2029-04-30 (Ext. 2032-04-30) | ✅ Verified |
 
-**HA Mode**: InnoDB Cluster (3-node Group Replication + HAProxy)
+**HA Mode**: InnoDB Cluster (3-node MySQL 8.4 LTS Group Replication + HAProxy)
 
 ## 🐬 MariaDB
 
-| Version | Docker Image | Standalone Port | TLS | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| 11.8 | `mariadb:11.8` | `3306` (via Traefik) | ✅ (cluster) | ✅ Verified |
-| 11.4 | `mariadb:11.4` | `3306` (via Traefik) | ✅ (cluster) | ✅ Verified |
-| 10.11 | `mariadb:10.11` | `3306` (via Traefik) | ✅ (cluster) | ✅ Verified |
-| 10.6 | `mariadb:10.6` | `3306` (via Traefik) | ✅ (cluster) | ✅ Verified |
+| Version | Docker Image | Standalone Port | TLS | Community EOL | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 12.3 LTS | `mariadb:12.3` | `3306` (via Traefik) | ✅ (cluster) | 2029-06-12 | ✅ Supported |
+| 11.8 LTS | `mariadb:11.8` | `3306` (via Traefik) | ✅ (cluster) | 2028-06-04 | ✅ Verified |
+| 11.4 LTS | `mariadb:11.4` | `3306` (via Traefik) | ✅ (cluster) | 2029-05-29 | ✅ Verified |
+| 10.11 LTS | `mariadb:10.11` | `3306` (via Traefik) | ✅ (cluster) | 2028-02-16 | ✅ Verified |
 
 **HA Modes**:
 - Galera Cluster (3-node synchronous replication, ports 3511-3513)
@@ -28,29 +26,30 @@ Comprehensive reference of all database engines and infrastructure components su
 
 ## 🐬 Percona Server
 
-| Version | Docker Image | Standalone Port | TLS | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| 8.0 | `percona/percona-server:8.0` | `3306` (via Traefik) | ❌ | ✅ Verified |
+| Version | Docker Image | Standalone Port | TLS | Community EOL | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 8.4 LTS | `percona/percona-server:8.4` | `3306` (via Traefik) | ❌ | 2029-04-30 | ✅ Supported |
 
 ## 🐘 PostgreSQL
 
-| Version | Docker Image | Standalone Port | TLS | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| 17 | `postgres:17` | `5432` (via Traefik) | ❌ | ✅ Verified |
-| 16 | `postgres:16` | `5432` (via Traefik) | ❌ | ✅ Verified |
-| 15 | `postgres:15` | `5432` (via Traefik) | ❌ | ✅ Verified |
+| Version | Docker Image | Standalone Port | TLS | Community EOL | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 18 | `postgres:18` | `5432` (via Traefik) | ❌ | 2030-11-14 | ✅ Supported |
+| 17 | `postgres:17` | `5432` (via Traefik) | ❌ | 2029-11-08 | ✅ Verified |
+| 16 | `postgres:16` | `5432` (via Traefik) | ❌ | 2028-11-09 | ✅ Verified |
+| 15 | `postgres:15` | `5432` (via Traefik) | ❌ | 2027-11-11 | ✅ Verified |
 
 **HA, Replication & Multi-Master Modes**:
 - Patroni Cluster (3 PG 17 + 3 ETCD + HAProxy, ports 5000/5001/7000)
-- PgPool-II Cluster (3 PG 17 + PgPool + HAProxy, ports 5100/5101/8406)
-- Replication & Multi-Master (`v2.1.0`–`v2.2.0`): `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge` (Spock 5), `bucardo`, `citus` (14.2), `cockroach` (v24.3), `yugabyte` (2026.1) — see [pg_multimaster.md](pg_multimaster.md).
+- PgPool-II Cluster (3 PG 17 + PgPool 4.6 + HAProxy, ports 5100/5101/8406)
+- Replication & Multi-Master (`v2.1.0`–`v2.3.0`): `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `pgedge` (Spock 5), `bucardo`, `citus` (14.2), `cockroach` (v25.4), `yugabyte` (2026.1) — see [pg_multimaster.md](pg_multimaster.md).
 
 ## 🍃 MongoDB
 
-| Version | Docker Image | Standalone Port | TLS | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| 8.0 | `mongo:8.0` | — | ✅ (cluster) | ✅ Verified |
-| 7.0 | `mongo:7.0` | — | ✅ (cluster) | ✅ Verified |
+| Version | Docker Image | Standalone Port | TLS | Community EOL | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 8.0 LTS | `mongo:8.0` | — | ✅ (cluster) | 2029-10-31 | ✅ Verified |
+| 7.0 | `mongo:7.0` | — | ✅ (cluster) | 2027-08-31 | ✅ Verified |
 
 **HA Mode**: ReplicaSet (3-node rs0 + HAProxy)
 - MongoDB 7: ports 27411-27413 / HAProxy 27100 / Stats 8408
@@ -60,9 +59,23 @@ Comprehensive reference of all database engines and infrastructure components su
 
 | Component | Image | Role | Ports |
 | :--- | :--- | :--- | :--- |
-| Traefik | `traefik:v2.10` | Reverse proxy for standalone DBs | `3306`, `5432`, `8080` (dashboard) |
-| HAProxy | `haproxy:lts` | TCP load balancer for HA clusters | Per-cluster (see docs) |
+| Traefik | `traefik:v3` | Reverse proxy for standalone DBs | `3306`, `5432`, `8080` (dashboard) |
+| HAProxy | `haproxy:lts` / `haproxy:lts-alpine` | TCP load balancer for HA clusters | Per-cluster (see docs) |
 | ETCD | `quay.io/coreos/etcd:v3.5.21` | Distributed config for Patroni | `2379`, `2380` |
+
+## 🛑 Decommissioned Versions (End-of-Life)
+
+The following versions have reached official community End-of-Life (EOL) and have been removed from active Compose stacks and CLI menus. Legacy `Makefile` targets print an EOL notice with the recommended upgrade target.
+
+| Product | Decommissioned Version | Official EOL Date | Decommissioning Note | Recommended Replacement |
+| :--- | :--- | :--- | :--- | :--- |
+| MySQL | `5.7` (`mysql:5.7`) | **2023-10-31** | Premier EOL 2023-10-31 (Extended ended 2026-10-31); removed from standalone stack | `mysql:8.4` (`make mysql84`) or `mysql:9.7` (`make mysql97`) |
+| MySQL | `8.0` (`mysql:8.0`) | **2026-04-30** | Oracle Community EOL reached; standalone and InnoDB Cluster migrated to 8.4 LTS | `mysql:8.4` (`make mysql84` / `make innodb-up`) or `mysql:9.7` (`make mysql97`) |
+| MySQL | `9.6` (`mysql:9.6`) | **2026-04-21** | Innovation release superseded by MySQL 9.7 LTS | `mysql:9.7` (`make mysql97`) |
+| MariaDB | `10.6` (`mariadb:10.6`) | **2026-07-06** | Community maintenance period ended; removed from standalone stack | `mariadb:10.11` (`make mariadb1011`), `mariadb:11.4` (`make mariadb114`), or `mariadb:12.3` (`make mariadb123`) |
+| Percona Server | `8.0` (`percona/percona-server:8.0`) | **2026-04-30** | Mirrors MySQL 8.0 EOL; public community updates ended | `percona/percona-server:8.4` (`make percona84`) |
+| Traefik | `v2.11` (`traefik:v2.11`) | **2026-09-07** | Security support ended; standalone reverse proxy upgraded to v3 | `traefik:v3` |
+| HAProxy | `2.9` (`haproxy:2.9-alpine`) | **2025-03-21** | Short-Term Support (STS) EOL; PostgreSQL cluster proxies upgraded to LTS | `haproxy:lts-alpine` / `haproxy:lts` |
 
 ## 📊 Networking Matrix
 
