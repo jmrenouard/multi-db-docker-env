@@ -160,7 +160,12 @@ for p in $PORTS; do
     if [ "$TUNER_RC" -eq 0 ] && grep -q "Terminated successfully" "$OUTPUT_FILE" 2>/dev/null; then
         echo "  ✅ MySQLTuner completed successfully"
     else
-        echo "  ❌ MySQLTuner did not complete successfully (exit code: $TUNER_RC)"
+        echo "  ❌ MySQLTuner did not complete successfully (exit code: $TUNER_RC)" >&2
+        if [ -s "$OUTPUT_FILE" ]; then
+            echo "  --- Last 30 lines of $OUTPUT_FILE ---" >&2
+            tail -n 30 "$OUTPUT_FILE" >&2
+            echo "  --- End of MySQLTuner failure output ---" >&2
+        fi
         RET=1
     fi
 done
