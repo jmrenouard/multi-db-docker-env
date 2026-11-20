@@ -50,12 +50,12 @@ PGPOOL_COMPOSE = docker-compose-pgpool.yml
 pgpool-up: gen-ssl-pgpool ## Start PostgreSQL + PgPool-II + HAProxy cluster
 	@echo "🚀 Starting PgPool-II cluster..."
 	docker compose -f $(PGPOOL_COMPOSE) up -d
-	@echo "⏳ Waiting for primary to initialize (20s)..."
-	@sleep 20
+	@echo "⏳ Waiting for PostgreSQL nodes to be ready..."
+	@for n in pg_node1 pg_node2 pg_node3; do for i in $$(seq 1 60); do docker exec "$$n" pg_isready -U postgres >/dev/null 2>&1 && break; [ $$i -eq 60 ] && { echo "❌ Timeout waiting for $$n" >&2; exit 1; }; sleep 2; done; done
 	@echo "⛓️  Setting up streaming replication..."
 	@bash ./scripts/pgpool/setup_replication.sh
-	@echo "⏳ Waiting for PgPool-II to detect backends (10s)..."
-	@sleep 10
+	@echo "⏳ Waiting for PgPool-II to detect backends..."
+	@for i in $$(seq 1 30); do docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pgpool psql -h 127.0.0.1 -p 9999 -U postgres -c "SHOW pool_nodes;" >/dev/null 2>&1 && break; [ $$i -eq 30 ] && { echo "❌ Timeout waiting for pgpool" >&2; exit 1; }; sleep 2; done
 	@echo "✅ PgPool-II cluster is ready."
 
 pgpool-down: ## Stop PgPool-II cluster and remove volumes
@@ -64,7 +64,7 @@ pgpool-down: ## Stop PgPool-II cluster and remove volumes
 
 pgpool-status: ## Show PgPool-II node status
 	@echo "📊 PgPool-II Cluster Status..."
-	@PGPASSWORD=$${DB_ROOT_PASSWORD:-postgres} psql -h 127.0.0.1 -p 9999 -U postgres -c "SHOW pool_nodes;"
+	@docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pgpool psql -h 127.0.0.1 -p 9999 -U postgres -c "SHOW pool_nodes;"
 
 pgpool-logs: ## Follow PgPool-II cluster logs
 	docker compose -f $(PGPOOL_COMPOSE) logs -f
@@ -81,12 +81,12 @@ INNODB_COMPOSE = docker-compose-innodb-cluster.yml
 innodb-up: gen-ssl-innodb ## Start MySQL 8.4 InnoDB Cluster (3 nodes + HAProxy)
 	@echo "🚀 Starting MySQL 8.4 InnoDB Cluster..."
 	docker compose -f $(INNODB_COMPOSE) up -d
-	@echo "⏳ Waiting for MySQL nodes to initialize (30s)..."
-	@sleep 30
+	@echo "⏳ Waiting for MySQL nodes to initialize..."
+	@for n in mysql_node1 mysql_node2 mysql_node3; do for i in $$(seq 1 60); do docker exec -e MYSQL_PWD="$${DB_ROOT_PASSWORD:-rootpass}" "$$n" mysql -uroot -e "SELECT 1" >/dev/null 2>&1 && break; [ $$i -eq 60 ] && { echo "❌ Timeout waiting for $$n" >&2; exit 1; }; sleep 2; done; done
 	@echo "⛓️  Setting up Group Replication..."
 	@bash ./conf/innodb-cluster/setup_cluster.sh
-	@echo "⏳ Waiting for HAProxy to detect InnoDB Cluster backends (15s)..."
-	@sleep 15
+	@echo "⏳ Waiting for HAProxy to detect InnoDB Cluster backends..."
+	@for i in $$(seq 1 30); do docker exec -e MYSQL_PWD="$${DB_ROOT_PASSWORD:-rootpass}" mysql_node1 mysql -h haproxy_innodb -P 6446 -uroot -e "SELECT 1" >/dev/null 2>&1 && break; [ $$i -eq 30 ] && { echo "❌ Timeout waiting for haproxy_innodb" >&2; exit 1; }; sleep 1; done
 	@echo "✅ MySQL 8.4 InnoDB Cluster is ready."
 
 innodb-down: ## Stop InnoDB Cluster and remove volumes
@@ -112,12 +112,12 @@ MONGO_COMPOSE = docker-compose-mongo-rs.yml
 mongo-up: gen-ssl-mongo ## Start MongoDB ReplicaSet (3 nodes + HAProxy)
 	@echo "🚀 Starting MongoDB ReplicaSet..."
 	docker compose -f $(MONGO_COMPOSE) up -d
-	@echo "⏳ Waiting for MongoDB nodes to initialize (15s)..."
-	@sleep 15
+	@echo "⏳ Waiting for MongoDB nodes to initialize..."
+	@for n in mongo1 mongo2 mongo3; do for i in $$(seq 1 60); do docker exec "$$n" mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --quiet --eval "db.runCommand({ping:1})" >/dev/null 2>&1 && break; [ $$i -eq 60 ] && { echo "❌ Timeout waiting for $$n" >&2; exit 1; }; sleep 2; done; done
 	@echo "⛓️  Setting up ReplicaSet..."
 	@bash ./conf/mongo-rs/setup_rs.sh
-	@echo "⏳ Waiting for HAProxy to detect backends (5s)..."
-	@sleep 5
+	@echo "⏳ Waiting for HAProxy to detect backends..."
+	@for i in $$(seq 1 20); do docker exec mongo1 mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --host haproxy_mongo --port 27100 --quiet --eval "db.runCommand({ping:1})" >/dev/null 2>&1 && break; [ $$i -eq 20 ] && { echo "❌ Timeout waiting for haproxy_mongo" >&2; exit 1; }; sleep 1; done
 	@echo "✅ MongoDB ReplicaSet is ready."
 
 mongo-down: ## Stop MongoDB ReplicaSet and remove volumes
@@ -147,12 +147,12 @@ MONGO8_COMPOSE = docker-compose-mongo8-rs.yml
 mongo8-up: gen-ssl-mongo ## Start MongoDB 8 ReplicaSet (3 nodes + HAProxy)
 	@echo "🚀 Starting MongoDB 8 ReplicaSet..."
 	docker compose -f $(MONGO8_COMPOSE) up -d
-	@echo "⏳ Waiting for MongoDB 8 nodes to initialize (15s)..."
-	@sleep 15
+	@echo "⏳ Waiting for MongoDB 8 nodes to initialize..."
+	@for n in mongo8_n1 mongo8_n2 mongo8_n3; do for i in $$(seq 1 60); do docker exec "$$n" mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --quiet --eval "db.runCommand({ping:1})" >/dev/null 2>&1 && break; [ $$i -eq 60 ] && { echo "❌ Timeout waiting for $$n" >&2; exit 1; }; sleep 2; done; done
 	@echo "⛓️  Setting up ReplicaSet..."
 	@MONGO_NODES="mongo8_n1 mongo8_n2 mongo8_n3" bash ./conf/mongo-rs/setup_rs.sh
-	@echo "⏳ Waiting for HAProxy to detect backends (5s)..."
-	@sleep 5
+	@echo "⏳ Waiting for HAProxy to detect backends..."
+	@for i in $$(seq 1 20); do docker exec mongo8_n1 mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --host haproxy_mongo8 --port 27200 --quiet --eval "db.runCommand({ping:1})" >/dev/null 2>&1 && break; [ $$i -eq 20 ] && { echo "❌ Timeout waiting for haproxy_mongo8" >&2; exit 1; }; sleep 1; done
 	@echo "✅ MongoDB 8 ReplicaSet is ready."
 
 mongo8-down: ## Stop MongoDB 8 ReplicaSet and remove volumes
@@ -495,32 +495,36 @@ inject-employee: inject-employees
 
 # 🛑 Stops and removes all containers, networks, and orphans
 stop:
-	@echo "🔥 Stopping and cleaning up containers..."
-	@docker compose --profile "*" down -v --remove-orphans >/dev/null 2>&1 || docker compose down -v --remove-orphans >/dev/null 2>&1
-	@docker ps -q --filter "label=com.docker.compose.project=multi-db-docker-env" | xargs -r docker stop >/dev/null 2>&1 || true
-	@docker ps -aq --filter "label=com.docker.compose.project=multi-db-docker-env" | xargs -r docker rm -f >/dev/null 2>&1 || true
+	@if $(MDB_CHECK); then ./mdb stop; else \
+		echo "🔥 Stopping and cleaning up containers..."; \
+		docker compose --profile "*" down -v --remove-orphans >/dev/null 2>&1 || docker compose down -v --remove-orphans >/dev/null 2>&1; \
+		for cf in docker-compose-*.yml; do [ -f "$$cf" ] && docker compose -f "$$cf" down -v --remove-orphans >/dev/null 2>&1 || true; done; \
+		PROJ="$${COMPOSE_PROJECT_NAME:-$$(basename "$$PWD" | tr '[:upper:]' '[:lower:]')}"; \
+		IDS=$$(docker ps -q --filter "label=com.docker.compose.project=$$PROJ"); [ -n "$$IDS" ] && docker stop $$IDS >/dev/null 2>&1 || true; \
+		IDS_ALL=$$(docker ps -aq --filter "label=com.docker.compose.project=$$PROJ"); [ -n "$$IDS_ALL" ] && docker rm -f $$IDS_ALL >/dev/null 2>&1 || true; \
+	fi
 
 # 📊 Displays the status of active containers
 status:
-	@echo "📊 Docker Compose Status:"
-	@docker compose ps
+	@if $(MDB_CHECK); then ./mdb status; else \
+		echo "📊 Docker Compose Status:"; \
+		docker compose ps; \
+		for cf in docker-compose-*.yml; do \
+			if [ -f "$$cf" ] && [ -n "$$(docker compose -f "$$cf" ps -q 2>/dev/null)" ]; then echo "--- $$cf ---"; docker compose -f "$$cf" ps; fi; \
+		done; \
+	fi
 
 # ℹ️ Provides information about the active DB service and displays status/logs
 info:
-	@DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
-	if [ -n "$${DB_SERVICE}" ]; then \
-		printf "✅ Active database service: \033[1;32m%s\033[0m\n" "$${DB_SERVICE}"; \
-	else \
-		printf "❌ No database service is running.\n"; \
+	@if $(MDB_CHECK); then ./mdb info; else \
+		DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
+		if [ -n "$${DB_SERVICE}" ]; then \
+			printf "✅ Active database service: \033[1;32m%s\033[0m\n" "$${DB_SERVICE}"; \
+			docker compose ps; docker compose logs -n 10 $$DB_SERVICE; \
+		else \
+			$(MAKE) status; \
+		fi; \
 	fi
-	@echo
-	@echo "📊 Docker Compose Status:"
-	@docker compose ps
-	@echo
-	@echo "📄 To view logs: make logs"
-	@echo "📄 Displaying recent logs..."
-	@DB_SERVICE=$$(docker compose ps --services --filter "status=running" | grep -v traefik); \
-	docker compose logs -n 10 $$DB_SERVICE
 
 # 📄 Displays logs
 # Usage: make logs or make logs service=<service_name>
@@ -531,31 +535,30 @@ logs:
 	
 # 🔑 Generates the .my.cnf file
 mycnf:
-	@echo "🔑 Generating .my.cnf configuration file..."
-	@# Load variables from .env for this specific command
-	@if [ ! -f .env ]; then \
-		printf "\n\033[1;31m❌ Error: .env file is missing.\033[0m\n\n"; \
-		exit 1; \
+	@if $(MDB_CHECK); then ./mdb mycnf; else \
+		echo "🔑 Generating .my.cnf configuration file..."; \
+		if [ ! -f .env ]; then printf "⚠️  Warning: .env not found; using default DB_ROOT_PASSWORD.\n" >&2; fi; \
+		if [ -f "$${HOME}/.my.cnf" ]; then cp "$${HOME}/.my.cnf" "$${HOME}/.my.cnf.bak" && chmod 600 "$${HOME}/.my.cnf.bak"; fi; \
+		printf "[client]\nuser=root\npassword=%s\nhost=127.0.0.1\n" "$(DB_ROOT_PASSWORD)" > "$${HOME}/.my.cnf"; \
+		chmod 600 "$${HOME}/.my.cnf"; \
+		printf "✅ .my.cnf file generated and secured in your home directory (~/.my.cnf).\n"; \
 	fi
-	@# Check if the variable is defined
-	@printf "[client]\nuser=root\npassword=%s\nhost=127.0.0.1\n" "$(DB_ROOT_PASSWORD)" > $${HOME}/.my.cnf
-	@# Apply restrictive permissions for security
-	@chmod 600 $${HOME}/.my.cnf
-	@printf "✅ .my.cnf file generated and secured in your home directory (~/.my.cnf).\n"
 
-# 💻 Starts a MySQL client on the active DB
+# 💻 Starts an interactive database client on the active DB
 client:
-	@if [ ! -f .env ]; then \
-		printf "❌ .env file is missing. Cannot retrieve password.\n"; \
-		exit 1; \
-	fi
-	@DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
-	DB_CONTAINER=$$($(GET_CONTAINER_NAME)); \
-	if [ -n "$${DB_SERVICE}" ]; then \
-		printf "💻 Connecting MySQL client to \033[1;32m%s\033[0m...\n" "$${DB_SERVICE}"; \
-		docker exec -it -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" mysql -uroot; \
-	else \
-		printf "❌ No database service is running to start the client.\n"; \
+	@if $(MDB_CHECK); then ./mdb client; else \
+		if [ ! -f .env ]; then printf "⚠️  Warning: .env not found; using default DB_ROOT_PASSWORD.\n" >&2; fi; \
+		DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
+		DB_CONTAINER=$$($(GET_CONTAINER_NAME)); \
+		if [ -n "$${DB_SERVICE}" ] && [ -n "$${DB_CONTAINER}" ]; then \
+			printf "💻 Connecting client to \033[1;32m%s\033[0m...\n" "$${DB_SERVICE}"; \
+			case "$${DB_SERVICE}" in \
+				postgres*) docker exec -it -e PGPASSWORD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" psql -U postgres ;; \
+				*) docker exec -it -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c 'if command -v mariadb >/dev/null 2>&1; then exec mariadb -uroot; else exec mysql -uroot; fi' ;; \
+			esac; \
+		else \
+			printf "❌ No database service is running to start the client.\n" >&2; exit 1; \
+		fi; \
 	fi
 
 # --- Data Injection ---
@@ -583,10 +586,10 @@ inject-data:
 	printf "⏳ Waiting for %s to be ready...\n" "$${DB_CONTAINER}"; \
 	case "$(service)" in \
 		postgres*) \
-			timeout 120s bash -c "until docker exec $${DB_CONTAINER} pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done" || (printf \"\033[1;31m❌ Error: PostgreSQL reached timeout without becoming ready.\033[0m\n\" && exit 1); \
+			for i in $$(seq 1 60); do docker exec "$${DB_CONTAINER}" pg_isready -U postgres >/dev/null 2>&1 && break; [ $$i -eq 60 ] && { printf "\033[1;31m❌ Error: PostgreSQL reached timeout without becoming ready.\033[0m\n" && exit 1; }; sleep 2; done; \
 			;; \
 		*) \
-			timeout 120s bash -c "until docker exec -e MYSQL_PWD=\"$(DB_ROOT_PASSWORD)\" $${DB_CONTAINER} sh -c 'mysql -uroot -e \"SELECT 1\" 2>/dev/null | grep -q 1 || mariadb -uroot -e \"SELECT 1\" 2>/dev/null | grep -q 1'; do sleep 2; done" || (printf \"\033[1;31m❌ Error: Database reached timeout without becoming ready. Check credentials or logs.\033[0m\n\" && exit 1); \
+			for i in $$(seq 1 60); do docker exec -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c 'mysql -uroot -e "SELECT 1" 2>/dev/null | grep -q 1 || mariadb -uroot -e "SELECT 1" 2>/dev/null | grep -q 1' && break; [ $$i -eq 60 ] && { printf "\033[1;31m❌ Error: Database reached timeout without becoming ready. Check credentials or logs.\033[0m\n" && exit 1; }; sleep 2; done; \
 			;; \
 	esac; \
 	sleep 5; \
@@ -639,10 +642,10 @@ test-all:
 		DB_CONTAINER=$$(docker compose ps -a $$service --format "{{.Names}}" | head -n 1); \
 		case "$$service" in \
 			postgres*) \
-				timeout 120s bash -c "until docker exec $${DB_CONTAINER} pg_isready -U postgres >/dev/null 2>&1; do sleep 2; done" || exit 1; \
+				for i in $$(seq 1 60); do docker exec "$${DB_CONTAINER}" pg_isready -U postgres >/dev/null 2>&1 && break; [ $$i -eq 60 ] && exit 1; sleep 2; done; \
 				;; \
 			*) \
-				timeout 120s bash -c "until docker exec -e MYSQL_PWD=\"$(DB_ROOT_PASSWORD)\" $${DB_CONTAINER} sh -c 'mysql -uroot -e \"SELECT 1\" 2>/dev/null | grep -q 1 || mariadb -uroot -e \"SELECT 1\" 2>/dev/null | grep -q 1'; do sleep 2; done" || exit 1; \
+				for i in $$(seq 1 60); do docker exec -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c 'mysql -uroot -e "SELECT 1" 2>/dev/null | grep -q 1 || mariadb -uroot -e "SELECT 1" 2>/dev/null | grep -q 1' && break; [ $$i -eq 60 ] && exit 1; sleep 2; done; \
 				;; \
 		esac; \
 		sleep 5; \
