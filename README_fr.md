@@ -27,8 +27,8 @@ Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que tout
 
 | Niveau | Nom du Niveau | Dernière Vérification | État |
 | :--- | :--- | :--- | :--- |
-| **T2** | **Matrice Standalone** | 2026-01-29 | ✅ 100% Réussi |
-| **T3** | **Cluster & HA** | - | 🏗️ En cours |
+| **T2** | **Matrice Standalone** | 2026-11-19 | ✅ 100% Réussi |
+| **T3** | **Cluster, HA & Multi-Maître (`v2.2.0`)** | 2026-11-19 | ✅ 16 Topologies Vérifiées |
 
 ## 📋 Prérequis
 
@@ -63,16 +63,16 @@ Ces commandes vous aident à gérer et à interagir avec l'ensemble de l'environ
 | Command                         | Icon | Description                                                                 | Exemple d'utilisation           |
 | :------------------------------ | :--- | :-------------------------------------------------------------------------- | :------------------------------ |
 | `make help`                     | 📜   | Affiche la liste complète de toutes les commandes disponibles.              | `make help`                     |
-| `make start`                    | 🚀   | Démarre le service de base de données par défaut (MariaDB 11.8).            | `make start`                    |
+| `make start`                    | 🚀   | Démarre le service de base de données par défaut (`mariadb114`).            | `make start`                    |
 | `make stop`                     | 🛑   | Arrête et supprime correctement tous les conteneurs et réseaux du projet.   | `make stop`                     |
 | `make status`                   | 📊   | Affiche l'état des conteneurs actifs du projet (Traefik + DB).              | `make status`                   |
 | `make info`                     | ℹ️   | Fournit des informations sur le service DB actif et les logs récents.       | `make info`                     |
 | `make logs`                     | 📄   | Affiche les logs du service de base de données actuellement actif.          | `make logs`                     |
 | `make mycnf`                    | 🔑   | Génère un fichier `~/.my.cnf` pour des connexions MySQL sans mot de passe.  | `make mycnf`                    |
 | `make client`                   | 💻   | Démarre un client MySQL connecté à la base de données active.               | `make client`                   |
-| `make pgpass`                   | 🔑   | Génère un fichier `~/.pgpass` pour des connexions PostgreSQL sans mot de passe. | `make pgpass`                 |
-| `make pgclient`                 | 💻   | Démarre un client PostgreSQL connecté à la base de données active.           | `make pgclient`                 |
-| `make verify`                   | ✅   | Exécute une validation complète de l'environnement (test-config).           | `make verify`                   |
+| `make verify`                   | ✅   | Exécute une validation complète de l'environnement (`test-config`).         | `make verify`                   |
+| `make build-go`                 | 🔨   | Compile le binaire Go natif `mdb` dans `bin/mdb` (`v2.2.0`, 16 topologies). | `make build-go`                 |
+| `make test-go`                  | 🧪   | Exécute la suite complète de tests unitaires Go.                            | `make test-go`                  |
 | `python3 interactive_runner.py` | 🚀   | Lance le coureur de tests interactif pour une configuration guidée.         | `python3 interactive_runner.py` |
 
 ### Gestion des Données
@@ -198,13 +198,20 @@ Architecture MongoDB avec ReplicaSet et routage HAProxy.
 
 | Commande             | Icon | Description                                            |
 | :------------------- | :--- | :----------------------------------------------------- |
-| `make mongo-up`      | 🍃   | Démarre MongoDB ReplicaSet (3 nœuds + HAProxy)         |
-| `make mongo-status`  | 📊   | Affiche le statut du ReplicaSet                        |
-| `make test-mongo`    | 🧪   | Exécute les tests MongoDB ReplicaSet                   |
-| `make mongo-down`    | 🛑   | Arrête MongoDB ReplicaSet                              |
+| `make mongo-up`      | 🍃   | Démarre MongoDB 7.0 ReplicaSet (3 nœuds + HAProxy)     |
+| `make mongo-status`  | 📊   | Affiche le statut du ReplicaSet MongoDB 7.0            |
+| `make test-mongo`    | 🧪   | Exécute les tests MongoDB 7.0 ReplicaSet               |
+| `make mongo-down`    | 🛑   | Arrête MongoDB 7.0 ReplicaSet                          |
+| `make mongo8-up`     | 🍃   | Démarre MongoDB 8.0 ReplicaSet (3 nœuds + HAProxy)     |
+| `make test-mongo8`   | 🧪   | Exécute les tests MongoDB 8.0 ReplicaSet               |
+| `make mongo8-down`   | 🛑   | Arrête MongoDB 8.0 ReplicaSet                          |
 
 > [!NOTE]
-> MongoDB ReplicaSet utilise le port 27100 (RW) via HAProxy. Stats : 8408. Accès direct : 27411-27413.
+> MongoDB 7.0 utilise le port 27100 (HAProxy), stats 8408, accès direct 27411-27413 (`10.10.0.0/24`). MongoDB 8.0 utilise le port 27200 (HAProxy), stats 8409, accès direct 27511-27513 (`10.11.0.0/24`). Les deux imposent TLS (`requireTLS`).
+
+### PostgreSQL Réplication, Multi-Maître & SQL Distribué (`v2.1.0`–`v2.2.0`)
+
+Huit topologies PostgreSQL supplémentaires (`pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) exposent chacune `<topo>-up`, `<topo>-down`, `<topo>-status`, `<topo>-logs`, `<topo>-ps` et `<topo>-test`, ainsi que `make test-pg-extended` (T11–T18) et `make bench-pg-v2`. Voir [PostgreSQL Multi-Maître & SQL Distribué](documentation/pg_multimaster_fr.md).
 
 **Exemple : Changer de Base de Données**
 
@@ -212,9 +219,9 @@ Architecture MongoDB avec ReplicaSet et routage HAProxy.
 # 1. Vous travaillez avec MySQL 8.0
 make mysql80
 
-# 2. Vous voulez passer à Percona 8.4. Pas besoin d'arrêter manuellement.
-make percona84
-# Cela arrêtera mysql80 puis démarrera percona84.
+# 2. Vous voulez passer à Percona 8.0. Pas besoin d'arrêter manuellement.
+make percona80
+# Cela arrêtera mysql80 puis démarrera percona80.
 
 # 3. Vérifier l'environnement
 make verify
@@ -272,16 +279,21 @@ graph TD
 
 Pour des informations détaillées, veuillez vous référer aux guides suivants :
 
-* **[Index de la Documentation](documentation/INDEX.md)** : Point d'entrée principal.
+* **[Index de la Documentation](documentation/INDEX_fr.md)** : Point d'entrée principal.
 * **[Architecture](documentation/architecture.md)** : Schéma réseau et topologie.
-* **[Référence Makefile](documentation/makefile.md)** : Liste exhaustive des commandes.
-* **[Scripts Utilitaires](documentation/scripts.md)** : Détails sur les scripts de backup, restauration et setup.
+* **[Référence Makefile](documentation/makefile_fr.md)** : Liste des commandes `make` (version complète : [makefile.md](documentation/makefile.md)).
+* **[Scripts Utilitaires](documentation/scripts.md)** : Détails sur les scripts de backup, restauration, setup et CLI Go `mdb`.
 * **[Support PostgreSQL](documentation/postgresql_support_fr.md)** : Standalone, Patroni HA, et clusters PgPool-II.
+* **[PostgreSQL Multi-Maître & SQL Distribué](documentation/pg_multimaster_fr.md)** : `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte` et benchmarks V2.
 * **[Cluster Patroni](documentation/patroni_cluster.md)** : PostgreSQL 17 HA avec ETCD et failover automatique.
 * **[Cluster PgPool-II](documentation/pgpool_cluster.md)** : Pooling de connexions + load balancing.
-* **[Scénarios de Test](documentation/tests.md)** : Cas de test spécifiques et rapports.
+* **[InnoDB Cluster](documentation/innodb_cluster_fr.md)** : MySQL 8.0 Group Replication + HAProxy.
+* **[MongoDB ReplicaSet](documentation/mongo_replicaset_fr.md)** : MongoDB 7.0 & 8.0 ReplicaSet + HAProxy + TLS.
+* **[Scénarios de Test](documentation/tests_fr.md)** : Cas de test spécifiques et rapports.
+* **[Produits Supportés](documentation/supported_products_fr.md)** : Matrice complète des moteurs, versions et ports.
 * **[Bootstrap Galera](documentation/galera_bootstrap.md)** : Étapes détaillées pour Galera.
 * **[Setup Réplication](documentation/replication_setup.md)** : Guide de configuration Maître/Esclave.
+* **[Gouvernance & Registres](AGENTS.md)** : Règles du projet, [Action Logbook](docs/ACTION_LOGBOOK.md) et [RCA Register](docs/RCA_REGISTER.md).
 
 ## 💡 Flux de Travail Typique
 
