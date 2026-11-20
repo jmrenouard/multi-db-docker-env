@@ -46,7 +46,10 @@ for d in scripts conf tests documentation; do
 done
 
 echo -e "\n2. Checking Docker Compose files..."
-COMPOSE_FILES=(docker-compose.yml docker-compose-galera.yml docker-compose-innodb-cluster.yml docker-compose-mongo-rs.yml docker-compose-mongo8-rs.yml docker-compose-patroni.yml docker-compose-pgpool.yml docker-compose-repli.yml)
+mapfile -t COMPOSE_FILES < <(git ls-files 'docker-compose*.yml' 2>/dev/null)
+if [ ${#COMPOSE_FILES[@]} -eq 0 ]; then
+    COMPOSE_FILES=(docker-compose*.yml)
+fi
 for f in "${COMPOSE_FILES[@]}"; do
     if [ -f "$f" ]; then
         echo "⏳ Validating syntax for $f..."
