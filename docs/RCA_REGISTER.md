@@ -508,6 +508,27 @@
 - **Applied Change / Fix**: Removed `transaction-write-set-extraction=XXHASH64` from `conf/innodb-cluster/node{1,2,3}.cnf`, replaced `RESET MASTER;` with `RESET BINARY LOGS AND GTIDS;` in `conf/innodb-cluster/setup_cluster.sh`, and mounted `postgres_18_data` at `/var/lib/postgresql` in `docker-compose.yml` (PR `#277`).
 - **Result & Non-Regression Test**: `docker compose config`, `bash -n`, `test_no_eol_images_and_pg18_volume_mount` in `tests/test_repo_static.py` (PR `#283`), and CI `test-and-validate` pass green.
 
+### RCA-068 -- YT Cluster 1.21.3 Default Commit Mode Is Sync-2PC Majority (`cc=half`), Not Async
+- **Date / Linked Action**: `2026-11-20` (`ACT-076` / `#288`, `#292`, `#300`)
+- **Observed Symptom**: Initial `dbinvent/yt:1.21.3` benchmarks produced `20.63 TPS` (`A_single_rw`) and `10.69 TPS` (`B2_overlap_rw`) with `0` balance drift and `86 rows/s` on 10k bulk inserts (`T11`), matching synchronous 2PC latency rather than asynchronous replication.
+- **Root Cause Analysis**: Inspecting `yt_info('d')` revealed `def_cluster_commit={"at_least":0,"mode":1}` (`half` = 2-of-3 synchronous XA 2PC with `NO_SC`), combined with per-row `yt_synchronize()` trigger capture.
+- **Applied Change / Fix**: Documented `cc=half` as the default `yt-cluster` profile and added an explicit async comparison mode (`cc=nodes>=0`, `yt-cluster-async`) in `scripts/bench_yt_runner.sh` (`A_single_rw=41.45 TPS`, `B2_overlap=55.03 TPS`, `D_hot=163.01 TPS` with `0` drift, `F_wan25=4.78 TPS`).
+- **Result & Non-Regression Test**: Verified live in `scripts/yt_cluster/setup_yt_cluster.sh` and `scripts/bench_yt_runner.sh`.
+
+### RCA-069 -- YT Cluster 1.21.3 `SAVEPOINT` Rollback (`0A000`) & Quorum Halt (`57P03`) Behavior
+- **Date / Linked Action**: `2026-11-20` (`ACT-076` / `#290`, `#300`)
+- **Observed Symptom**: Rolling back a `SAVEPOINT` over replicated writes failed at `COMMIT` with `SQLSTATE 0A000`, and losing 2 of 3 nodes halted writes with `SQLSTATE 57P03` (`YT-E1852 Not enough working nodes`).
+- **Root Cause Analysis**: `yt_cluster 1.21` does not support partial subtransaction rollback over captured write triggers (`0A000`), and `min_cluster_size=2` enforces quorum writes on a 3-node cluster (`57P03`).
+- **Applied Change / Fix**: Codified both behaviors as explicit `EXPECTED_LIMITATION` assertions in `tests/test_yt_cluster.sh` (`L5`, `L8`) alongside `55409` lost-update/SERIAL conflict detection (`L1`, `L3`) and `40001` unique-constraint arbitration (`L4`).
+- **Result & Non-Regression Test**: Verified live in `tests/test_yt_cluster.sh` (`SQLSTATE`s `0A000;40001;55409;57P03`).
+
+### RCA-070 -- YT Cluster Stale `/var/run/postgresql/.s.YT.5432.pid` `YT-E1104` Crash-Loop Caveat After Unclean Stop
+- **Date / Linked Action**: `2026-11-20` (`ACT-076` / `#290`, `#300`)
+- **Observed Symptom**: Following an unclean `SIGKILL` crash (`T16`), if the restarted container reuses the PID recorded in `/var/run/postgresql/.s.YT.5432.pid`, `ytserv` can exit in a crash-loop with `YT-E1104`.
+- **Root Cause Analysis**: The `dbinvent/yt:1.21.3` entrypoint does not clear a stale `.s.YT.5432.pid` lock file when PID reuse occurs across rapid container restarts.
+- **Applied Change / Fix**: Documented the operational caveat in `documentation/pg_multimaster{,_fr}.md` and verified clean `RPO=0` recovery (`20/20`) and `T_REVERT` (`DROP EXTENSION yt_cluster CASCADE;`) in `tests/test_yt_cluster.sh`.
+- **Result & Non-Regression Test**: `T16` (`RPO=0`, `post_restart=20/20`) and `T_REVERT` (`5/5` intact -> `6/6` plain PG write) verified in `tests/test_yt_cluster.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
@@ -563,6 +584,10 @@
 ### IMP-013 -- Retaining End-of-Life Database and Proxy Images in Active Stacks
 - **Why It Is a Dead-End**: Keeping EOL images (`mysql:5.7` EOL 2023-10-31, `mysql:8.0` EOL 2026-04-30, `mysql:9.6` EOL 2026-04-21, `mariadb:10.6` EOL 2026-07-06, `percona/percona-server:8.0` EOL 2026-04-30, `traefik:v2.11` EOL 2026-09-07, `haproxy:2.9-alpine` EOL 2025-03-21) exposes lab users to unpatched CVEs and obsolete configuration patterns.
 - **Adopted Decision**: Removed all 7 EOL images from Compose stacks and `interactive_runner.py`, replaced legacy `Makefile` targets with explicit EOL notices + recommended replacements (`exit 1`), documented official EOL dates in EN/FR matrices (PR `#278`, `#281`), and enforced non-regression via `test_no_eol_images_and_pg18_volume_mount` (PR `#283`).
+
+### IMP-014 -- Treating YT Cluster Default Mode as High-Throughput Async or Relying on `SAVEPOINT` Rollbacks
+- **Why It Is a Dead-End**: Default `cc=half` sync-2PC caps write throughput near `20.6`–`67.8 TPS` (`86 rows/s` bulk), and `SAVEPOINT` rollbacks over writes fail at `COMMIT` (`SQLSTATE 0A000`).
+- **Adopted Decision**: Benchmark both default `cc=half` and async `cc=nodes>=0` explicitly in `scripts/bench_yt_runner.sh` and avoid write-containing `SAVEPOINT`s in YT Cluster workloads.
 
 ---
 
@@ -683,6 +708,11 @@
 - **Nature & Justification**: `mariadb:11.8` (EOL 2028-06-04) and `postgres:17` (EOL 2029-11-08) remain actively supported upstream, so upgrading Galera/Repli base image to `mariadb:12.3` or migrating PG 17 clusters to PG 18 (requiring PgPool-II 4.7) was deferred to avoid unverified live-cluster regressions.
 - **Removal Condition**: Upgrade once live E2E cluster tests for `mariadb:12.3` Galera/Repli and PG 18 Citus/pgEdge/PgPool-II 4.7 are verified.
 
+### APP-024 -- Single-Host YT Cluster 1.21.3 Sequential PoC (`dbinvent/yt:1.21.3`, `PG_SCALE=2`)
+- **Target Files**: `docker-compose-yt-cluster.yml`, `scripts/bench_yt_runner.sh`, `tests/test_yt_cluster.sh`
+- **Nature & Justification**: Evaluates the official prebuilt `dbinvent/yt:1.21.3` (PolyForm Noncommercial / Commercial `ytserv` + MIT `yt_cluster` core) on a single Docker host at `PG_SCALE=2` with `tc netem` WAN emulation and ephemeral lab credentials.
+- **Removal Condition**: Re-evaluate on multi-host VMs with production licensing and persistent secret management if deployed beyond PoC evaluation.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
@@ -726,5 +756,9 @@
 ### IDEA-010 -- PostgreSQL 19 Logical Sequence Sync (`FOR ALL SEQUENCES`) & Unit Tests for `bench_pg18_lib.py`
 - **Priority / Target**: `Medium` | `tests/test_pg_libs.py`, `docker-compose-pg19-*.yml`
 - **Description**: Add deterministic unit tests for `scripts/bench_pg18_lib.py` and add a PostgreSQL 19 stack once GA to validate native `FOR ALL SEQUENCES` / `REFRESH SEQUENCES` logical failover parity.
+
+### IDEA-011 -- Dedicated Go Verifier Branch for `yt-cluster` (`yt_info('o')`)
+- **Priority / Target**: `Low` | `pkg/dbclient/postgres.go`
+- **Description**: Extend `PostgresVerifier` to inspect `SELECT yt_info('o');` directly and report active YT Cluster leader and working node count (`3` expected).
 
 

@@ -26,6 +26,7 @@
 | **Phase 10** | Ponytail Quality Audit, Release CI, Test Expansion & Governance Consolidation | Automated release pipeline, 18 audit fixes, 46 Python + 9 Go test suites, unified registers | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...` |
 | **Phase 11** | PostgreSQL 18.6 Native Topologies, Benchmark Suite & `v2.3.0` Release | `pg18-streaming`, `pg18-logical`, `pg18-birep` (`uuidv7`), `bench-pg18`, Go CLI 19 topologies, `v2.3.0` tag | ✅ Complete | `make bench-pg18`, `go test ./...`, `./bin/mdb topologies` |
 | **Phase 12** | Database Version Upgrades & EOL Decommissioning | Upgrade to MySQL 8.4/9.7 LTS, MariaDB 12.3 LTS, Percona 8.4 LTS, PG 18 standalone, CockroachDB v25.4, Traefik v3, HAProxy LTS; decommission 7 EOL versions | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...`, CI `test-and-validate` |
+| **Phase 13** | YT Cluster 1.21.3 (PG 18) Active-Active Topology & `v2.4.0` Release | 3-node `yt-cluster` Compose stack, setup, `L1-L8`/`T11-T18`/`T_REVERT` tests, `bench-yt-cluster`, Go CLI 20 topologies, `v2.4.0` tag | ✅ Complete | `make yt-cluster-test`, `make bench-yt-cluster`, `go test ./...`, `./bin/mdb topologies` |
 
 ---
 
@@ -78,6 +79,14 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-076 -- YT Cluster 1.21.3 (PG 18.7) Active-Active Topology, Benchmark Suite & `v2.4.0` Release (Issues `#288`, `#290`, `#292`, `#294`, `#296`, `#298`, `#300`)
+- **Date**: `2026-11-20T20:05+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#288`/`#289`, `#290`/`#291`, `#292`/`#293`, `#294`/`#295`, `#296`/`#297`, `#298`/`#299`, `#300`
+- **Request**: Land the live-verified 3-node YT Cluster 1.21.3 (`dbinvent/yt:1.21.3`, PG 18.7 + `yt_cluster 1.21` / `ytserv`) active-active Docker Compose stack, setup script, functional/limits/reversibility test suite, sequential benchmark runner, Makefile & Go `mdb` CLI integration (20 topologies), EN/FR documentation, governance registers, and annotated release tag `v2.4.0` via atomic `< 15K` PRs.
+- **Changes**: Added `docker-compose-yt-cluster.yml`, `scripts/yt_cluster/setup_yt_cluster.sh`, `tests/test_yt_cluster.sh`, and `scripts/bench_yt_runner.sh`; wired `Makefile` (`yt-cluster-*`, `bench-yt-cluster`, `clean-pg18`), `pkg/topology/` (20 topologies), `pkg/dbclient/`, and `cmd/mdb/`; bumped `VERSION` to `2.4.0` and prepended `2.4.0` to `Changelog` (597 lines <= 600); synchronized `documentation/pg_multimaster{,_fr}.md`, `README{,_fr}.md`, `docs/ACTION_LOGBOOK.md` (`Phase 13`, `ACT-076`), and `docs/RCA_REGISTER.md` (`RCA-068`–`RCA-070`, `IMP-014`, `APP-024`, `IDEA-011`).
+- **Result**: All 7 atomic PRs strictly `< 14,800` B; `docker compose -f docker-compose-yt-cluster.yml config -q`, `bash ./tests/test_config.sh`, `PGCONNECT_TIMEOUT=2 python3 -m unittest discover -s tests -v` (48 tests, 0 failures), `go test -count=1 ./...` (9/9), and `python3 scripts/release_notes.py --tag v2.4.0 --check` pass; `./bin/mdb version` prints `mdb version 2.4.0` and `./bin/mdb topologies` lists all 20 topologies; annotated tag `v2.4.0` pushed to `origin`.
+
+---
 
 ### ACT-075 -- Database & Proxy Version Upgrades and Official EOL Decommissioning (Issues `#274`, `#275`, `#276`, `#279`, `#280`, `#284`, `#286`)
 - **Date**: `2026-11-20T18:45+01:00`
