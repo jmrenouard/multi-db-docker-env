@@ -22,7 +22,8 @@
 | **Phase 6** | Governance & Engineering Standards | CIS Benchmarks rules, `< 15K` diff limit, registers | ✅ Complete | `python -m unittest discover -s tests -v` |
 | **Phase 7** | Golang v2.0.0 Migration & Orchestrator | Statically compiled CLI, native PKI, verifiers, reports | ✅ Complete | `make test-go` |
 | **Phase 8** | PostgreSQL Multi-Master & Distributed SQL (`v2.1.0`) | `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`, benchmarks | ✅ Complete | `make bench-pg-multimaster` |
-| **Phase 9** | PostgreSQL Streaming, Logical, Extended Matrix & V2 Benchmarks (`v2.2.0`) | `pg-streaming`, `pg-logical`, `T11`-`T18` matrix, V2 suites (`E2`-`E4`, `H`, `G`, WAN `10/25/50ms`) | Complete | `make test-pg-extended`, `make bench-pg-v2` |
+| **Phase 9** | PostgreSQL Streaming, Logical, Extended Matrix & V2 Benchmarks (`v2.2.0`) | `pg-streaming`, `pg-logical`, `T11`-`T18` matrix, V2 suites (`E2`-`E4`, `H`, `G`, WAN `10/25/50ms`) | ✅ Complete | `make test-pg-extended`, `make bench-pg-v2` |
+| **Phase 10** | Ponytail Quality Audit, Release CI, Test Expansion & Governance Consolidation | Automated release pipeline, 18 audit fixes, 46 Python + 9 Go test suites, unified registers | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...` |
 
 ---
 
@@ -75,6 +76,46 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-072 -- Release Pipeline Docs, `Changelog` & Governance Register Consolidation (Issues `#244`, `#245`)
+- **Date**: `2026-11-20T15:10+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#244`/`#246`, `#245` (`docs/issue-245-governance-consolidation`)
+- **Request**: Document `.github/workflows/release.yml`, `scripts/release_notes.py`, and `PREREQUISITES.txt`; update `Changelog`; consolidate `docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`, `ROADMAP.md`, and `POTENTIAL_ISSUES.md` with zero drifting tracking lists.
+- **Changes**: Updated `README.md`, `README_fr.md`, `documentation/scripts.md`, `Changelog`, `docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`, `ROADMAP.md`, and `POTENTIAL_ISSUES.md` across two atomic `< 15K` PRs.
+- **Result**: `python -m unittest discover -s tests -v` (46 ran, 40 passed, 6 live-DB skipped, 0 failed) and `go test ./...` (9/9) pass; zero broken links or duplicate trackers.
+
+---
+
+### ACT-071 -- Ponytail Audit Remediation: Go, Python, Makefile, Shell & Docker Hardening (Issues `#225`, `#227`, `#237`, `#242`)
+- **Date**: `2026-11-20T15:08+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#225`/`#234` (`c519722`), `#227`/`#240` (`4813548`), `#237`/`#241` (`539fe42`), `#242`/`#243` (`52f56cb`)
+- **Request**: Remediate all 18 ranked findings + 6 smaller items from the repository-wide Ponytail quality and security audit.
+- **Changes**: Fixed expired cert verification (`pkg/pki/cert.go`), 9 missing `NewVerifier` topologies (`pkg/dbclient`), `Seconds_Behind_Source` fallback, sysbench password/error handling (`pkg/bench`), `bench_pg_lib.py` `chk=False` args, `interactive_runner.py` PG target & `html.escape`, `mysql_docker.py` `chmod 600`/CLI/rm fixes, logical backup/restore `pipefail` + positional args, `Makefile` syntax/TLS/exit-code/logs fixes, runtime `ssh-keygen`, removal of `privileged: true` & dead/duplicate files (`setup_rs_mongo8.sh`, `conf/mongo-rs/keyfile`, `.code-workspace.bak`), `requirements.txt` -> `PREREQUISITES.txt`, and `mysql57` Traefik profile.
+- **Result**: All 4 atomic PRs (`< 15K` each, `-107` net lines on PR `#243`) verified by `@verifier` and merged onto `main`; `go test ./...` (9/9) and 46 Python tests pass.
+
+---
+
+### ACT-070 -- Expanded Deterministic Test Coverage & Test-Directory Audit Fixes (Issues `#223`, `#228`, `#229`)
+- **Date**: `2026-11-20T15:03+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#223`/`#226` (`b76748a`), `#228`/`#233` (`cd4dfba`), `#229`/`#238` (`3516eed`)
+- **Request**: Validate local tests and broaden deterministic Python, Go, and static repository test coverage plus audit fixes in `tests/`.
+- **Changes**: Expanded `tests/test_python_runners.py`, added `tests/test_pg_libs.py` and `tests/test_repo_static.py` (with stdlib fallback when PyYAML is absent), expanded `cmd/mdb/main_test.go` (`cmd/mdb` coverage `13.8%` -> `44.2%`), and fixed `tests/test_failover.sh`, `tests/test_lab.py`, and `tests/test_config.sh`.
+- **Result**: Python unit tests doubled from 21 (15 ok) to 46 (40 ok, 6 live-DB skipped, 0 failed); `go test -cover ./...` 9/9 pass; `bash -n` 60/60 pass.
+
+---
+
+### ACT-069 -- Documentation Stack Audit & Bilingual `v2.2.0` Synchronization (Issues `#224`, `#231`, `#232`)
+- **Date**: `2026-11-20T15:02+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#224`/`#230` (`fb688f3`), `#231`/`#235` (`b445a42`), `#232`/`#236` (`469fd24`)
+- **Request**: Audit and synchronize `README.md`, `README_fr.md`, `documentation/INDEX{,_fr}.md`, and technical guides with the `v2.2.0` codebase.
+- **Changes**: Fixed stale CLI versions (`2.0.25`/`2.0.2` -> `2.2.0`), topology count (`8` -> `16`), removed phantom targets (`percona84`, `pgpass`, `pgclient`, Percona 8.4), fixed MongoDB TLS flags and `make start` default (`mariadb114`), updated legacy index titles, and added v2.1–v2.2 PostgreSQL & MongoDB 8 docs.
+- **Result**: All 3 atomic PRs (`13,332 B`, `11,296 B`, `4,776 B`) passed CI `test-and-validate`, `@verifier` review, and link audit (0 broken links).
+
+---
+
+### ACT-068 -- Automated GitHub Actions Release Pipeline (Issue `#222`)
+- **Date**: `2026-11-20T14:59+01:00` | **Status**: `COMPLETED` | **Issue / PR**: `#222` / `#239` (`48e41a4`)
+- **Request**: Implement an automated tag-triggered and `workflow_dispatch` GitHub Actions release workflow with version validation, test gate, 6-target `mdb` cross-compilation, checksums, and Changelog extraction.
+- **Changes**: Updated `.github/workflows/release.yml`, added stdlib-only `scripts/release_notes.py` and `tests/test_release_workflow.py` (diff `14,960 B` < `15,000`).
+- **Result**: Verified by `@verifier`, CI `test-and-validate` green, merged onto `main`.
+
+---
 
 ### ACT-067 -- Governance Registers & V2 Empirical RCA Consolidation (Issue `#220`)
 - **Date**: `2026-11-19T16:58+01:00` | **Status**: `COMPLETED` | **Issue / Branch**: `#220` (`docs/issue-220-registers-v220`)
