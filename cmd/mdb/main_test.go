@@ -1,10 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
+	"io"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/jmrenouard/multi-db-docker-env/pkg/config"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
 )
 
@@ -25,6 +33,18 @@ func TestDefaultAndResolveContainer(t *testing.T) {
 	c := docker.NewClientWithRunner(&docker.MockCommandRunner{Output: []byte("mdb-galera_01-1\n")})
 	if got := resolveContainer(context.Background(), c, "galera"); got != "mdb-galera_01-1" {
 		t.Fatalf("resolve: %s", got)
+	}
+	// Fallbacks: nil client, empty PS output, runner error
+	if got := resolveContainer(context.Background(), nil, "patroni"); got != "node1" {
+		t.Fatalf("nil client fallback: %s", got)
+	}
+	emptyC := docker.NewClientWithRunner(&docker.MockCommandRunner{Output: []byte("")})
+	if got := resolveContainer(context.Background(), emptyC, "mongo"); got != "mongo1" {
+		t.Fatalf("empty output fallback: %s", got)
+	}
+	errC := docker.NewClientWithRunner(&docker.MockCommandRunner{Err: errors.New("daemon down")})
+	if got := resolveContainer(context.Background(), errC, "citus"); got != "citus_coord" {
+		t.Fatalf("error fallback: %s", got)
 	}
 }
 
@@ -69,5 +89,128 @@ func TestResolveVersion(t *testing.T) {
 	version = "2.0.99-injected"
 	if got := resolveVersion(); got != "2.0.99-injected" {
 		t.Errorf("expected injected version 2.0.99-injected, got %s", got)
+	}
+}
+
+func TestLoadPassword(t *testing.T) {
+	t.Setenv("DB_ROOT_PASSWORD", "")
+	wd, _ := os.Getwd()
+	tmp := t.TempDir()
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Chdir(wd) }()
+
+	if got := loadPassword(); got != config.DefaultConfig().RootPassword {
+		t.Fatalf("expected default password, got %q", got)
+	}
+	if err := os.WriteFile(filepath.Join(tmp, ".env"), []byte("DB_ROOT_PASSWORD=custom_secret\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if got := loadPassword(); got != "custom_secret" {
+		t.Fatalf("expected custom_secret, got %q", got)
+	}
+}
+
+func captureMain(t *testing.T, args ...string) string {
+	t.Helper()
+	origArgs, origOut := os.Args, os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Args = append([]string{"mdb"}, args...)
+	os.Stdout = w
+	defer func() {
+		os.Args = origArgs
+		os.Stdout = origOut
+	}()
+	main()
+	_ = w.Close()
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+	_ = r.Close()
+	return buf.String()
+}
+
+func TestMain_InProcessSubcommands(t *testing.T) {
+	for _, flag := range []string{"version", "--version", "-v"} {
+		out := captureMain(t, flag)
+		if !strings.Contains(out, "mdb version ") {
+			t.Errorf("%s: unexpected output %q", flag, out)
+		}
+	}
+
+	topoOut := captureMain(t, "topologies")
+	for _, want := range []string{"galera", "patroni", "pg-streaming", "yugabyte"} {
+		if !strings.Contains(topoOut, want) {
+			t.Errorf("topologies output missing %q", want)
+		}
+	}
+
+	tmp := t.TempDir()
+	envFile := filepath.Join(tmp, "test.env")
+	if err := os.WriteFile(envFile, []byte("DB_ROOT_PASSWORD=testpass\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfgOut := captureMain(t, "config", "--env", envFile)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(cfgOut), &parsed); err != nil {
+		t.Fatalf("config output invalid JSON: %v\n%s", err, cfgOut)
+	}
+
+	sslDir := filepath.Join(tmp, "ssl")
+	genOut := captureMain(t, "pki", "generate", "galera", "--dir", sslDir)
+	if !strings.Contains(genOut, "generated in") {
+		t.Fatalf("unexpected pki generate output: %q", genOut)
+	}
+	verOut := captureMain(t, "pki", "verify", "galera", "--dir", sslDir)
+	if !strings.Contains(verOut, "are valid") {
+		t.Fatalf("unexpected pki verify output: %q", verOut)
+	}
+}
+
+func TestHelperProcess(t *testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
+		return
+	}
+	for i, a := range os.Args {
+		if a == "--" {
+			os.Args = append([]string{"mdb"}, os.Args[i+1:]...)
+			break
+		}
+	}
+	main()
+	os.Exit(0)
+}
+
+func TestMain_ExitErrors(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"no_args", nil, "Usage: mdb"},
+		{"unknown_cmd", []string{"bogus"}, "Unknown command: bogus"},
+		{"pki_no_action", []string{"pki"}, "Usage: mdb pki"},
+		{"pki_bad_action", []string{"pki", "bogus"}, "Unknown PKI action"},
+		{"up_no_topo", []string{"up"}, "Usage: mdb up"},
+		{"down_unknown_topo", []string{"down", "doesnotexist"}, "Error:"},
+		{"test_no_topo", []string{"test"}, "Usage: mdb test"},
+		{"bench_unknown_topo", []string{"bench", "doesnotexist"}, "Error:"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cmdArgs := append([]string{"-test.run=TestHelperProcess", "--"}, tc.args...)
+			cmd := exec.Command(os.Args[0], cmdArgs...)
+			cmd.Env = append(os.Environ(), "GO_WANT_HELPER_PROCESS=1")
+			out, err := cmd.CombinedOutput()
+			if err == nil {
+				t.Fatalf("expected non-zero exit for %v, got 0 (out=%q)", tc.args, string(out))
+			}
+			if !strings.Contains(string(out), tc.want) {
+				t.Errorf("expected output containing %q, got %q", tc.want, string(out))
+			}
+		})
 	}
 }

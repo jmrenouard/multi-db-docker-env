@@ -9,7 +9,7 @@ class TestDatabaseLab(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db_root_password = os.getenv("DB_ROOT_PASSWORD", "votre_mot_de_passe_super_secret")
+        cls.db_root_password = os.getenv("DB_ROOT_PASSWORD", "rootpass")
 
     def run_mysql_query(self, query):
         """Executes a SQL query against a running container via Traefik (localhost:3306)."""
@@ -51,18 +51,21 @@ class TestDatabaseLab(unittest.TestCase):
     def test_version(self):
         """Check if the active database version is correctly reported."""
         # Try MySQL first
-        res = self.run_mysql_query("SELECT VERSION()")
-        if res.returncode == 0:
-            print(f"\n✅ MySQL Version detected: {res.stdout.strip()}")
+        res_mysql = self.run_mysql_query("SELECT VERSION()")
+        if res_mysql.returncode == 0:
+            print(f"\n✅ MySQL Version detected: {res_mysql.stdout.strip()}")
             return
 
         # Try PostgreSQL
-        res = self.run_pg_query("SELECT version();")
-        if res.returncode == 0:
-            print(f"\n✅ PostgreSQL Version detected: {res.stdout.strip()}")
+        res_pg = self.run_pg_query("SELECT version();")
+        if res_pg.returncode == 0:
+            print(f"\n✅ PostgreSQL Version detected: {res_pg.stdout.strip()}")
             return
         
-        self.skipTest(f"No running database detected on 3306 or 5432 (MySQL error: {res.stderr.strip()}).")
+        self.skipTest(
+            f"No running database detected on 3306 or 5432 "
+            f"(MySQL error: {res_mysql.stderr.strip()}; Postgres error: {res_pg.stderr.strip()})."
+        )
 
     def test_employees_schema(self):
         """Check if primary test database ('employees', or 'sakila' for mysql96) is present and has data (MySQL only)."""

@@ -65,7 +65,9 @@ test_failover_patroni() {
         docker stop "$LEADER" >/dev/null 2>&1
         sleep 10
 
-        NEW_LEADER=$(docker exec node2 patronictl -c /etc/patroni.yml list 2>/dev/null | grep "Leader" | awk '{print $2}' || echo "")
+        PEER="node2"
+        [ "$LEADER" = "node2" ] && PEER="node3"
+        NEW_LEADER=$(docker exec "$PEER" patronictl -c /etc/patroni.yml list 2>/dev/null | grep "Leader" | awk '{print $2}' || echo "")
         if [ -n "$NEW_LEADER" ] && [ "$NEW_LEADER" != "$LEADER" ]; then
             assert_pass "Patroni Failover" "New Leader elected: $NEW_LEADER"
         else
