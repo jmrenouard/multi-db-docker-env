@@ -28,7 +28,7 @@ Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que tout
 | Niveau | Nom du Niveau | Dernière Vérification | État |
 | :--- | :--- | :--- | :--- |
 | **T2** | **Matrice Standalone** | 2026-11-19 | ✅ 100% Réussi |
-| **T3** | **Cluster, HA & Multi-Maître (`v2.2.0`)** | 2026-11-19 | ✅ 16 Topologies Vérifiées |
+| **T3** | **Cluster, HA & Multi-Maître (`v2.3.0`)** | 2026-11-20 | ✅ 19 Topologies Vérifiées |
 
 ## 📋 Prérequis
 
@@ -72,7 +72,7 @@ Ces commandes vous aident à gérer et à interagir avec l'ensemble de l'environ
 | `make mycnf`                    | 🔑   | Génère un fichier `~/.my.cnf` pour des connexions MySQL sans mot de passe.  | `make mycnf`                    |
 | `make client`                   | 💻   | Démarre un client MySQL connecté à la base de données active.               | `make client`                   |
 | `make verify`                   | ✅   | Exécute une validation complète de l'environnement (`test-config`).         | `make verify`                   |
-| `make build-go`                 | 🔨   | Compile le binaire Go natif `mdb` dans `bin/mdb` (`v2.2.0`, 16 topologies). | `make build-go`                 |
+| `make build-go`                 | 🔨   | Compile le binaire Go natif `mdb` dans `bin/mdb` (`v2.3.0`, 19 topologies). | `make build-go`                 |
 | `make test-go`                  | 🧪   | Exécute la suite complète de tests unitaires Go.                            | `make test-go`                  |
 | `python3 interactive_runner.py` | 🚀   | Lance le coureur de tests interactif pour une configuration guidée.         | `python3 interactive_runner.py` |
 

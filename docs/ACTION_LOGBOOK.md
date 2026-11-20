@@ -24,6 +24,7 @@
 | **Phase 8** | PostgreSQL Multi-Master & Distributed SQL (`v2.1.0`) | `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`, benchmarks | ✅ Complete | `make bench-pg-multimaster` |
 | **Phase 9** | PostgreSQL Streaming, Logical, Extended Matrix & V2 Benchmarks (`v2.2.0`) | `pg-streaming`, `pg-logical`, `T11`-`T18` matrix, V2 suites (`E2`-`E4`, `H`, `G`, WAN `10/25/50ms`) | ✅ Complete | `make test-pg-extended`, `make bench-pg-v2` |
 | **Phase 10** | Ponytail Quality Audit, Release CI, Test Expansion & Governance Consolidation | Automated release pipeline, 18 audit fixes, 46 Python + 9 Go test suites, unified registers | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...` |
+| **Phase 11** | PostgreSQL 18.6 Native Topologies, Benchmark Suite & `v2.3.0` Release | `pg18-streaming`, `pg18-logical`, `pg18-birep` (`uuidv7`), `bench-pg18`, Go CLI 19 topologies, `v2.3.0` tag | ✅ Complete | `make bench-pg18`, `go test ./...`, `./bin/mdb topologies` |
 
 ---
 
@@ -76,6 +77,14 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-074 -- PostgreSQL 18.6 Native Clustering Topologies, Benchmark Suite & `v2.3.0` Release (Issues `#252`, `#254`, `#256`, `#258`, `#260`, `#262`, `#264`, `#266`, `#268`, `#270`, `#272`)
+- **Date**: `2026-11-20T15:55+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#252`/`#253`, `#254`/`#255`, `#256`/`#257`, `#258`/`#259`, `#260`/`#261`, `#262`/`#263`, `#264`/`#265`, `#266`/`#267`, `#268`/`#269`, `#270`/`#271`, `#272`
+- **Request**: Land all live-verified PostgreSQL 18.6 native clustering stacks (`pg18-streaming`, `pg18-logical`, `pg18-birep`), functional/limits test suites, sequential benchmark suite (`bench-pg18`), Makefile & Go `mdb` CLI wiring (19 topologies), bilingual documentation, governance updates, and release tag `v2.3.0` via atomic `< 15K` PRs.
+- **Changes**: Added `docker-compose-pg18-{streaming,logical,birep}.yml`, `scripts/pg18_*/`, `tests/test_pg18_*.sh`, `scripts/bench_pg18_{runner.sh,lib.py}`; wired `Makefile` (`pg18-*`, `bench-pg18`, `clean-pg18`), `pkg/topology/` (19 topologies), `pkg/dbclient/`, `cmd/mdb/`; bumped `VERSION` to `2.3.0` with FIFO-rotated `Changelog`; documented PG 18.6 stacks and findings in `documentation/pg_multimaster{,_fr}.md`, `README{,_fr}.md`, `docs/ACTION_LOGBOOK.md`, and `docs/RCA_REGISTER.md` (`RCA-064`–`RCA-066`, `IMP-012`, `APP-022`, `IDEA-010`).
+- **Result**: All 11 atomic PRs strictly `< 14,800` B; `docker compose config --quiet` passes on all 3 PG 18 stacks; `python3 -m unittest discover -s tests -v` (46 ran, 40 passed, 6 live-DB skipped, 0 failed) and `go test -count=1 ./...` (9/9) pass; `./bin/mdb version` prints `mdb version 2.3.0` and `./bin/mdb topologies` lists all 19 topologies; annotated tag `v2.3.0` pushed to `origin`.
+
+---
 
 ### ACT-073 -- Pin MySQLTuner `v2.9.4` in CI & Print Failure Tail in `run_mysqltuner.sh` (Issue `#250`)
 - **Date**: `2026-11-20T15:18+01:00` | **Status**: `COMPLETED` | **Issue / Branch**: `#250` (`fix/issue-250-ci-mysqltuner`)

@@ -480,6 +480,27 @@
 - **Applied Change / Fix**: Upgraded the pinned MySQLTuner version in `.github/workflows/ci.yml` from `v2.6.0` to `v2.9.4` (which explicitly skips chunk-size division when `innodb_buffer_pool_chunk_size == 0`) and printed the last 30 lines of `$OUTPUT_FILE` to stderr on failure in `scripts/run_mysqltuner.sh`.
 - **Result & Non-Regression Test**: `bash -n scripts/run_mysqltuner.sh`, `python -m unittest discover -s tests -v`, and GitHub Actions `test-and-validate` E2E `make mysqltuner-galera` pass green.
 
+### RCA-064 -- PostgreSQL 18 Official Docker Image `PGDATA` Path & Volume Layout Change (`/var/lib/postgresql/18/docker`)
+- **Date / Linked Action**: `2026-11-20` (`ACT-074` / `#252`, `#272`)
+- **Observed Symptom**: Mounting a named volume at `/var/lib/postgresql/data` or running `pg_basebackup -D /var/lib/postgresql/data` failed on `postgres:18` (`PostgreSQL 18.6 (Debian 18.6-1.pgdg13+2)`).
+- **Root Cause Analysis**: Starting with the official `postgres:18` image, `VOLUME` moved to `/var/lib/postgresql` and default `PGDATA` moved to `/var/lib/postgresql/18/docker` to support `pg_upgrade` across major versions.
+- **Applied Change / Fix**: Mounted all PG 18 Docker Compose volumes at `/var/lib/postgresql` (`docker-compose-pg18-{streaming,logical,birep}.yml`) and parameterized standby bootstrap via `PGD="${PGDATA:-/var/lib/postgresql/18/docker}"`.
+- **Result & Non-Regression Test**: `docker compose -f <file> config --quiet` and live `tests/test_pg18_{streaming,logical,birep}.sh` pass cleanly.
+
+### RCA-065 -- PostgreSQL 18 `io_method=io_uring` Blocked by Default Docker Seccomp (`Operation not permitted`)
+- **Date / Linked Action**: `2026-11-20` (`ACT-074` / `#254`, `#272`)
+- **Observed Symptom**: Starting `postgres:18` with `-c io_method=io_uring` under default Docker security profiles failed immediately with `Operation not permitted` (`EPERM`).
+- **Root Cause Analysis**: Docker's default seccomp profile blocks `io_uring_setup` / `io_uring_enter` syscalls for container isolation, whereas PG 18 defaults to portable `io_method=worker` (`io_workers=3`).
+- **Applied Change / Fix**: Kept PG 18 default `io_method=worker` across all PG 18 stacks without relaxing container seccomp (`security_opt: seccomp=unconfined`) and benchmarked `worker` vs `sync` A/B (`-18.5%` cold post-checkpoint seq-scan latency: `829.4 ms` vs `1018.3 ms`).
+- **Result & Non-Regression Test**: Verified live in `tests/test_pg18_streaming.sh` (`io_method=worker`, `data_checksums=on`).
+
+### RCA-066 -- PostgreSQL 18.6 Logical Sequence Sync Deferred to PG 19 (`SQLSTATE 42601`)
+- **Date / Linked Action**: `2026-11-20` (`ACT-074` / `#256`, `#258`, `#272`)
+- **Observed Symptom**: Executing `CREATE PUBLICATION ... FOR ALL SEQUENCES` and `ALTER SUBSCRIPTION ... REFRESH SEQUENCES` on PostgreSQL 18.6 raised `SQLSTATE 42601` (`syntax error`), and `T18` failover left logical subscriber sequences at `1|false` -> `SQLSTATE 23505`.
+- **Root Cause Analysis**: Native logical sequence replication was reverted/deferred past PostgreSQL 18 to PostgreSQL 19, while physical streaming replication continues to sync sequence state via WAL (`66|true` -> `next_id=67`).
+- **Applied Change / Fix**: Verified and logged `SQLSTATE 42601` explicitly in `tests/test_pg18_logical.sh`, adopted native PG 18 `uuidv7()` primary keys (`id UUID PRIMARY KEY DEFAULT uuidv7()`) for collision-free `pg18-birep` active-active inserts (`50/50` converged, `2,066.70 TPS` on `H_append_only_insert`), and kept stepped sequences (`INCREMENT BY 2`) for integer tables.
+- **Result & Non-Regression Test**: Verified live in `tests/test_pg18_logical.sh` and `tests/test_pg18_birep.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
@@ -527,6 +548,10 @@
 ### IMP-011 -- Image-Baked SSH Host Keys, `privileged: true` Lab Containers & Per-Version Mongo Setup Copies
 - **Why It Is a Dead-End**: Baking `ssh-keygen -A` into `Dockerfile` distributes identical private host keys to every image consumer; `privileged: true` over-grants host capabilities to MariaDB containers; duplicating `setup_rs.sh` into `setup_rs_mongo8.sh` caused drift.
 - **Adopted Decision**: Generate SSH host keys lazily at container startup (`scripts/start_mariadb.sh`), drop `privileged: true`, and parameterize `conf/mongo-rs/setup_rs.sh` via `MONGO_NODES` (PR `#243`).
+
+### IMP-012 -- Enabling `io_method=io_uring` via Unconfined Docker Seccomp or Relying on PG 18 `FOR ALL SEQUENCES`
+- **Why It Is a Dead-End**: Disabling Docker seccomp to expose `io_uring` weakens container isolation (`RCA-065`), and `FOR ALL SEQUENCES` raises `SQLSTATE 42601` in PG 18.6 (`RCA-066`).
+- **Adopted Decision**: Use PG 18's default `io_method=worker` under standard seccomp and use native `uuidv7()` or stepped sequences for active-active logical schemas until PG 19 ships logical sequence sync.
 
 ---
 
@@ -637,6 +662,11 @@
 - **Nature & Justification**: When `PyYAML` is absent on bare CI runners, `test_repo_static.py` falls back to stdlib regex checks (`services:` + `image:`/`build:`) to keep zero-dependency CI fast; manual `workflow_dispatch` defaults to dry-run (`publish=false`) to prevent accidental releases.
 - **Removal Condition**: Install `PyYAML` in CI if deep schema linting is added; keep dry-run default permanently.
 
+### APP-022 -- Single-Host PG 18.6 Sequential Benchmark Execution (`PG_SCALE=2`, `io_method=worker`)
+- **Target Files**: `scripts/bench_pg18_runner.sh`, `scripts/bench_pg18_lib.py`
+- **Nature & Justification**: PG 18.6 benchmarks (87 rows across 5 topologies) execute sequentially on one Docker host with `PG_SCALE=2`, default `io_method=worker`, `data_checksums=on`, and `tc netem` WAN emulation for controlled PG 17 vs PG 18 comparison.
+- **Removal Condition**: Re-run on dedicated multi-node bare-metal/VM hosts with NVMe and Linux kernel `io_uring` enabled.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
@@ -676,5 +706,9 @@
 ### IDEA-009 -- Scheduled Live Multi-Node Docker E2E Matrix on Self-Hosted CI Runners
 - **Priority / Target**: `Medium` | `.github/workflows/ci.yml`
 - **Description**: Run live cluster E2E suites (`test_lab.py`, `test_failover.sh`, `make test-all-topologies`) on a scheduled self-hosted runner with Docker daemon capacity so live container paths are verified continuously alongside deterministic unit/static tests.
+
+### IDEA-010 -- PostgreSQL 19 Logical Sequence Sync (`FOR ALL SEQUENCES`) & Unit Tests for `bench_pg18_lib.py`
+- **Priority / Target**: `Medium` | `tests/test_pg_libs.py`, `docker-compose-pg19-*.yml`
+- **Description**: Add deterministic unit tests for `scripts/bench_pg18_lib.py` and add a PostgreSQL 19 stack once GA to validate native `FOR ALL SEQUENCES` / `REFRESH SEQUENCES` logical failover parity.
 
 
