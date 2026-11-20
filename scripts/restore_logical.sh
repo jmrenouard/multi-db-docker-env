@@ -63,9 +63,7 @@ echo "Source File: $BACKUP_DIR/$FILENAME"
 
 # Execute restoration inside container
 # We use unpigz to decompress on the fly
-docker exec -e MYSQL_PWD="$DB_PASS" "$CONTAINER" bash -c "unpigz < $BACKUP_DIR/$FILENAME | mariadb -u$DB_USER"
-
-if [ $? -eq 0 ]; then
+if docker exec -e MYSQL_PWD="$DB_PASS" "$CONTAINER" bash -c 'set -o pipefail; unpigz < "$1" | mariadb -u"$2"' _ "$BACKUP_DIR/$FILENAME" "$DB_USER"; then
     echo_success "Restoration completed successfully!"
 else
     echo_error "Restoration failed!"

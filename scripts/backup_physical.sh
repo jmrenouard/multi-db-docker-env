@@ -61,29 +61,23 @@ echo "Final Archive: ${BACKUP_BASE_DIR}/${FILENAME}"
 
 # 1. Run mariabackup
 echo ">> 📁 Running mariabackup..."
-docker exec -e MYSQL_PWD="$DB_PASS" "$CONTAINER" mariabackup --backup \
+if ! docker exec -e MYSQL_PWD="$DB_PASS" "$CONTAINER" mariabackup --backup \
     --user="$DB_USER" \
-    --target-dir="$BACKUP_DIR"
-
-if [ $? -ne 0 ]; then
+    --target-dir="$BACKUP_DIR"; then
     echo_error "Physical backup failed during capture!"
     exit 1
 fi
 
 # 2. Prepare the backup
 echo ">> ⚙️ Preparing the backup (apply-log)..."
-docker exec "$CONTAINER" mariabackup --prepare --target-dir="$BACKUP_DIR"
-
-if [ $? -ne 0 ]; then
+if ! docker exec "$CONTAINER" mariabackup --prepare --target-dir="$BACKUP_DIR"; then
     echo_error "Physical backup failed during preparation!"
     exit 1
 fi
 
 # 3. Compress the backup
 echo ">> 📦 Compressing backup directory..."
-docker exec "$CONTAINER" bash -c "cd $BACKUP_BASE_DIR && tar -I pigz -cf $FILENAME $(basename $BACKUP_DIR) && rm -rf $(basename $BACKUP_DIR)"
-
-if [ $? -eq 0 ]; then
+if docker exec "$CONTAINER" bash -c 'cd "$1" && tar -I pigz -cf "$2" "$3" && rm -rf "$3"' _ "$BACKUP_BASE_DIR" "$FILENAME" "$(basename "$BACKUP_DIR")"; then
     echo_success "Physical backup completed successfully!"
     echo "File info:"
     docker exec "$CONTAINER" ls -lh "$BACKUP_BASE_DIR/$FILENAME"

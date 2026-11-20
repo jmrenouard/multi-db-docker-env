@@ -59,17 +59,15 @@ echo "Database: $DB_TARGET"
 echo "Destination: $BACKUP_DIR/$FILENAME"
 
 if [ "$DB_TARGET" != "--all-databases" ]; then
-    DUMP_OPTS="--databases $DB_TARGET"
+    DUMP_ARGS=(--databases "$DB_TARGET")
 else
-    DUMP_OPTS="--all-databases"
+    DUMP_ARGS=(--all-databases)
 fi
 
 # Execute dump inside container and compress
 # We use --single-transaction for InnoDB consistency
 # We use --routines --triggers --events for a complete dump
-docker exec -e MYSQL_PWD="$DB_PASS" "$CONTAINER" bash -c "mariadb-dump -u$DB_USER --single-transaction --routines --triggers --events $DUMP_OPTS | pigz > $BACKUP_DIR/$FILENAME"
-
-if [ $? -eq 0 ]; then
+if docker exec -e MYSQL_PWD="$DB_PASS" "$CONTAINER" bash -c 'set -o pipefail; user=$1; out=$2; shift 2; mariadb-dump -u"$user" --single-transaction --routines --triggers --events "$@" | pigz > "$out"' _ "$DB_USER" "$BACKUP_DIR/$FILENAME" "${DUMP_ARGS[@]}"; then
     echo_success "Backup completed successfully!"
     echo "File info:"
     docker exec "$CONTAINER" ls -lh "$BACKUP_DIR/$FILENAME"
