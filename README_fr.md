@@ -28,7 +28,7 @@ Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que tout
 | Niveau | Nom du Niveau | Dernière Vérification | État |
 | :--- | :--- | :--- | :--- |
 | **T2** | **Matrice Standalone** | 2026-11-19 | ✅ 100% Réussi |
-| **T3** | **Cluster, HA & Multi-Maître (`v2.3.0`)** | 2026-11-20 | ✅ 19 Topologies Vérifiées |
+| **T3** | **Cluster, HA & Multi-Maître (`v2.4.0`)** | 2026-11-20 | ✅ 20 Topologies Vérifiées |
 
 ## 📋 Prérequis
 
@@ -72,7 +72,7 @@ Ces commandes vous aident à gérer et à interagir avec l'ensemble de l'environ
 | `make mycnf`                    | 🔑   | Génère un fichier `~/.my.cnf` pour des connexions MySQL sans mot de passe.  | `make mycnf`                    |
 | `make client`                   | 💻   | Démarre un client MySQL connecté à la base de données active.               | `make client`                   |
 | `make verify`                   | ✅   | Exécute une validation complète de l'environnement (`test-config`).         | `make verify`                   |
-| `make build-go`                 | 🔨   | Compile le binaire Go natif `mdb` dans `bin/mdb` (`v2.3.0`, 19 topologies). | `make build-go`                 |
+| `make build-go`                 | 🔨   | Compile le binaire Go natif `mdb` dans `bin/mdb` (`v2.4.0`, 20 topologies). | `make build-go`                 |
 | `make test-go`                  | 🧪   | Exécute la suite complète de tests unitaires Go.                            | `make test-go`                  |
 | `python3 interactive_runner.py` | 🚀   | Lance le coureur de tests interactif pour une configuration guidée.         | `python3 interactive_runner.py` |
 
@@ -212,9 +212,9 @@ Architecture MongoDB avec ReplicaSet et routage HAProxy.
 > [!NOTE]
 > MongoDB 7.0 utilise le port 27100 (HAProxy), stats 8408, accès direct 27411-27413 (`10.10.0.0/24`). MongoDB 8.0 utilise le port 27200 (HAProxy), stats 8409, accès direct 27511-27513 (`10.11.0.0/24`). Les deux imposent TLS (`requireTLS`).
 
-### PostgreSQL Réplication, Multi-Maître & SQL Distribué (`v2.1.0`–`v2.2.0`)
+### PostgreSQL Réplication, Multi-Maître & SQL Distribué (`v2.1.0`–`v2.4.0`)
 
-Huit topologies PostgreSQL supplémentaires (`pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) exposent chacune `<topo>-up`, `<topo>-down`, `<topo>-status`, `<topo>-logs`, `<topo>-ps` et `<topo>-test`, ainsi que `make test-pg-extended` (T11–T18) et `make bench-pg-v2`. Voir [PostgreSQL Multi-Maître & SQL Distribué](documentation/pg_multimaster_fr.md).
+Douze topologies PostgreSQL supplémentaires (`pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) exposent chacune `<topo>-up`, `<topo>-down`, `<topo>-status`, `<topo>-logs`, `<topo>-ps` et `<topo>-test`, ainsi que `make test-pg-extended` (T11–T18), `make bench-pg-v2`, `make bench-pg18` et `make bench-yt-cluster`. Voir [PostgreSQL Multi-Maître & SQL Distribué](documentation/pg_multimaster_fr.md).
 
 **Exemple : Changer de Base de Données**
 
