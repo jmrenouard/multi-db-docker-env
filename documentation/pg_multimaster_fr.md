@@ -1,6 +1,6 @@
 # Topologies PostgreSQL Réplication, Multi-Maître et SQL Distribué
 
-Ce guide présente les onze topologies PostgreSQL de réplication, multi-maître et SQL distribué (`pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `pgedge`, `bucardo`, `citus`, `yugabyte`, `cockroach`) ainsi que la référence PostgreSQL 17 (`docker-compose-pg17-baseline.yml`) disponibles dans `multi-db-docker-env` (`v2.3.0`), avec leurs cibles Makefile, commandes CLI Go `mdb` (19 topologies enregistrées), résultats de benchmarks V1/V2/PG18, matrice étendue `T11`–`T18` et modes de défaillance observés.
+Ce guide présente les douze topologies PostgreSQL de réplication, multi-maître et SQL distribué (`pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `yugabyte`, `cockroach`) ainsi que la référence PostgreSQL 17 (`docker-compose-pg17-baseline.yml`) disponibles dans `multi-db-docker-env` (`v2.4.0`), avec leurs cibles Makefile, commandes CLI Go `mdb` (20 topologies enregistrées), résultats de benchmarks V1/V2/PG18/YT, matrice étendue `T11`–`T18` et modes de défaillance observés.
 
 *Étude comparative complète, graphiques Log10 et explorateur HTML interactif : [jmrenouard/ClusterPostgreSQL-Series](https://github.com/jmrenouard/ClusterPostgreSQL-Series).*
 
@@ -16,6 +16,7 @@ Ce guide présente les onze topologies PostgreSQL de réplication, multi-maître
 | **`pg18-streaming`** | `postgres:18` (`18.6`, AIO `worker`, checksums `on`) | 1 Standalone + 1 Primaire RW + 1 Standby RO (`async`/`sync`) | `AP` (`async`) / `CP` (`sync`) | `15531` (std), `15534` (pri), `15535` (stb) |
 | **`pg18-logical`** | `postgres:18` (`18.6`, `substream=p`, `pubgencols=s`) | 1 Publisher + 1 Subscriber (`pub_pg18_logical` -> `sub_pg18_logical`) | `AP` / `PA-EL` | `15536` (pub), `15537` (sub) |
 | **`pg18-birep`** | `postgres:18` (`18.6`, `uuidv7()`) + `haproxy:2.9-alpine` | 2 nœuds actif-actif (`origin=none`) + HAProxy RR | `AP` / `PA-EL` | `15540` (LB), `15541`–`15542`, `15549` (stats) |
+| **`yt-cluster`** | `dbinvent/yt:1.21.3` (PG `18.7` + `yt_cluster 1.21` / `ytserv`) | 3 nœuds actif-actif (`cc=half` 2-sur-3 XA 2PC par défaut ; async `cc=nodes>=0` optionnel) | `CP` / `PC-EC` (défaut) · `AP` (async) | `5491`–`5493` (`127.0.0.1`) |
 | **`pgedge`** | `ghcr.io/pgedge/pgedge-postgres:17-spock5-minimal` | Maillage 3 nœuds Spock 5.0.14 + Snowflake 2.6.1 | `AP` / `PA-EL` | `15450` (LB), `15451`–`15453` |
 | **`bucardo`** | `postgres:17` (`plperl`) + Bucardo `5.6.0` | 2 sources PG 17 + daemon Perl asynchrone | `AP` / `PA-EL` | `15461`–`15462` |
 | **`citus`** | `citusdata/citus:14.2.0-pg17` | 1 Coordinateur + 2 Workers (8 shards) | `CP` (Coord SPOF / 2PC) | `15490` (coord), `15491`–`15492` |
@@ -33,6 +34,7 @@ make pg-birep-up     && make test-pg-birep     && make pg-birep-down
 make pg18-streaming-up && make pg18-streaming-test && make pg18-streaming-down
 make pg18-logical-up   && make pg18-logical-test   && make pg18-logical-down
 make pg18-birep-up     && make pg18-birep-test     && make pg18-birep-down
+make yt-cluster-up     && make yt-cluster-test     && make yt-cluster-down
 make pgedge-up       && make test-pgedge       && make pgedge-down
 make bucardo-up      && make test-bucardo      && make bucardo-down
 make citus-up        && make test-citus        && make citus-down
@@ -42,17 +44,19 @@ make yugabyte-up     && make test-yugabyte     && make yugabyte-down
 # Matrice de tests empiriques étendus (T11-T18 sur les 10 topologies PostgreSQL)
 make test-pg-extended
 
-# Campagnes séquentielles multi-moteurs (V1 Suites A-F, V2 Suites A-H et PG 18.6)
+# Campagnes séquentielles multi-moteurs (V1 Suites A-F, V2 Suites A-H, PG 18.6 et YT Cluster 1.21.3)
 make bench-pg-multimaster
 make bench-pg-v2
 make bench-pg18
+make bench-yt-cluster
 make clean-pg18
 
-# Ou via le CLI natif Go mdb (v2.3.0, 19 topologies enregistrées)
+# Ou via le CLI natif Go mdb (v2.4.0, 20 topologies enregistrées)
 ./bin/mdb topologies
 ./bin/mdb up pg18-streaming && ./bin/mdb status pg18-streaming && ./bin/mdb down pg18-streaming
 ./bin/mdb up pg18-logical   && ./bin/mdb status pg18-logical   && ./bin/mdb down pg18-logical
 ./bin/mdb up pg18-birep     && ./bin/mdb status pg18-birep     && ./bin/mdb down pg18-birep
+./bin/mdb up yt-cluster     && ./bin/mdb status yt-cluster     && ./bin/mdb down yt-cluster
 ```
 
 ## Synthèse des benchmarks empiriques (`PG_SCALE=2`)
@@ -129,3 +133,10 @@ La commande `make bench-pg-v2` complète la campagne avec les charges sysbench �
 - **AIO `io_method` & Checksums** : défauts `io_method=worker` (`io_workers=3`) et `data_checksums=on`. `io_method=io_uring` échoue avec `Operation not permitted` sous le profil seccomp Docker par défaut ; `worker` réduit le scan séquentiel à froid de `-18,5 %` (`829,4 ms` vs `1018,3 ms` en `sync`).
 - **`uuidv7()` natif & 7 compteurs `confl_*`** : `id UUID PRIMARY KEY DEFAULT uuidv7()` réalise `50/50` écritures concurrentes bi-nœuds sans collision (`0` `23505`, `0` inversion B-tree) et `2 066,70 TPS` sur `H_append_only_insert` (`3,30x` vs `pg-birep` PG 17). Les 7 compteurs `pg_stat_subscription_stats` — dont `confl_multiple_unique_conflicts` — sont vérifiés dans `tests/test_pg18_birep.sh`.
 - **Séquences logiques reportées à PG 19** : `CREATE SUBSCRIPTION` active `substream=p` par défaut et `publish_generated_columns=stored` fonctionne (`pubgencols=s`), mais `FOR ALL SEQUENCES` et `REFRESH SEQUENCES` lèvent toujours `SQLSTATE 42601` en PG 18.6 (séquences abonnées à `1|false` -> `23505` après bascule).
+
+## Pile actif-actif YT Cluster 1.21.3 (PostgreSQL 18.7, `v2.4.0`)
+
+`docker-compose-yt-cluster.yml` déploie un cluster 3 nœuds `dbinvent/yt:1.21.3` (`yt1`/`yt2`/`yt3` sur `127.0.0.1:5491-5493:5432`) associant PostgreSQL 18.7 non modifié (`io_method=worker`, `data_checksums=on`), l'extension `yt_cluster 1.21` et le coordinateur Rust local `ytserv`.
+
+- **Mode par défaut (`cc=half` Sync-2PC)** : `yt_info('d')` active par défaut `def_cluster_commit={"at_least":0,"mode":1}` (`half` = 2PC XA synchrone 2-sur-3, `NO_SC`, `min_cluster_size=2`). Sous `PG_SCALE=2` (`make bench-yt-cluster`), le mode par défaut `yt-cluster` atteint `A_rw=20,63 TPS`, `B2_overlap=10,69 TPS`, `C_ro=48 787,74 TPS`, `D_hot=67,76 TPS` (`0` dérive), `E_sb=28,48 TPS`, `E4_pt=165 472,75 TPS`, `H_append=110,53 TPS` (`uuidv7()`), `F_wan25=2,25 TPS` et `T11=86 lignes/s`. Le passage en mode asynchrone `cc=nodes>=0` porte `A_rw` à `41,45 TPS`, `B2_overlap` à `55,03 TPS`, `D_hot` à `163,01 TPS` (`0` dérive) et `F_wan25` à `4,78 TPS`.
+- **Limites vérifiées & réversibilité (`make yt-cluster-test`)** : l'arbitrage de conflits garantit une dérive nulle (`55409` sur mises à jour concurrentes / `SERIAL`, `40001` sur `UNIQUE`) ; le rollback de `SAVEPOINT` sur des écritures échoue au `COMMIT` avec `0A000` ; la perte de `2/3` nœuds bloque les écritures avec `57P03` (`min_cluster_size=2`, `YT-E1852`) ; `T16` `SIGKILL` préserve `RPO=0` (`20/20`, avec une limite d'image où un fichier résiduel `/var/run/postgresql/.s.YT.5432.pid` peut provoquer une boucle `YT-E1104` si le PID est réutilisé après un arrêt brutal) ; `T_REVERT` confirme que `DROP EXTENSION yt_cluster CASCADE;` retire extension et triggers en conservant toutes les données utilisateur (`5/5` -> `6/6` en écriture PG standard).
