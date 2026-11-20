@@ -3,6 +3,8 @@ package docker
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -117,5 +119,81 @@ func TestRealCommandRunner(t *testing.T) {
 	cleanArgs, envVars := extractComposeEnv("docker", []string{"compose", "-f", "f1.yml", "--env", "K=V", "up", "-d"})
 	if len(envVars) != 1 || envVars[0] != "K=V" || strings.Contains(strings.Join(cleanArgs, " "), "--env") {
 		t.Fatalf("extractComposeEnv: args=%v env=%v", cleanArgs, envVars)
+	}
+}
+
+func TestClient_ProfilesDownAllPSStatusAndImages(t *testing.T) {
+	ctx := context.Background()
+	m := &MockCommandRunner{Output: []byte("mariadb-11.4\tmariadb114\trunning\tUp 5s\t3306/tcp\n")}
+	c := NewClientWithRunner(m)
+
+	if err := c.ComposeUpProfiles(ctx, []string{"docker-compose.yml"}, []string{"traefik", "mariadb114"}, map[string]string{"A": "1"}, true); err != nil || !strings.Contains(strings.Join(m.Calls[0], " "), "--profile traefik --profile mariadb114 --env A=1 up -d") {
+		t.Fatal(err)
+	}
+	if err := c.ComposeDownProfiles(ctx, []string{"docker-compose.yml"}, []string{"*"}, true); err != nil || !strings.Contains(strings.Join(m.Calls[1], " "), "--profile * down -v") {
+		t.Fatal(err)
+	}
+	if st, err := c.ComposePSStatusAll(ctx, [][]string{{"docker-compose.yml"}, {"docker-compose-galera.yml"}}); err != nil || len(st) != 1 || st[0].Service != "mariadb114" {
+		t.Fatal(st, err)
+	}
+	m.Calls = nil
+	if err := c.ComposeDownAll(ctx, [][]string{{"docker-compose.yml"}}, "CustomProj"); err != nil || len(m.Calls) < 3 || !strings.Contains(strings.Join(m.Calls[1], " "), "project=CustomProj") {
+		t.Fatal(err, m.Calls)
+	}
+	if ok, err := c.ImageExists(ctx, "mariadb_ssh:004"); err != nil || !ok {
+		t.Fatal(ok, err)
+	}
+	m.ExitCode, m.Err, m.Stderr = 1, errors.New("x"), []byte("Error response from daemon: No such image: missing:1")
+	if ok, err := c.ImageExists(ctx, "missing:1"); err != nil || ok {
+		t.Fatal(ok, err)
+	}
+	m.Stderr = []byte("Cannot connect to the Docker daemon")
+	if _, err := c.ImageExists(ctx, "missing:1"); err == nil {
+		t.Fatal("want err")
+	}
+	if _, err := c.ComposePSStatusAll(ctx, [][]string{{"docker-compose.yml"}}); err == nil {
+		t.Fatal("want err")
+	}
+	if err := c.ComposeDownAll(ctx, [][]string{{"docker-compose.yml"}}, "proj"); err == nil {
+		t.Fatal("want err")
+	}
+	rmFail := NewClientWithRunner(&MockCommandRunner{Custom: func(_ context.Context, _ string, a ...string) ([]byte, []byte, int, error) {
+		if a[0] == "ps" {
+			return []byte("cid1\n"), nil, 0, nil
+		}
+		if a[0] == "rm" {
+			return nil, []byte("denied"), 1, errors.New("rm")
+		}
+		return nil, nil, 0, nil
+	}})
+	if err := rmFail.ComposeDownAll(ctx, [][]string{{"docker-compose.yml"}}, "proj"); err == nil || !strings.Contains(err.Error(), "docker rm failed") {
+		t.Fatal(err)
+	}
+	if err := c.BuildImage(ctx, "mariadb_ssh:004", "."); err == nil {
+		t.Fatal("want err")
+	}
+	m.ExitCode, m.Err, m.Stderr = 0, nil, nil
+	if err := c.BuildImage(ctx, "mariadb_ssh:004", ""); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := c.RunWithEnv(ctx, []string{"K=V"}, "bash", "s.sh"); err != nil || len(m.EnvCalls) != 1 {
+		t.Fatal(err, m.EnvCalls)
+	}
+	t.Setenv("COMPOSE_PROJECT_NAME", "override-proj")
+	if ProjectName() != "override-proj" {
+		t.Fatal(ProjectName())
+	}
+	t.Setenv("COMPOSE_PROJECT_NAME", "")
+	wd, _ := os.Getwd()
+	defer func() { _ = os.Chdir(wd) }()
+	tmp := t.TempDir()
+	_ = os.Chdir(tmp)
+	if ProjectName() != filepath.Base(tmp) {
+		t.Fatal(ProjectName())
+	}
+	_ = os.WriteFile("docker-compose.yml", []byte("services: {}\n"), 0644)
+	_ = os.WriteFile("docker-compose-galera.yml", []byte("services: {}\n"), 0644)
+	if files := DiscoverComposeFiles(); len(files) != 2 || files[0][0] != "docker-compose.yml" {
+		t.Fatal(files)
 	}
 }

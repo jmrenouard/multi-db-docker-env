@@ -15,6 +15,11 @@ type CommandRunner interface {
 	RunCombined(ctx context.Context, name string, args ...string) ([]byte, error)
 }
 
+// EnvCommandRunner optionally executes commands with extra env vars.
+type EnvCommandRunner interface {
+	RunWithEnv(ctx context.Context, env []string, name string, args ...string) ([]byte, []byte, int, error)
+}
+
 type RealCommandRunner struct{}
 
 func extractComposeEnv(name string, args []string) ([]string, []string) {
@@ -34,11 +39,11 @@ func extractComposeEnv(name string, args []string) ([]string, []string) {
 	return filtered, envVars
 }
 
-func (r *RealCommandRunner) Run(ctx context.Context, name string, args ...string) ([]byte, []byte, int, error) {
+func (r *RealCommandRunner) RunWithEnv(ctx context.Context, env []string, name string, args ...string) ([]byte, []byte, int, error) {
 	cleanArgs, envVars := extractComposeEnv(name, args)
 	cmd := exec.CommandContext(ctx, name, cleanArgs...)
-	if len(envVars) > 0 {
-		cmd.Env = append(os.Environ(), envVars...)
+	if merged := append(envVars, env...); len(merged) > 0 {
+		cmd.Env = append(os.Environ(), merged...)
 	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
@@ -50,6 +55,10 @@ func (r *RealCommandRunner) Run(ctx context.Context, name string, args ...string
 		code = 1
 	}
 	return stdout.Bytes(), stderr.Bytes(), code, err
+}
+
+func (r *RealCommandRunner) Run(ctx context.Context, name string, args ...string) ([]byte, []byte, int, error) {
+	return r.RunWithEnv(ctx, nil, name, args...)
 }
 
 func (r *RealCommandRunner) RunCombined(ctx context.Context, name string, args ...string) ([]byte, error) {
@@ -64,6 +73,7 @@ func (r *RealCommandRunner) RunCombined(ctx context.Context, name string, args .
 type MockCommandRunner struct {
 	mu       sync.Mutex
 	Calls    [][]string
+	EnvCalls [][]string
 	Output   []byte
 	Stderr   []byte
 	ExitCode int
@@ -81,6 +91,15 @@ func (m *MockCommandRunner) Run(ctx context.Context, name string, args ...string
 	return m.Output, m.Stderr, m.ExitCode, m.Err
 }
 
+func (m *MockCommandRunner) RunWithEnv(ctx context.Context, env []string, name string, args ...string) ([]byte, []byte, int, error) {
+	if len(env) > 0 {
+		m.mu.Lock()
+		m.EnvCalls = append(m.EnvCalls, append([]string(nil), env...))
+		m.mu.Unlock()
+	}
+	return m.Run(ctx, name, args...)
+}
+
 func (m *MockCommandRunner) RunCombined(ctx context.Context, name string, args ...string) ([]byte, error) {
 	out, stderr, _, err := m.Run(ctx, name, args...)
 	if err != nil {
@@ -94,6 +113,38 @@ type Client struct{ runner CommandRunner }
 func NewClient() *Client                          { return &Client{runner: &RealCommandRunner{}} }
 func NewClientWithRunner(r CommandRunner) *Client { return &Client{runner: r} }
 func (c *Client) Runner() CommandRunner           { return c.runner }
+
+// RunWithEnv runs a command with optional extra env vars.
+func (c *Client) RunWithEnv(ctx context.Context, env []string, name string, args ...string) ([]byte, []byte, int, error) {
+	if er, ok := c.runner.(EnvCommandRunner); ok {
+		return er.RunWithEnv(ctx, env, name, args...)
+	}
+	return c.runner.Run(ctx, name, args...)
+}
+
+// ImageExists checks whether a Docker image tag exists locally.
+func (c *Client) ImageExists(ctx context.Context, tag string) (bool, error) {
+	_, stderr, code, err := c.runner.Run(ctx, "docker", "image", "inspect", tag)
+	if err == nil && code == 0 {
+		return true, nil
+	}
+	if msg := strings.ToLower(string(stderr)); strings.Contains(msg, "no such image") || strings.Contains(msg, "not found") {
+		return false, nil
+	}
+	return false, fmt.Errorf("docker image inspect %s failed (%d): %s: %w", tag, code, strings.TrimSpace(string(stderr)), err)
+}
+
+// BuildImage builds a Docker image from dir with tag.
+func (c *Client) BuildImage(ctx context.Context, tag, dir string) error {
+	if dir == "" {
+		dir = "."
+	}
+	_, se, code, err := c.runner.Run(ctx, "docker", "build", "-t", tag, dir)
+	if err != nil || code != 0 {
+		return fmt.Errorf("docker build %s failed (%d): %s: %w", tag, code, strings.TrimSpace(string(se)), err)
+	}
+	return nil
+}
 
 func splitLines(b []byte) []string {
 	var res []string
