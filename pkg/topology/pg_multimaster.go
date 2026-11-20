@@ -90,7 +90,7 @@ func NewCitusTopology() *CitusTopology {
 	}
 }
 
-// CockroachTopology manages the 3-node CockroachDB v24.3.0 Raft cluster.
+// CockroachTopology manages the 3-node CockroachDB v25.4 Raft cluster.
 type CockroachTopology struct{ *BaseTopology }
 
 // NewCockroachTopology returns the cockroach topology definition.
@@ -98,7 +98,7 @@ func NewCockroachTopology() *CockroachTopology {
 	return &CockroachTopology{
 		BaseTopology: NewBaseTopology(
 			"cockroach",
-			"CockroachDB v24.3.0 3-node Raft RF=3 distributed SQL cluster",
+			"CockroachDB v25.4 3-node Raft RF=3 distributed SQL cluster",
 			[]string{"docker-compose-cockroach.yml"},
 			nil,
 		),
