@@ -1,0 +1,61 @@
+networks:
+  yt_cluster_net:
+    driver: bridge
+
+x-yt-common: &yt-common
+  image: dbinvent/yt:1.21.3
+  restart: unless-stopped
+  cap_add:
+    - NET_ADMIN
+  environment:
+    POSTGRES_USER: ${PG_USER:-postgres}
+    POSTGRES_PASSWORD: ${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}
+    POSTGRES_DB: ${PG_DB:-labdb}
+    YT_PEERS: "yt1 yt2 yt3"
+    YT_CLUSTER: "11111111-2222-4333-8444-555555555555"
+    YT_TABLES: "public.%"
+    YT_MAX_PREPARED: "100"
+    YT_CONFIG_TRIGGER: "1"
+  healthcheck:
+    test:
+      - CMD-SHELL
+      - "yt-health && psql -q -U postgres -d postgres -tAc \"SELECT count(*) FROM yt_info('o');\" | grep -qE '^[1-9]'"
+    interval: 5s
+    timeout: 5s
+    retries: 20
+    start_period: 10s
+  networks:
+    - yt_cluster_net
+
+services:
+  yt1:
+    <<: *yt-common
+    container_name: yt1
+    hostname: yt1
+    ports:
+      - "127.0.0.1:5491:5432"
+    volumes:
+      - yt1_data:/var/lib/postgresql
+
+  yt2:
+    <<: *yt-common
+    container_name: yt2
+    hostname: yt2
+    ports:
+      - "127.0.0.1:5492:5432"
+    volumes:
+      - yt2_data:/var/lib/postgresql
+
+  yt3:
+    <<: *yt-common
+    container_name: yt3
+    hostname: yt3
+    ports:
+      - "127.0.0.1:5493:5432"
+    volumes:
+      - yt3_data:/var/lib/postgresql
+
+volumes:
+  yt1_data:
+  yt2_data:
+  yt3_data:
