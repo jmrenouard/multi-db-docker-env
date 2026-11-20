@@ -4,7 +4,8 @@ Ce document décrit l'intégration de PostgreSQL dans l'environnement multi-db-d
 
 ## Versions Supportées
 
-- **PostgreSQL 17** (Dernière version stable)
+- **PostgreSQL 18** (Dernière version stable ; montage du volume sur `/var/lib/postgresql`)
+- **PostgreSQL 17**
 - **PostgreSQL 16**
 - **PostgreSQL 15**
 
@@ -18,11 +19,12 @@ Ce document décrit l'intégration de PostgreSQL dans l'environnement multi-db-d
 │   (Noeud Unique) │  (Cluster HA)        │  (Pool + LB)          │
 ├──────────────────┼──────────────────────┼───────────────────────┤
 │ postgres15       │ 3 noeuds ETCD        │ 3 noeuds PostgreSQL   │
-│ postgres16       │ 3 noeuds PostgreSQL  │ PgPool-II 4.4         │
-│ postgres17       │ HAProxy (RW/RO)      │ HAProxy (RW/RO)       │
+│ postgres16       │ 3 noeuds PostgreSQL  │ PgPool-II 4.6         │
+│ postgres17       │ HAProxy LTS (RW/RO)  │ HAProxy LTS (RW/RO)   │
+│ postgres18       │                      │                       │
 ├──────────────────┼──────────────────────┼───────────────────────┤
-│ make postgres17  │ make patroni-up      │ make pgpool-up         │
-│ make test-all    │ make test-patroni    │ make test-pgpool       │
+│ make postgres18  │ make patroni-up      │ make pgpool-up        │
+│ make test-all    │ make test-patroni    │ make test-pgpool      │
 └──────────────────┴──────────────────────┴───────────────────────┘
 ```
 
@@ -33,6 +35,7 @@ Ce document décrit l'intégration de PostgreSQL dans l'environnement multi-db-d
 ### Démarrage Rapide
 
 ```bash
+make postgres18    # PostgreSQL 18 (montage /var/lib/postgresql)
 make postgres17    # PostgreSQL 17
 make postgres16    # PostgreSQL 16
 make postgres15    # PostgreSQL 15
@@ -43,7 +46,7 @@ make postgres15    # PostgreSQL 15
 | Paramètre | Valeur |
 | :--- | :--- |
 | Hôte | `127.0.0.1` |
-| Port (Traefik) | `5432` |
+| Port (Traefik v3) | `5432` |
 | Utilisateur | `postgres` |
 | Mot de passe | Défini par `DB_ROOT_PASSWORD` dans `.env` |
 
@@ -57,11 +60,11 @@ PGPASSWORD=$DB_ROOT_PASSWORD psql -h 127.0.0.1 -p 5432 -U postgres
 
 | Commande | Description |
 | :--- | :--- |
-| `make postgres17` / `16` / `15` | Démarre PostgreSQL 17, 16 ou 15 standalone via Traefik (`5432`). |
+| `make postgres18` / `17` / `16` / `15` | Démarre PostgreSQL 18, 17, 16 ou 15 standalone via Traefik v3 (`5432`). |
 | `make status` | Vérifie l'état des conteneurs. |
 | `make stop` | Arrête les conteneurs standalone et le réseau. |
 
-> Pour les topologies `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach` et `yugabyte`, voir [pg_multimaster_fr.md](pg_multimaster_fr.md).
+> Pour les topologies `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `pgedge`, `bucardo`, `citus`, `cockroach` (`v25.4`) et `yugabyte` (`2026.1`) (avec `haproxy:lts-alpine`), voir [pg_multimaster_fr.md](pg_multimaster_fr.md).
 
 ---
 
@@ -129,7 +132,7 @@ make pgpool-down       # Arrêter le cluster
 
 Les données PostgreSQL sont stockées dans des volumes Docker nommés :
 
-- Standalone : `postgres_17_data`, `postgres_16_data`, `postgres_15_data`
+- Standalone : `postgres_18_data` (`/var/lib/postgresql`), `postgres_17_data`, `postgres_16_data`, `postgres_15_data`
 - PgPool-II : `pg_pgpool_data1`, `pg_pgpool_data2`, `pg_pgpool_data3`
 - Patroni : `node1_data`, `node2_data`, `node3_data`
 

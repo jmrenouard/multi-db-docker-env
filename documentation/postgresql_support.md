@@ -4,7 +4,8 @@ PostgreSQL is supported in the multi-db-docker-env project as standalone instanc
 
 ## Supported Versions
 
-- PostgreSQL 17 (Latest stable)
+- PostgreSQL 18 (Latest stable; official image mounts volume at `/var/lib/postgresql`)
+- PostgreSQL 17
 - PostgreSQL 16
 - PostgreSQL 15
 
@@ -18,12 +19,12 @@ PostgreSQL is supported in the multi-db-docker-env project as standalone instanc
 │   (Single Node)  │   (HA Cluster)       │   (Pool + LB)         │
 ├──────────────────┼──────────────────────┼───────────────────────┤
 │ postgres15       │ 3 ETCD nodes         │ 3 PostgreSQL 17 nodes │
-│ postgres16       │ 3 PostgreSQL 17      │ PgPool-II 4.4         │
-│ postgres17       │ HAProxy (RW/RO)      │ HAProxy (RW/RO)       │
-│                  │ Supervisord          │ Streaming Replication  │
+│ postgres16       │ 3 PostgreSQL 17      │ PgPool-II 4.6         │
+│ postgres17       │ HAProxy LTS (RW/RO)  │ HAProxy LTS (RW/RO)   │
+│ postgres18       │ Supervisord          │ Streaming Replication │
 ├──────────────────┼──────────────────────┼───────────────────────┤
-│ make postgres17  │ make patroni-up      │ make pgpool-up         │
-│ make test-all    │ make patroni-test    │ make test-pgpool       │
+│ make postgres18  │ make patroni-up      │ make pgpool-up        │
+│ make test-all    │ make patroni-test    │ make test-pgpool      │
 └──────────────────┴──────────────────────┴───────────────────────┘
 ```
 
@@ -34,6 +35,7 @@ PostgreSQL is supported in the multi-db-docker-env project as standalone instanc
 ### Quick Start
 
 ```bash
+make postgres18    # PostgreSQL 18 (mounts /var/lib/postgresql)
 make postgres17    # PostgreSQL 17
 make postgres16    # PostgreSQL 16
 make postgres15    # PostgreSQL 15
@@ -44,7 +46,7 @@ make postgres15    # PostgreSQL 15
 | Setting | Value |
 | :--- | :--- |
 | Host | `127.0.0.1` |
-| Port (Traefik) | `5432` |
+| Port (Traefik v3) | `5432` |
 | User | `postgres` |
 | Password | Defined by `DB_ROOT_PASSWORD` in `.env` |
 
@@ -58,11 +60,11 @@ PGPASSWORD=$DB_ROOT_PASSWORD psql -h 127.0.0.1 -p 5432 -U postgres
 
 | Command | Description |
 | :--- | :--- |
-| `make postgres17` / `16` / `15` | Start standalone PostgreSQL 17, 16, or 15 via Traefik (`5432`). |
+| `make postgres18` / `17` / `16` / `15` | Start standalone PostgreSQL 18, 17, 16, or 15 via Traefik v3 (`5432`). |
 | `make status` | Check running container status. |
 | `make stop` | Stop standalone containers and network. |
 
-> For `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, and `yugabyte` topologies, see [pg_multimaster.md](pg_multimaster.md).
+> For `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `pgedge`, `bucardo`, `citus`, `cockroach` (`v25.4`), and `yugabyte` (`2026.1`) topologies (using `haproxy:lts-alpine`), see [pg_multimaster.md](pg_multimaster.md).
 
 ---
 

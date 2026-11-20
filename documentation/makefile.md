@@ -48,18 +48,20 @@ The `Makefile` is the main entry point for managing database environments (Stand
 
 | Command | Description |
 | :--- | :--- |
-| `make mysql96` | Starts MySQL 9.6 |
-| `make mysql84` | Starts MySQL 8.4 |
-| `make mysql80` | Starts MySQL 8.0 |
-| `make mysql57` | Starts MySQL 5.7 |
-| `make mariadb118` | Starts MariaDB 11.8 |
-| `make mariadb114` | Starts MariaDB 11.4 |
-| `make mariadb1011`| Starts MariaDB 10.11 |
-| `make mariadb106` | Starts MariaDB 10.6 |
-| `make percona80` | Starts Percona Server 8.0 |
+| `make mysql97` | Starts MySQL 9.7 LTS |
+| `make mysql84` | Starts MySQL 8.4 LTS |
+| `make mariadb123` | Starts MariaDB 12.3 LTS |
+| `make mariadb118` | Starts MariaDB 11.8 LTS |
+| `make mariadb114` | Starts MariaDB 11.4 LTS |
+| `make mariadb1011` | Starts MariaDB 10.11 LTS |
+| `make percona84` | Starts Percona Server 8.4 LTS |
+| `make postgres18` | Starts PostgreSQL 18 |
 | `make postgres17` | Starts PostgreSQL 17 |
 | `make postgres16` | Starts PostgreSQL 16 |
 | `make postgres15` | Starts PostgreSQL 15 |
+
+> [!NOTE]
+> **Decommissioned EOL Targets**: Legacy targets (`mysql57`, `mysql80`, `mysql96`, `mariadb106`, `percona80`) print their official End-of-Life date and recommended replacement, then exit with status `1`. See [supported_products.md](supported_products.md#decommissioned-versions-end-of-life).
 
 ## 🌐 Galera Cluster Commands
 
@@ -151,7 +153,7 @@ These commands allow targeted access to logs within nodes without using `docker 
 
 | Command | Description |
 | :--- | :--- |
-| `make innodb-up` | Start MySQL 8.4 InnoDB Cluster (3 nodes + Router). |
+| `make innodb-up` | Start MySQL 8.4 LTS InnoDB Cluster (3 nodes + HAProxy). |
 | `make innodb-down` | Stop InnoDB Cluster and remove volumes. |
 | `make innodb-status` | Display Group Replication members status. |
 | `make innodb-logs` | Follow real-time logs for InnoDB Cluster. |
