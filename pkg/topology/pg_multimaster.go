@@ -164,3 +164,18 @@ func NewPg18BirepTopology() *Pg18BirepTopology {
 		),
 	}
 }
+
+// YtClusterTopology manages the 3-node YT Cluster 1.21.3 (PG 18.7) active-active stack.
+type YtClusterTopology struct{ *BaseTopology }
+
+// NewYtClusterTopology returns the yt-cluster topology definition.
+func NewYtClusterTopology() *YtClusterTopology {
+	return &YtClusterTopology{
+		BaseTopology: NewBaseTopology(
+			"yt-cluster",
+			"YT Cluster 1.21.3 (PostgreSQL 18.7) 3-node active-active cluster (yt_cluster + ytserv)",
+			[]string{"docker-compose-yt-cluster.yml"},
+			nil,
+		),
+	}
+}

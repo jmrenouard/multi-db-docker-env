@@ -1,3 +1,10 @@
+2.4.0 2026-11-20
+- feat: add 3-node YT Cluster 1.21.3 (PostgreSQL 18.7 + yt_cluster 1.21 / ytserv) active-active Docker Compose stack and leader-election readiness setup script (docker-compose-yt-cluster.yml, scripts/yt_cluster/setup_yt_cluster.sh) (Closes #288).
+- feat: add sequential YT Cluster 1.21.3 empirical benchmark runner covering Suites A-H, WAN 10/25/50ms netem sweeps, concurrency scaling, and sync-2PC (cc=half) vs async (cc=nodes>=0) modes (scripts/bench_yt_runner.sh) (Closes #292).
+- feat: wire yt-cluster Makefile lifecycle/benchmark/cleanup targets, register yt-cluster in Go mdb CLI (20 topologies) and dbclient verifiers, and bump release version to 2.4.0 (Makefile, pkg/topology, pkg/dbclient, cmd/mdb, VERSION) (Closes #294).
+- doc: document YT Cluster 1.21.3 stack, commands, empirical findings (default cc=half sync-2PC, SAVEPOINT 0A000, min_cluster_size=2 57P03, stale .s.YT.5432.pid YT-E1104 caveat) across EN/FR guides, READMEs, and governance registers.
+- test: add YT Cluster 1.21.3 functional limits (L1-L8), extended matrix (T11-T18), and reversibility (T_REVERT) test suite plus Go topology/dbclient/cmd unit tests (tests/test_yt_cluster.sh, pkg/topology, pkg/dbclient, cmd/mdb) (Closes #290, #294).
+
 2.3.0 2026-11-20
 - feat: add PostgreSQL 18.6 native physical streaming (pg18-streaming), uni-directional logical (pg18-logical), and bidirectional active-active (pg18-birep with uuidv7 & HAProxy) Docker Compose stacks and setup scripts (Closes #252, #254).
 - feat: add PostgreSQL 18.6 sequential benchmark runner and helper library covering Suites A-H, WAN 10/25/50ms sweeps, and concurrency scaling (scripts/bench_pg18_runner.sh, scripts/bench_pg18_lib.py) (Closes #260, #262).

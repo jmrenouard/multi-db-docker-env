@@ -11,7 +11,7 @@ import (
 
 func TestRegistry_Default(t *testing.T) {
 	r := DefaultRegistry()
-	expected := []string{"bucardo", "citus", "cockroach", "galera", "innodb", "mongo", "mongo8", "patroni", "pg-birep", "pg-logical", "pg-streaming", "pg18-birep", "pg18-logical", "pg18-streaming", "pgedge", "pgpool", "repli", "standalone", "yugabyte"}
+	expected := []string{"bucardo", "citus", "cockroach", "galera", "innodb", "mongo", "mongo8", "patroni", "pg-birep", "pg-logical", "pg-streaming", "pg18-birep", "pg18-logical", "pg18-streaming", "pgedge", "pgpool", "repli", "standalone", "yt-cluster", "yugabyte"}
 	list := r.List()
 	if len(list) != len(expected) {
 		t.Fatalf("expected %d, got %d", len(expected), len(list))
