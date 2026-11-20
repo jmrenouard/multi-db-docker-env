@@ -47,13 +47,21 @@ make postgres15    # PostgreSQL 15
 | Utilisateur | `postgres` |
 | Mot de passe | Défini par `DB_ROOT_PASSWORD` dans `.env` |
 
+### Connexion Client
+
+```bash
+PGPASSWORD=$DB_ROOT_PASSWORD psql -h 127.0.0.1 -p 5432 -U postgres
+```
+
 ### Commandes Makefile
 
 | Commande | Description |
 | :--- | :--- |
-| `make pgpass` | Génère `~/.pgpass` pour les connexions sans mot de passe. |
-| `make pgclient` | Ouvre une session `psql` interactive. |
+| `make postgres17` / `16` / `15` | Démarre PostgreSQL 17, 16 ou 15 standalone via Traefik (`5432`). |
 | `make status` | Vérifie l'état des conteneurs. |
+| `make stop` | Arrête les conteneurs standalone et le réseau. |
+
+> Pour les topologies `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach` et `yugabyte`, voir [pg_multimaster_fr.md](pg_multimaster_fr.md).
 
 ---
 

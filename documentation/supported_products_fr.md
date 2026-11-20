@@ -30,8 +30,7 @@ Référence complète de tous les moteurs de bases de données et composants d'i
 
 | Version | Image Docker | Port Standalone | TLS | Statut |
 | :--- | :--- | :--- | :--- | :--- |
-| 8.4 | `percona:8.4` | `3306` (via Traefik) | ❌ | ✅ Vérifié |
-| 8.0 | `percona:8.0` | `3306` (via Traefik) | ❌ | ✅ Vérifié |
+| 8.0 | `percona/percona-server:8.0` | `3306` (via Traefik) | ❌ | ✅ Vérifié |
 
 ## 🐘 PostgreSQL
 
@@ -41,16 +40,17 @@ Référence complète de tous les moteurs de bases de données et composants d'i
 | 16 | `postgres:16` | `5432` (via Traefik) | ❌ | ✅ Vérifié |
 | 15 | `postgres:15` | `5432` (via Traefik) | ❌ | ✅ Vérifié |
 
-**Modes HA** :
+**Modes HA, Réplication & Multi-Maître** :
 - Cluster Patroni (3 PG 17 + 3 ETCD + HAProxy, ports 5000/5001/7000)
 - Cluster PgPool-II (3 PG 17 + PgPool + HAProxy, ports 5100/5101/8406)
+- Réplication & Multi-Maître (`v2.1.0`–`v2.2.0`) : `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge` (Spock 5), `bucardo`, `citus` (14.2), `cockroach` (v24.3), `yugabyte` (2026.1) — voir [pg_multimaster_fr.md](pg_multimaster_fr.md).
 
 ## 🍃 MongoDB
 
 | Version | Image Docker | Port Standalone | TLS | Statut |
 | :--- | :--- | :--- | :--- | :--- |
-| 8.0 | `mongo:8.0` | — | ❌ | ✅ Vérifié |
-| 7.0 | `mongo:7.0` | — | ❌ | ✅ Vérifié |
+| 8.0 | `mongo:8.0` | — | ✅ (cluster) | ✅ Vérifié |
+| 7.0 | `mongo:7.0` | — | ✅ (cluster) | ✅ Vérifié |
 
 **Mode HA** : ReplicaSet (3 nœuds rs0 + HAProxy)
 - MongoDB 7 : ports 27411-27413 / HAProxy 27100 / Stats 8408
@@ -72,5 +72,6 @@ Référence complète de tous les moteurs de bases de données et composants d'i
 | Galera | `10.6.0.0/24` | 3 MariaDB | — |
 | PgPool-II | `10.8.0.0/24` | 3 PG + PgPool + HAProxy | HAProxy |
 | InnoDB Cluster | `10.9.0.0/24` | 3 MySQL + HAProxy | HAProxy |
-| MongoDB RS | `10.10.0.0/24` | 3 MongoDB + HAProxy | HAProxy |
+| MongoDB RS (7.0) | `10.10.0.0/24` | 3 MongoDB + HAProxy | HAProxy |
+| MongoDB RS (8.0) | `10.11.0.0/24` | 3 MongoDB + HAProxy | HAProxy |
 | Patroni | Docker bridge | 3 PG + 3 ETCD + HAProxy | HAProxy |
