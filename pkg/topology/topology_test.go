@@ -20,7 +20,7 @@ func withTempDir(t *testing.T) {
 
 func TestRegistry_Default(t *testing.T) {
 	r := DefaultRegistry()
-	expected := []string{"bucardo", "citus", "cockroach", "galera", "innodb", "mongo", "mongo8", "patroni", "pg-birep", "pg-logical", "pg-streaming", "pg18-birep", "pg18-logical", "pg18-streaming", "pgedge", "pgpool", "repli", "standalone", "yt-cluster", "yugabyte"}
+	expected := []string{"bucardo", "citus", "cockroach", "galera", "innodb", "mongo", "mongo8", "patroni", "pg-birep", "pg-logical", "pg-streaming", "pg17-baseline", "pg18-birep", "pg18-logical", "pg18-streaming", "pgedge", "pgpool", "repli", "standalone", "yt-cluster", "yugabyte"}
 	list := r.List()
 	if len(list) != len(expected) {
 		t.Fatalf("expected %d, got %d", len(expected), len(list))
@@ -41,8 +41,8 @@ func TestRegistry_Default(t *testing.T) {
 		t.Fatal("expected err")
 	}
 	withTempDir(t)
-	if r2 := DefaultRegistry(); len(r2.List()) != 19 {
-		t.Fatalf("expected 19 without yt-cluster, got %d", len(r2.List()))
+	if r2 := DefaultRegistry(); len(r2.List()) != 21 {
+		t.Fatalf("expected 21 unconditionally, got %d", len(r2.List()))
 	}
 }
 

@@ -179,3 +179,18 @@ func NewYtClusterTopology() *YtClusterTopology {
 		),
 	}
 }
+
+// Pg17BaselineTopology manages the PG 17 baseline standalone and sync primary/standby stack.
+type Pg17BaselineTopology struct{ *BaseTopology }
+
+// NewPg17BaselineTopology returns the pg17-baseline topology definition.
+func NewPg17BaselineTopology() *Pg17BaselineTopology {
+	return &Pg17BaselineTopology{
+		BaseTopology: NewBaseTopology(
+			"pg17-baseline",
+			"PostgreSQL 17 baseline standalone and sync streaming primary/standby stack",
+			[]string{"docker-compose-pg17-baseline.yml"},
+			nil,
+		),
+	}
+}
