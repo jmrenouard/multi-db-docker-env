@@ -1,6 +1,6 @@
 # Topologies PostgreSQL Réplication, Multi-Maître et SQL Distribué
 
-Ce guide présente les huit topologies PostgreSQL de réplication, multi-maître et SQL distribué (`pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `yugabyte`, `cockroach`) ainsi que la référence PostgreSQL 17 (`docker-compose-pg17-baseline.yml`) disponibles dans `multi-db-docker-env` (`v2.2.0`), avec leurs cibles Makefile, commandes CLI Go `mdb` (16 topologies enregistrées), résultats de benchmarks V1/V2, matrice étendue `T11`–`T18` et modes de défaillance observés.
+Ce guide présente les onze topologies PostgreSQL de réplication, multi-maître et SQL distribué (`pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `pgedge`, `bucardo`, `citus`, `yugabyte`, `cockroach`) ainsi que la référence PostgreSQL 17 (`docker-compose-pg17-baseline.yml`) disponibles dans `multi-db-docker-env` (`v2.3.0`), avec leurs cibles Makefile, commandes CLI Go `mdb` (19 topologies enregistrées), résultats de benchmarks V1/V2/PG18, matrice étendue `T11`–`T18` et modes de défaillance observés.
 
 *Étude comparative complète, graphiques Log10 et explorateur HTML interactif : [jmrenouard/ClusterPostgreSQL-Series](https://github.com/jmrenouard/ClusterPostgreSQL-Series).*
 
@@ -13,6 +13,9 @@ Ce guide présente les huit topologies PostgreSQL de réplication, multi-maître
 | **`pg-streaming`** | `postgres:17` (`wal_level=replica`) | 1 Primaire RW + 1 Standby RO (`async` / `sync`) | `AP` (`async`) / `CP` (`sync`) | `15434` (pri), `15435` (stb) |
 | **`pg-logical`** | `postgres:17` (`wal_level=logical`) | 1 Publisher + 1 Subscriber (`pub_logical` -> `sub_logical`) | `AP` / `PA-EL` | `15436` (pub), `15437` (sub) |
 | **`pg-birep`** | `postgres:17` (`17.11`) + `haproxy:2.9-alpine` | 2 nœuds actif-actif + HAProxy RR | `AP` / `PA-EL` | `15440` (LB), `15441`–`15442`, `15449` (stats) |
+| **`pg18-streaming`** | `postgres:18` (`18.6`, AIO `worker`, checksums `on`) | 1 Standalone + 1 Primaire RW + 1 Standby RO (`async`/`sync`) | `AP` (`async`) / `CP` (`sync`) | `15531` (std), `15534` (pri), `15535` (stb) |
+| **`pg18-logical`** | `postgres:18` (`18.6`, `substream=p`, `pubgencols=s`) | 1 Publisher + 1 Subscriber (`pub_pg18_logical` -> `sub_pg18_logical`) | `AP` / `PA-EL` | `15536` (pub), `15537` (sub) |
+| **`pg18-birep`** | `postgres:18` (`18.6`, `uuidv7()`) + `haproxy:2.9-alpine` | 2 nœuds actif-actif (`origin=none`) + HAProxy RR | `AP` / `PA-EL` | `15540` (LB), `15541`–`15542`, `15549` (stats) |
 | **`pgedge`** | `ghcr.io/pgedge/pgedge-postgres:17-spock5-minimal` | Maillage 3 nœuds Spock 5.0.14 + Snowflake 2.6.1 | `AP` / `PA-EL` | `15450` (LB), `15451`–`15453` |
 | **`bucardo`** | `postgres:17` (`plperl`) + Bucardo `5.6.0` | 2 sources PG 17 + daemon Perl asynchrone | `AP` / `PA-EL` | `15461`–`15462` |
 | **`citus`** | `citusdata/citus:14.2.0-pg17` | 1 Coordinateur + 2 Workers (8 shards) | `CP` (Coord SPOF / 2PC) | `15490` (coord), `15491`–`15492` |
@@ -27,6 +30,9 @@ Ce guide présente les huit topologies PostgreSQL de réplication, multi-maître
 make pg-streaming-up && make test-pg-streaming && make pg-streaming-down
 make pg-logical-up   && make test-pg-logical   && make pg-logical-down
 make pg-birep-up     && make test-pg-birep     && make pg-birep-down
+make pg18-streaming-up && make pg18-streaming-test && make pg18-streaming-down
+make pg18-logical-up   && make pg18-logical-test   && make pg18-logical-down
+make pg18-birep-up     && make pg18-birep-test     && make pg18-birep-down
 make pgedge-up       && make test-pgedge       && make pgedge-down
 make bucardo-up      && make test-bucardo      && make bucardo-down
 make citus-up        && make test-citus        && make citus-down
@@ -36,14 +42,17 @@ make yugabyte-up     && make test-yugabyte     && make yugabyte-down
 # Matrice de tests empiriques étendus (T11-T18 sur les 10 topologies PostgreSQL)
 make test-pg-extended
 
-# Campagnes séquentielles multi-moteurs (V1 Suites A-F et V2 Suites A-H + WAN + Concurrence)
+# Campagnes séquentielles multi-moteurs (V1 Suites A-F, V2 Suites A-H et PG 18.6)
 make bench-pg-multimaster
 make bench-pg-v2
+make bench-pg18
+make clean-pg18
 
-# Ou via le CLI natif Go mdb (v2.2.0, 16 topologies enregistrées)
+# Ou via le CLI natif Go mdb (v2.3.0, 19 topologies enregistrées)
 ./bin/mdb topologies
-./bin/mdb up pg-streaming && ./bin/mdb status pg-streaming && ./bin/mdb down pg-streaming
-./bin/mdb up pg-logical   && ./bin/mdb status pg-logical   && ./bin/mdb down pg-logical
+./bin/mdb up pg18-streaming && ./bin/mdb status pg18-streaming && ./bin/mdb down pg18-streaming
+./bin/mdb up pg18-logical   && ./bin/mdb status pg18-logical   && ./bin/mdb down pg18-logical
+./bin/mdb up pg18-birep     && ./bin/mdb status pg18-birep     && ./bin/mdb down pg18-birep
 ```
 
 ## Synthèse des benchmarks empiriques (`PG_SCALE=2`)
@@ -103,3 +112,20 @@ La commande `make test-pg-extended` exécute 8 sondes empiriques avancées sur l
 - **`T18` Synchronisation des séquences après 50 insertions** : le streaming physique préserve la séquence après `pg_promote()` (`last_value=66|true`, zéro `23505`) ; les séquences globales Raft passent ; `pg17-logical`, `pg-birep`, `pgedge` et `bucardo` laissent la séquence distante à `1|false` -> **`SQLSTATE 23505`** sans `setval()`, séquences décalées ou `snowflake.nextval()`.
 
 La commande `make bench-pg-v2` complète la campagne avec les charges sysbench étendues (`E2` lecture seule, `E3` écriture seule, `E4` point-select culminant à `148 022 TPS` sur `pg17-async-streaming`), `H_append_only_insert` (`3 108 TPS` standalone, `2 987 TPS` YugabyteDB 2 nœuds, `2 207 TPS` pgEdge 2 nœuds), la montée en concurrence (`G_conc_c1..c32`) et le balayage WAN (`10 / 25 / 50 ms`, réduisant `pg17-sync-streaming` `121.75 -> 57.00 -> 25.79 TPS` et `yugabyte` `15.38 -> 5.78 -> 3.06 TPS`). Consulter [ClusterPostgreSQL-Series](https://github.com/jmrenouard/ClusterPostgreSQL-Series) pour les CSV complets, les graphiques Log10 et le tableau de bord interactif.
+
+## Topologies natives PostgreSQL 18.6 & synthèse des benchmarks (`v2.3.0`)
+
+`make bench-pg18` exécute les 18 suites (`A`–`H`, WAN `10/25/50 ms`, concurrence `c1..c32`) sur les 5 topologies natives PG 18.6 (`PG_SCALE=2`) :
+
+| Topologie | `A_rw` TPS | `C_ro` TPS | `E_sb_rw` TPS | `E2_ro` TPS | `E3_wo` TPS | `E4_pt` QPS | `H_append` TPS | `F_wan25` TPS | `T11` lignes/s |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `pg18-standalone` | `784.43` | `42 373.67` | `1 046.67` | `2 000.88` | `1 382.15` | `130 850.73` | `1 956.76` | N/A | `80 108` |
+| `pg18-async-streaming` | `558.34` | `47 548.05` | `980.72` | `1 706.90` | `1 809.82` | `126 416.90` | `1 423.07` | `554.93` | `87 903` |
+| `pg18-sync-streaming` | `497.94` | `32 258.16` | `767.63` | `1 869.54` | `1 184.57` | `122 246.91` | `1 760.26` | `41.56` | `75 629` |
+| `pg18-logical` | `314.26` | `45 862.68` | `1 027.84` | `1 517.26` | `1 582.39` | `131 542.35` | `3 518.49` | `844.10` | `69 827` |
+| `pg18-birep` (`uuidv7`) | `514.28` | `42 190.66` | `1 055.55` | `2 053.07` | `1 492.99` | `146 907.74` | `2 066.70` | `747.42` | `70 470` |
+
+- **Arborescence Docker `PGDATA`** : `postgres:18` déplace `PGDATA` vers `/var/lib/postgresql/18/docker` (`VOLUME /var/lib/postgresql`) ; les trois piles Compose PG 18 montent `/var/lib/postgresql` et utilisent `${PGDATA:-/var/lib/postgresql/18/docker}`.
+- **AIO `io_method` & Checksums** : défauts `io_method=worker` (`io_workers=3`) et `data_checksums=on`. `io_method=io_uring` échoue avec `Operation not permitted` sous le profil seccomp Docker par défaut ; `worker` réduit le scan séquentiel à froid de `-18,5 %` (`829,4 ms` vs `1018,3 ms` en `sync`).
+- **`uuidv7()` natif & 7 compteurs `confl_*`** : `id UUID PRIMARY KEY DEFAULT uuidv7()` réalise `50/50` écritures concurrentes bi-nœuds sans collision (`0` `23505`, `0` inversion B-tree) et `2 066,70 TPS` sur `H_append_only_insert` (`3,30x` vs `pg-birep` PG 17). Les 7 compteurs `pg_stat_subscription_stats` — dont `confl_multiple_unique_conflicts` — sont vérifiés dans `tests/test_pg18_birep.sh`.
+- **Séquences logiques reportées à PG 19** : `CREATE SUBSCRIPTION` active `substream=p` par défaut et `publish_generated_columns=stored` fonctionne (`pubgencols=s`), mais `FOR ALL SEQUENCES` et `REFRESH SEQUENCES` lèvent toujours `SQLSTATE 42601` en PG 18.6 (séquences abonnées à `1|false` -> `23505` après bascule).
