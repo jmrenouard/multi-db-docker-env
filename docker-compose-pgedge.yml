@@ -55,7 +55,7 @@ services:
     volumes: ["pgedge_data3:/var/lib/pgsql/17/data"]
 
   haproxy_pgedge:
-    image: haproxy:2.9-alpine
+    image: haproxy:lts-alpine
     container_name: haproxy_pgedge
     hostname: haproxy_pgedge
     restart: unless-stopped

@@ -3,7 +3,7 @@ networks:
     driver: bridge
 
 x-crdb-node: &crdb-node
-  image: cockroachdb/cockroach:v24.3.0
+  image: cockroachdb/cockroach:latest-v25.4
   restart: unless-stopped
   mem_limit: 1280m
   networks:

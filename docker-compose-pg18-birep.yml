@@ -57,7 +57,7 @@ services:
       - pg18_birep_data2:/var/lib/postgresql
 
   haproxy_pg18_birep:
-    image: haproxy:2.9-alpine
+    image: haproxy:lts-alpine
     container_name: haproxy_pg18_birep
     hostname: haproxy_pg18_birep
     restart: unless-stopped
