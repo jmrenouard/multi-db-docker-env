@@ -2,8 +2,12 @@
 - feat: add PostgreSQL 18.6 native physical streaming (pg18-streaming), uni-directional logical (pg18-logical), and bidirectional active-active (pg18-birep with uuidv7 & HAProxy) Docker Compose stacks and setup scripts (Closes #252, #254).
 - feat: add PostgreSQL 18.6 sequential benchmark runner and helper library covering Suites A-H, WAN 10/25/50ms sweeps, and concurrency scaling (scripts/bench_pg18_runner.sh, scripts/bench_pg18_lib.py) (Closes #260, #262).
 - feat: wire PG 18.6 Makefile lifecycle/benchmark targets, register pg18-streaming, pg18-logical, and pg18-birep in Go mdb CLI (19 topologies) and dbclient verifiers, and bump release version to 2.3.0 (Makefile, pkg/topology, pkg/dbclient, cmd/mdb, VERSION) (Closes #264, #266).
+- feat: upgrade supported DB/proxy matrix to MySQL 8.4/9.7 LTS, MariaDB 12.3 LTS, Percona Server 8.4 LTS, PostgreSQL 18 standalone (/var/lib/postgresql mount), CockroachDB v25.4, Traefik v3, and HAProxy LTS, and decommission EOL versions (MySQL 5.7/8.0/9.6, MariaDB 10.6, Percona 8.0, Traefik v2.11, HAProxy 2.9) with explicit Makefile EOL notices (Closes #275, #280).
+- fix: update InnoDB Cluster for MySQL 8.4 LTS by removing deprecated transaction-write-set-extraction=XXHASH64 and replacing RESET MASTER with RESET BINARY LOGS AND GTIDS (conf/innodb-cluster) (Closes #275).
 - doc: document PostgreSQL 18.6 stacks, benchmark highlights, PGDATA volume layout, AIO io_method, and logical sequence sync findings across EN/FR guides and governance registers (documentation, docs).
+- doc: update EN/FR supported products matrices, READMEs, Makefile/PostgreSQL/Architecture guides, ROADMAP, and governance registers with active LTS support windows and official EOL decommissioning table (Closes #274, #279, #284, #286).
 - test: add PostgreSQL 18.6 functional and empirical limits test suites (tests/test_pg18_streaming.sh, tests/test_pg18_logical.sh, tests/test_pg18_birep.sh) and expand Go topology/dbclient/cmd unit tests (Closes #254, #256, #258).
+- test: update interactive_runner.py, test_lab.py (is_mysql97), Python runner unit tests, and add static EOL image + PG18 volume mount regression guard in tests/test_repo_static.py (48 Python tests) (Closes #276).
 
 2.2.0 2026-11-20
 - feat: add PostgreSQL 17 physical streaming (pg-streaming) and native uni-directional logical (pg-logical) topologies, extended T11-T18 test matrix, and V2 benchmark harness (Makefile, pkg/topology, cmd/mdb, scripts) (Closes #214).
