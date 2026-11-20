@@ -3,7 +3,9 @@
 # Initializes a MongoDB ReplicaSet with 3 members (no auth, lab context)
 set -euo pipefail
 
-NODES=("mongo1" "mongo2" "mongo3")
+read -r -a NODES <<< "${*:-${MONGO_NODES:-mongo1 mongo2 mongo3}}"
+PRIMARY_NODE="${NODES[0]}"
+WAIT_RETRIES="${WAIT_RETRIES:-60}"
 
 run_mongosh() {
     local node="$1"
@@ -29,30 +31,30 @@ echo "=========================================================="
 echo ""
 echo "1. ⏳ Waiting for all MongoDB nodes to be ready (max 120s)..."
 for node in "${NODES[@]}"; do
-    TIMEOUT=120
+    TIMEOUT=$((WAIT_RETRIES * 2))
     ELAPSED=0
     while ! run_mongosh "$node" --eval "db.runCommand({ping:1})" &>/dev/null; do
         sleep 2
         ELAPSED=$((ELAPSED + 2))
         if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
-            echo "❌ Timeout waiting for $node"
+            echo "❌ [ERROR] Timeout waiting for $node" >&2
             exit 1
         fi
     done
-    echo "   ✅ $node is ready."
+    echo "   ✅ [OK] $node is ready."
 done
 
 # 2. Initiate ReplicaSet
 echo ""
 echo "2. ⛓️  Initiating ReplicaSet rs0..."
-run_mongosh mongo1 --eval "
+run_mongosh "$PRIMARY_NODE" --eval "
 try {
     rs.initiate({
         _id: 'rs0',
         members: [
-            { _id: 0, host: 'mongo1:27017', priority: 2 },
-            { _id: 1, host: 'mongo2:27017', priority: 1 },
-            { _id: 2, host: 'mongo3:27017', priority: 1 }
+            { _id: 0, host: '${NODES[0]}:27017', priority: 2 },
+            { _id: 1, host: '${NODES[1]}:27017', priority: 1 },
+            { _id: 2, host: '${NODES[2]}:27017', priority: 1 }
         ]
     });
     print('ReplicaSet initiated.');
@@ -72,9 +74,9 @@ echo "3. ⏳ Waiting for primary election (max 60s)..."
 TIMEOUT=60
 ELAPSED=0
 while true; do
-    IS_PRIMARY=$(run_mongosh mongo1 --eval "rs.isMaster().ismaster" 2>/dev/null || echo "false")
+    IS_PRIMARY=$(run_mongosh "$PRIMARY_NODE" --eval "rs.isMaster().ismaster" 2>/dev/null || echo "false")
     if [ "$IS_PRIMARY" = "true" ]; then
-        echo "   ✅ mongo1 elected as PRIMARY."
+        echo "   ✅ $PRIMARY_NODE elected as PRIMARY."
         break
     fi
     sleep 2
@@ -93,7 +95,7 @@ sleep 10
 # 5. Verify ReplicaSet status
 echo ""
 echo "5. 📊 Verifying ReplicaSet status..."
-run_mongosh mongo1 --eval "
+run_mongosh "$PRIMARY_NODE" --eval "
 var s = rs.status();
 s.members.forEach(function(m) {
     print(m.name + ' | ' + m.stateStr + ' | health=' + m.health);

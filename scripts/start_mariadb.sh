@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+# Generate SSH host keys at runtime if missing (avoid shared keys baked into image)
+if ! compgen -G "/etc/ssh/ssh_host_*_key" >/dev/null 2>&1; then
+    ssh-keygen -A
+fi
+
 # Configure runtime SSH access if provided via environment
 if [ -n "${SSH_ROOT_PASSWORD:-}" ]; then
     echo "root:${SSH_ROOT_PASSWORD}" | chpasswd

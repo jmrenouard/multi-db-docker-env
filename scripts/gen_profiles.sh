@@ -56,6 +56,6 @@ alias ssh-g3='ssh -i ./id_rsa -p 24003 root@127.0.0.1 -o StrictHostKeyChecking=n
 echo "✅ Galera aliases loaded (mariadb-g1, mariadb-g2, mariadb-g3, mariadb-galera-lb, ssh-g1, ssh-g2, ssh-g3)"
 EOF
 
-chmod +x "$REPLI_PROFILE" "$GALERA_PROFILE"
+chmod 600 "$REPLI_PROFILE" "$GALERA_PROFILE"
 echo "✨ Profiles generated: $REPLI_PROFILE, $GALERA_PROFILE"
 echo "👉 Use 'source <profile_name>' to activate them."

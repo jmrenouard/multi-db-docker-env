@@ -218,7 +218,7 @@ class TestProjectGovernanceRules(unittest.TestCase):
         """Verify Mongo 8 TLS parity."""
         t_c = (ROOT / "docker-compose-mongo8-rs.yml").read_text(encoding="utf-8")
         t_m = (ROOT / "Makefile").read_text(encoding="utf-8")
-        t_s = (ROOT / "conf/mongo-rs/setup_rs_mongo8.sh").read_text(encoding="utf-8")
+        t_s = (ROOT / "conf/mongo-rs/setup_rs.sh").read_text(encoding="utf-8")
         t_t = (ROOT / "pkg/topology/mongo.go").read_text(encoding="utf-8")
         for txt, exp in (
             (t_c, ("./ssl/certs/mongo8:/etc/ssl/mongo:ro", "--tlsMode requireTLS")),
