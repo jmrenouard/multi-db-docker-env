@@ -15,7 +15,7 @@ type CommandRunner interface {
 	RunCombined(ctx context.Context, name string, args ...string) ([]byte, error)
 }
 
-// EnvCommandRunner optionally executes commands with extra environment variables.
+// EnvCommandRunner optionally executes commands with extra env vars.
 type EnvCommandRunner interface {
 	RunWithEnv(ctx context.Context, env []string, name string, args ...string) ([]byte, []byte, int, error)
 }
@@ -114,7 +114,7 @@ func NewClient() *Client                          { return &Client{runner: &Real
 func NewClientWithRunner(r CommandRunner) *Client { return &Client{runner: r} }
 func (c *Client) Runner() CommandRunner           { return c.runner }
 
-// RunWithEnv runs a command with optional extra environment variables.
+// RunWithEnv runs a command with optional extra env vars.
 func (c *Client) RunWithEnv(ctx context.Context, env []string, name string, args ...string) ([]byte, []byte, int, error) {
 	if er, ok := c.runner.(EnvCommandRunner); ok {
 		return er.RunWithEnv(ctx, env, name, args...)
@@ -128,21 +128,20 @@ func (c *Client) ImageExists(ctx context.Context, tag string) (bool, error) {
 	if err == nil && code == 0 {
 		return true, nil
 	}
-	msg := strings.ToLower(string(stderr))
-	if strings.Contains(msg, "cannot connect") || strings.Contains(msg, "daemon") {
-		return false, fmt.Errorf("docker daemon error: %s: %w", strings.TrimSpace(string(stderr)), err)
+	if msg := strings.ToLower(string(stderr)); strings.Contains(msg, "no such image") || strings.Contains(msg, "not found") {
+		return false, nil
 	}
-	return false, nil
+	return false, fmt.Errorf("docker image inspect %s failed (%d): %s: %w", tag, code, strings.TrimSpace(string(stderr)), err)
 }
 
-// BuildImage builds a Docker image from dockerfileDir with the given tag.
-func (c *Client) BuildImage(ctx context.Context, tag, dockerfileDir string) error {
-	if dockerfileDir == "" {
-		dockerfileDir = "."
+// BuildImage builds a Docker image from dir with tag.
+func (c *Client) BuildImage(ctx context.Context, tag, dir string) error {
+	if dir == "" {
+		dir = "."
 	}
-	_, stderr, code, err := c.runner.Run(ctx, "docker", "build", "-t", tag, dockerfileDir)
+	_, se, code, err := c.runner.Run(ctx, "docker", "build", "-t", tag, dir)
 	if err != nil || code != 0 {
-		return fmt.Errorf("docker build %s failed (%d): %s: %w", tag, code, strings.TrimSpace(string(stderr)), err)
+		return fmt.Errorf("docker build %s failed (%d): %s: %w", tag, code, strings.TrimSpace(string(se)), err)
 	}
 	return nil
 }
