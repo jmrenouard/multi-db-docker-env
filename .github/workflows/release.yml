@@ -1,64 +1,129 @@
 name: Release & Distribution
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to validate/build (defaults to v<VERSION>)'
+        required: false
+        default: ''
+      publish:
+        description: 'Publish GitHub Release and Docker image (false = dry-run)'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
   packages: write
 
 jobs:
-  package-release-assets:
-    name: Package Release Assets
+  validate:
+    name: Validate Version & Tests
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Package Laboratory Distribution Archives
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Validate Version Consistency & Changelog
+        id: meta
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          mkdir -p dist
-          TAG_NAME="${{ github.event.release.tag_name }}"
-          if [ -z "$TAG_NAME" ]; then
-            TAG_NAME="${GITHUB_REF_NAME:-v2.0.0}"
-          fi
-          ARCHIVE_BASE="multi-db-docker-env-${TAG_NAME}"
+          RAW_TAG="$INPUT_TAG"
+          [ "$EVENT_NAME" = "push" ] && RAW_TAG="$REF_NAME"
+          python3 scripts/release_notes.py --tag "$RAW_TAG" --check --github-output "$GITHUB_OUTPUT"
+      - name: Run Python, Go & Config Tests
+        run: |
+          python3 -m unittest discover -s tests -v
+          go test -race ./...
+          bash ./tests/test_config.sh
 
-          # Create distribution directory excluding local caches and git metadata
+  release:
+    name: Build CLI, Package & Publish Release
+    needs: validate
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.validate.outputs.tag }}
+      VERSION: ${{ needs.validate.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Cross-Compile mdb CLI & Package Release Assets
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os="${target%/*}"; arch="${target#*/}"; ext=""
+            [ "$os" = "windows" ] && ext=".exe"
+            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -trimpath \
+              -ldflags="-s -w -X main.version=${VERSION}" \
+              -o "dist/mdb-${TAG}-${os}-${arch}${ext}" ./cmd/mdb
+          done
+
+          ARCHIVE_BASE="multi-db-docker-env-${TAG}"
           TMP_DIR=$(mktemp -d)
           PACKAGE_DIR="${TMP_DIR}/${ARCHIVE_BASE}"
           mkdir -p "${PACKAGE_DIR}"
-
-          # Copy essential compose files, configurations, scripts, and documentation
-          cp -r docker-compose*.yml Dockerfile Makefile VERSION README.md LICENSE "${PACKAGE_DIR}/"
-          cp -r conf scripts pkg cmd "${PACKAGE_DIR}/" 2>/dev/null || true
-          cp .env.example "${PACKAGE_DIR}/" 2>/dev/null || true
-
-          # Create tar.gz and zip bundles
+          cp -r docker-compose*.yml Dockerfile Makefile VERSION Changelog README.md LICENSE conf scripts pkg cmd go.mod "${PACKAGE_DIR}/"
+          cp go.sum .env.example "${PACKAGE_DIR}/" 2>/dev/null || true
           tar -czf "dist/${ARCHIVE_BASE}.tar.gz" -C "${TMP_DIR}" "${ARCHIVE_BASE}"
           (cd "${TMP_DIR}" && zip -rq "${GITHUB_WORKSPACE}/dist/${ARCHIVE_BASE}.zip" "${ARCHIVE_BASE}")
           rm -rf "${TMP_DIR}"
 
-          # Generate cryptographic checksums
-          cd dist
-          sha256sum * > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-
-      - name: Attach Assets to GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: github.event_name == 'release'
+          (cd dist && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          python3 scripts/release_notes.py --tag "$TAG" --output RELEASE_NOTES.md
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          files: |
-            dist/*
+          name: release-dist-${{ needs.validate.outputs.tag }}
+          path: |
+            dist/
+            RELEASE_NOTES.md
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish == true
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: Release ${{ needs.validate.outputs.tag }}
+          body_path: RELEASE_NOTES.md
+          prerelease: ${{ needs.validate.outputs.prerelease == 'true' }}
+          files: dist/*
 
   publish-docker-hub:
     name: Build & Push Multi-Arch Docker Hub Image
+    needs: [validate, release]
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.publish == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Check Docker Hub Credentials
+        id: creds
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ] && echo "ok=true" >> "$GITHUB_OUTPUT" || echo "ok=false" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -67,25 +132,24 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
+        if: steps.creds.outputs.ok == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Resolve Docker Hub Image Tags
+        if: steps.creds.outputs.ok == 'true'
         id: meta
+        env:
+          RAW_TAG: ${{ needs.validate.outputs.tag }}
+          CLEAN_VERSION: ${{ needs.validate.outputs.version }}
+          IS_PRERELEASE: ${{ needs.validate.outputs.prerelease }}
         run: |
           IMAGE="jmrenouard/multi-db-docker-env"
-          RAW_TAG="${{ github.event.release.tag_name }}"
-          if [ -z "$RAW_TAG" ]; then
-            RAW_TAG="${GITHUB_REF_NAME:-v2.0.0}"
-          fi
-          CLEAN_VERSION="${RAW_TAG#v}"
-
           TAGS="${IMAGE}:${RAW_TAG},${IMAGE}:${CLEAN_VERSION}"
 
           # Conditionally append :latest tag only if release is not a prerelease
-          IS_PRERELEASE="${{ github.event.release.prerelease }}"
           if [ "$IS_PRERELEASE" != "true" ]; then
             TAGS="${TAGS},${IMAGE}:latest"
           fi
@@ -93,6 +157,7 @@ jobs:
           echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
 
       - name: Build and Push Multi-Arch Docker Image
+        if: steps.creds.outputs.ok == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
