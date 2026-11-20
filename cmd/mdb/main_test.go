@@ -21,7 +21,7 @@ func TestDefaultAndResolveContainer(t *testing.T) {
 	cases := map[string]string{
 		"galera": "galera_01", "repli": "mariadb_02", "innodb": "mysql_node1",
 		"patroni": "node1", "pgpool": "pgpool", "mongo": "mongo1", "mongo8": "mongo8_n1",
-		"pg-streaming": "pg_stream_primary", "pg-logical": "pg_logical_pub",
+		"pg17-baseline": "pg17_standalone", "pg-streaming": "pg_stream_primary", "pg-logical": "pg_logical_pub",
 		"pg-birep": "pg_birep_node1", "pg18-streaming": "pg18_stream_primary",
 		"pg18-logical": "pg18_logical_pub", "pg18-birep": "pg18_birep_node1",
 		"pgedge": "pgedge_node1", "bucardo": "bucardo_node1",
@@ -146,7 +146,7 @@ func TestMain_InProcessSubcommands(t *testing.T) {
 	}
 
 	topoOut := captureMain(t, "topologies")
-	for _, want := range []string{"galera", "patroni", "pg-streaming", "pg18-streaming", "pg18-logical", "pg18-birep", "yt-cluster", "yugabyte"} {
+	for _, want := range []string{"galera", "patroni", "pg17-baseline", "pg-streaming", "pg18-streaming", "pg18-logical", "pg18-birep", "yt-cluster", "yugabyte"} {
 		if !strings.Contains(topoOut, want) {
 			t.Errorf("topologies output missing %q", want)
 		}
@@ -223,7 +223,7 @@ func TestHelpAndCatalogCommands(t *testing.T) {
 	for _, h := range []string{"help", "--help", "-h"} {
 		cmd := exec.Command(os.Args[0], "-test.run=TestHelperProcess", "--", h)
 		cmd.Env = append(os.Environ(), "GO_WANT_HELPER_PROCESS=1")
-		if out, err := cmd.CombinedOutput(); err != nil || !strings.Contains(string(out), "catalog") {
+		if out, err := cmd.CombinedOutput(); err != nil || !strings.Contains(string(out), "catalog") || !strings.Contains(string(out), "lint") || !strings.Contains(string(out), "setup") {
 			t.Fatalf("%s failed err=%v out=%s", h, err, string(out))
 		}
 	}
@@ -482,5 +482,54 @@ func TestBenchRouting(t *testing.T) {
 	}
 	if err := runBenchCmd(ctx, client, cat, nil); err == nil {
 		t.Fatalf("expected usage error when env omitted")
+	}
+}
+
+func TestSetupLintAndTestSuite(t *testing.T) {
+	cat, wd, tmp := activeCatalog(), "", t.TempDir()
+	wd, _ = os.Getwd()
+	for _, rel := range []string{"scripts/yt_cluster/setup_yt_cluster.sh", "tests/test_yt_cluster.sh", ".env.example", "docker-compose-pg17-baseline.yml"} {
+		p := filepath.Join(tmp, rel)
+		_ = os.MkdirAll(filepath.Dir(p), 0755)
+		_ = os.WriteFile(p, []byte("ok\n"), 0644)
+	}
+	_ = os.Chdir(tmp)
+	defer func() { _ = os.Chdir(wd) }()
+
+	var out, errBuf bytes.Buffer
+	var ran [][]string
+	fx := func(_ context.Context, e []string, _ io.Reader, _, _ io.Writer, n string, a ...string) error {
+		ran = append(ran, append([]string{strings.Join(e, ","), n}, a...))
+		return nil
+	}
+	if err := runSetupCmd(context.Background(), cat, []string{"pg17-baseline"}, &out, &errBuf, fx); err != nil || !strings.Contains(out.String(), "No setup script") {
+		t.Fatalf("pg17 setup: %v %s", err, out.String())
+	}
+	if err := runSetupCmd(context.Background(), cat, []string{"yt-cluster"}, &out, &errBuf, fx); err != nil || ran[0][2] != "scripts/yt_cluster/setup_yt_cluster.sh" {
+		t.Fatalf("yt setup: %v %v", err, ran)
+	}
+	if err := runSetupCmd(context.Background(), cat, []string{"mysql80"}, &out, &errBuf, fx); err == nil {
+		t.Fatal("expected EOL")
+	}
+
+	mock := &docker.MockCommandRunner{Custom: func(_ context.Context, _ string, _ ...string) ([]byte, []byte, int, error) {
+		return []byte("1\n"), nil, 0, nil
+	}}
+	client := docker.NewClientWithRunner(mock)
+	out.Reset()
+	if err := runLintCmd(context.Background(), client, &out, &errBuf); err != nil || !strings.Contains(out.String(), "bash -n passed") || !strings.Contains(out.String(), "docker-compose-pg17-baseline.yml") {
+		t.Fatalf("lint: %v %s", err, out.String())
+	}
+	if got := strings.Join(mock.Calls[len(mock.Calls)-1], " "); !strings.Contains(got, "--env-file .env.example -f docker-compose-pg17-baseline.yml config -q") {
+		t.Fatalf("lint args: %s", got)
+	}
+
+	out.Reset()
+	ran = nil
+	if err := runTestCmd(context.Background(), client, cat, []string{"yt-cluster", "--suite"}, &out, &errBuf, fx); err != nil || !strings.Contains(out.String(), `"HEALTHY"`) || ran[0][2] != "tests/test_yt_cluster.sh" {
+		t.Fatalf("test --suite: %v %s %v", err, out.String(), ran)
+	}
+	if err := runTestCmd(context.Background(), client, cat, []string{"pg17-baseline", "--suite"}, &out, &errBuf, fx); err == nil {
+		t.Fatal("expected missing suite")
 	}
 }
