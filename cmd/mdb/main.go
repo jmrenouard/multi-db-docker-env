@@ -130,6 +130,18 @@ func main() {
 		runOrExit(runMyCnfCmd(os.Stdout, os.Stderr))
 	case "doctor":
 		runOrExit(runDoctorCmd(ctx, os.Stdout, runtime.GOOS, exec.LookPath, os.Stat, docker.NewClient()))
+	case "profiles":
+		runOrExit(streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "bash", "./scripts/gen_profiles.sh"))
+	case "inject":
+		runOrExit(runInjectCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:]))
+	case "backup":
+		runOrExit(runBackupRestore(ctx, false, os.Args[2:]))
+	case "restore":
+		runOrExit(runBackupRestore(ctx, true, os.Args[2:]))
+	case "audit":
+		runOrExit(runAuditCmd(ctx, os.Args[2:]))
+	case "clean":
+		runOrExit(runCleanCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:]))
 	case "test":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: mdb test <topology>")
