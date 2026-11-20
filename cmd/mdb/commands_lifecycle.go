@@ -27,6 +27,7 @@ Lifecycle:
 Client, Diagnostics & Operations:
   catalog [flags]          List environments (--category, --engine, --eol, --all, --json)
                            Aliases: list, envs, environments, topologies
+  interactive | wizard     Bilingual wizard (-a/--auto, -i/--interactive, -l en|fr)
   client [env] | mycnf     Open DB shell or backup/write ~/.my.cnf (0600)
   profiles | inject | backup | restore | audit | clean
   doctor | config | pki | test | bench | report | version | help
