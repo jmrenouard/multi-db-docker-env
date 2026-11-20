@@ -14,6 +14,7 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/config"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/dbclient"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
+	"github.com/jmrenouard/multi-db-docker-env/pkg/interactive"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/pki"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/report"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/runner"
@@ -140,6 +141,11 @@ func main() {
 		runOrExit(runAuditCmd(ctx, os.Args[2:]))
 	case "clean":
 		runOrExit(runCleanCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:]))
+	case "interactive", "wizard":
+		opts, err := interactive.ParseArgs(os.Args[2:])
+		runOrExit(err)
+		opts.Catalog = activeCatalog()
+		runOrExit(interactive.Run(ctx, opts))
 	case "test":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: mdb test <topology>")
