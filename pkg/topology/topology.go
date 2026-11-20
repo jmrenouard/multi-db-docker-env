@@ -50,6 +50,7 @@ var setupScripts = map[string]string{
 	"citus":          "scripts/citus/setup_citus.sh",
 	"cockroach":      "scripts/cockroach/setup_cockroach.sh",
 	"yugabyte":       "scripts/yugabyte/setup_yugabyte.sh",
+	"yt-cluster":     "scripts/yt_cluster/setup_yt_cluster.sh",
 }
 
 var setupScriptArgs = map[string][]string{
@@ -173,5 +174,6 @@ func DefaultRegistry() *Registry {
 	r.Register(NewCitusTopology())
 	r.Register(NewCockroachTopology())
 	r.Register(NewYugabyteTopology())
+	r.Register(NewYtClusterTopology())
 	return r
 }

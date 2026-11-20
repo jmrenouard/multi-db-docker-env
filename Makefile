@@ -351,7 +351,25 @@ pg18-birep-test: test-pg18-birep
 bench-pg18: ## Run sequential empirical benchmarks across all 5 PG 18.6 topologies
 	@bash ./scripts/bench_pg18_runner.sh
 
-clean-pg18: pg18-streaming-down pg18-logical-down pg18-birep-down ## Stop and remove all PG 18.6 stacks and volumes
+YT_CLUSTER_COMPOSE = docker-compose-yt-cluster.yml
+yt-cluster-up: ## Start 3-node YT Cluster 1.21.3 (PG 18.7) active-active cluster
+	docker compose -f $(YT_CLUSTER_COMPOSE) up -d && bash ./scripts/yt_cluster/setup_yt_cluster.sh
+yt-cluster-down: ## Stop YT Cluster 1.21.3 and remove volumes
+	docker compose -f $(YT_CLUSTER_COMPOSE) down -v
+yt-cluster-status: ## Show YT Cluster 1.21.3 node roles and containers
+	docker compose -f $(YT_CLUSTER_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-pg_poc_ephemeral}" yt1 psql -U postgres -d postgres -c "SELECT yt_info('o');"
+yt-cluster-logs: ## Follow YT Cluster 1.21.3 logs
+	docker compose -f $(YT_CLUSTER_COMPOSE) logs -f
+yt-cluster-ps: ## List YT Cluster 1.21.3 containers
+	docker compose -f $(YT_CLUSTER_COMPOSE) ps
+test-yt-cluster: ## Run YT Cluster 1.21.3 limits (L1-L8), T11-T18, and T_REVERT tests
+	@bash ./tests/test_yt_cluster.sh
+yt-cluster-test: test-yt-cluster
+
+bench-yt-cluster: ## Run sequential empirical benchmarks on YT Cluster 1.21.3 (sync-2PC & async)
+	@bash ./scripts/bench_yt_runner.sh
+
+clean-pg18: pg18-streaming-down pg18-logical-down pg18-birep-down yt-cluster-down ## Stop and remove all PG 18 / YT Cluster stacks and volumes
 
 # --- Main Targets ---
 .PHONY: help mycnf client info mysql97 mysql84 mysql96 mysql80 mysql57 mariadb123 mariadb118 mariadb114 mariadb1011 mariadb106 percona84 percona80 postgres18 postgres17 postgres16 postgres15 stop status logs \
@@ -371,7 +389,8 @@ clean-pg18: pg18-streaming-down pg18-logical-down pg18-birep-down ## Stop and re
         pg18-streaming-up pg18-streaming-down pg18-streaming-status pg18-streaming-logs pg18-streaming-ps test-pg18-streaming pg18-streaming-test \
         pg18-logical-up pg18-logical-down pg18-logical-status pg18-logical-logs pg18-logical-ps test-pg18-logical pg18-logical-test \
         pg18-birep-up pg18-birep-down pg18-birep-status pg18-birep-logs pg18-birep-ps test-pg18-birep pg18-birep-test \
-        bench-pg-multimaster test-pg-extended bench-pg-v2 bench-pg18 clean-pg18 \
+        yt-cluster-up yt-cluster-down yt-cluster-status yt-cluster-logs yt-cluster-ps test-yt-cluster yt-cluster-test \
+        bench-pg-multimaster test-pg-extended bench-pg-v2 bench-pg18 bench-yt-cluster clean-pg18 \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
@@ -478,9 +497,10 @@ help:
 	@printf "    \033[1mpg18-streaming-up / pg18-streaming-test\033[0m - PG 18.6 Streaming (AIO worker)\n"
 	@printf "    \033[1mpg18-logical-up / pg18-logical-test\033[0m     - PG 18.6 Native Logical\n"
 	@printf "    \033[1mpg18-birep-up / pg18-birep-test\033[0m         - PG 18.6 Bidirectional (uuidv7)\n"
-	@printf "    \033[1mbench-pg18 / clean-pg18\033[0m                 - PG 18.6 Benchmark & Cleanup\n"
+	@printf "    \033[1myt-cluster-up / yt-cluster-test\033[0m       - YT Cluster 1.21.3 (PG 18 Active-Active)\n"
+	@printf "    \033[1mbench-pg18 / bench-yt-cluster / clean-pg18\033[0m - PG 18 & YT Cluster Bench/Cleanup\n"
 	@printf "\n"
-	@printf "  \033[1;32mGolang Orchestrator (v2.3.0):\033[0m\n"
+	@printf "  \033[1;32mGolang Orchestrator (v2.4.0):\033[0m\n"
 	@printf "    \033[1mbuild-go\033[0m           - 🔨 Compiles mdb CLI binary into bin/mdb\n"
 	@printf "    \033[1mtest-go\033[0m            - 🧪 Runs complete Go unit test suite\n"
 	@printf "\n"
