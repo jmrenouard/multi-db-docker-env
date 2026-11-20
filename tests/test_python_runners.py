@@ -25,10 +25,47 @@ class TestInteractiveRunner(unittest.TestCase):
              patch.object(interactive_runner, 'get_steps', return_value=('standalone', steps)), \
              patch.object(interactive_runner, 'run_command', run_mock), \
              patch.object(interactive_runner, 'generate_report'), \
-             patch('builtins.input', side_effect=['y', 'c', 'n']), \
+             patch('builtins.input', side_effect=['y', 's']), \
+             patch('builtins.print'):
+            with self.assertRaises(SystemExit) as cm:
+                interactive_runner.main()
+        self.assertEqual(cm.exception.code, 1)
+        self.assertEqual(run_mock.call_count, 1)
+
+    def test_interactive_continue_no_duplicate_prompt_and_localized_retry(self):
+        self.assertIn('retry_prompt', interactive_runner.STRINGS['en'])
+        self.assertIn('retry_prompt', interactive_runner.STRINGS['fr'])
+        self.assertNotEqual(interactive_runner.STRINGS['en']['retry_prompt'], interactive_runner.STRINGS['fr']['retry_prompt'])
+        steps = [{"id": "s1", "name": "s1", "command": "c1", "description": "d1"}, {"id": "s2", "name": "s2", "command": "c2", "description": "d2"}]
+        run_mock = MagicMock(side_effect=[(1, "out1", "err1"), (0, "ok", "")])
+        prompts = []
+        answers = iter(['y', 'c', 'y'])
+        def fake_input(prompt=""):
+            prompts.append(prompt)
+            return next(answers)
+        with patch('argparse.ArgumentParser.parse_args', return_value=argparse.Namespace(auto=False, interactive=True, lang='fr')), \
+             patch.object(interactive_runner, 'get_steps', return_value=('standalone', steps)), \
+             patch.object(interactive_runner, 'run_command', run_mock), \
+             patch.object(interactive_runner, 'generate_report'), \
+             patch('builtins.input', side_effect=fake_input), \
              patch('builtins.print'):
             interactive_runner.main()
-        self.assertEqual(run_mock.call_count, 1)
+        self.assertEqual(run_mock.call_count, 2)
+        self.assertEqual(prompts, [
+            interactive_runner.STRINGS['fr']['run_step'],
+            interactive_runner.STRINGS['fr']['retry_prompt'],
+            interactive_runner.STRINGS['fr']['run_step'],
+        ])
+
+    def test_postgres_skips_inject_and_verify_uses_info(self):
+        with patch('builtins.print'), patch('builtins.input', side_effect=['1', '4', '1']):
+            lbl, st = interactive_runner.get_steps(auto=False)
+        self.assertIn("PostgreSQL 18", lbl)
+        ids = [s["id"] for s in st]
+        self.assertNotIn("inject", ids)
+        self.assertEqual(next(s for s in st if s["id"] == "verify")["command"], "make info")
+        _, auto_steps = interactive_runner.get_steps(auto=True)
+        self.assertEqual(next(s for s in auto_steps if s["id"] == "verify")["command"], "make info")
 
     def test_select_language(self):
         with patch('builtins.input', return_value='f'):
@@ -252,6 +289,15 @@ class TestMySQLDocker(unittest.TestCase):
                 self.assertIn("MYSQL_DEFAULTS_FILE_db10=p10", content)
             finally:
                 os.chdir(orig)
+
+    def test_legacy_notices_point_to_mdb(self):
+        err_buf = io.StringIO()
+        with patch.object(sys, 'argv', ['mysql_docker.py', 'stop', 'db1']), \
+             patch.object(mysql_docker, 'stop_container'), \
+             patch('sys.stderr', err_buf):
+            mysql_docker.main()
+        self.assertIn("./mdb", err_buf.getvalue())
+        self.assertIn("./mdb interactive", interactive_runner.__doc__)
 
 class TestMakefileUsability(unittest.TestCase):
     def test_makefile_usability_fixes_and_delegation(self):

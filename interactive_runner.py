@@ -1,3 +1,8 @@
+"""Legacy interactive test runner wrapper.
+
+Unified CLI entry point: './mdb interactive' (or 'mdb.cmd interactive' on Windows).
+"""
+
 import subprocess
 import os
 import html
@@ -21,6 +26,7 @@ STRINGS = {
         'invalid': "\n❌ Invalid choice or interrupted. Falling back to default.",
         'run_step': "   Run this step? (Y/n) ",
         'continue': "   Continue to next step? (y/N) ",
+        'retry_prompt': "   Retry this step? [r]etry / [c]ontinue / [s]top (default: r): ",
         'failed': "❌ Step failed with return code {}",
         'executing': "\n📦 Executing: {}",
         'report_updated': "\n✨ Report updated: {}",
@@ -49,6 +55,7 @@ STRINGS = {
         'invalid': "\n❌ Choix invalide ou interrompu. Retour à la version par défaut.",
         'run_step': "   Exécuter cette étape ? (O/n) ",
         'continue': "   Continuer vers l'étape suivante ? (o/N) ",
+        'retry_prompt': "   Réessayer cette étape ? [r]éessayer / [c]ontinuer / [s]top (défaut : r) : ",
         'failed': "❌ Étape échouée avec le code de sortie {}",
         'executing': "\n📦 Exécution de : {}",
         'report_updated': "\n✨ Rapport mis à jour : {}",
@@ -95,7 +102,7 @@ def get_steps(auto=False):
             {"id": "start", "name": f"Start {p_name}", "description": f"Starts {p_name} container.", "command": f"make {tgt}"},
             {"id": "status", "name": "Check Status", "description": f"Shows status of {p_name}.", "command": "make status"},
             {"id": "inject", "name": "Inject Data", "description": "Injects employees dataset.", "command": f"make inject-data service={tgt} db=employees"},
-            {"id": "verify", "name": "Verify Integrity", "description": "Runs integrity checks.", "command": "make test-config"}
+            {"id": "verify", "name": "Verify Connectivity", "description": f"Verifies {p_name} container status and logs.", "command": "make info"}
         ]
 
     print(f"\n{STRINGS[L]['select_type']}")
@@ -207,10 +214,11 @@ def get_steps(auto=False):
             
         except (ValueError, IndexError, KeyboardInterrupt):
             print(STRINGS[L]['invalid'])
+            system_name = "MariaDB"
             pretty_name = "MariaDB 11.4"
             target = "mariadb114"
 
-        return f"{'Standalone' if L == 'en' else 'Autonome'} ({pretty_name})", [
+        steps = [
             {
                 "id": "config",
                 "name": "Test Configuration" if L == 'en' else "Test de Configuration",
@@ -229,19 +237,21 @@ def get_steps(auto=False):
                 "description": f"Shows the current status of the {pretty_name} container." if L == 'en' else f"Affiche l'état actuel du conteneur {pretty_name}",
                 "command": "make status"
             },
-            {
+        ]
+        if system_name != "PostgreSQL":
+            steps.append({
                 "id": "inject",
                 "name": "Inject Data" if L == 'en' else "Injecter les Données",
                 "description": "Injects the employees dataset." if L == 'en' else "Injecte le jeu de données des employés.",
                 "command": f"make inject-data service={target} db=employees"
-            },
-            {
-                "id": "verify",
-                "name": "Verify Integrity" if L == 'en' else "Vérifier l'Intégrité",
-                "description": "Runs data integrity checks." if L == 'en' else "Exécute des contrôles d'intégrité des données.",
-                "command": "make test-config"
-            }
-        ]
+            })
+        steps.append({
+            "id": "verify",
+            "name": "Verify Connectivity" if L == 'en' else "Vérifier la Connectivité",
+            "description": f"Verifies {pretty_name} container readiness and logs." if L == 'en' else f"Vérifie la disponibilité et les journaux du conteneur {pretty_name}.",
+            "command": "make info"
+        })
+        return f"{'Standalone' if L == 'en' else 'Autonome'} ({pretty_name})", steps
 
 INSTALL_TYPE = ""
 STEPS = []
@@ -604,11 +614,13 @@ def generate_report(results, finished=False):
 
 def main():
     global L, INSTALL_TYPE, STEPS
-    parser = argparse.ArgumentParser(description="Interactive and Automated Test Runner")
+    parser = argparse.ArgumentParser(description="Legacy interactive and automated test runner wrapper (prefer './mdb interactive').")
     parser.add_argument("-a", "--auto", action="store_true", help="Run in automated mode (no prompts)")
     parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode (prompts for each step)")
     parser.add_argument("-l", "--lang", choices=['en', 'fr'], help="Force language (en/fr)")
     args = parser.parse_args()
+
+    print("ℹ️  Unified CLI available: './mdb interactive' (or 'mdb.cmd interactive' on Windows). Running legacy interactive_runner.py wrapper.")
 
     if args.lang:
         L = args.lang
@@ -665,15 +677,16 @@ def main():
                 returncode, stdout, stderr = run_command(step['command'], update_func=on_update)
                 status = "SUCCESS" if returncode == 0 else "FAILED"
                 
-                if status == "FAILED" and mode == 'i':
+                if status == "FAILED":
                     print(STRINGS[L]['failed'].format(returncode))
-                    retry = input(f"   Retry this step? [r]etry / [c]ontinue / [s]top (default: r): ").lower().strip() or 'r'
-                    if retry == 'r':
-                        continue
-                    elif retry == 's':
-                        results.append({**step, "status": "FAILED", "stdout": stdout, "stderr": stderr})
-                        generate_report(results + [{**s, "status": "PENDING", "stdout": "", "stderr": ""} for s in STEPS[len(results):]], finished=True)
-                        sys.exit(1)
+                    if mode == 'i':
+                        retry = input(STRINGS[L]['retry_prompt']).lower().strip() or 'r'
+                        if retry == 'r':
+                            continue
+                        elif retry == 's':
+                            results.append({**step, "status": "FAILED", "stdout": stdout, "stderr": stderr})
+                            generate_report(results + [{**s, "status": "PENDING", "stdout": "", "stderr": ""} for s in STEPS[len(results):]], finished=True)
+                            sys.exit(1)
                 
                 results.append({
                     **step,
@@ -687,13 +700,6 @@ def main():
                     for s in STEPS[len(results):]
                 ]
                 generate_report(current_report)
-
-                if status == "FAILED":
-                    print(STRINGS[L]['failed'].format(returncode))
-                    if mode == 'i':
-                        cont = input(STRINGS[L]['continue']).lower().strip()
-                        if cont != ('o' if L == 'fr' else 'y'):
-                            return
                 break # Exit the while True loop for this step
             else:
                 results.append({

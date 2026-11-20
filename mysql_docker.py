@@ -1,7 +1,13 @@
+"""Legacy standalone MySQL/MariaDB Docker helper (deprecated).
+
+Prefer './mdb' (or 'mdb.cmd' on Windows) as the single unified CLI entry point.
+"""
+
 import argparse
 import secrets
 import string
 import os
+import sys
 try:
     import docker
     from docker import from_env
@@ -231,7 +237,8 @@ def list_containers(status_filter=None, debug=False):
         print(format_row(row))
 
 def main(debug=False):
-    parser = argparse.ArgumentParser(description="Manage MySQL/MariaDB containers.")
+    print("⚠️  [DEPRECATED] mysql_docker.py is a legacy helper. Use './mdb' (or 'mdb.cmd' on Windows) instead.", file=sys.stderr)
+    parser = argparse.ArgumentParser(description="Legacy MySQL/MariaDB helper (use ./mdb instead).")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Command to list environments
