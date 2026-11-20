@@ -21,8 +21,12 @@ class TestPythonAuditFixes(unittest.TestCase):
     def test_interactive_runner_postgres_target_and_html_escape(self):
         with patch("builtins.input", side_effect=["1", "4", "1"]), patch("builtins.print"):
             title, steps = interactive_runner.get_steps()
-        self.assertIn("PostgreSQL 17", title)
-        self.assertEqual(next(s for s in steps if s["id"] == "start")["command"], "make postgres17")
+        self.assertIn("PostgreSQL 18", title)
+        self.assertEqual(next(s for s in steps if s["id"] == "start")["command"], "make postgres18")
+        with patch("builtins.input", side_effect=["1", "3", "1"]), patch("builtins.print"):
+            p_title, p_steps = interactive_runner.get_steps()
+        self.assertIn("Percona 8.4", p_title)
+        self.assertEqual(next(s for s in p_steps if s["id"] == "start")["command"], "make percona84")
         with tempfile.TemporaryDirectory() as tmp:
             rpt = os.path.join(tmp, "report.html")
             res = [{"id": "s1", "name": "S1", "description": "D", "command": "echo <script>x</script>", "status": "RUNNING", "stdout": "<b>ok</b>", "stderr": "<err>"}]
