@@ -372,8 +372,8 @@ bench-yt-cluster: ## Run sequential empirical benchmarks on YT Cluster 1.21.3 (s
 clean-pg18: pg18-streaming-down pg18-logical-down pg18-birep-down yt-cluster-down ## Stop and remove all PG 18 / YT Cluster stacks and volumes
 
 # --- Main Targets ---
-.PHONY: help mycnf client info mysql97 mysql84 mysql96 mysql80 mysql57 mariadb123 mariadb118 mariadb114 mariadb1011 mariadb106 percona84 percona80 postgres18 postgres17 postgres16 postgres15 stop status logs \
-        build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera test-patroni \
+.PHONY: help catalog doctor interactive mycnf client info mysql97 mysql84 mysql96 mysql80 mysql57 mariadb123 mariadb118 mariadb114 mariadb1011 mariadb106 percona84 percona80 postgres18 postgres17 postgres16 postgres15 stop status logs \
+        build-image galera-up galera-down galera-status galera-logs repli-up repli-down repli-status repli-logs test-repli test-galera test-patroni \
         pgpool-up pgpool-down pgpool-status pgpool-logs pgpool-ps test-pgpool \
         innodb-up innodb-down innodb-status innodb-logs innodb-ps test-innodb \
         mongo-up mongo-down mongo-status mongo-logs mongo-ps test-mongo \
@@ -409,101 +409,43 @@ DEFAULT_SERVICE ?= mariadb114
 GET_ACTIVE_SERVICE = docker compose ps --services --filter "status=running" | grep -v traefik | head -n 1
 GET_CONTAINER_NAME = docker compose ps $$( $(GET_ACTIVE_SERVICE) ) --format "{{.Names}}"
 
+MDB_CHECK = [ -x ./mdb ] && { [ -x ./bin/mdb ] || command -v go >/dev/null 2>&1; }
+
 # Default target, displays help
 help:
-	@printf "╔═══════════════════════════════════════════════════════╗\n"
-	@printf "║      🚀 Available commands to manage databases        ║\n"
-	@printf "╚═══════════════════════════════════════════════════════╝\n"
-	@printf "\n"
-	@printf "  \033[1;33mUsage:\033[0m make <command>\n"
-	@printf "\n"
-	@printf "  \033[1;32mGeneral:\033[0m\n"
-	@printf "    \033[1mstop\033[0m          - 🛑 Stops all containers managed by this project.\n"
-	@printf "    \033[1mstatus\033[0m        - 📊 Displays the status of active containers.\n"
-	@printf "    \033[1minfo\033[0m          - ℹ️  Provides information about the active DB service.\n"
-	@printf "    \033[1mlogs\033[0m          - 📄 Displays logs for all containers (e.g., make logs service=mysql97).\n"
-	@printf "    \033[1mmycnf\033[0m         - 🔑 Generates the .my.cnf file for the MySQL client.\n"
-	@printf "    \033[1mclient\033[0m        - 💻 Starts a MySQL client on the active database.\n"
-	@printf "\n"
-	@printf "  \033[1;32mMySQL (LTS):\033[0m\n"
-	@printf "    \033[1mmysql97\033[0m       - Starts MySQL 9.7 LTS\n"
-	@printf "    \033[1mmysql84\033[0m       - Starts MySQL 8.4 LTS\n"
-	@printf "\n"
-	@printf "  \033[1;32mMariaDB (LTS):\033[0m\n"
-	@printf "    \033[1mmariadb123\033[0m    - Starts MariaDB 12.3 LTS\n"
-	@printf "    \033[1mmariadb118\033[0m    - Starts MariaDB 11.8 LTS\n"
-	@printf "    \033[1mmariadb114\033[0m    - Starts MariaDB 11.4 LTS\n"
-	@printf "    \033[1mmariadb1011\033[0m   - Starts MariaDB 10.11 LTS\n"
-	@printf "\n"
-	@printf "  \033[1;32mMariaDB Clusters (Galera & Replication):\033[0m\n"
-	@printf "    \033[1mup-galera\033[0m     - 🚀 Starts Galera cluster (Sequential bootstrap)\n"
-	@printf "    \033[1mup-repli\033[0m      - 🚀 Starts Replication cluster\n"
-	@printf "    \033[1mcheck-galera\033[0m  - 📊 Checks Galera status\n"
-	@printf "    \033[1mcheck-repli\033[0m   - 📊 Checks Replication status\n"
-	@printf "    \033[1mtest-galera\033[0m   - 🧪 Runs Galera tests\n"
-	@printf "    \033[1mtest-repli\033[0m    - 🧪 Runs Replication tests\n"
-	@printf "    \033[1mtest-config\033[0m   - 🧪 Validates orchestration and configuration\n"
-	@printf "\n"
-	@printf "  \033[1;32mData Injection:\033[0m\n"
-	@printf "    \033[1minject-employees\033[0m - 💉 Injects employees database (Auto-detect environment)\n"
-	@printf "    \033[1minject-sakila\033[0m    - 💉 Injects sakila database (Auto-detect environment)\n"
-	@printf "    \033[1minject\033[0m           - 💉 Alias for inject-employees on default service\n"
-	@printf "\n"
-	@printf "  \033[1;32mPercona Server (LTS):\033[0m\n"
-	@printf "    \033[1mpercona84\033[0m     - Starts Percona Server 8.4 LTS\n"
-	@printf "\n"
-	@printf "  \033[1;32mPostgreSQL & Patroni:\033[0m\n"
-	@printf "    \033[1mpatroni-up\033[0m    - 🚀 Starts Patroni PostgreSQL 17 cluster\n"
-	@printf "    \033[1mpatroni-status\033[0m - 📊 Checks Patroni cluster status\n"
-	@printf "    \033[1mtest-patroni\033[0m   - 🧪 Runs Patroni functional tests\n"
-	@printf "    \033[1mpostgres18\033[0m    - Starts PostgreSQL 18\n"
-	@printf "    \033[1mpostgres17\033[0m    - Starts PostgreSQL 17\n"
-	@printf "    \033[1mpostgres16\033[0m    - Starts PostgreSQL 16\n"
-	@printf "    \033[1mpostgres15\033[0m    - Starts PostgreSQL 15\n"
-	@printf "\n"
-	@printf "  \033[1;32mPgPool-II Cluster:\033[0m\n"
-	@printf "    \033[1mpgpool-up\033[0m     - 🚀 Starts PgPool-II + PostgreSQL 17 cluster\n"
-	@printf "    \033[1mpgpool-down\033[0m   - 🛑 Stops PgPool-II cluster\n"
-	@printf "    \033[1mpgpool-status\033[0m - 📊 Shows PgPool-II node status\n"
-	@printf "    \033[1mtest-pgpool\033[0m   - 🧪 Runs PgPool-II functional tests\n"
-	@printf "\n"
-	@printf "  \033[1;32mMySQL InnoDB Cluster:\033[0m\n"
-	@printf "    \033[1minnodb-up\033[0m     - 🚀 Starts MySQL 8.4 InnoDB Cluster (3 nodes + HAProxy)\n"
-	@printf "    \033[1minnodb-down\033[0m   - 🛑 Stops InnoDB Cluster\n"
-	@printf "    \033[1minnodb-status\033[0m - 📊 Shows Group Replication status\n"
-	@printf "    \033[1mtest-innodb\033[0m   - 🧪 Runs InnoDB Cluster functional tests\n"
-	@printf "\n"
-	@printf "  \033[1;32mMySQLTuner Integration:\033[0m\n"
-	@printf "    \033[1mmysqltuner-galera\033[0m  - 🔍 Run MySQLTuner audit on Galera Cluster\n"
-	@printf "    \033[1mmysqltuner-innodb\033[0m  - 🔍 Run MySQLTuner audit on InnoDB Cluster\n"
-	@printf "    \033[1mmysqltuner-repli\033[0m   - 🔍 Run MySQLTuner audit on Replication\n"
-	@printf "    \033[1mmysqltuner-all\033[0m     - 🔍 Run MySQLTuner on all HA topologies\n"
-	@printf "\n"
-	@printf "  \033[1;32mEnd-to-End Testing:\033[0m\n"
-	@printf "    \033[1mtest-all\033[0m           - 🧪 Runs functional tests on all standalone databases\n"
-	@printf "    \033[1mtest-all-topologies\033[0m- 🧪 Runs E2E tests across ALL standalone DBs and HA topologies\n"
-	@printf "\n"
-	@printf "  \033[1;32mPostgreSQL Multi-Master Clusters:\033[0m\n"
-	@printf "    \033[1mpg-streaming-up / test-pg-streaming\033[0m - PG 17 Physical Streaming (Async/Sync)\n"
-	@printf "    \033[1mpg-logical-up / test-pg-logical\033[0m     - PG 17 Native Uni-Directional Logical\n"
-	@printf "    \033[1mpg-birep-up / test-pg-birep\033[0m   - PG 17 Bidirectional Logical + HAProxy\n"
-	@printf "    \033[1mpgedge-up / test-pgedge\033[0m       - PG 17 pgEdge Spock 5 + Snowflake Mesh\n"
-	@printf "    \033[1mbucardo-up / test-bucardo\033[0m     - PG 17 Bucardo 5 Trigger Multi-Master\n"
-	@printf "    \033[1mcitus-up / test-citus\033[0m         - Citus 14.2 Distributed PG 17\n"
-	@printf "    \033[1mcockroach-up / test-cockroach\033[0m - CockroachDB v25.4 3-Node Raft\n"
-	@printf "    \033[1myugabyte-up / test-yugabyte\033[0m   - YugabyteDB 2026.1.3 3-Node Raft\n"
-	@printf "    \033[1mbench-pg-multimaster\033[0m          - Sequential pgbench/sysbench suite\n"
-	@printf "    \033[1mtest-pg-extended / bench-pg-v2\033[0m - Extended T11-T18 matrix & V2 benchmarks\n"
-	@printf "    \033[1mpg18-streaming-up / pg18-streaming-test\033[0m - PG 18.6 Streaming (AIO worker)\n"
-	@printf "    \033[1mpg18-logical-up / pg18-logical-test\033[0m     - PG 18.6 Native Logical\n"
-	@printf "    \033[1mpg18-birep-up / pg18-birep-test\033[0m         - PG 18.6 Bidirectional (uuidv7)\n"
-	@printf "    \033[1myt-cluster-up / yt-cluster-test\033[0m       - YT Cluster 1.21.3 (PG 18 Active-Active)\n"
-	@printf "    \033[1mbench-pg18 / bench-yt-cluster / clean-pg18\033[0m - PG 18 & YT Cluster Bench/Cleanup\n"
-	@printf "\n"
-	@printf "  \033[1;32mGolang Orchestrator (v2.4.0):\033[0m\n"
-	@printf "    \033[1mbuild-go\033[0m           - 🔨 Compiles mdb CLI binary into bin/mdb\n"
-	@printf "    \033[1mtest-go\033[0m            - 🧪 Runs complete Go unit test suite\n"
-	@printf "\n"
+	@if $(MDB_CHECK); then \
+		./mdb help; \
+		printf "\nMake Compatibility Wrappers:\n"; \
+		printf "  General:    make start | stop | status | info | logs | client | mycnf | catalog | doctor | interactive\n"; \
+		printf "  Standalone: make mysql97 | mysql84 | mariadb123 | mariadb118 | mariadb114 | mariadb1011 | percona84 | postgres18..15\n"; \
+		printf "  Clusters:   make <topo>-up | <topo>-down | <topo>-status | <topo>-logs (galera, repli, innodb, patroni, pgpool, mongo, mongo8, pg-*, citus, cockroach, yugabyte)\n"; \
+		if [ -f "$(YT_CLUSTER_COMPOSE)" ]; then printf "  Optional:   make yt-cluster-up | yt-cluster-down | yt-cluster-status | test-yt-cluster\n"; fi; \
+		printf "  CI/Tests:   make gen-ssl-all | check-ssl-all | test-config | test-backup-restore | test-failover | mysqltuner-galera | test-all-report\n"; \
+	else \
+		printf "Usage: make <target> (build bin/mdb or install Go to use unified ./mdb CLI)\n"; \
+		printf "  General:    stop status info logs mycnf client catalog doctor interactive\n"; \
+		printf "  Standalone: mysql97 mysql84 mariadb123 mariadb118 mariadb114 mariadb1011 percona84 postgres18 postgres17 postgres16 postgres15\n"; \
+		printf "  Clusters:   galera-up repli-up innodb-up patroni-up pgpool-up mongo-up mongo8-up pg-streaming-up pg-logical-up pg-birep-up pgedge-up bucardo-up citus-up cockroach-up yugabyte-up pg18-streaming-up pg18-logical-up pg18-birep-up\n"; \
+		if [ -f "$(YT_CLUSTER_COMPOSE)" ]; then printf "  Optional:   yt-cluster-up yt-cluster-down yt-cluster-status test-yt-cluster\n"; fi; \
+		printf "  Testing:    test-config test-galera test-repli test-all test-all-topologies\n"; \
+	fi
+
+catalog: ## List all supported database environments and clusters via mdb
+	@if $(MDB_CHECK); then ./mdb catalog; else \
+		echo "Standalone: mysql97 mysql84 mariadb123 mariadb118 mariadb114 mariadb1011 percona84 postgres18 postgres17 postgres16 postgres15"; \
+		echo "Clusters:   galera repli innodb patroni pgpool mongo mongo8 pg-streaming pg-logical pg-birep pg18-streaming pg18-logical pg18-birep pgedge bucardo citus cockroach yugabyte"; \
+		if [ -f "$(YT_CLUSTER_COMPOSE)" ]; then echo "Optional:   yt-cluster"; fi; \
+	fi
+
+doctor: ## Run environment and dependency diagnostics via mdb
+	@if $(MDB_CHECK); then ./mdb doctor; else \
+		echo "Docker: $$(command -v docker || echo missing) | Go: $$(command -v go || echo missing) | OpenSSL: $$(command -v openssl || echo missing)"; \
+	fi
+
+interactive: ## Launch unified interactive wizard via mdb (with Python fallback)
+	@if $(MDB_CHECK) && ./mdb help 2>/dev/null | grep -qw "interactive"; then ./mdb interactive; else \
+		python3 interactive_runner.py; \
+	fi
 
 # 🚀 Starts the default database service
 start: $(DEFAULT_SERVICE)
@@ -1015,6 +957,11 @@ down-galera: ## Stop Galera cluster
 logs-galera: ## Follow Galera cluster logs
 	docker compose -f $(COMPOSE_GALERA) logs -f
 
+galera-up: up-galera ## Alias for up-galera
+galera-down: down-galera ## Alias for down-galera
+galera-status: check-galera ## Alias for check-galera
+galera-logs: logs-galera ## Alias for logs-galera
+
 ## Replication Cluster
 up-repli: stop build-image gen-ssl down-galera ## Start Replication cluster
 	docker compose -f $(COMPOSE_REPLI) up -d
@@ -1032,6 +979,11 @@ down-repli: ## Stop Replication cluster
 
 logs-repli: ## Follow Replication cluster logs
 	docker compose -f $(COMPOSE_REPLI) logs -f
+
+repli-up: up-repli ## Alias for up-repli
+repli-down: down-repli ## Alias for down-repli
+repli-status: check-repli ## Alias for check-repli
+repli-logs: logs-repli ## Alias for logs-repli
 
 test-repli: ## Run replication tests on the active cluster
 	bash ./tests/test_repli.sh
