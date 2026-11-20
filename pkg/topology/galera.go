@@ -40,6 +40,9 @@ func (g *GaleraTopology) Up(ctx context.Context, client *docker.Client) error {
 	}
 	pass := rootPassword()
 	bootEnv := defaultComposeEnv()
+	if bootEnv == nil {
+		bootEnv = make(map[string]string)
+	}
 	bootEnv["MARIADB_GALERA_BOOTSTRAP"] = "1"
 	if err := client.ComposeUp(ctx, g.ComposeFiles(), bootEnv, true, "galera_01"); err != nil {
 		return err

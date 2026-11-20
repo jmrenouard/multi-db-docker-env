@@ -127,6 +127,10 @@ func TestGaleraAndRepli_BuildAndReadiness(t *testing.T) {
 	}
 
 	imagePresent = true
+	t.Setenv("DB_ROOT_PASSWORD", "ci-secret")
+	if err := galera.Up(ctx, client); err != nil {
+		t.Fatalf("Galera Up with DB_ROOT_PASSWORD set: %v", err)
+	}
 	mock.Calls = nil
 	repli := NewRepliTopology()
 	if err := repli.Up(ctx, client); err != nil {
