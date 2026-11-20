@@ -36,6 +36,7 @@ Before you begin, ensure you have the following tools installed:
 * [Docker](https://docs.docker.com/get-docker/)
 * [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
 * `make` (available on most Linux/macOS systems. For Windows, you can use Chocolatey: `choco install make`)
+* Full host CLI and optional client tool list: see [`PREREQUISITES.txt`](PREREQUISITES.txt).
 
 ## ⚙️ Initial Setup
 
@@ -382,6 +383,14 @@ make test-go     # Run Go test suite
 | `bench` | `mdb bench <topology> [flags]` | Runs Sysbench benchmarks (`-workload`, `-threads`, `-duration`). |
 | `pki` | `mdb pki <generate\|verify> [topo]` | Generates or verifies TLS certificates natively. |
 | `report` | `mdb report [topos...] [flags]` | Aggregates health & exports telemetry reports. |
+
+## 🚀 Release Pipeline (GitHub Actions)
+
+Automated releases run via [`.github/workflows/release.yml`](.github/workflows/release.yml) on `v*.*.*` tag pushes or manual `workflow_dispatch` (dry-run by default; set `publish=true` to publish):
+
+1. **Validate**: Checks `VERSION` / `Changelog` / tag consistency via [`scripts/release_notes.py`](scripts/release_notes.py), runs Python `unittest`, `go test -race ./...`, and `tests/test_config.sh`.
+2. **Build & Package**: Cross-compiles `cmd/mdb` for 6 targets (`linux`/`darwin`/`windows` × `amd64`/`arm64`) with `-ldflags` version injection, packages lab `.tar.gz`/`.zip` bundles, and generates `SHA256SUMS.txt`.
+3. **Publish**: Extracts release notes from `Changelog`, publishes the GitHub Release with binaries and checksums, and pushes multi-arch Docker Hub images when `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN` secrets are configured.
 
 ## 📜 Project Governance & Living Registers
 
