@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+# Sequential empirical PG_SCALE=2 benchmark runner for 3-node YT Cluster 1.21.3 (PG 18).
+set -euo pipefail
+export BENCH_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" PYTHONDONTWRITEBYTECODE=1 PG_SCALE="${PG_SCALE:-2}"
+export PG_PASS="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}"
+export DB_ROOT_PASSWORD="$PG_PASS" PG_LAB_PASSWORD="$PG_PASS" BENCH_IMAGE="${BENCH_IMAGE:-multi-db-pgbench-sysbench:latest}"
+export BENCH_OUT_CSV="${BENCH_OUT_CSV:-${BENCH_ROOT}/reports/benchmark_yt_cluster.csv}"
+export BENCH_LOG_FILE="${BENCH_LOG_FILE:-${BENCH_ROOT}/reports/logs/yt-cluster-benchmark.log}"
+cd "$BENCH_ROOT"
+
+exec python3 - <<'PY'
+import csv,io,os,re,subprocess as sp,sys,time
+from pathlib import Path
+
+R,OUT,LOG=Path(os.environ["BENCH_ROOT"]),Path(os.environ["BENCH_OUT_CSV"]),Path(os.environ["BENCH_LOG_FILE"])
+OUT.parent.mkdir(parents=True,exist_ok=True); LOG.parent.mkdir(parents=True,exist_ok=True)
+sys.path.insert(0,str(R/"scripts"))
+from bench_pg_lib import B,COLS,bc,de,mk_scripts,pb_run,pq,row,sh
+
+SC,PW,IMG=int(os.environ["PG_SCALE"]),os.environ["PG_PASS"],os.environ["BENCH_IMAGE"]
+NA,HF,NS,U,PT,J=100000*SC,50000*SC,["yt1","yt2","yt3"],"postgres",5432,"/".join
+CF,CC_ASYNC=str(R/"docker-compose-yt-cluster.yml"),"CgQSAhAC"
+q=lambda n,s:pq(n,PT,U,PW,s)
+pb=lambda t,su,m,c,j,d,a1,a2="":pb_run(t,su,m,c,j,d,a1,a2,NS[:2],PT,U,PW,io.StringIO())
+
+RETRY_PY="""import math,random,sys,threading,time,psycopg
+md,dur,sc,na,pw,hs=sys.argv[1],int(sys.argv[2]),int(sys.argv[3]),int(sys.argv[4]),sys.argv[5],sys.argv[6].split(",")
+te=time.monotonic()+dur;lts=[];ct=[0,0,0,0];lk=threading.Lock()
+def w(h):
+ c=psycopg.connect(f"host={h} port=5432 dbname=labdb user=postgres password={pw}",autocommit=False);cur=c.cursor();ll=[];lc=[0,0,0,0]
+ while time.monotonic()<te:
+  t0=time.monotonic();aid=random.randint(1,50 if md=="hot" else na);dl=random.randint(1,100) if md=="hot" else random.randint(-5000,5000)
+  bid=1 if md=="hot" else random.randint(1,sc);tid=1 if md=="hot" else random.randint(1,10*sc)
+  for _ in range(100):
+   if time.monotonic()>=te:break
+   try:
+    cur.execute("UPDATE pgbench_accounts SET abalance=abalance+%s WHERE aid=%s",(dl,aid))
+    if md!="hot":
+     cur.execute("SELECT abalance FROM pgbench_accounts WHERE aid=%s",(aid,))
+     cur.execute("UPDATE pgbench_tellers SET tbalance=tbalance+%s WHERE tid=%s",(dl,tid))
+     cur.execute("UPDATE pgbench_branches SET bbalance=bbalance+%s WHERE bid=%s",(dl,bid))
+    cur.execute("INSERT INTO pgbench_history(tid,bid,aid,delta,mtime) VALUES(%s,%s,%s,%s,CURRENT_TIMESTAMP)",(tid,bid,aid,dl))
+    c.commit();lc[0]+=1;ll.append((time.monotonic()-t0)*1000);break
+   except psycopg.Error as e:
+    c.rollback();st=getattr(e,"sqlstate","") or ""
+    if st in("40001","40P01"):lc[2]+=1
+    elif st=="55409":lc[3]+=1
+    else:lc[1]+=1;break
+  else:lc[1]+=1
+ c.close()
+ with lk:
+  lts.extend(ll)
+  for i in range(4):ct[i]+=lc[i]
+ts=[threading.Thread(target=w,args=(h,)) for h in hs for _ in range(4)];t0=time.monotonic()
+for t in ts:t.start()
+for t in ts:t.join()
+el=max(time.monotonic()-t0,1e-4)
+if lts:lts.sort();n=len(lts);a=sum(lts)/n;sd=math.sqrt(sum((x-a)**2 for x in lts)/n);p95=lts[min(n-1,int(0.95*n))]
+else:a=sd=p95=0.0
+print(f"{ct[0]/el:.2f}|{a:.3f}|{sd:.3f}|{p95:.3f}|{ct[0]}|{ct[1]}|{ct[2]+ct[3]}|{ct[2]}|{ct[3]}")
+"""
+
+def assert_zero():
+  left=[n.strip() for n in sh(["docker","ps","-a","--format","{{.Names}}"]).stdout.splitlines() if n.strip() in("yt1","yt2","yt3","bench_client")]
+  if left: raise RuntimeError(f"Residual: {left}")
+
+def ldr():
+  for n in NS:
+    if ', Leader"' in de(n,["psql","-X","-q","-U",U,"-d","postgres","-tAc","SELECT yt_info('o')::text;"],PW,False).stdout: return n
+  return "yt1"
+
+def yts(pat):
+  for n in NS: q(n,f"SELECT count(*) FROM public.yt_setup('{pat}','',true,'public.yt_config');")
+  time.sleep(2.5)
+
+def init_pb():
+  ddl=(f"DROP TABLE IF EXISTS {B}history,{B}accounts,{B}tellers,{B}branches CASCADE;"
+       f"CREATE TABLE {B}branches(bid INT PRIMARY KEY,bbalance INT,filler CHAR(88));"
+       f"CREATE TABLE {B}tellers(tid INT PRIMARY KEY,bid INT,tbalance INT,filler CHAR(84));"
+       f"CREATE TABLE {B}accounts(aid INT PRIMARY KEY,bid INT,abalance INT,filler CHAR(84));"
+       f"CREATE TABLE {B}history(hid UUID PRIMARY KEY DEFAULT uuidv7(),tid INT,bid INT,aid INT,delta INT,mtime TIMESTAMP,filler CHAR(22));")
+  for n in NS: q(n,ddl); bc(["pgbench","-U",U,"-d","labdb","-i","-s",str(SC),"-I","g","-n","-q","-h",n,"-p",str(PT)],PW)
+  yts("public.pgbench_%")
+
+def rst():
+  s=f"BEGIN;SET LOCAL session_replication_role=replica;UPDATE {B}accounts SET abalance=0 WHERE abalance<>0;UPDATE {B}branches SET bbalance=0;UPDATE {B}tellers SET tbalance=0;TRUNCATE {B}history;COMMIT;"
+  for n in NS: q(n,s)
+  time.sleep(0.5)
+
+def cchk(ok,tag):
+  for _ in range(35):
+    hcs=[int(q(n,f"SELECT count(*) FROM {B}history;") or -1) for n in NS]
+    if len(set(hcs))==1 and hcs[0]>=ok: break
+    time.sleep(1)
+  exp=int(q("yt1",f"SELECT COALESCE(SUM(delta),0) FROM {B}history;"))
+  accs=[int(q(n,f"SELECT COALESCE(SUM(abalance),0) FROM {B}accounts;")) for n in NS]
+  hcs=[int(q(n,f"SELECT count(*) FROM {B}history;")) for n in NS]; dr=accs[0]-exp
+  st="EXPECTED_LIMITATION_DIVERGED" if len(set(accs))>1 else ("EXPECTED_LIMITATION_LOST_UPDATE" if dr else "PASS_CONVERGED")
+  return st,dr,f"{tag} d={exp} acc={J(map(str,accs))} h={J(map(str,hcs))}"
+
+def r_ret(topo,su,md,dur,tag):
+  rst(); p=bc(["python3","/tmp/yt_retry.py",md,str(dur),str(SC),str(NA),PW,"yt1,yt2"]).stdout.strip().split("|")
+  cst,cdr,cn=cchk(int(p[4]),f"{tag} r40001={p[7]} r55409={p[8]}")
+  return row(topo,su,SC,8,dur,float(p[0]),"N/A",float(p[1]),float(p[2]),float(p[3]),int(p[4]),int(p[5]),int(p[6]),cst,cdr,cn)
+
+def r_sb(topo,tag):
+  cm=f"--db-driver=pgsql --pgsql-host=yt1 --pgsql-port={PT} --pgsql-user={U} --pgsql-password={PW} --pgsql-db=labdb --tables=4 --table-size=10000"
+  for n in NS: q(n,"DROP TABLE IF EXISTS sbtest1,sbtest2,sbtest3,sbtest4 CASCADE;")
+  q(ldr(),"DELETE FROM public.yt_config WHERE module='A' AND name LIKE 'public.sbtest%';"); time.sleep(1.5)
+  bc(["bash","-c",f"sysbench oltp_read_write {cm} prepare >/tmp/sb_p.out 2>&1"],"",True)
+  dump=de("yt1",["pg_dump","-U",U,"-d","labdb","-t","sbtest*"],PW).stdout
+  for n in("yt2","yt3"): sp.run(["docker","exec","-i","-e",f"PGPASSWORD={PW}",n,"psql","-U",U,"-d","labdb","-v","ON_ERROR_STOP=1"],input=dump,text=True,check=True,stdout=sp.DEVNULL)
+  yts("public.sbtest%")
+  pats=(r"transactions:\s+(\d+)\s+\(([0-9.]+)",r"queries:\s+\d+\s+\(([0-9.]+)",r"ignored errors:\s+(\d+)",r"avg:\s+([0-9.]+)",r"95th percentile:\s+([0-9.]+)")
+  res={}
+  for su,lua,th,dur in [("E2_sysbench_oltp_ro","oltp_read_only",8,12),("E4_sysbench_point_select","oltp_point_select",16,12),("E_sysbench_oltp_rw","oltp_read_write",8,15),("E3_sysbench_oltp_wo","oltp_write_only",8,12)]:
+    note=f"{tag} {lua} 4x10k"
+    if bc(["bash","-c",f"sysbench {lua} {cm} --threads={th} --time={dur} run >/tmp/sb_r.out 2>&1"],"",False).returncode:
+      note=f"{tag} {lua} ps=off"
+      if bc(["bash","-c",f"sysbench {lua} {cm} --threads={th} --time={dur} --db-ps-mode=disable run >/tmp/sb_r.out 2>&1"],"",False).returncode:
+        res[su]=row(topo,su,SC,th,dur,0,0,0,0,0,0,0,0,"EXPECTED_LIMITATION_UNSUPPORTED",0,f"{tag} err"); continue
+    s=bc(["cat","/tmp/sb_r.out"]).stdout; tx,qm,em,am,pm=[re.search(x,s) for x in pats]
+    res[su]=row(topo,su,SC,th,dur,float(tx.group(2)) if tx else 0,float(qm.group(1)) if qm else 0,float(am.group(1)) if am else 0,0,float(pm.group(1)) if pm else 0,int(tx.group(1)) if tx else 0,int(em.group(1)) if em else 0,0,"PASS",0,note)
+  for n in NS: q(n,"DROP TABLE IF EXISTS sbtest1,sbtest2,sbtest3,sbtest4 CASCADE;")
+  q(ldr(),"DELETE FROM public.yt_config WHERE module='A' AND name LIKE 'public.sbtest%';")
+  return [res[k] for k in("E_sysbench_oltp_rw","E2_sysbench_oltp_ro","E3_sysbench_oltp_wo","E4_sysbench_point_select")]
+
+def r_app(topo,tag):
+  tb="bench_append_events"
+  for n in NS: q(n,f"DROP TABLE IF EXISTS {tb} CASCADE;CREATE TABLE {tb}(ev_id UUID PRIMARY KEY DEFAULT uuidv7(),node_id INT,payload INT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);")
+  yts(f"public.{tb}")
+  sp.run(["docker","exec","-i","bench_client","bash","-c","cat>/tmp/s_append.sql"],input="\\set payload random(1,100000)\nINSERT INTO bench_append_events(node_id,payload) VALUES(:nid,:payload);\n",text=True,check=True)
+  tps,avg,sdv,p95,ok,fl,rt=pb(topo,"H_append_only_insert",2,4,2,12,"-f /tmp/s_append.sql -D nid=1","-f /tmp/s_append.sql -D nid=2")
+  for _ in range(45):
+    cs=[int(q(n,f"SELECT count(*) FROM {tb};") or -1) for n in NS]
+    if len(set(cs))==1 and cs[0]>=ok: break
+    time.sleep(1)
+  cs=[int(q(n,f"SELECT count(*) FROM {tb};") or -1) for n in NS]; dr=cs[0]-ok
+  return row(topo,"H_append_only_insert",SC,8,12,tps,"N/A",avg,sdv,p95,ok,fl,rt,"PASS_CONVERGED" if (len(set(cs))==1 and dr==0) else "DIVERGED",dr,f"{tag} uuidv7 2n rows={J(map(str,cs))}")
+
+def _tc(pc,args,chk=True): sh(["docker","run","--rm","--network",f"container:{pc}","--cap-add","NET_ADMIN",IMG,"tc","qdisc",*args],chk)
+
+def r_wan(topo,ms,tag):
+  rst()
+  for pc in("yt2","yt3"): _tc(pc,["replace","dev","eth0","root","netem","delay",f"{ms}ms"])
+  time.sleep(1)
+  try: tps,avg,sdv,p95,ok,fl,rt=pb(topo,f"F_wan_netem_{ms}ms",1,8,4,12,f"-D scale={SC}")
+  finally:
+    for pc in("yt2","yt3"): _tc(pc,["del","dev","eth0","root"],False)
+    time.sleep(1)
+  return row(topo,f"F_wan_netem_{ms}ms",SC,8,12,tps,"N/A",avg,sdv,p95,ok,fl,rt,f"PASS_NETEM_{ms}MS",0,f"{tag} netem {ms}ms")
+
+def emit(rows,lf,r):
+  rows.append(r)
+  ln=f"  [{r['topology']}] {r['suite']}: tps={r['tps']} qps={r['qps']} avg={r['lat_avg_ms']}ms p95={r['lat_p95_ms']}ms ok={r['tx_committed']} fl={r['tx_failed']} rt={r['retries_40001']} {r['convergence_status']} drift={r['balance_drift']} | {r['notes']}"
+  print(ln,flush=True); lf.write(ln+"\n")
+
+rows=[]; assert_zero()
+with LOG.open("w",encoding="utf-8",newline="\n") as lf:
+  try:
+    lf.write("=== YT Cluster 1.21.3 Empirical Benchmark (3-Node PG 18, PG_SCALE=2) ===\n")
+    sh(["docker","compose","-f",CF,"up","-d"]); sh(["bash",str(R/"scripts/yt_cluster/setup_yt_cluster.sh")])
+    ver=de("yt1",["psql","-X","-q","-U",U,"-d","labdb","-tAc","SELECT version();"],PW).stdout.strip().split(" on ")[0]
+    dcc=de("yt1",["psql","-X","-q","-U",U,"-d","postgres","-tAc","SELECT e->>'value' FROM jsonb_array_elements(yt_info('d')::jsonb) e WHERE e->>'name'='def_cluster_commit';"],PW).stdout.strip()
+    lf.write(f"engine: {ver} + yt_cluster 1.21 | default_cc={dcc} (half/sync-2pc) | sc=0 (NO_SC)\n")
+    net=sh(["docker","inspect","-f","{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{end}}","yt1"]).stdout.strip()
+    sh(["docker","rm","-f","bench_client"],False); sh(["docker","run","-d","--name","bench_client","--network",net,"--cap-add","NET_ADMIN",IMG])
+    mk_scripts(); init_pb()
+    sp.run(["docker","exec","-i","bench_client","bash","-c","cat>/tmp/yt_retry.py"],input=RETRY_PY,text=True,check=True)
+    de("bench_client",["pgbench","-h","yt1","-p",str(PT),"-U",U,"-d","labdb","-n","-c","4","-j","2","-T","4","-q"],PW,False)
+
+    t1,g1="yt-cluster","cc=half sc=NO_SC"; lf.write(f"=== [{t1}] Start ({g1}) ===\n")
+    for su,m,c,j,d,a1,a2,dc in [("A_single_rw",1,8,4,15,f"-D scale={SC}","",True),("B1_disjoint_rw",2,4,2,15,f"-f /tmp/s_d1.sql -D half={HF}",f"-f /tmp/s_d2.sql -D half1={HF+1} -D nacc={NA}",True),("C_multinode_ro",2,8,4,15,"-S","-S",False)]:
+      if dc: rst()
+      tps,avg,sdv,p95,ok,fl,rt=pb(t1,su,m,c,j,d,a1,a2); cst,cdr,cn=cchk(ok,g1) if dc else ("PASS",0,f"{g1} select_only 16c")
+      emit(rows,lf,row(t1,su,SC,m*c,d,tps,"N/A",avg,sdv,p95,ok,fl,rt,cst,cdr,cn))
+    for su,md,d in [("B2_overlap_rw","ov",15),("D_hot_conflict","hot",12)]: emit(rows,lf,r_ret(t1,su,md,d,g1))
+    for r in r_sb(t1,g1): emit(rows,lf,r)
+    emit(rows,lf,r_app(t1,g1)); rst()
+    for c,j in [(1,1),(4,2),(8,4),(16,4),(32,4)]:
+      tps,avg,sdv,p95,ok,fl,rt=pb(t1,f"G_conc_c{c}",1,c,j,8,f"-D scale={SC}")
+      emit(rows,lf,row(t1,f"G_conc_c{c}",SC,c,8,tps,"N/A",avg,sdv,p95,ok,fl,rt,"PASS",0,f"{g1} c={c} j={j}")); time.sleep(1)
+    for ms in(10,25,50): emit(rows,lf,r_wan(t1,ms,g1))
+
+    t2,g2="yt-cluster-async","cc=nodes>=0 sc=NO_SC"; lf.write(f"=== [{t2}] Start ({g2}) ===\n")
+    q(ldr(),f"UPDATE public.yt_config SET value='{CC_ASYNC}' WHERE module='A' AND name LIKE 'public.pgbench_%';"); time.sleep(3); rst()
+    tps,avg,sdv,p95,ok,fl,rt=pb(t2,"A_single_rw",1,8,4,15,f"-D scale={SC}"); cst,cdr,cn=cchk(ok,g2)
+    emit(rows,lf,row(t2,"A_single_rw",SC,8,15,tps,"N/A",avg,sdv,p95,ok,fl,rt,cst,cdr,cn))
+    for su,md,d in [("B2_overlap_rw","ov",15),("D_hot_conflict","hot",12)]: emit(rows,lf,r_ret(t2,su,md,d,g2))
+    emit(rows,lf,r_wan(t2,25,g2))
+  finally:
+    sh(["docker","rm","-f","bench_client"],False); sh(["docker","compose","-f",CF,"down","-v"],False)
+    lf.write("=== [yt-cluster] Down (0 residual containers) ===\n"); lf.flush(); time.sleep(1); assert_zero()
+
+with OUT.open("w",encoding="utf-8",newline="\n") as fh:
+  w=csv.DictWriter(fh,fieldnames=COLS,lineterminator="\n"); w.writeheader(); w.writerows(rows)
+print(f"Wrote {len(rows)} rows to {OUT}",flush=True)
+PY
