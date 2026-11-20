@@ -79,6 +79,14 @@ def select_language():
         pass
 
 # Configuration
+SUPPORTED_VERSIONS = {
+    "MariaDB": ["12.3", "11.8", "11.4", "10.11"],
+    "MySQL": ["9.7", "8.4"],
+    "Percona": ["8.4"],
+    "PostgreSQL": ["18", "17", "16", "15"],
+}
+
+
 def get_steps(auto=False):
     if auto:
         p_name, tgt = "MariaDB 11.4", "mariadb114"
@@ -176,12 +184,7 @@ def get_steps(auto=False):
             }
         ]
     else:
-        versions = {
-            "MariaDB": ["11.8", "11.4", "10.11", "10.6"],
-            "MySQL": ["9.6", "8.4", "8.0", "5.7"],
-            "Percona": ["8.0"],
-            "PostgreSQL": ["17", "16"]
-        }
+        versions = SUPPORTED_VERSIONS
         
         print(STRINGS[L]['select_sys'])
         for i, system in enumerate(versions.keys(), 1):

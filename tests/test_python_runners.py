@@ -59,6 +59,30 @@ class TestInteractiveRunner(unittest.TestCase):
             lbl, st = interactive_runner.get_steps(auto=False)
         self.assertIn("MariaDB 11.4", lbl)
 
+    def test_supported_and_eol_versions(self):
+        versions = interactive_runner.SUPPORTED_VERSIONS
+        self.assertEqual(set(versions["MariaDB"]), {"10.11", "11.4", "11.8", "12.3"})
+        self.assertEqual(set(versions["MySQL"]), {"8.4", "9.7"})
+        self.assertEqual(set(versions["Percona"]), {"8.4"})
+        self.assertEqual(set(versions["PostgreSQL"]), {"15", "16", "17", "18"})
+        for engine, eol_vers in [("MySQL", ["5.7", "8.0", "9.6"]), ("MariaDB", ["10.6"]), ("Percona", ["8.0"])]:
+            for eol in eol_vers:
+                self.assertNotIn(eol, versions[engine], f"EOL {engine} {eol} must not be offered")
+
+        cases = [
+            (['1', '1', '1'], "MariaDB 12.3", "make mariadb123"),
+            (['1', '2', '1'], "MySQL 9.7", "make mysql97"),
+            (['1', '3', '1'], "Percona 8.4", "make percona84"),
+            (['1', '4', '1'], "PostgreSQL 18", "make postgres18"),
+            (['1', '4', '4'], "PostgreSQL 15", "make postgres15"),
+        ]
+        for inputs, expected_label, expected_cmd in cases:
+            with self.subTest(target=expected_cmd):
+                with patch('builtins.print'), patch('builtins.input', side_effect=inputs):
+                    lbl, st = interactive_runner.get_steps(auto=False)
+                self.assertIn(expected_label, lbl)
+                self.assertEqual(st[1]["command"], expected_cmd)
+
     def test_generate_report_all_statuses(self):
         results = [
             {"id": "s1", "name": "S1", "description": "d1", "command": "c1", "status": "SUCCESS", "stdout": "ok", "stderr": ""},

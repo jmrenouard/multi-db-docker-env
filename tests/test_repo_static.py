@@ -71,6 +71,43 @@ class TestRepoStaticValidation(unittest.TestCase):
         missing = [r for r in refs if not (ROOT / r).is_file()]
         self.assertEqual(missing, [], f"Makefile references missing scripts: {missing}")
 
+    def test_no_eol_images_and_pg18_volume_mount(self):
+        eol_images = (
+            "mysql:5.7",
+            "mysql:8.0",
+            "mysql:9.6",
+            "mariadb:10.6",
+            "percona/percona-server:8.0",
+            "traefik:v2.11",
+            "haproxy:2.9-alpine",
+        )
+        for path in _git_ls_files("docker-compose*.yml"):
+            text = path.read_text(encoding="utf-8")
+            for img in eol_images:
+                with self.subTest(file=path.name, image=img):
+                    pattern = rf"(?m)^\s*image:\s*['\"]?{re.escape(img)}(?:['\"\s#]|$)"
+                    self.assertNotRegex(text, pattern, f"Decommissioned EOL image '{img}' found in {path.name}")
+
+        compose_text = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+        if yaml is not None:
+            services = yaml.safe_load(compose_text).get("services", {})
+            self.assertIn("postgres18", services, "postgres18 service missing from docker-compose.yml")
+            volumes = [str(v) for v in services["postgres18"].get("volumes", [])]
+            self.assertTrue(
+                any(v.endswith(":/var/lib/postgresql") for v in volumes),
+                f"postgres18 must mount /var/lib/postgresql, got: {volumes}",
+            )
+            self.assertFalse(
+                any("/var/lib/postgresql/data" in v for v in volumes),
+                f"postgres18 must not mount /var/lib/postgresql/data, got: {volumes}",
+            )
+        else:
+            m = re.search(r"(?ms)^  postgres18:\n(.*?)(?=^  [A-Za-z0-9_-]+:|\Z)", compose_text)
+            self.assertIsNotNone(m, "postgres18 service missing from docker-compose.yml")
+            block = m.group(1)
+            self.assertIn(":/var/lib/postgresql", block)
+            self.assertNotIn(":/var/lib/postgresql/data", block)
+
 
 if __name__ == "__main__":
     unittest.main()
