@@ -30,8 +30,7 @@ Comprehensive reference of all database engines and infrastructure components su
 
 | Version | Docker Image | Standalone Port | TLS | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| 8.4 | `percona:8.4` | `3306` (via Traefik) | ❌ | ✅ Verified |
-| 8.0 | `percona:8.0` | `3306` (via Traefik) | ❌ | ✅ Verified |
+| 8.0 | `percona/percona-server:8.0` | `3306` (via Traefik) | ❌ | ✅ Verified |
 
 ## 🐘 PostgreSQL
 
@@ -41,16 +40,17 @@ Comprehensive reference of all database engines and infrastructure components su
 | 16 | `postgres:16` | `5432` (via Traefik) | ❌ | ✅ Verified |
 | 15 | `postgres:15` | `5432` (via Traefik) | ❌ | ✅ Verified |
 
-**HA Modes**:
+**HA, Replication & Multi-Master Modes**:
 - Patroni Cluster (3 PG 17 + 3 ETCD + HAProxy, ports 5000/5001/7000)
 - PgPool-II Cluster (3 PG 17 + PgPool + HAProxy, ports 5100/5101/8406)
+- Replication & Multi-Master (`v2.1.0`–`v2.2.0`): `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge` (Spock 5), `bucardo`, `citus` (14.2), `cockroach` (v24.3), `yugabyte` (2026.1) — see [pg_multimaster.md](pg_multimaster.md).
 
 ## 🍃 MongoDB
 
 | Version | Docker Image | Standalone Port | TLS | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| 8.0 | `mongo:8.0` | — | ❌ | ✅ Verified |
-| 7.0 | `mongo:7.0` | — | ❌ | ✅ Verified |
+| 8.0 | `mongo:8.0` | — | ✅ (cluster) | ✅ Verified |
+| 7.0 | `mongo:7.0` | — | ✅ (cluster) | ✅ Verified |
 
 **HA Mode**: ReplicaSet (3-node rs0 + HAProxy)
 - MongoDB 7: ports 27411-27413 / HAProxy 27100 / Stats 8408

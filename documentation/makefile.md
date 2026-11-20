@@ -180,3 +180,18 @@ These commands allow targeted access to logs within nodes without using `docker 
 | `make mysqltuner-innodb` | Run MySQLTuner audit against InnoDB Cluster. |
 | `make mysqltuner-repli` | Run MySQLTuner audit against MariaDB Replication. |
 | `make mysqltuner-all` | Run MySQLTuner audit across all HA topologies. |
+
+## 🐘 PostgreSQL Replication, Multi-Master & Distributed SQL (`v2.1.0`–`v2.2.0`)
+
+Each topology `<topo>` in `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte` provides the uniform target set:
+
+| Command Pattern | Description |
+| :--- | :--- |
+| `make <topo>-up` / `<topo>-down` | Start or tear down the topology (including volumes). |
+| `make <topo>-status` / `<topo>-ps` / `<topo>-logs` | Inspect cluster health, running containers, or logs. |
+| `make test-<topo>` (alias `<topo>-test`) | Run functional and empirical limits test suite. |
+| `make test-pg-extended` | Run extended T11–T18 verification matrix across PostgreSQL topologies. |
+| `make bench-pg-multimaster` | Run sequential V1 pgbench/sysbench/netem benchmark harness. |
+| `make bench-pg-v2` | Run V2 benchmark suites (E2–E4, H append-only, G concurrency, WAN netem). |
+
+> See [pg_multimaster.md](pg_multimaster.md) for ports, node layouts, and benchmark parameters.

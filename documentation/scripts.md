@@ -71,9 +71,9 @@ This document describes the various shell scripts available in the root director
 ## 🚀 Go `mdb` CLI Orchestrator
 
 Compiled pure-Go CLI (`cmd/mdb`, `bin/mdb` with zero external dependencies):
-- `mdb version`: Display binary version (`2.0.2`).
+- `mdb version`: Display binary version (`2.2.0`, synced with `VERSION`).
 - `mdb config [-env <path>]`: Dump active environment settings as JSON.
-- `mdb topologies`: List registered topologies.
+- `mdb topologies`: List all 16 registered topologies.
 - `mdb up <topo>` / `mdb down <topo>` / `mdb status <topo>`: Orchestrate database topologies.
 - `mdb test <topo>`: Run cluster health verification assertions.
 - `mdb bench <topo> [-workload <w>] [-threads <n>] [-duration <d>]`: Run Sysbench OLTP benchmarks.
