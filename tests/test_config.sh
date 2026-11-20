@@ -88,7 +88,6 @@ SCRIPTS_TO_CHECK=(
     "scripts/setup_repli.sh" "scripts/start_mariadb.sh"
     "conf/innodb-cluster/setup_cluster.sh"
     "conf/mongo-rs/setup_rs.sh"
-    "conf/mongo-rs/setup_rs_mongo8.sh"
 )
 
 for s in "${SCRIPTS_TO_CHECK[@]}"; do

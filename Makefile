@@ -150,7 +150,7 @@ mongo8-up: gen-ssl-mongo ## Start MongoDB 8 ReplicaSet (3 nodes + HAProxy)
 	@echo "⏳ Waiting for MongoDB 8 nodes to initialize (15s)..."
 	@sleep 15
 	@echo "⛓️  Setting up ReplicaSet..."
-	@bash ./conf/mongo-rs/setup_rs_mongo8.sh
+	@MONGO_NODES="mongo8_n1 mongo8_n2 mongo8_n3" bash ./conf/mongo-rs/setup_rs.sh
 	@echo "⏳ Waiting for HAProxy to detect backends (5s)..."
 	@sleep 5
 	@echo "✅ MongoDB 8 ReplicaSet is ready."

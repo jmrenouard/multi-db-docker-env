@@ -51,11 +51,10 @@ EXPOSE 22 3306
 VOLUME ["/datas"]
 WORKDIR /datas
 
-# 🔐 SSH Service & Key Directory Setup
-# Host keys are generated, and /root/.ssh is secured with strict permissions.
+# 🔐 SSH Key Directory Setup
+# Host keys are generated at runtime in start_mariadb.sh (never baked into the image).
 # Public keys should be mounted at runtime (e.g. -v ./id_rsa.pub:/root/.ssh/authorized_keys:ro).
-RUN ssh-keygen -A && \
-  mkdir -p /root/.ssh && \
+RUN mkdir -p /root/.ssh && \
   chmod 700 /root/.ssh
 
 # Startup via Supervisor which manages SSH and MariaDB

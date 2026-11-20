@@ -9,7 +9,6 @@ networks:
 x-template: &template
   image: mariadb_ssh:004
   restart: unless-stopped
-  privileged: true
   environment:
     - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
     # Expert Tip: Sets internal DNS for name resolution

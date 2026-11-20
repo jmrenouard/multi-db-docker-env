@@ -9,6 +9,7 @@ services:
         "mysql96",
         "mysql84",
         "mysql80",
+        "mysql57",
         "mariadb118",
         "mariadb114",
         "mariadb1011",

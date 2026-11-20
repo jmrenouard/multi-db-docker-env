@@ -86,7 +86,7 @@ cat $CERT_DIR/postgresql-server.crt $CERT_DIR/postgresql-server.key > $CERT_DIR/
 
 echo "✅ Certificates generated in $CERT_DIR"
 
-chmod 700 $CERT_DIR
-chmod 600 $CERT_DIR/*.key
-chmod 644 $CERT_DIR/*.crt
+chmod 700 "$CERT_DIR"
+chmod 600 "$CERT_DIR"/*.key "$CERT_DIR/haproxy.pem"
+chmod 644 "$CERT_DIR"/*.crt
 rm -f $CERT_DIR/openssl.cnf $CERT_DIR/*.csr $CERT_DIR/ca.srl

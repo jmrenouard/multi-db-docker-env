@@ -38,7 +38,7 @@ var setupScripts = map[string]string{
 	"innodb":       "conf/innodb-cluster/setup_cluster.sh",
 	"pgpool":       "scripts/pgpool/setup_replication.sh",
 	"mongo":        "conf/mongo-rs/setup_rs.sh",
-	"mongo8":       "conf/mongo-rs/setup_rs_mongo8.sh",
+	"mongo8":       "conf/mongo-rs/setup_rs.sh",
 	"pg-streaming": "scripts/pg_streaming/setup_pg_streaming.sh",
 	"pg-logical":   "scripts/pg_logical/setup_pg_logical.sh",
 	"pg-birep":     "scripts/pg_birep/setup_birep.sh",
@@ -47,6 +47,10 @@ var setupScripts = map[string]string{
 	"citus":        "scripts/citus/setup_citus.sh",
 	"cockroach":    "scripts/cockroach/setup_cockroach.sh",
 	"yugabyte":     "scripts/yugabyte/setup_yugabyte.sh",
+}
+
+var setupScriptArgs = map[string][]string{
+	"mongo8": {"mongo8_n1", "mongo8_n2", "mongo8_n3"},
 }
 
 func NewBaseTopology(name, description string, composeFiles, requiredCerts []string) *BaseTopology {
@@ -68,7 +72,8 @@ func (b *BaseTopology) Up(ctx context.Context, client *docker.Client) error {
 		return err
 	}
 	if s := setupScripts[b.name]; s != "" {
-		if _, stderr, code, err := client.Runner().Run(ctx, "bash", s); err != nil || code != 0 {
+		args := append([]string{s}, setupScriptArgs[b.name]...)
+		if _, stderr, code, err := client.Runner().Run(ctx, "bash", args...); err != nil || code != 0 {
 			return fmt.Errorf("topology %s setup %s failed (%d): %s: %w", b.name, s, code, string(stderr), err)
 		}
 	}
