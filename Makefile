@@ -78,16 +78,16 @@ test-pgpool: ## Run functional tests on the PgPool-II cluster
 # --- MYSQL INNODB CLUSTER ---
 INNODB_COMPOSE = docker-compose-innodb-cluster.yml
 
-innodb-up: gen-ssl-innodb ## Start MySQL InnoDB Cluster (3 nodes + MySQL Router)
-	@echo "🚀 Starting MySQL InnoDB Cluster..."
+innodb-up: gen-ssl-innodb ## Start MySQL 8.4 InnoDB Cluster (3 nodes + HAProxy)
+	@echo "🚀 Starting MySQL 8.4 InnoDB Cluster..."
 	docker compose -f $(INNODB_COMPOSE) up -d
 	@echo "⏳ Waiting for MySQL nodes to initialize (30s)..."
 	@sleep 30
 	@echo "⛓️  Setting up Group Replication..."
 	@bash ./conf/innodb-cluster/setup_cluster.sh
-	@echo "⏳ Waiting for MySQL Router to bootstrap (15s)..."
+	@echo "⏳ Waiting for HAProxy to detect InnoDB Cluster backends (15s)..."
 	@sleep 15
-	@echo "✅ MySQL InnoDB Cluster is ready."
+	@echo "✅ MySQL 8.4 InnoDB Cluster is ready."
 
 innodb-down: ## Stop InnoDB Cluster and remove volumes
 	@echo "🛑 Stopping MySQL InnoDB Cluster..."
@@ -264,7 +264,7 @@ test-citus: ## Run Citus functional and empirical limits tests
 citus-test: test-citus
 
 COCKROACH_COMPOSE = docker-compose-cockroach.yml
-cockroach-up: ## Start 3-node CockroachDB v24.3.0 Raft cluster
+cockroach-up: ## Start 3-node CockroachDB v25.4 Raft cluster
 	docker compose -f $(COCKROACH_COMPOSE) up -d && bash ./scripts/cockroach/setup_cockroach.sh
 cockroach-down: ## Stop CockroachDB cluster and remove volumes
 	docker compose -f $(COCKROACH_COMPOSE) down -v
@@ -354,7 +354,7 @@ bench-pg18: ## Run sequential empirical benchmarks across all 5 PG 18.6 topologi
 clean-pg18: pg18-streaming-down pg18-logical-down pg18-birep-down ## Stop and remove all PG 18.6 stacks and volumes
 
 # --- Main Targets ---
-.PHONY: help mycnf client info mysql96 mysql84 mysql80 mysql57 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 postgres15 stop status logs \
+.PHONY: help mycnf client info mysql97 mysql84 mysql96 mysql80 mysql57 mariadb123 mariadb118 mariadb114 mariadb1011 mariadb106 percona84 percona80 postgres18 postgres17 postgres16 postgres15 stop status logs \
         build-image galera-up galera-down galera-logs repli-up repli-down repli-logs test-repli test-galera test-patroni \
         pgpool-up pgpool-down pgpool-status pgpool-logs pgpool-ps test-pgpool \
         innodb-up innodb-down innodb-status innodb-logs innodb-ps test-innodb \
@@ -402,21 +402,19 @@ help:
 	@printf "    \033[1mstop\033[0m          - 🛑 Stops all containers managed by this project.\n"
 	@printf "    \033[1mstatus\033[0m        - 📊 Displays the status of active containers.\n"
 	@printf "    \033[1minfo\033[0m          - ℹ️  Provides information about the active DB service.\n"
-	@printf "    \033[1mlogs\033[0m          - 📄 Displays logs for all containers (e.g., make logs service=mysql93).\n"
+	@printf "    \033[1mlogs\033[0m          - 📄 Displays logs for all containers (e.g., make logs service=mysql97).\n"
 	@printf "    \033[1mmycnf\033[0m         - 🔑 Generates the .my.cnf file for the MySQL client.\n"
 	@printf "    \033[1mclient\033[0m        - 💻 Starts a MySQL client on the active database.\n"
 	@printf "\n"
-	@printf "  \033[1;32mMySQL:\033[0m\n"
-	@printf "    \033[1mmysql96\033[0m       - Starts MySQL 9.6\n"
-	@printf "    \033[1mmysql84\033[0m       - Starts MySQL 8.4\n"
-	@printf "    \033[1mmysql80\033[0m       - Starts MySQL 8.0\n"
-	@printf "    \033[1mmysql57\033[0m       - Starts MySQL 5.7\n"
+	@printf "  \033[1;32mMySQL (LTS):\033[0m\n"
+	@printf "    \033[1mmysql97\033[0m       - Starts MySQL 9.7 LTS\n"
+	@printf "    \033[1mmysql84\033[0m       - Starts MySQL 8.4 LTS\n"
 	@printf "\n"
-	@printf "  \033[1;32mMariaDB:\033[0m\n"
-	@printf "    \033[1mmariadb118\033[0m    - Starts MariaDB 11.8\n"
-	@printf "    \033[1mmariadb114\033[0m    - Starts MariaDB 11.4\n"
-	@printf "    \033[1mmariadb1011\033[0m   - Starts MariaDB 10.11\n"
-	@printf "    \033[1mmariadb106\033[0m    - Starts MariaDB 10.6\n"
+	@printf "  \033[1;32mMariaDB (LTS):\033[0m\n"
+	@printf "    \033[1mmariadb123\033[0m    - Starts MariaDB 12.3 LTS\n"
+	@printf "    \033[1mmariadb118\033[0m    - Starts MariaDB 11.8 LTS\n"
+	@printf "    \033[1mmariadb114\033[0m    - Starts MariaDB 11.4 LTS\n"
+	@printf "    \033[1mmariadb1011\033[0m   - Starts MariaDB 10.11 LTS\n"
 	@printf "\n"
 	@printf "  \033[1;32mMariaDB Clusters (Galera & Replication):\033[0m\n"
 	@printf "    \033[1mup-galera\033[0m     - 🚀 Starts Galera cluster (Sequential bootstrap)\n"
@@ -432,13 +430,14 @@ help:
 	@printf "    \033[1minject-sakila\033[0m    - 💉 Injects sakila database (Auto-detect environment)\n"
 	@printf "    \033[1minject\033[0m           - 💉 Alias for inject-employees on default service\n"
 	@printf "\n"
-	@printf "  \033[1;32mPercona Server:\033[0m\n"
-	@printf "    \033[1mpercona80\033[0m     - Starts Percona Server 8.0\n"
+	@printf "  \033[1;32mPercona Server (LTS):\033[0m\n"
+	@printf "    \033[1mpercona84\033[0m     - Starts Percona Server 8.4 LTS\n"
 	@printf "\n"
 	@printf "  \033[1;32mPostgreSQL & Patroni:\033[0m\n"
 	@printf "    \033[1mpatroni-up\033[0m    - 🚀 Starts Patroni PostgreSQL 17 cluster\n"
 	@printf "    \033[1mpatroni-status\033[0m - 📊 Checks Patroni cluster status\n"
 	@printf "    \033[1mtest-patroni\033[0m   - 🧪 Runs Patroni functional tests\n"
+	@printf "    \033[1mpostgres18\033[0m    - Starts PostgreSQL 18\n"
 	@printf "    \033[1mpostgres17\033[0m    - Starts PostgreSQL 17\n"
 	@printf "    \033[1mpostgres16\033[0m    - Starts PostgreSQL 16\n"
 	@printf "    \033[1mpostgres15\033[0m    - Starts PostgreSQL 15\n"
@@ -450,7 +449,7 @@ help:
 	@printf "    \033[1mtest-pgpool\033[0m   - 🧪 Runs PgPool-II functional tests\n"
 	@printf "\n"
 	@printf "  \033[1;32mMySQL InnoDB Cluster:\033[0m\n"
-	@printf "    \033[1minnodb-up\033[0m     - 🚀 Starts MySQL InnoDB Cluster (3 nodes + Router)\n"
+	@printf "    \033[1minnodb-up\033[0m     - 🚀 Starts MySQL 8.4 InnoDB Cluster (3 nodes + HAProxy)\n"
 	@printf "    \033[1minnodb-down\033[0m   - 🛑 Stops InnoDB Cluster\n"
 	@printf "    \033[1minnodb-status\033[0m - 📊 Shows Group Replication status\n"
 	@printf "    \033[1mtest-innodb\033[0m   - 🧪 Runs InnoDB Cluster functional tests\n"
@@ -472,7 +471,7 @@ help:
 	@printf "    \033[1mpgedge-up / test-pgedge\033[0m       - PG 17 pgEdge Spock 5 + Snowflake Mesh\n"
 	@printf "    \033[1mbucardo-up / test-bucardo\033[0m     - PG 17 Bucardo 5 Trigger Multi-Master\n"
 	@printf "    \033[1mcitus-up / test-citus\033[0m         - Citus 14.2 Distributed PG 17\n"
-	@printf "    \033[1mcockroach-up / test-cockroach\033[0m - CockroachDB v24.3.0 3-Node Raft\n"
+	@printf "    \033[1mcockroach-up / test-cockroach\033[0m - CockroachDB v25.4 3-Node Raft\n"
 	@printf "    \033[1myugabyte-up / test-yugabyte\033[0m   - YugabyteDB 2026.1.3 3-Node Raft\n"
 	@printf "    \033[1mbench-pg-multimaster\033[0m          - Sequential pgbench/sysbench suite\n"
 	@printf "    \033[1mtest-pg-extended / bench-pg-v2\033[0m - Extended T11-T18 matrix & V2 benchmarks\n"
@@ -642,12 +641,12 @@ inject-data:
 			fi; \
 			printf "Injecting data into %s using %s...\n" "$${DB_CONTAINER}" "$${MYSQL_CMD}"; \
 			if [ "$(db)" = "employees" ]; then \
-				if [ "$(service)" = "mysql96" ]; then \
-					printf "⚠️ Skipping 'employees' for mysql96 (Nested source regression). Injecting 'sakila' as primary test database instead...\n"; \
+				if [ "$(service)" = "mysql97" ]; then \
+					printf "⚠️ Skipping 'employees' for mysql97 (Nested source regression). Injecting 'sakila' as primary test database instead...\n"; \
 					docker cp $(TEST_DB_DIR)/sakila "$${DB_CONTAINER}:/tmp/" && \
 					docker exec -i -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot < sakila-mv-schema.sql" && \
 					docker exec -i -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c "cd /tmp/sakila && $${MYSQL_CMD} -uroot < sakila-mv-data.sql" && \
-					printf "✅ 'sakila' database injected as primary dataset for mysql96.\n"; \
+					printf "✅ 'sakila' database injected as primary dataset for mysql97.\n"; \
 				else \
 					docker cp $(TEST_DB_DIR)/employees "$${DB_CONTAINER}:/tmp/test_db" && \
 					docker exec -i -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" sh -c "cd /tmp/test_db && $${MYSQL_CMD} -uroot < employees.sql" && \
@@ -666,8 +665,8 @@ inject-data:
 .PHONY: test-all
 
 test-all:
-	@# List of all database services to test
-	@SERVICES_TO_TEST="mysql96 mysql84 mysql80 mariadb118 mariadb114 mariadb1011 mariadb106 percona80 postgres17 postgres16 postgres15"; \
+	@# List of all active supported database services to test
+	@SERVICES_TO_TEST="mysql97 mysql84 mariadb123 mariadb118 mariadb114 mariadb1011 percona84 postgres18 postgres17 postgres16 postgres15"; \
 	for service in $${SERVICES_TO_TEST}; do \
 		printf "\n\033[1;34m--- Testing service: %s ---\033[0m\n" "$$service"; \
 		\
@@ -699,7 +698,7 @@ test-all:
 				fi; \
 				\
 				PRIMARY_DB="employees"; \
-				if [ "$$service" = "mysql96" ]; then PRIMARY_DB="sakila"; fi; \
+				if [ "$$service" = "mysql97" ]; then PRIMARY_DB="sakila"; fi; \
 				\
 				printf "💉 Injecting 'employees' database...\n" && \
 				make inject-data service=$$service db=employees && \
@@ -842,46 +841,42 @@ traefik: stop
 	@echo "🚀 Starting Traefik..."
 	@docker compose --profile traefik up -d
 
-# 🐬 MySQL
-mysql96: stop traefik
-	@echo "🚀 Starting MySQL 9.6..."
-	@docker compose --profile mysql96 up -d
+# 🐬 MySQL (LTS)
+mysql97: stop traefik
+	@echo "🚀 Starting MySQL 9.7 LTS..."
+	@docker compose --profile mysql97 up -d
 
 mysql84: stop traefik
-	@echo "🚀 Starting MySQL 8.4..."
+	@echo "🚀 Starting MySQL 8.4 LTS..."
 	@docker compose --profile mysql84 up -d
 
-mysql80: stop traefik
-	@echo "🚀 Starting MySQL 8.0..."
-	@docker compose --profile mysql80 up -d
+# 🐧 MariaDB (LTS)
+mariadb123: stop traefik
+	@echo "🚀 Starting MariaDB 12.3 LTS..."
+	@docker compose --profile mariadb123 up -d
 
-mysql57: stop traefik
-	@echo "🚀 Starting MySQL 5.7..."
-	@docker compose --profile mysql57 up -d
-
-# 🐧 MariaDB
 mariadb118: stop traefik
-	@echo "🚀 Starting MariaDB 11.8..."
+	@echo "🚀 Starting MariaDB 11.8 LTS..."
 	@docker compose --profile mariadb118 up -d
 
 mariadb114: stop traefik
-	@echo "🚀 Starting MariaDB 11.4..."
+	@echo "🚀 Starting MariaDB 11.4 LTS..."
 	@docker compose --profile mariadb114 up -d
 
 mariadb1011: stop traefik
-	@echo "🚀 Starting MariaDB 10.11..."
+	@echo "🚀 Starting MariaDB 10.11 LTS..."
 	@docker compose --profile mariadb1011 up -d
 
-mariadb106: stop traefik
-	@echo "🚀 Starting MariaDB 10.6..."
-	@docker compose --profile mariadb106 up -d
-
-# ⚡ Percona Server
-percona80: stop traefik
-	@echo "🚀 Starting Percona Server 8.0..."
-	@docker compose --profile percona80 up -d
+# ⚡ Percona Server (LTS)
+percona84: stop traefik
+	@echo "🚀 Starting Percona Server 8.4 LTS..."
+	@docker compose --profile percona84 up -d
 
 # 🐘 PostgreSQL
+postgres18: stop traefik
+	@echo "🚀 Starting PostgreSQL 18..."
+	@docker compose --profile postgres18 up -d
+
 postgres17: stop traefik
 	@echo "🚀 Starting PostgreSQL 17..."
 	@docker compose --profile postgres17 up -d
@@ -893,6 +888,32 @@ postgres16: stop traefik
 postgres15: stop traefik
 	@echo "🚀 Starting PostgreSQL 15..."
 	@docker compose --profile postgres15 up -d
+
+# --- Decommissioned End-of-Life (EOL) Targets ---
+mysql57:
+	@printf "\033[1;31m❌ Decommissioned target: mysql57 (MySQL 5.7 reached official Community EOL on 2023-10-31; Extended Support ended 2026-10-31).\033[0m\n" >&2
+	@printf "👉 Use a supported LTS target instead: make mysql84 or make mysql97\n" >&2
+	@exit 1
+
+mysql80:
+	@printf "\033[1;31m❌ Decommissioned target: mysql80 (MySQL 8.0 reached official Community EOL on 2026-04-30).\033[0m\n" >&2
+	@printf "👉 Use a supported LTS target instead: make mysql84 or make mysql97\n" >&2
+	@exit 1
+
+mysql96:
+	@printf "\033[1;31m❌ Decommissioned target: mysql96 (MySQL 9.6 Innovation reached official EOL on 2026-04-21 and was superseded by MySQL 9.7 LTS).\033[0m\n" >&2
+	@printf "👉 Use a supported LTS target instead: make mysql97 or make mysql84\n" >&2
+	@exit 1
+
+mariadb106:
+	@printf "\033[1;31m❌ Decommissioned target: mariadb106 (MariaDB 10.6 reached official Community EOL on 2026-07-06).\033[0m\n" >&2
+	@printf "👉 Use a supported LTS target instead: make mariadb1011, make mariadb114, make mariadb118, or make mariadb123\n" >&2
+	@exit 1
+
+percona80:
+	@printf "\033[1;31m❌ Decommissioned target: percona80 (Percona Server 8.0 reached official Community EOL on 2026-04-30).\033[0m\n" >&2
+	@printf "👉 Use a supported LTS target instead: make percona84\n" >&2
+	@exit 1
 
 # --- MariaDB Clusters (Merged from mariadb subfolder) ---
 
