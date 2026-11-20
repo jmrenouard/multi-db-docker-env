@@ -46,42 +46,115 @@ func TestRegistry_Default(t *testing.T) {
 	}
 }
 
-func TestBaseTopology_Lifecycle(t *testing.T) {
+func TestStandaloneTopology_UpProfileAndDown(t *testing.T) {
+	ctx := context.Background()
+	mock := &docker.MockCommandRunner{}
+	client := docker.NewClientWithRunner(mock)
+	s := NewStandaloneTopology()
+
+	if err := s.Up(ctx, client); err != nil {
+		t.Fatalf("Up: %v", err)
+	}
+	if got := strings.Join(mock.Calls[0], " "); !strings.Contains(got, "--profile traefik --profile mariadb114") {
+		t.Fatalf("expected default mariadb114 profile, got %s", got)
+	}
+	if err := s.UpProfile(ctx, client, "postgres18"); err != nil {
+		t.Fatalf("UpProfile postgres18: %v", err)
+	}
+	if got := strings.Join(mock.Calls[1], " "); !strings.Contains(got, "--profile traefik --profile postgres18") {
+		t.Fatalf("expected postgres18 profile, got %s", got)
+	}
+	if err := s.UpProfile(ctx, client, "standalone"); err != nil {
+		t.Fatalf("UpProfile standalone: %v", err)
+	}
+	if got := strings.Join(mock.Calls[2], " "); !strings.Contains(got, "--profile traefik --profile mariadb114") {
+		t.Fatalf("expected fallback mariadb114 profile, got %s", got)
+	}
+	if err := s.Down(ctx, client); err != nil {
+		t.Fatalf("Down: %v", err)
+	}
+	if got := strings.Join(mock.Calls[3], " "); !strings.Contains(got, "--profile * down -v") {
+		t.Fatalf("expected --profile * down, got %s", got)
+	}
+}
+
+func TestGaleraAndRepli_BuildAndReadiness(t *testing.T) {
 	withTempDir(t)
 	origPoll := defaultPollInterval
 	defaultPollInterval = time.Millisecond
 	defer func() { defaultPollInterval = origPoll }()
 
 	ctx := context.Background()
-	mock := &docker.MockCommandRunner{Output: []byte("g1\n1\n")}
-	client := docker.NewClientWithRunner(mock)
-	topo := NewGaleraTopology()
-
-	if err := topo.Up(ctx, client); err != nil || len(mock.Calls) != 2 || !strings.Contains(strings.Join(mock.Calls[0], " "), "MARIADB_GALERA_BOOTSTRAP=1 up -d galera_01") || !strings.Contains(strings.Join(mock.Calls[1], " "), "compose -f docker-compose-galera.yml up -d") {
-		t.Fatalf("Up: %v, calls: %v", err, mock.Calls)
+	var imagePresent bool
+	mock := &docker.MockCommandRunner{
+		Custom: func(_ context.Context, name string, args ...string) ([]byte, []byte, int, error) {
+			joined := strings.Join(append([]string{name}, args...), " ")
+			if strings.Contains(joined, "image inspect mariadb_ssh:004") {
+				if imagePresent {
+					return []byte("[]"), nil, 0, nil
+				}
+				return nil, []byte("Error response from daemon: No such image: mariadb_ssh:004"), 1, errors.New("missing")
+			}
+			if strings.Contains(joined, "wsrep_local_state_comment") {
+				return []byte("wsrep_local_state_comment\tSynced\n"), nil, 0, nil
+			}
+			if strings.Contains(joined, "SELECT 1") {
+				return []byte("1\n"), nil, 0, nil
+			}
+			return []byte("g1\n"), nil, 0, nil
+		},
 	}
-	if err := topo.Down(ctx, client); err != nil || !strings.Contains(strings.Join(mock.Calls[2], " "), "compose -f docker-compose-galera.yml down -v") {
+	client := docker.NewClientWithRunner(mock)
+	galera := NewGaleraTopology()
+	if err := galera.Up(ctx, client); err != nil {
+		t.Fatalf("Galera Up: %v", err)
+	}
+	if !filesExist("ssl/ca-cert.pem", "ssl/server-cert.pem", "ssl/client-cert.pem") {
+		t.Fatal("expected galera certs auto-generated")
+	}
+	joinCalls := func() string {
+		var lines []string
+		for _, c := range mock.Calls {
+			lines = append(lines, strings.Join(c, " "))
+		}
+		return strings.Join(lines, "\n")
+	}
+	joined := joinCalls()
+	for _, want := range []string{"docker build -t mariadb_ssh:004 .", "MARIADB_GALERA_BOOTSTRAP=1", "up -d galera_01", "up -d galera_02", "up -d galera_03", "up -d haproxy_galera"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("missing %q in calls:\n%s", want, joined)
+		}
+	}
+
+	imagePresent = true
+	mock.Calls = nil
+	repli := NewRepliTopology()
+	if err := repli.Up(ctx, client); err != nil {
+		t.Fatalf("Repli Up: %v", err)
+	}
+	if repliCalls := joinCalls(); strings.Contains(repliCalls, "docker build") {
+		t.Fatalf("unexpected docker build when image present:\n%s", repliCalls)
+	}
+	if last := strings.Join(mock.Calls[len(mock.Calls)-1], " "); !strings.Contains(last, "bash scripts/setup_repli.sh") {
+		t.Fatalf("expected setup_repli.sh last, got %s", last)
+	}
+	if err := galera.Down(ctx, client); err != nil {
 		t.Fatalf("Down: %v", err)
 	}
-	repli := NewRepliTopology()
-	if err := repli.Up(ctx, client); err != nil || !strings.Contains(strings.Join(mock.Calls[len(mock.Calls)-1], " "), "bash scripts/setup_repli.sh") {
-		t.Fatalf("Repli Up setup script: %v, calls: %v", err, mock.Calls)
+
+	plainMock := &docker.MockCommandRunner{Output: []byte("g1\n")}
+	plainClient := docker.NewClientWithRunner(plainMock)
+	st, err := galera.Status(ctx, plainClient)
+	if err != nil || !st.Running || len(st.Services) != 1 || galera.Verify(ctx, plainClient) != nil {
+		t.Fatalf("status running: %+v %v", st, err)
 	}
-	if !filesExist("ssl/ca-cert.pem", "ssl/server-cert.pem") {
-		t.Fatal("missing mariadb certs")
+	plainMock.Output = []byte("")
+	st, err = galera.Status(ctx, plainClient)
+	if err != nil || st.Running || galera.Verify(ctx, plainClient) == nil {
+		t.Fatalf("status stopped: %+v %v", st, err)
 	}
-	mock.Output = []byte("g1\n")
-	st, err := topo.Status(ctx, client)
-	if err != nil || !st.Running || len(st.Services) != 1 || topo.Verify(ctx, client) != nil {
-		t.Fatalf("status running: %v", err)
-	}
-	mock.Output = []byte("")
-	st, err = topo.Status(ctx, client)
-	if err != nil || st.Running || topo.Verify(ctx, client) == nil {
-		t.Fatalf("status stopped: %v", err)
-	}
-	mock.Err, mock.ExitCode = errors.New("err"), 1
-	if _, err := topo.Status(ctx, client); err == nil {
+	plainMock.Err, plainMock.ExitCode = errors.New("err"), 1
+	if _, err := galera.Status(ctx, plainClient); err == nil {
 		t.Fatal("expected err")
 	}
 }
