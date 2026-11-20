@@ -501,6 +501,13 @@
 - **Applied Change / Fix**: Verified and logged `SQLSTATE 42601` explicitly in `tests/test_pg18_logical.sh`, adopted native PG 18 `uuidv7()` primary keys (`id UUID PRIMARY KEY DEFAULT uuidv7()`) for collision-free `pg18-birep` active-active inserts (`50/50` converged, `2,066.70 TPS` on `H_append_only_insert`), and kept stepped sequences (`INCREMENT BY 2`) for integer tables.
 - **Result & Non-Regression Test**: Verified live in `tests/test_pg18_logical.sh` and `tests/test_pg18_birep.sh`.
 
+### RCA-067 -- MySQL 8.4 LTS InnoDB Cluster Breaking Configuration & SQL Changes and PG 18 Standalone `PGDATA` Mount
+- **Date / Linked Action**: `2026-11-20` (`ACT-075` / `#275`, `#276`, `#286`)
+- **Observed Symptom**: Upgrading `docker-compose-innodb-cluster.yml` from EOL `mysql:8.0` to `mysql:8.4` causes fatal startup and bootstrap errors if legacy MySQL 8.0 Group Replication options (`transaction-write-set-extraction=XXHASH64`) and `RESET MASTER;` remain; similarly, adding standalone `postgres18` (`postgres:18`) with `/var/lib/postgresql/data` fails under PG 18's new `PGDATA` layout (see `RCA-064`).
+- **Root Cause Analysis**: MySQL 8.4 LTS removed the deprecated `transaction_write_set_extraction` system variable (XXHASH64 is now unconditional) and removed `RESET MASTER` in favor of `RESET BINARY LOGS AND GTIDS`. Official `postgres:18` Docker images require mounting volumes at `/var/lib/postgresql`.
+- **Applied Change / Fix**: Removed `transaction-write-set-extraction=XXHASH64` from `conf/innodb-cluster/node{1,2,3}.cnf`, replaced `RESET MASTER;` with `RESET BINARY LOGS AND GTIDS;` in `conf/innodb-cluster/setup_cluster.sh`, and mounted `postgres_18_data` at `/var/lib/postgresql` in `docker-compose.yml` (PR `#277`).
+- **Result & Non-Regression Test**: `docker compose config`, `bash -n`, `test_no_eol_images_and_pg18_volume_mount` in `tests/test_repo_static.py` (PR `#283`), and CI `test-and-validate` pass green.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
@@ -552,6 +559,10 @@
 ### IMP-012 -- Enabling `io_method=io_uring` via Unconfined Docker Seccomp or Relying on PG 18 `FOR ALL SEQUENCES`
 - **Why It Is a Dead-End**: Disabling Docker seccomp to expose `io_uring` weakens container isolation (`RCA-065`), and `FOR ALL SEQUENCES` raises `SQLSTATE 42601` in PG 18.6 (`RCA-066`).
 - **Adopted Decision**: Use PG 18's default `io_method=worker` under standard seccomp and use native `uuidv7()` or stepped sequences for active-active logical schemas until PG 19 ships logical sequence sync.
+
+### IMP-013 -- Retaining End-of-Life Database and Proxy Images in Active Stacks
+- **Why It Is a Dead-End**: Keeping EOL images (`mysql:5.7` EOL 2023-10-31, `mysql:8.0` EOL 2026-04-30, `mysql:9.6` EOL 2026-04-21, `mariadb:10.6` EOL 2026-07-06, `percona/percona-server:8.0` EOL 2026-04-30, `traefik:v2.11` EOL 2026-09-07, `haproxy:2.9-alpine` EOL 2025-03-21) exposes lab users to unpatched CVEs and obsolete configuration patterns.
+- **Adopted Decision**: Removed all 7 EOL images from Compose stacks and `interactive_runner.py`, replaced legacy `Makefile` targets with explicit EOL notices + recommended replacements (`exit 1`), documented official EOL dates in EN/FR matrices (PR `#278`, `#281`), and enforced non-regression via `test_no_eol_images_and_pg18_volume_mount` (PR `#283`).
 
 ---
 
@@ -666,6 +677,11 @@
 - **Target Files**: `scripts/bench_pg18_runner.sh`, `scripts/bench_pg18_lib.py`
 - **Nature & Justification**: PG 18.6 benchmarks (87 rows across 5 topologies) execute sequentially on one Docker host with `PG_SCALE=2`, default `io_method=worker`, `data_checksums=on`, and `tc netem` WAN emulation for controlled PG 17 vs PG 18 comparison.
 - **Removal Condition**: Re-run on dedicated multi-node bare-metal/VM hosts with NVMe and Linux kernel `io_uring` enabled.
+
+### APP-023 -- Retaining Supported `mariadb:11.8` in `Dockerfile` and `postgres:17` in Patroni/PgPool/Citus/pgEdge
+- **Target Files**: `Dockerfile`, `docker-compose-patroni.yml`, `docker-compose-pgpool.yml`, `docker-compose-citus.yml`, `docker-compose-pgedge.yml`
+- **Nature & Justification**: `mariadb:11.8` (EOL 2028-06-04) and `postgres:17` (EOL 2029-11-08) remain actively supported upstream, so upgrading Galera/Repli base image to `mariadb:12.3` or migrating PG 17 clusters to PG 18 (requiring PgPool-II 4.7) was deferred to avoid unverified live-cluster regressions.
+- **Removal Condition**: Upgrade once live E2E cluster tests for `mariadb:12.3` Galera/Repli and PG 18 Citus/pgEdge/PgPool-II 4.7 are verified.
 
 ---
 

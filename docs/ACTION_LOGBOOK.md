@@ -25,6 +25,7 @@
 | **Phase 9** | PostgreSQL Streaming, Logical, Extended Matrix & V2 Benchmarks (`v2.2.0`) | `pg-streaming`, `pg-logical`, `T11`-`T18` matrix, V2 suites (`E2`-`E4`, `H`, `G`, WAN `10/25/50ms`) | ✅ Complete | `make test-pg-extended`, `make bench-pg-v2` |
 | **Phase 10** | Ponytail Quality Audit, Release CI, Test Expansion & Governance Consolidation | Automated release pipeline, 18 audit fixes, 46 Python + 9 Go test suites, unified registers | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...` |
 | **Phase 11** | PostgreSQL 18.6 Native Topologies, Benchmark Suite & `v2.3.0` Release | `pg18-streaming`, `pg18-logical`, `pg18-birep` (`uuidv7`), `bench-pg18`, Go CLI 19 topologies, `v2.3.0` tag | ✅ Complete | `make bench-pg18`, `go test ./...`, `./bin/mdb topologies` |
+| **Phase 12** | Database Version Upgrades & EOL Decommissioning | Upgrade to MySQL 8.4/9.7 LTS, MariaDB 12.3 LTS, Percona 8.4 LTS, PG 18 standalone, CockroachDB v25.4, Traefik v3, HAProxy LTS; decommission 7 EOL versions | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...`, CI `test-and-validate` |
 
 ---
 
@@ -77,6 +78,19 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-075 -- Database & Proxy Version Upgrades and Official EOL Decommissioning (Issues `#274`, `#275`, `#276`, `#279`, `#280`, `#284`, `#286`)
+- **Date**: `2026-11-20T18:45+01:00`
+- **Status**: `COMPLETED`
+- **Issues / PRs**: `#275`/PR `#277` (Compose & Cluster Configs, 10,438 chars), `#280`/PR `#282` (`Makefile` upgrades & EOL notices, 13,070 chars), `#276`/PR `#283` (Python runner & static EOL tests, 8,709 chars), `#274`/PR `#278` (EN supported products & EOL matrix, 12,198 bytes), `#279`/PR `#281` (FR supported products & EOL matrix, 12,535 bytes), `#284`/PR `#285` (EN/FR Makefile, PG, Architecture guides, 13,082 bytes), `#286` (Governance registers & `Changelog`).
+- **Request**: Audit all database and proxy versions against official community EOL dates (as of `2026-11-20`), upgrade to active LTS/current releases, and cleanly decommission all End-of-Life versions across Compose stacks, `Makefile`, Python runner, tests, EN/FR documentation, and governance registers.
+- **Changes**:
+  - Upgraded `docker-compose.yml` (`traefik:v3`, added `mysql97`, `mariadb123`, `percona84`, `postgres18` mounting `/var/lib/postgresql`, removed EOL `mysql57`/`mysql80`/`mysql96`/`mariadb106`/`percona80`), InnoDB Cluster (`mysql:8.4` + removed `transaction-write-set-extraction=XXHASH64` + `RESET BINARY LOGS AND GTIDS;`), CockroachDB (`latest-v25.4`), and HAProxy (`haproxy:lts-alpine` in PG clusters).
+  - Updated `Makefile` with active targets and explicit EOL decommissioning notices (`exit 1` with official EOL date + replacement), updated `interactive_runner.py` and `tests/test_lab.py` (`is_mysql97`), and added static regression test `test_no_eol_images_and_pg18_volume_mount` in `tests/test_repo_static.py`.
+  - Updated EN/FR supported products matrices (`documentation/supported_products{,_fr}.md`), `README{,_fr}.md`, technical guides (`makefile{,_fr}.md`, `postgresql_support{,_fr}.md`, `architecture.md`), `Changelog`, `ROADMAP.md`, `docs/RCA_REGISTER.md` (`RCA-067`, `IMP-013`, `APP-023`), and `docs/ACTION_LOGBOOK.md` (`Phase 12`, `ACT-075`).
+- **Result**: `python -m unittest discover -s tests -v` (`48` ran, `42` ok, `6` live-DB skipped), `go test ./...` (`9/9` packages ok), `bash tests/test_config.sh` (ok), CI `test-and-validate` green on every PR; all PR diffs strictly `< 15,000` characters.
+
+---
 
 ### ACT-074 -- PostgreSQL 18.6 Native Clustering Topologies, Benchmark Suite & `v2.3.0` Release (Issues `#252`, `#254`, `#256`, `#258`, `#260`, `#262`, `#264`, `#266`, `#268`, `#270`, `#272`)
 - **Date**: `2026-11-20T15:55+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#252`/`#253`, `#254`/`#255`, `#256`/`#257`, `#258`/`#259`, `#260`/`#261`, `#262`/`#263`, `#264`/`#265`, `#266`/`#267`, `#268`/`#269`, `#270`/`#271`, `#272`
