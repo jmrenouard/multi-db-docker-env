@@ -119,3 +119,48 @@ func NewYugabyteTopology() *YugabyteTopology {
 		),
 	}
 }
+
+// Pg18StreamingTopology manages the PG 18.6 physical streaming replication stack.
+type Pg18StreamingTopology struct{ *BaseTopology }
+
+// NewPg18StreamingTopology returns the pg18-streaming topology definition.
+func NewPg18StreamingTopology() *Pg18StreamingTopology {
+	return &Pg18StreamingTopology{
+		BaseTopology: NewBaseTopology(
+			"pg18-streaming",
+			"PostgreSQL 18.6 standalone + 2-node physical streaming cluster (async/sync, AIO worker)",
+			[]string{"docker-compose-pg18-streaming.yml"},
+			nil,
+		),
+	}
+}
+
+// Pg18LogicalTopology manages the 2-node PG 18.6 uni-directional logical stack.
+type Pg18LogicalTopology struct{ *BaseTopology }
+
+// NewPg18LogicalTopology returns the pg18-logical topology definition.
+func NewPg18LogicalTopology() *Pg18LogicalTopology {
+	return &Pg18LogicalTopology{
+		BaseTopology: NewBaseTopology(
+			"pg18-logical",
+			"PostgreSQL 18.6 2-node native uni-directional logical replication cluster",
+			[]string{"docker-compose-pg18-logical.yml"},
+			nil,
+		),
+	}
+}
+
+// Pg18BirepTopology manages the 2-node PG 18.6 bidirectional logical replication stack.
+type Pg18BirepTopology struct{ *BaseTopology }
+
+// NewPg18BirepTopology returns the pg18-birep topology definition.
+func NewPg18BirepTopology() *Pg18BirepTopology {
+	return &Pg18BirepTopology{
+		BaseTopology: NewBaseTopology(
+			"pg18-birep",
+			"PostgreSQL 18.6 2-node bidirectional logical cluster (uuidv7 + HAProxy)",
+			[]string{"docker-compose-pg18-birep.yml"},
+			nil,
+		),
+	}
+}

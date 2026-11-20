@@ -39,14 +39,17 @@ var setupScripts = map[string]string{
 	"pgpool":       "scripts/pgpool/setup_replication.sh",
 	"mongo":        "conf/mongo-rs/setup_rs.sh",
 	"mongo8":       "conf/mongo-rs/setup_rs.sh",
-	"pg-streaming": "scripts/pg_streaming/setup_pg_streaming.sh",
-	"pg-logical":   "scripts/pg_logical/setup_pg_logical.sh",
-	"pg-birep":     "scripts/pg_birep/setup_birep.sh",
-	"pgedge":       "scripts/pgedge/setup_pgedge.sh",
-	"bucardo":      "scripts/bucardo/setup_bucardo.sh",
-	"citus":        "scripts/citus/setup_citus.sh",
-	"cockroach":    "scripts/cockroach/setup_cockroach.sh",
-	"yugabyte":     "scripts/yugabyte/setup_yugabyte.sh",
+	"pg-streaming":   "scripts/pg_streaming/setup_pg_streaming.sh",
+	"pg-logical":     "scripts/pg_logical/setup_pg_logical.sh",
+	"pg-birep":       "scripts/pg_birep/setup_birep.sh",
+	"pg18-streaming": "scripts/pg18_streaming/setup_pg18_streaming.sh",
+	"pg18-logical":   "scripts/pg18_logical/setup_pg18_logical.sh",
+	"pg18-birep":     "scripts/pg18_birep/setup_pg18_birep.sh",
+	"pgedge":         "scripts/pgedge/setup_pgedge.sh",
+	"bucardo":        "scripts/bucardo/setup_bucardo.sh",
+	"citus":          "scripts/citus/setup_citus.sh",
+	"cockroach":      "scripts/cockroach/setup_cockroach.sh",
+	"yugabyte":       "scripts/yugabyte/setup_yugabyte.sh",
 }
 
 var setupScriptArgs = map[string][]string{
@@ -162,6 +165,9 @@ func DefaultRegistry() *Registry {
 	r.Register(NewPgStreamingTopology())
 	r.Register(NewPgLogicalTopology())
 	r.Register(NewPgBirepTopology())
+	r.Register(NewPg18StreamingTopology())
+	r.Register(NewPg18LogicalTopology())
+	r.Register(NewPg18BirepTopology())
 	r.Register(NewPgEdgeTopology())
 	r.Register(NewBucardoTopology())
 	r.Register(NewCitusTopology())
