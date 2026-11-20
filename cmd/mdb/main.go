@@ -20,7 +20,7 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-var version = "2.2.0"
+var version = "2.3.0"
 
 func resolveVersion() string {
 	if data, err := os.ReadFile("VERSION"); err == nil {
@@ -84,7 +84,7 @@ func main() {
 		}
 	case "topologies":
 		for _, t := range topology.DefaultRegistry().List() {
-			fmt.Printf("%-12s - %s\n", t.Name(), t.Description())
+			fmt.Printf("%-14s - %s\n", t.Name(), t.Description())
 		}
 	case "up", "down", "status":
 		cmd := os.Args[1]
@@ -276,6 +276,9 @@ func defaultContainer(topo string) string {
 	case "pg-streaming": return "pg_stream_primary"
 	case "pg-logical": return "pg_logical_pub"
 	case "pg-birep": return "pg_birep_node1"
+	case "pg18-streaming": return "pg18_stream_primary"
+	case "pg18-logical": return "pg18_logical_pub"
+	case "pg18-birep": return "pg18_birep_node1"
 	case "pgedge": return "pgedge_node1"
 	case "bucardo": return "bucardo_node1"
 	case "citus": return "citus_coord"

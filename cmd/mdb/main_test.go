@@ -21,7 +21,9 @@ func TestDefaultAndResolveContainer(t *testing.T) {
 		"galera": "galera_01", "repli": "mariadb_02", "innodb": "mysql_node1",
 		"patroni": "node1", "pgpool": "pgpool", "mongo": "mongo1", "mongo8": "mongo8_n1",
 		"pg-streaming": "pg_stream_primary", "pg-logical": "pg_logical_pub",
-		"pg-birep": "pg_birep_node1", "pgedge": "pgedge_node1", "bucardo": "bucardo_node1",
+		"pg-birep": "pg_birep_node1", "pg18-streaming": "pg18_stream_primary",
+		"pg18-logical": "pg18_logical_pub", "pg18-birep": "pg18_birep_node1",
+		"pgedge": "pgedge_node1", "bucardo": "bucardo_node1",
 		"citus": "citus_coord", "cockroach": "crdb_node1", "yugabyte": "yb_node1",
 		"x": "mariadb-11.8",
 	}
@@ -63,17 +65,17 @@ func TestResolveVersion(t *testing.T) {
 
 	// Fallback to package-level version when VERSION file is absent
 	_ = os.Remove("VERSION")
-	if got := resolveVersion(); got != "2.2.0" {
-		t.Errorf("expected fallback 2.2.0, got %s", got)
+	if got := resolveVersion(); got != "2.3.0" {
+		t.Errorf("expected fallback 2.3.0, got %s", got)
 	}
 
 	// Reads and trims VERSION file from disk when present
-	if err := os.WriteFile("VERSION", []byte("  2.2.0 \n"), 0644); err != nil {
+	if err := os.WriteFile("VERSION", []byte("  2.3.0 \n"), 0644); err != nil {
 		t.Fatalf("failed to write test VERSION file: %v", err)
 	}
 
-	if got := resolveVersion(); got != "2.2.0" {
-		t.Errorf("expected 2.2.0 from VERSION file, got %s", got)
+	if got := resolveVersion(); got != "2.3.0" {
+		t.Errorf("expected 2.3.0 from VERSION file, got %s", got)
 	}
 
 	// Trim whitespace / custom release version
@@ -142,7 +144,7 @@ func TestMain_InProcessSubcommands(t *testing.T) {
 	}
 
 	topoOut := captureMain(t, "topologies")
-	for _, want := range []string{"galera", "patroni", "pg-streaming", "yugabyte"} {
+	for _, want := range []string{"galera", "patroni", "pg-streaming", "pg18-streaming", "pg18-logical", "pg18-birep", "yugabyte"} {
 		if !strings.Contains(topoOut, want) {
 			t.Errorf("topologies output missing %q", want)
 		}

@@ -481,7 +481,7 @@ help:
 	@printf "    \033[1mpg18-birep-up / pg18-birep-test\033[0m         - PG 18.6 Bidirectional (uuidv7)\n"
 	@printf "    \033[1mbench-pg18 / clean-pg18\033[0m                 - PG 18.6 Benchmark & Cleanup\n"
 	@printf "\n"
-	@printf "  \033[1;32mGolang Orchestrator (v2.2.0):\033[0m\n"
+	@printf "  \033[1;32mGolang Orchestrator (v2.3.0):\033[0m\n"
 	@printf "    \033[1mbuild-go\033[0m           - 🔨 Compiles mdb CLI binary into bin/mdb\n"
 	@printf "    \033[1mtest-go\033[0m            - 🧪 Runs complete Go unit test suite\n"
 	@printf "\n"
