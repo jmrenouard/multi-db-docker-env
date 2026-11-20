@@ -1,4 +1,4 @@
-# MariaDB Documentation Index 📚
+# Multi-DB Docker Environment Documentation Index 📚
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="50" height="50">
@@ -10,13 +10,13 @@
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" width="50" height="50">
 </p>
 
-Welcome to the MariaDB Docker environment documentation. This index provides a structured overview of all available guides and technical references.
+Welcome to the Multi-DB Docker Environment documentation. This index provides a structured overview of all available guides and technical references.
 
 ---
 
 ## 📋 Table of Contents
 
-- [MariaDB Documentation Index 📚](#mariadb-documentation-index-)
+- [Multi-DB Docker Environment Documentation Index 📚](#multi-db-docker-environment-documentation-index-)
   - [📋 Table of Contents](#-table-of-contents)
   - [🚀 Core Documentation](#-core-documentation)
   - [🏛️ Governance \& Orchestration](#️-governance--orchestration)

@@ -118,5 +118,5 @@ The project follows a modular organization:
 Similar to the MySQL standalone instances, PostgreSQL is orchestrated via Docker and proxied by Traefik.
 
 - **Port**: `5432` (Exposed via Traefik)
-- **Data Persistence**: Named volumes (`postgres_17_data`, `postgres_16_data`).
-- **Access**: Standard `psql` client or `make pgclient`.
+- **Data Persistence**: Named volumes (`postgres_17_data`, `postgres_16_data`, `postgres_15_data`).
+- **Access**: Standard `psql` client (`PGPASSWORD=$DB_ROOT_PASSWORD psql -h 127.0.0.1 -p 5432 -U postgres`).

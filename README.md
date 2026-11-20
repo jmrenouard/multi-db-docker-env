@@ -26,8 +26,8 @@ A key feature is the **Traefik reverse proxy**, which ensures all database insta
 
 | Tier | Tier Name | Last Verified | Status |
 | :--- | :--- | :--- | :--- |
-| **T2** | **Standalone Matrix** | 2026-01-29 | ✅ 100% Passed |
-| **T3** | **Cluster & HA** | - | 🏗️ In Progress |
+| **T2** | **Standalone Matrix** | 2026-11-19 | ✅ 100% Passed |
+| **T3** | **Cluster, HA & Multi-Master (`v2.2.0`)** | 2026-11-19 | ✅ 16 Topologies Verified |
 
 ## 📋 Prerequisites
 
@@ -197,13 +197,20 @@ MongoDB architecture with ReplicaSet and HAProxy routing.
 
 | Command              | Icon | Description                                        |
 | :------------------- | :--- | :------------------------------------------------- |
-| `make mongo-up`      | 🍃   | Starts MongoDB ReplicaSet (3 nodes + HAProxy)       |
-| `make mongo-status`  | 📊   | Shows ReplicaSet status                            |
-| `make test-mongo`    | 🧪   | Runs MongoDB ReplicaSet functional tests           |
-| `make mongo-down`    | 🛑   | Stops MongoDB ReplicaSet                           |
+| `make mongo-up`      | 🍃   | Starts MongoDB 7.0 ReplicaSet (3 nodes + HAProxy)  |
+| `make mongo-status`  | 📊   | Shows MongoDB 7.0 ReplicaSet status                |
+| `make test-mongo`    | 🧪   | Runs MongoDB 7.0 ReplicaSet functional tests       |
+| `make mongo-down`    | 🛑   | Stops MongoDB 7.0 ReplicaSet                       |
+| `make mongo8-up`     | 🍃   | Starts MongoDB 8.0 ReplicaSet (3 nodes + HAProxy)  |
+| `make test-mongo8`   | 🧪   | Runs MongoDB 8.0 ReplicaSet functional tests       |
+| `make mongo8-down`   | 🛑   | Stops MongoDB 8.0 ReplicaSet                       |
 
 > [!NOTE]
-> MongoDB ReplicaSet uses port 27100 (RW) via HAProxy. Stats: 8408. Direct access: 27411-27413.
+> MongoDB 7.0 uses port 27100 (HAProxy), stats 8408, direct 27411-27413 (`10.10.0.0/24`). MongoDB 8.0 uses port 27200 (HAProxy), stats 8409, direct 27511-27513 (`10.11.0.0/24`). Both enforce TLS (`requireTLS`).
+
+**PostgreSQL Replication, Multi-Master & Distributed SQL (`v2.1.0`–`v2.2.0`)**
+
+Eight additional PostgreSQL topologies (`pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) each expose `<topo>-up`, `<topo>-down`, `<topo>-status`, `<topo>-logs`, `<topo>-ps`, and `<topo>-test` targets, plus `make test-pg-extended` (T11–T18) and `make bench-pg-v2`. See [PostgreSQL Multi-Master & Distributed SQL](documentation/pg_multimaster.md) for ports, architecture, and benchmark commands.
 
 **Example: Switching Databases**
 
@@ -211,9 +218,9 @@ MongoDB architecture with ReplicaSet and HAProxy routing.
 # 1. You are working with MySQL 8.0
 make mysql80
 
-# 2. You want to switch to Percona 8.4. No need to stop manually.
-make percona84
-# This will stop mysql80 and then start percona84.
+# 2. You want to switch to Percona 8.0. No need to stop manually.
+make percona80
+# This will stop mysql80 and then start percona80.
 
 # 3. Verify environment
 make verify
@@ -260,7 +267,9 @@ graph TD
 ├── 🐳 docker-compose-patroni.yml # Patroni PostgreSQL HA Cluster
 ├── 🐳 docker-compose-pgpool.yml  # PgPool-II PostgreSQL Cluster
 ├── 🐳 docker-compose-innodb-cluster.yml # MySQL InnoDB Cluster
-├── 🐳 docker-compose-mongo-rs.yml  # MongoDB ReplicaSet
+├── 🐳 docker-compose-mongo-rs.yml  # MongoDB 7.0 ReplicaSet
+├── 🐳 docker-compose-mongo8-rs.yml # MongoDB 8.0 ReplicaSet
+├── 🐳 docker-compose-pg-*.yml      # PostgreSQL streaming, logical, bi-rep, pgEdge, Citus, Bucardo, Cockroach, Yugabyte
 ├── 🚀 cmd/mdb/             # Native Go CLI entrypoint (main.go)
 ├── 📦 pkg/                 # Pure-Go orchestration modules (bench, pki, dbclient, report)
 ├── 📜 go.mod               # Go module definition (zero external dependencies)
@@ -282,10 +291,11 @@ For detailed information on specific components, please refer to the following g
 * **[Makefile Reference](documentation/makefile.md)**: Comprehensive list of all available commands.
 * **[Utility Scripts](documentation/scripts.md)**: Backup, restore, and setup script details.
 * **[PostgreSQL Support](documentation/postgresql_support.md)**: Standalone, Patroni HA, and PgPool-II clusters.
+* **[PostgreSQL Multi-Master & Distributed SQL](documentation/pg_multimaster.md)**: `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`, T11–T18 matrix, and V2 benchmarks.
 * **[Patroni Cluster](documentation/patroni_cluster.md)**: PostgreSQL 17 HA with ETCD and automatic failover.
 * **[PgPool-II Cluster](documentation/pgpool_cluster.md)**: Connection pooling + load balancing.
 * **[InnoDB Cluster](documentation/innodb_cluster.md)**: MySQL 8.0 Group Replication + HAProxy.
-* **[MongoDB ReplicaSet](documentation/mongo_replicaset.md)**: MongoDB 7.0 ReplicaSet + HAProxy.
+* **[MongoDB ReplicaSet](documentation/mongo_replicaset.md)**: MongoDB 7.0 & 8.0 ReplicaSet + HAProxy + TLS.
 * **[Test Scenarios](documentation/tests.md)**: Specific test cases and reporting instructions.
 * **[Galera Bootstrap](documentation/galera_bootstrap.md)**: Detailed steps for Galera clustering.
 * **[Replication Setup](documentation/replication_setup.md)**: Master/Slave configuration guide.
@@ -351,20 +361,20 @@ graph TD
     make stop
     ```
 
-## 🚀 Go mdb CLI Orchestrator (v2.0)
+## 🚀 Go mdb CLI Orchestrator (v2.2.0)
 
 A native compiled CLI (`cmd/mdb`, `bin/mdb`) written in pure Go (zero external dependencies).
 
 ```bash
 make build-go    # Build binary into bin/mdb
-make test-go     # Run Go test suite (67+ tests)
+make test-go     # Run Go test suite
 ```
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| `version` | `mdb version` | Prints CLI version (`2.0.25`). |
+| `version` | `mdb version` | Prints CLI version (`2.2.0`). |
 | `config` | `mdb config [-env <path>]` | Dumps configuration as JSON. |
-| `topologies` | `mdb topologies` | Lists all 8 supported topologies. |
+| `topologies` | `mdb topologies` | Lists all 16 supported topologies. |
 | `up` | `mdb up <topology>` | Deploys topology with bootstrap & setup. |
 | `down` | `mdb down <topology>` | Tears down containers and volumes. |
 | `status` | `mdb status <topology>` | Returns JSON running status. |

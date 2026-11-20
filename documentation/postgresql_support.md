@@ -58,9 +58,11 @@ PGPASSWORD=$DB_ROOT_PASSWORD psql -h 127.0.0.1 -p 5432 -U postgres
 
 | Command | Description |
 | :--- | :--- |
-| `make pgpass` | Generate `~/.pgpass` for passwordless connections. |
-| `make pgclient` | Open an interactive `psql` session. |
+| `make postgres17` / `16` / `15` | Start standalone PostgreSQL 17, 16, or 15 via Traefik (`5432`). |
 | `make status` | Check running container status. |
+| `make stop` | Stop standalone containers and network. |
+
+> For `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, and `yugabyte` topologies, see [pg_multimaster.md](pg_multimaster.md).
 
 ---
 
