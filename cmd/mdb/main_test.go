@@ -407,3 +407,45 @@ func TestClientMyCnfAndDoctor(t *testing.T) {
 		t.Fatalf("expected error when docker missing")
 	}
 }
+
+func TestAdminCommands(t *testing.T) {
+	cat := catalog.NewCatalog(true)
+	mock := &docker.MockCommandRunner{}
+	client, ctx := docker.NewClientWithRunner(mock), context.Background()
+	if err := runInjectCmd(ctx, client, cat, []string{"employees", "postgres17"}); err != nil {
+		t.Fatalf("postgres inject should skip cleanly, got %v", err)
+	}
+	if err := runInjectCmd(ctx, client, cat, []string{"bad"}); err == nil {
+		t.Fatalf("expected unsupported dataset error")
+	}
+
+	if s, a, err := planBackupRestore(false, []string{"galera", "--physical"}); err != nil || s != "./scripts/backup_physical.sh" || a[0] != "galera" {
+		t.Fatalf("backup plan: s=%s a=%v err=%v", s, a, err)
+	}
+	if s, a, err := planBackupRestore(true, []string{"repli", "dump.sql.gz"}); err != nil || s != "./scripts/restore_logical.sh" || len(a) != 2 {
+		t.Fatalf("restore plan: s=%s a=%v err=%v", s, a, err)
+	}
+	if _, _, err := planBackupRestore(true, []string{"galera"}); err == nil {
+		t.Fatalf("expected error on missing restore file")
+	}
+	if tgts, err := auditTargets("all"); err != nil || len(tgts) != 3 {
+		t.Fatalf("audit all: %v err=%v", tgts, err)
+	}
+	if _, err := auditTargets("bad"); err == nil {
+		t.Fatalf("expected error on bad audit target")
+	}
+
+	wd, _ := os.Getwd()
+	tmp := t.TempDir()
+	_ = os.MkdirAll(filepath.Join(tmp, "reports"), 0755)
+	rpt := filepath.Join(tmp, "reports", "r.html")
+	_ = os.WriteFile(rpt, []byte("x"), 0644)
+	_ = os.Chdir(tmp)
+	defer func() { _ = os.Chdir(wd) }()
+	if err := runCleanCmd(ctx, client, cat, []string{"reports"}); err != nil {
+		t.Fatalf("clean reports: %v", err)
+	}
+	if _, err := os.Stat(rpt); !os.IsNotExist(err) {
+		t.Fatalf("expected report removed")
+	}
+}
