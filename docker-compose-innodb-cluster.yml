@@ -9,7 +9,7 @@ networks:
 services:
   # 🟢 MySQL Node 1 (Primary)
   mysql_node1:
-    image: mysql:8.0
+    image: mysql:8.4
     hostname: mysql_node1
     container_name: mysql_node1
     restart: unless-stopped
@@ -28,7 +28,7 @@ services:
 
   # 🟡 MySQL Node 2 (Secondary)
   mysql_node2:
-    image: mysql:8.0
+    image: mysql:8.4
     hostname: mysql_node2
     container_name: mysql_node2
     restart: unless-stopped
@@ -49,7 +49,7 @@ services:
 
   # 🟡 MySQL Node 3 (Secondary)
   mysql_node3:
-    image: mysql:8.0
+    image: mysql:8.4
     hostname: mysql_node3
     container_name: mysql_node3
     restart: unless-stopped

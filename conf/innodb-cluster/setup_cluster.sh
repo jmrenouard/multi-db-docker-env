@@ -51,12 +51,12 @@ echo ""
 echo "3. 🔄 Resetting GTID state on all nodes..."
 for node in "${NODES[@]}"; do
     docker exec -e MYSQL_PWD="$DB_PASS" "$node" mysql -uroot -e "
-        RESET MASTER;
+        RESET BINARY LOGS AND GTIDS;
     " 2>/dev/null || true
     echo "   ✅ GTID reset on $node."
 done
 
-# 4. Create replication user on all nodes (after RESET MASTER)
+# 4. Create replication user on all nodes (after RESET BINARY LOGS AND GTIDS)
 echo ""
 echo "4. 👤 Creating replication user on all nodes..."
 for node in "${NODES[@]}"; do

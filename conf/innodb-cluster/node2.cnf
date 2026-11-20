@@ -12,7 +12,6 @@ loose-group-replication-group-seeds=mysql_node1:33061,mysql_node2:33061,mysql_no
 loose-group-replication-local-address=mysql_node2:33061
 loose-group-replication-start-on-boot=OFF
 report-host=mysql_node2
-transaction-write-set-extraction=XXHASH64
 loose-group-replication-recovery-get-public-key=ON
 
 # TLS / SSL Configuration
