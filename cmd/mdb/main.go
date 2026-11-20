@@ -111,22 +111,17 @@ func main() {
 		fmt.Printf("Environment %s started\n", target)
 	case "down", "stop":
 		target := ""
-		if os.Args[1] == "down" && len(os.Args) >= 3 {
+		if len(os.Args) >= 3 {
 			target = os.Args[2]
 		}
 		runOrExit(runDownCmd(ctx, docker.NewClient(), activeCatalog(), target))
 		fmt.Println("Stop completed successfully")
 	case "status":
-		if len(os.Args) < 3 {
-			fmt.Println("Usage: mdb status <topology>")
-			os.Exit(1)
-		}
-		topo, err := topology.DefaultRegistry().Get(os.Args[2])
-		runOrExit(err)
-		st, err := topo.Status(ctx, docker.NewClient())
-		runOrExit(err)
-		data, _ := json.MarshalIndent(st, "", "  ")
-		fmt.Println(string(data))
+		runOrExit(runStatusCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:], os.Stdout))
+	case "info":
+		runOrExit(runInfoCmd(ctx, docker.NewClient(), os.Stdout))
+	case "logs":
+		runOrExit(runLogsCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:]))
 	case "test":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: mdb test <topology>")
