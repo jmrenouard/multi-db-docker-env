@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -122,6 +124,12 @@ func main() {
 		runOrExit(runInfoCmd(ctx, docker.NewClient(), os.Stdout))
 	case "logs":
 		runOrExit(runLogsCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:]))
+	case "client":
+		runOrExit(runClientCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:], os.Stderr))
+	case "mycnf":
+		runOrExit(runMyCnfCmd(os.Stdout, os.Stderr))
+	case "doctor":
+		runOrExit(runDoctorCmd(ctx, os.Stdout, runtime.GOOS, exec.LookPath, os.Stat, docker.NewClient()))
 	case "test":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: mdb test <topology>")

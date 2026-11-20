@@ -27,7 +27,8 @@ Lifecycle:
 Client, Diagnostics & Operations:
   catalog [flags]          List environments (--category, --engine, --eol, --all, --json)
                            Aliases: list, envs, environments, topologies
-  config | pki | test | bench | report | version | help
+  client [env] | mycnf     Open DB shell or backup/write ~/.my.cnf (0600)
+  doctor | config | pki | test | bench | report | version | help
 `)
 }
 
