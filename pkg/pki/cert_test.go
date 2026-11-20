@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestPKIEngine_Lifecycle(t *testing.T) {
@@ -36,6 +37,24 @@ func TestPKIEngine_Lifecycle(t *testing.T) {
 	}
 	if s, err := os.Stat(filepath.Join(d, "b.pem")); err != nil || s.Size() == 0 {
 		t.Fatal(err)
+	}
+}
+
+func TestPKIEngine_VerifyExpiredCertFails(t *testing.T) {
+	e := NewPKIEngine(t.TempDir())
+	ca, err := e.GenerateCA(CertSpec{Name: "TestCA", ValidDays: 365})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tmpl := makeTemplate(CertSpec{Name: "expired-srv"}, false)
+	tmpl.NotBefore = time.Now().Add(-2 * time.Hour)
+	tmpl.NotAfter = time.Now().Add(-time.Hour)
+	expired, err := genKeyPair(tmpl, ca.Cert, ca.Key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.VerifyCertBytes(ca.CertPEM, expired.CertPEM); err == nil {
+		t.Fatal("expected expired certificate to fail verification")
 	}
 }
 

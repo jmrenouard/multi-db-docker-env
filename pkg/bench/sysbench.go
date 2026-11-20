@@ -86,9 +86,6 @@ func (r *SysbenchRunner) Run(ctx context.Context) (*SysbenchResult, error) {
 	if r.cfg.User != "" {
 		args = append(args, "--mysql-user="+r.cfg.User)
 	}
-	if r.cfg.Password != "" {
-		args = append(args, "--mysql-password="+r.cfg.Password)
-	}
 	if r.cfg.Host != "" {
 		args = append(args, "--mysql-host="+r.cfg.Host)
 	}
@@ -104,7 +101,7 @@ func (r *SysbenchRunner) Run(ctx context.Context) (*SysbenchResult, error) {
 		env = []string{"MYSQL_PWD=" + r.cfg.Password}
 	}
 	out, err := r.cfg.Executor.Exec(ctx, r.cfg.Container, env, args...)
-	if err != nil && out == "" {
+	if err != nil {
 		return nil, fmt.Errorf("sysbench execution failed: %w", err)
 	}
 	res, parseErr := ParseSysbenchOutput(out)

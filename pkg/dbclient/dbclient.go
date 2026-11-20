@@ -47,9 +47,9 @@ func NewVerifier(clusterType string, cfg Config) (Verifier, error) {
 		cfg.ClusterType = lower
 	}
 	switch lower {
-	case "galera", "repli", "mysql", "mariadb", "innodb":
+	case "galera", "repli", "mysql", "mariadb", "innodb", "standalone":
 		return NewMySQLVerifier(cfg), nil
-	case "patroni", "pgpool", "postgres", "postgresql":
+	case "patroni", "pgpool", "postgres", "postgresql", "pg-streaming", "pg-logical", "pg-birep", "pgedge", "bucardo", "citus", "cockroach", "yugabyte":
 		return NewPostgresVerifier(cfg), nil
 	case "mongo", "mongo8", "mongodb", "replicaset":
 		return NewMongoVerifier(cfg), nil

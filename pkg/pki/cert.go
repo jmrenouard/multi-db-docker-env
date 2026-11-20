@@ -158,9 +158,8 @@ func (p *PKIEngine) VerifyCertBytes(caPEM, certPEM []byte) error {
 		return err
 	}
 	_, err = cert.Verify(x509.VerifyOptions{
-		Roots:       roots,
-		CurrentTime: cert.NotBefore.Add(time.Minute),
-		KeyUsages:   []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+		Roots:     roots,
+		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
 	})
 	return err
 }
