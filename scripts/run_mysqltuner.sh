@@ -88,17 +88,6 @@ detect_topology() {
     echo "none"
 }
 
-get_default_port() {
-    local topo=$1
-    case "$topo" in
-        galera)          echo "3511" ;;
-        innodb_cluster)  echo "4411" ;;
-        replication)     echo "3411" ;;
-        standalone)      echo "3306" ;;
-        *)               echo "3306" ;;
-    esac
-}
-
 get_all_ports() {
     local topo=$1
     case "$topo" in
@@ -136,6 +125,7 @@ else
 fi
 
 NODE_IDX=0
+RET=0
 for p in $PORTS; do
     NODE_IDX=$((NODE_IDX + 1))
     echo ""
@@ -144,12 +134,14 @@ for p in $PORTS; do
     # Check connectivity
     if ! MYSQL_PWD="$DB_PASS" mysqladmin -h 127.0.0.1 -P "$p" -u "$DB_USER" ping >/dev/null 2>&1; then
         echo "⚠️  Port $p is not responding, skipping."
+        RET=1
         continue
     fi
 
     OUTPUT_FILE="$REPORT_DIR/mysqltuner_${TOPOLOGY}_node${NODE_IDX}_${TIMESTAMP}.txt"
     REPORT_FILE="$REPORT_DIR/mysqltuner_${TOPOLOGY}_node${NODE_IDX}_${TIMESTAMP}.html"
 
+    TUNER_RC=0
     perl "$MYSQLTUNER" \
         --host 127.0.0.1 \
         --port "$p" \
@@ -159,20 +151,26 @@ for p in $PORTS; do
         --forcemem 256 \
         --reportfile "$REPORT_FILE" \
         ${EXTRA_ARGS:+"${EXTRA_ARGS[@]}"} \
-        > "$OUTPUT_FILE" 2>&1 || true
+        > "$OUTPUT_FILE" 2>&1 || TUNER_RC=$?
 
     echo "  📄 Output: $OUTPUT_FILE"
     echo "  📊 Report: $REPORT_FILE"
 
     # Quick verdict
-    if grep -q "Terminated successfully" "$OUTPUT_FILE" 2>/dev/null; then
+    if [ "$TUNER_RC" -eq 0 ] && grep -q "Terminated successfully" "$OUTPUT_FILE" 2>/dev/null; then
         echo "  ✅ MySQLTuner completed successfully"
     else
-        echo "  ❌ MySQLTuner did not complete successfully"
+        echo "  ❌ MySQLTuner did not complete successfully (exit code: $TUNER_RC)"
+        RET=1
     fi
 done
 
 echo ""
 echo "======================================================================"
-echo "  ✅ Audit complete. Reports in: $REPORT_DIR"
+if [ "$RET" -eq 0 ]; then
+    echo "  ✅ Audit complete. Reports in: $REPORT_DIR"
+else
+    echo "  ❌ Audit finished with errors. Reports in: $REPORT_DIR"
+fi
 echo "======================================================================"
+exit "$RET"

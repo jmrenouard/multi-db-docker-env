@@ -81,9 +81,7 @@ docker exec "$CONTAINER" rm -rf "$TMP_RESTORE_DIR"
 
 # 7. Start MariaDB
 echo ">> 🚀 Starting MariaDB via Supervisor..."
-docker exec "$CONTAINER" supervisorctl start mariadb
-
-if [ $? -eq 0 ]; then
+if docker exec "$CONTAINER" supervisorctl start mariadb; then
     echo_success "Physical restoration completed successfully!"
     echo "Note: If this is a cluster, other nodes may need to perform an SST to sync."
 else

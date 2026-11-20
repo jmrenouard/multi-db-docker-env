@@ -126,7 +126,7 @@ mongo-down: ## Stop MongoDB ReplicaSet and remove volumes
 
 mongo-status: ## Show MongoDB ReplicaSet status
 	@echo "📊 MongoDB ReplicaSet Status..."
-	@docker exec mongo1 mongosh --quiet --eval "var s=rs.status(); s.members.forEach(function(m){print(m.name+' | '+m.stateStr+' | health='+m.health);});" 2>/dev/null
+	@docker exec mongo1 mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --quiet --eval "var s=rs.status(); s.members.forEach(function(m){print(m.name+' | '+m.stateStr+' | health='+m.health);});" 2>/dev/null
 
 mongo-logs: ## Follow MongoDB ReplicaSet logs
 	docker compose -f $(MONGO_COMPOSE) logs -f
@@ -161,7 +161,7 @@ mongo8-down: ## Stop MongoDB 8 ReplicaSet and remove volumes
 
 mongo8-status: ## Show MongoDB 8 ReplicaSet status
 	@echo "📊 MongoDB 8 ReplicaSet Status..."
-	@docker exec mongo8_n1 mongosh --quiet --eval "var s=rs.status(); s.members.forEach(function(m){print(m.name+' | '+m.stateStr+' | health='+m.health);});" 2>/dev/null
+	@docker exec mongo8_n1 mongosh --tls --tlsAllowInvalidCertificates --tlsCertificateKeyFile /etc/ssl/mongo/mongodb.pem --quiet --eval "var s=rs.status(); s.members.forEach(function(m){print(m.name+' | '+m.stateStr+' | health='+m.health);});" 2>/dev/null
 
 mongo8-logs: ## Follow MongoDB 8 ReplicaSet logs
 	docker compose -f $(MONGO8_COMPOSE) logs -f
@@ -507,7 +507,7 @@ info:
 # Usage: make logs or make logs service=<service_name>
 logs:
 	@echo "📄 Displaying logs..."
-	@DB_SERVICE=$$($(GET_ACTIVE_SERVICE)); \
+	@DB_SERVICE=$(if $(service),$(service),$$($(GET_ACTIVE_SERVICE))); \
 	docker compose logs -f $$DB_SERVICE
 	
 # 🔑 Generates the .my.cnf file
@@ -640,6 +640,9 @@ test-all:
 					exit 1; \
 				fi; \
 				\
+				PRIMARY_DB="employees"; \
+				if [ "$$service" = "mysql96" ]; then PRIMARY_DB="sakila"; fi; \
+				\
 				printf "💉 Injecting 'employees' database...\n" && \
 				make inject-data service=$$service db=employees && \
 				\
@@ -650,8 +653,8 @@ test-all:
 				python3 tests/test_lab.py || exit 1; \
 				\
 				printf "🔍 Verifying data injection...\n" && \
-				docker exec -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -e "SHOW DATABASES;" | grep -q "employees" && \
-				printf "✅ 'employees' database found.\n" && \
+				docker exec -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -e "SHOW DATABASES;" | grep -q "$$PRIMARY_DB" && \
+				printf "✅ '%s' database found.\n" "$$PRIMARY_DB" && \
 				docker exec -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -e "SHOW DATABASES;" | grep -q "sakila" && \
 				printf "✅ 'sakila' database found.\n"; \
 				;; \
@@ -664,7 +667,7 @@ test-all:
 				printf "✅ Connection via Traefik successful.\n" \
 				;; \
 			*) \
-				docker exec -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -h traefik -e "SHOW DATABASES;" | grep -q "employees" && \
+				docker exec -e MYSQL_PWD="$(DB_ROOT_PASSWORD)" "$${DB_CONTAINER}" "$${MYSQL_CMD}" -uroot -h traefik -e "SHOW DATABASES;" | grep -q "$$PRIMARY_DB" && \
 				printf "✅ Connection via Traefik successful.\n" \
 				;; \
 		esac; \
@@ -1077,7 +1080,8 @@ check-ssl-all: ## Verify TLS certificate validity for all products
 	@if command -v go >/dev/null 2>&1; then \
 		go run ./cmd/mdb pki verify all; \
 	fi
-	@for d in ssl ssl/innodb ssl/pgpool ssl/mongo ssl/certs/mongo8 ssl/patroni; do \
+	@RET=0; \
+	for d in ssl ssl/innodb ssl/pgpool ssl/mongo ssl/certs/mongo8 ssl/patroni; do \
 		if [ -d "$$d" ]; then \
 			CA=$$(ls $$d/ca-cert.pem $$d/ca.pem 2>/dev/null | head -1); \
 			CERT=$$(ls $$d/server-cert.pem $$d/server.crt 2>/dev/null | head -1); \
@@ -1086,6 +1090,7 @@ check-ssl-all: ## Verify TLS certificate validity for all products
 					echo "✅ $$d: valid"; \
 				else \
 					echo "❌ $$d: INVALID"; \
+					RET=1; \
 				fi; \
 			else \
 				echo "⚠️  $$d: no certificates found"; \
@@ -1093,7 +1098,8 @@ check-ssl-all: ## Verify TLS certificate validity for all products
 		else \
 			echo "⏭️  $$d: directory not found"; \
 		fi; \
-	done
+	done; \
+	exit $$RET
 
 clean-data: clean-galera clean-repli clean-ssl ## Remove ALL data, backup, and SSL directories (CAUTION!)
 
@@ -1140,7 +1146,7 @@ follow-slow-repli: ## Stream slow query logs for Replication (Usage: make follow
 
 check-galera: ## Check Galera cluster status and key variables (Usage: make check-galera [NODE=1|2|3])
 	@NODE_PORT=$$(case "$(NODE)" in 2) echo "3512";; 3) echo "3513";; *) echo "3511";; esac); \
-	echo ">> 📊 Galera Status (Node $$( (NODE:-1) ) @ port $$NODE_PORT)..."; \
+	echo ">> 📊 Galera Status (Node $${NODE:-1} @ port $$NODE_PORT)..."; \
 	MYSQL_PWD="$${DB_ROOT_PASSWORD}" mariadb -h 127.0.0.1 -P $$NODE_PORT -u root -e "\
 		SELECT VARIABLE_NAME, VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME IN ('WSREP_CLUSTER_SIZE', 'WSREP_LOCAL_STATE_COMMENT', 'WSREP_CONNECTED', 'WSREP_READY'); \
 		SHOW VARIABLES LIKE 'innodb_buffer_pool_size'; \
@@ -1149,7 +1155,7 @@ check-galera: ## Check Galera cluster status and key variables (Usage: make chec
 
 check-repli: ## Check Replication cluster status and key variables (Usage: make check-repli [NODE=1|2|3])
 	@NODE_PORT=$$(case "$(NODE)" in 2) echo "3412";; 3) echo "3413";; *) echo "3411";; esac); \
-	echo ">> 📊 Replication Status (Node $$( (NODE:-1) ) @ port $$NODE_PORT)..."; \
+	echo ">> 📊 Replication Status (Node $${NODE:-1} @ port $$NODE_PORT)..."; \
 	MYSQL_PWD="$${DB_ROOT_PASSWORD}" mariadb -h 127.0.0.1 -P $$NODE_PORT -u root -e "\
 		SHOW SLAVE STATUS\G \
 		SHOW VARIABLES LIKE 'innodb_buffer_pool_size'; \
