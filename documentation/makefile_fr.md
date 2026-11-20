@@ -26,18 +26,20 @@ Le `Makefile` est le point d'entrée principal pour la gestion des environnement
 
 | Commande | Description |
 | :--- | :--- |
-| `make mysql96` | Démarre MySQL 9.6 |
-| `make mysql84` | Démarre MySQL 8.4 |
-| `make mysql80` | Démarre MySQL 8.0 |
-| `make mysql57` | Démarre MySQL 5.7 |
-| `make mariadb118` | Démarre MariaDB 11.8 |
-| `make mariadb114` | Démarre MariaDB 11.4 |
-| `make mariadb1011`| Démarre MariaDB 10.11 |
-| `make mariadb106` | Démarre MariaDB 10.6 |
-| `make percona80` | Démarre Percona 8.0 |
+| `make mysql97` | Démarre MySQL 9.7 LTS |
+| `make mysql84` | Démarre MySQL 8.4 LTS |
+| `make mariadb123` | Démarre MariaDB 12.3 LTS |
+| `make mariadb118` | Démarre MariaDB 11.8 LTS |
+| `make mariadb114` | Démarre MariaDB 11.4 LTS |
+| `make mariadb1011` | Démarre MariaDB 10.11 LTS |
+| `make percona84` | Démarre Percona Server 8.4 LTS |
+| `make postgres18` | Démarre PostgreSQL 18 |
 | `make postgres17` | Démarre PostgreSQL 17 |
 | `make postgres16` | Démarre PostgreSQL 16 |
 | `make postgres15` | Démarre PostgreSQL 15 |
+
+> [!NOTE]
+> **Cibles EOL Décommissionnées** : Les anciennes cibles (`mysql57`, `mysql80`, `mysql96`, `mariadb106`, `percona80`) affichent la date officielle de fin de vie et la cible de remplacement recommandée, puis retournent `exit 1`. Voir [supported_products_fr.md](supported_products_fr.md#versions-décommissionnées-fin-de-vie--eol).
 
 ## 🌐 Commandes Cluster Galera
 

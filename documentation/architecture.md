@@ -113,10 +113,11 @@ The project follows a modular organization:
 
 ---
 
-## 🐘 5. PostgreSQL Standalone
+## 🐘 5. Standalone Routing & PostgreSQL
 
-Similar to the MySQL standalone instances, PostgreSQL is orchestrated via Docker and proxied by Traefik.
+All active standalone database instances (`mysql84`, `mysql97`, `mariadb1011`, `mariadb114`, `mariadb118`, `mariadb123`, `percona84`, `postgres15`–`postgres18`) are proxied through **Traefik v3** (`traefik:v3`), while HA clusters use **HAProxy LTS** (`haproxy:lts` / `haproxy:lts-alpine`), **MySQL 8.4 LTS** (InnoDB Cluster), and **CockroachDB v25.4**.
 
-- **Port**: `5432` (Exposed via Traefik)
-- **Data Persistence**: Named volumes (`postgres_17_data`, `postgres_16_data`, `postgres_15_data`).
+- **Ports**: `3306` (MySQL/MariaDB/Percona) and `5432` (PostgreSQL) exposed via Traefik v3.
+- **PostgreSQL Data Persistence**: Named volumes (`postgres_18_data` mounted at `/var/lib/postgresql`, and `postgres_17_data`, `postgres_16_data`, `postgres_15_data` at `/var/lib/postgresql/data`).
 - **Access**: Standard `psql` client (`PGPASSWORD=$DB_ROOT_PASSWORD psql -h 127.0.0.1 -p 5432 -U postgres`).
+- **EOL Decommissioning**: End-of-Life images (`mysql:5.7`, `mysql:8.0`, `mysql:9.6`, `mariadb:10.6`, `percona/percona-server:8.0`, `traefik:v2.11`, `haproxy:2.9-alpine`) have been removed; see [supported_products.md](supported_products.md#decommissioned-versions-end-of-life).
