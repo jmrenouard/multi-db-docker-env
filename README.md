@@ -27,7 +27,7 @@ A key feature is the **Traefik reverse proxy**, which ensures all database insta
 | Tier | Tier Name | Last Verified | Status |
 | :--- | :--- | :--- | :--- |
 | **T2** | **Standalone Matrix** | 2026-11-19 | ✅ 100% Passed |
-| **T3** | **Cluster, HA & Multi-Master (`v2.3.0`)** | 2026-11-20 | ✅ 19 Topologies Verified |
+| **T3** | **Cluster, HA & Multi-Master (`v2.4.0`)** | 2026-11-20 | ✅ 20 Topologies Verified |
 
 ## 📋 Prerequisites
 
@@ -211,9 +211,9 @@ MongoDB architecture with ReplicaSet and HAProxy routing.
 > [!NOTE]
 > MongoDB 7.0 uses port 27100 (HAProxy), stats 8408, direct 27411-27413 (`10.10.0.0/24`). MongoDB 8.0 uses port 27200 (HAProxy), stats 8409, direct 27511-27513 (`10.11.0.0/24`). Both enforce TLS (`requireTLS`).
 
-**PostgreSQL Replication, Multi-Master & Distributed SQL (`v2.1.0`–`v2.2.0`)**
+**PostgreSQL Replication, Multi-Master & Distributed SQL (`v2.1.0`–`v2.4.0`)**
 
-Eight additional PostgreSQL topologies (`pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) each expose `<topo>-up`, `<topo>-down`, `<topo>-status`, `<topo>-logs`, `<topo>-ps`, and `<topo>-test` targets, plus `make test-pg-extended` (T11–T18) and `make bench-pg-v2`. See [PostgreSQL Multi-Master & Distributed SQL](documentation/pg_multimaster.md) for ports, architecture, and benchmark commands.
+Twelve additional PostgreSQL topologies (`pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) each expose `<topo>-up`, `<topo>-down`, `<topo>-status`, `<topo>-logs`, `<topo>-ps`, and `<topo>-test` targets, plus `make test-pg-extended` (T11–T18), `make bench-pg-v2`, `make bench-pg18`, and `make bench-yt-cluster`. See [PostgreSQL Multi-Master & Distributed SQL](documentation/pg_multimaster.md) for ports, architecture, and benchmark commands.
 
 **Example: Switching Databases**
 
@@ -375,9 +375,9 @@ make test-go     # Run Go test suite
 
 | Command | Usage | Description |
 | :--- | :--- | :--- |
-| `version` | `mdb version` | Prints CLI version (`2.2.0`). |
+| `version` | `mdb version` | Prints CLI version (`2.4.0`). |
 | `config` | `mdb config [-env <path>]` | Dumps configuration as JSON. |
-| `topologies` | `mdb topologies` | Lists all 16 supported topologies. |
+| `topologies` | `mdb topologies` | Lists all 20 supported topologies. |
 | `up` | `mdb up <topology>` | Deploys topology with bootstrap & setup. |
 | `down` | `mdb down <topology>` | Tears down containers and volumes. |
 | `status` | `mdb status <topology>` | Returns JSON running status. |
