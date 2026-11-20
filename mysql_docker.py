@@ -63,10 +63,9 @@ def generate_bash_alias(env_name, port, password):
         for alias in aliases:
             f.write(f"{alias}\n")
         f.write("\n")
+    os.chmod(bashrc_path, 0o600)
 
-    print(f"Aliases added to {bashrc_path}:")
-    for alias in aliases:
-        print(f"  {alias}")
+    print(f"Aliases added to {bashrc_path} for '{env_name}'.")
 
 def launch_container(env_name, db_type, version, username, password, debug=False):
     version = version or 'latest'
@@ -93,7 +92,7 @@ def launch_container(env_name, db_type, version, username, password, debug=False
     except docker.errors.NotFound:
       print(f"{container_name} not found")
     except Exception as e:
-      print(f"Erreur: {e}")
+      print(f"Error: {e}")
       return
  
     if debug:
@@ -140,14 +139,13 @@ def stop_container(env_name, debug=False):
         print(f"Error stopping container: {e}")
 
 def remove_environment(env_name, debug=False, docker_client=None):
-    """Remove Docker container, image, .my.cnf file, and alias for the given environment."""
+    """Remove Docker container, .my.cnf file, and alias for the given environment."""
     if docker_client is None:
         docker_client = from_env()
     container_name = env_name
     my_cnf_path = f"{env_name}.my.cnf"
     bashrc_path = "mysql.bashrc"
 
-    container = None
     # Remove container
     try:
         container = docker_client.containers.get(container_name)
@@ -155,15 +153,6 @@ def remove_environment(env_name, debug=False, docker_client=None):
         print(f"Container {container_name} removed successfully.")
     except Exception as e:
         print(f"Error removing container: {e}")
-
-    # Remove image
-    try:
-        if container and getattr(container, 'image', None) and container.image.tags:
-            image_name = f"{container.image.tags[0]}"
-            docker_client.images.remove(image=image_name, force=True)
-            print(f"Image {image_name} removed successfully.")
-    except Exception as e:
-        print(f"Error removing image: {e}")
 
     # Remove .my.cnf file
     if os.path.exists(my_cnf_path):
@@ -206,7 +195,10 @@ def list_containers(status_filter=None, debug=False):
         return
     data = []
     for container in containers:
-        if status_filter and container.status != status_filter:
+        if status_filter == "stopped":
+            if container.status == "running":
+                continue
+        elif status_filter and container.status != status_filter:
             continue
         try:
             image = container.image.tags[0] if container.image.tags else "<none>"
@@ -215,7 +207,7 @@ def list_containers(status_filter=None, debug=False):
         if any(db in image.lower() for db in ["mysql", "mariadb", "percona"]):
             name = container.name
             status = "Running" if container.status == "running" else "Stopped"
-            port_bindings = container.attrs['NetworkSettings']['Ports']
+            port_bindings = container.attrs.get('NetworkSettings', {}).get('Ports') or {}
             if '3306/tcp' in port_bindings and port_bindings['3306/tcp']:
                 host_port = port_bindings['3306/tcp'][0]['HostPort']
             else:

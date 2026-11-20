@@ -156,11 +156,11 @@ def pb_run(t, su, m, c, j, d, a1, a2, hs, pt, u, pw, logf):
     base = f"pgbench -U {u} -d labdb -n -c {c} -j {j} -T {d} -r --max-tries=100 --failures-detailed"
     if m == 1:
         bc(["bash", "-c", f"{base} -h '{hs[0]}' -p {pt} -l --log-prefix=/tmp/pbl_s {a1} >/tmp/pb_1.out 2>&1||true"], pw)
-        wlog(logf, bc(["cat", "/tmp/pb_1.out"], False).stdout)
+        wlog(logf, bc(["cat", "/tmp/pb_1.out"], chk=False).stdout)
     else:
         h2 = hs[0] if (len(hs) < 2 or (t == "pg17-sync-streaming" and su != "C_multinode_ro")) else hs[1]
         bc(["bash", "-c", f"{base} -h '{hs[0]}' -p {pt} -l --log-prefix=/tmp/pbl_1 {a1} >/tmp/pb_1.out 2>&1 & {base} -h '{h2}' -p {pt} -l --log-prefix=/tmp/pbl_2 {a2} >/tmp/pb_2.out 2>&1 & wait||true"], pw)
-        wlog(logf, bc(["cat", "/tmp/pb_1.out", "/tmp/pb_2.out"], False).stdout)
+        wlog(logf, bc(["cat", "/tmp/pb_1.out", "/tmp/pb_2.out"], chk=False).stdout)
     py = (
         'import glob,math,re\nt=ok=fl=rt=0.0;av=[];lt=[]\n'
         'for f in sorted(glob.glob("/tmp/pb_*.out")):\n'
@@ -209,16 +209,16 @@ def run_sb(t, h1, pt, u, pw, sc, logf):
     """Execute sysbench oltp_read_write inside bench_client."""
     base = f"sysbench oltp_read_write --db-driver=pgsql --pgsql-host={h1} --pgsql-port={pt} --pgsql-user={u} " + (f"--pgsql-password={pw} " if pw else "") + "--pgsql-db=labdb --tables=4 --table-size=10000"
     bc(["bash", "-c", f"{base} cleanup >/dev/null 2>&1||true"])
-    if bc(["bash", "-c", f"{base} prepare >/tmp/sb_p.out 2>&1"], False).returncode:
-        return row(t, "E_sysbench_oltp_rw", sc, 8, 20, 0, 0, 0, 0, 0, 0, 0, 0, "EXPECTED_LIMITATION_UNSUPPORTED", 0, "prepare: " + bc(["head", "-n", "4", "/tmp/sb_p.out"], False).stdout.replace("\n", " ").strip())
+    if bc(["bash", "-c", f"{base} prepare >/tmp/sb_p.out 2>&1"], chk=False).returncode:
+        return row(t, "E_sysbench_oltp_rw", sc, 8, 20, 0, 0, 0, 0, 0, 0, 0, 0, "EXPECTED_LIMITATION_UNSUPPORTED", 0, "prepare: " + bc(["head", "-n", "4", "/tmp/sb_p.out"], chk=False).stdout.replace("\n", " ").strip())
     if t == "citus":
         for i in range(1, 5):
             pq(h1, pt, u, pw, f"SELECT create_distributed_table('sbtest{i}','id');")
     note = "oltp_read_write tables=4 size=10000"
-    if bc(["bash", "-c", f"{base} --threads=8 --time=20 run >/tmp/sb_r.out 2>&1"], False).returncode:
+    if bc(["bash", "-c", f"{base} --threads=8 --time=20 run >/tmp/sb_r.out 2>&1"], chk=False).returncode:
         note = "auto ps failed; retried --db-ps-mode=disable"
-        if bc(["bash", "-c", f"{base} --threads=8 --time=20 --db-ps-mode=disable run >/tmp/sb_r.out 2>&1"], False).returncode:
-            return row(t, "E_sysbench_oltp_rw", sc, 8, 20, 0, 0, 0, 0, 0, 0, 0, 0, "EXPECTED_LIMITATION_UNSUPPORTED", 0, "run: " + bc(["tail", "-n", "4", "/tmp/sb_r.out"], False).stdout.replace("\n", " ").strip())
+        if bc(["bash", "-c", f"{base} --threads=8 --time=20 --db-ps-mode=disable run >/tmp/sb_r.out 2>&1"], chk=False).returncode:
+            return row(t, "E_sysbench_oltp_rw", sc, 8, 20, 0, 0, 0, 0, 0, 0, 0, 0, "EXPECTED_LIMITATION_UNSUPPORTED", 0, "run: " + bc(["tail", "-n", "4", "/tmp/sb_r.out"], chk=False).stdout.replace("\n", " ").strip())
     s = bc(["cat", "/tmp/sb_r.out"]).stdout
     wlog(logf, s)
     bc(["bash", "-c", f"{base} cleanup >/dev/null 2>&1||true"])

@@ -1,5 +1,6 @@
 import subprocess
 import os
+import html
 import json
 import sys
 import argparse
@@ -197,7 +198,8 @@ def get_steps(auto=False):
             
             ver_choice = input(f"\n{STRINGS[L]['choice']} [1-{len(available_versions)}] (default: 1): ").strip() or '1'
             version = available_versions[int(ver_choice)-1]
-            target = f"{system_name.lower()}{version.replace('.', '')}"
+            prefix = "postgres" if system_name == "PostgreSQL" else system_name.lower()
+            target = f"{prefix}{version.replace('.', '')}"
             pretty_name = f"{system_name} {version}"
             
         except (ValueError, IndexError, KeyboardInterrupt):
@@ -555,12 +557,12 @@ def generate_report(results, finished=False):
             status_icon = '<svg class="w-7 h-7 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>'
 
         output_section = ""
-        if res['status'] not in ["SKIPPED", "PENDING", "RUNNING"]:
+        if res['status'] not in ["SKIPPED", "PENDING"]:
             output_section = OUTPUT_TEMPLATE.format(
                 stdout_label=STRINGS[L]['stdout'],
                 stderr_label=STRINGS[L]['stderr'],
-                stdout=res['stdout'] if res['stdout'] else STRINGS[L]['no_output'],
-                stderr=res['stderr'] if res['stderr'] else STRINGS[L]['no_error']
+                stdout=html.escape(res['stdout']) if res['stdout'] else STRINGS[L]['no_output'],
+                stderr=html.escape(res['stderr']) if res['stderr'] else STRINGS[L]['no_error']
             )
 
         open_state = "open" if res['status'] == "RUNNING" else ""
@@ -570,7 +572,7 @@ def generate_report(results, finished=False):
             id=res['id'],
             name=res['name'],
             description=res['description'],
-            command=res['command'],
+            command=html.escape(res['command']),
             status=res['status'],
             status_class=status_class,
             status_bg=status_bg,
@@ -580,7 +582,7 @@ def generate_report(results, finished=False):
             logs_label=STRINGS[L]['logs']
         )
 
-    html = HTML_TEMPLATE.format(
+    rendered_html = HTML_TEMPLATE.format(
         timestamp=timestamp,
         install_type=INSTALL_TYPE,
         total_steps=len(results),
@@ -593,7 +595,7 @@ def generate_report(results, finished=False):
 
     os.makedirs(os.path.dirname(REPORT_FILE), exist_ok=True)
     with open(REPORT_FILE, "w", encoding="utf-8") as f:
-        f.write(html)
+        f.write(rendered_html)
     
     print(STRINGS[L]['report_updated'].format(REPORT_FILE))
 
