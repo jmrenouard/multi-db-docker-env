@@ -30,8 +30,8 @@ Bienvenue dans la documentation de Multi-DB Docker Environment. Cet index fourni
 
 | Document | Description |
 | --- | --- |
-| **[README Principal](../README_fr.md)** | Présentation, démarrage rapide, instructions de build et utilisation de base. |
-| **[Architecture](architecture.md)** | Topologie globale, schéma réseau et schémas Mermaid détaillés. |
+| **[README Principal](../README_fr.md)** | Présentation, démarrage rapide unifié `./mdb` (`mdb.cmd`), configuration multi-OS et usage CLI. |
+| **[Architecture](architecture.md)** | Topologie globale, routage unifié de l'orchestrateur, schéma réseau et schémas Mermaid. |
 
 ## 🏛️ Gouvernance & Orchestration
 
@@ -47,8 +47,8 @@ Bienvenue dans la documentation de Multi-DB Docker Environment. Cet index fourni
 
 | Document | Description |
 | --- | --- |
-| **[Support PostgreSQL](postgresql_support_fr.md)** | Guide complet : standalone (15/16/17), Patroni HA, et clusters PgPool-II. |
-| **[PostgreSQL Multi-Maître & SQL Distribué](pg_multimaster_fr.md)** | Guide et benchmarks pg-birep, pgEdge Spock 5, Bucardo 5, Citus 14.2, YugabyteDB 2026.1 et CockroachDB v24.3. |
+| **[Support PostgreSQL](postgresql_support_fr.md)** | Guide complet : standalone (15/16/17/18), Patroni HA, et clusters PgPool-II. |
+| **[PostgreSQL Multi-Maître & SQL Distribué](pg_multimaster_fr.md)** | Guide et benchmarks `pg17-baseline`, `pg-streaming`/`logical`/`birep`, `pg18-*`, `yt-cluster` 1.21.3, pgEdge Spock 5, Bucardo 5, Citus 14.2, YugabyteDB 2026.1 et CockroachDB v25.4. |
 | **[Cluster Patroni](patroni_cluster.md)** | Cluster PostgreSQL 17 HA à 3 noeuds avec ETCD et failover automatique. |
 | **[Cluster PgPool-II](pgpool_cluster.md)** | Pooling de connexions + load balancing avec réplication streaming. |
 
@@ -56,7 +56,7 @@ Bienvenue dans la documentation de Multi-DB Docker Environment. Cet index fourni
 
 | Document | Description |
 | --- | --- |
-| **[InnoDB Cluster](innodb_cluster_fr.md)** | MySQL 8.0 Group Replication avec HAProxy pour le routage transparent. |
+| **[InnoDB Cluster](innodb_cluster_fr.md)** | MySQL 8.4 LTS Group Replication avec HAProxy pour le routage transparent. |
 
 ## 🍃 MongoDB ReplicaSet
 
@@ -74,7 +74,7 @@ Bienvenue dans la documentation de Multi-DB Docker Environment. Cet index fourni
 
 | Document | Description |
 | --- | --- |
-| **[Référence Makefile](makefile_fr.md)** | Détail de toutes les commandes `make` pour le déploiement et la maintenance. |
+| **[Référence CLI & Makefile](makefile_fr.md)** | Commandes unifiées `./mdb` (`catalog`, `up`, `setup`, `lint`, `interactive`, `doctor`) et wrappers `Makefile`. |
 | **[Scripts Utilitaires](scripts.md)** | Approfondissement des scripts de sauvegarde, restauration, sécurité (SSL) et setup. |
 
 ## 🔄 Réplication & Galera

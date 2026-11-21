@@ -1,26 +1,35 @@
-# Référence Makefile 🛠️
+# Référence CLI unifiée (`./mdb`) & Makefile 🛠️
 
-Le `Makefile` est le point d'entrée principal pour la gestion des environnements de base de données (Standalone, Galera et Réplication).
+> [!IMPORTANT]
+> **`./mdb` (`mdb.cmd` sous Windows) est le point d'entrée unique unifié** pour toutes les opérations. `Makefile`, `interactive_runner.py` et `mysql_docker.py` servent de wrappers de compatibilité et d'helpers historiques déléguant à `./mdb`.
 
-## 🛠️ Commandes Globales
+## 🚀 Commandes Unifiées `./mdb`
 
 | Commande | Description |
 | :--- | :--- |
-| `make stop` | 🛑 Arrête et supprime tous les conteneurs et réseaux. |
-| `make start` | 🚀 Démarre le service par défaut (MariaDB 11.4). |
-| `make status` | 📊 Affiche l'état des conteneurs actifs. |
-| `make info` | ℹ️ Fournit des informations sur le service DB actif. |
-| `make logs` | 📄 Affiche les logs du service actif. |
-| `make mycnf` | 🔑 Génère le fichier `.my.cnf` pour les connexions sans mot de passe. |
-| `make client` | 💻 Lance un client MySQL sur la base active. |
-| `make verify` | ✅ Valide l'intégrité de l'environnement (`test-config`). |
-| `make build-go` | 🔨 Compile le binaire Go `mdb` dans `bin/mdb` (`v2.2.0`). |
-| `make test-go` | 🧪 Exécute la suite de tests unitaires Go. |
-| `make help` | Affiche l'aide pour toutes les tâches disponibles. |
-| `make build-image` | Construit l'image de base `mariadb_ssh:004`. |
-| `make gen-ssl` | Génère les certificats SSL dans le répertoire `ssl/`. |
-| `make gen-profiles` | Génère les profils shell pour un accès rapide. |
-| `make clean-data` | **DANGER** : Supprime TOUTES les données, sauvegardes et certificats. |
+| `./mdb help` | Affiche l'aide CLI catégorisée (`--help`, `-h`). |
+| `./mdb catalog [--category ...] [--engine ...] [--eol] [--all] [--json]` | Liste les 31 environnements actifs + 5 EOL (`list`, `envs`, `topologies`). |
+| `./mdb up <env>` / `./mdb start [env]` | Démarre un profil ou cluster (auto-PKI, rejette EOL, défaut `mariadb114`). |
+| `./mdb setup <env>` | Exécute le script de setup d'une topologie (no-op si superflu). |
+| `./mdb down [env\|all]` / `./mdb stop [env]` | Arrête l'environnement ou toutes les piles Compose actives. |
+| `./mdb status [env\|all]` / `./mdb info` / `./mdb logs [env]` | Inspecte les conteneurs actifs et les journaux (`--tail N`, `-f`, `--json`). |
+| `./mdb client [env]` / `./mdb mycnf` | Shell BDD adaptatif (`mariadb`/`psql`/`mongosh`/etc.) ou sauvegarde `~/.my.cnf.bak` + `~/.my.cnf` (`0600`). |
+| `./mdb interactive [-a\|-i] [-l en\|fr]` | Assistant bilingue natif sur tout le catalogue (`alias` : `wizard`). |
+| `./mdb lint` / `./mdb test <env> [--suite]` | Valide `.sh` + 21 Compose YAML (`lint`) et exécute les vérifications (`--suite` lance `tests/test_<env>.sh`). |
+| `./mdb bench <env>` / `./mdb doctor` | Benchmarks multi-moteurs et diagnostic des dépendances OS/Docker/Go/`.env`/`ssl/`. |
+| `./mdb pki <generate\|verify>` / `./mdb report` | PKI x509 native et export de rapports JSON/HTML. |
+
+## 🛠️ Wrappers `Makefile` Globaux
+
+| Commande | Description |
+| :--- | :--- |
+| `make stop` / `status` / `info` | 🛑 / 📊 / ℹ️ Délèguent à `./mdb stop` / `status` / `info` (scan multi-compose). |
+| `make mycnf` / `client` | 🔑 / 💻 Délèguent à `./mdb mycnf` (`~/.my.cnf.bak` `0600`) et `./mdb client` (avertissement si `.env` absent). |
+| `make catalog` / `doctor` / `interactive` | 📋 / 🩺 / 🚀 Délèguent à `./mdb catalog`, `doctor` et `interactive` (repli Python). |
+| `make lint` / `test` / `verify` | 🔍 / 🧪 / ✅ Délèguent à `./mdb lint` et `test-config`. |
+| `make start` / `help` | 🚀 / 📜 Démarre `mariadb114` / affiche `./mdb help` + alias Make. |
+| `make build-go` / `test-go` | 🔨 / 🧪 Compile `bin/mdb` et exécute la suite de tests unitaires Go. |
+| `make build-image` / `gen-ssl` / `gen-profiles` / `clean-data` | Construit `mariadb_ssh:004`, génère SSL/profils, ou purge les données locales. |
 
 ## 🐬 Commandes Standalone
 
@@ -45,18 +54,24 @@ Le `Makefile` est le point d'entrée principal pour la gestion des environnement
 
 | Commande | Description |
 | :--- | :--- |
-| `make up-galera` | Démarre les nœuds Galera et HAProxy. |
+| `make up-galera` / `make galera-up` | Démarre les nœuds Galera et HAProxy. |
 | `make bootstrap-galera`| Bootstrap séquentiel d'un nouveau cluster. |
-| `make down-galera` | Arrête le cluster Galera. |
+| `make down-galera` / `make galera-down` | Arrête le cluster Galera. |
+| `make galera-status` / `galera-logs` | Statut WSREP et logs temps réel Galera. |
 | `make test-galera` | Lance la suite de tests Galera. |
 
 ## 🔄 Commandes Cluster Réplication
 
 | Commande | Description |
 | :--- | :--- |
-| `make up-repli` | Démarre les nœuds de réplication et HAProxy. |
+| `make up-repli` / `make repli-up` | Démarre les nœuds de réplication et HAProxy. |
 | `make setup-repli` | Configure la relation Maître/Esclave. |
-| `make down-repli` | Arrête le cluster de réplication. |
+| `make down-repli` / `make repli-down` | Arrête le cluster de réplication. |
+| `make repli-status` / `repli-logs` | Statut GTID et logs temps réel Réplication. |
 | `make test-repli` | Lance la suite de tests de réplication. |
+
+## 🐘 Piles PostgreSQL Compose (13 Topologies)
+
+Les 13 piles (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`) exposent `make up-<pile>`, `make setup-<pile>`, `make test-<pile>` et `make down-<pile>` ainsi que `<pile>-{up,down,status,logs,ps,test}`.
 
 > **Astuce** : Utilisez `NODE=2` ou `NODE=3` (ex: `make logs-error-galera NODE=2`) pour cibler un nœud spécifique. Le défaut est le Nœud 1.
