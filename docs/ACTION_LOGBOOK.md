@@ -29,6 +29,7 @@
 | **Phase 13** | YT Cluster 1.21.3 (PG 18) Active-Active Topology & `v2.4.0` / `v2.4.1` | 3-node `yt-cluster` Compose stack, setup, `L1-L8`/`T11-T18`/`T_REVERT` tests, 36-row `bench-yt-cluster`, Go CLI 20 topologies | ✅ Complete | `make yt-cluster-test`, `make bench-yt-cluster`, `go test ./...`, `./bin/mdb topologies` |
 | **Phase 14** | Unified `./mdb` CLI, 12 Usability Audit Fixes & `v2.5.0` Release | `pkg/catalog`, unified `./mdb`/`mdb.cmd`, bilingual wizard, 13 PG stack wrappers, `make lint`/`test`, EN/FR docs, `v2.5.0` sync | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...`, CI `test-and-validate` |
 | **Phase 15** | Durable Production-Tuned PG Compose Stacks & Unified 18-Topology Benchmark Harness (`v2.6.0`) | Tuned 13 PG Compose stacks (`fsync`/`RPO=0` preserved), YB/CRDB HAProxy LBs, `bench_pg_optimized_*` (`PG_SCALE=20`, `--resume`), unit/static tests, EN/FR docs, `v2.6.0` tag | ✅ Complete | `make bench-pg-optimized`, `bash ./tests/test_config.sh`, `python -m unittest`, `go test ./...` |
+| **Phase 16** | Self-Contained Patroni Images, `mdb images` CLI & 31/31 Live E2E Parity (`v2.6.1`) | 3 non-root Patroni Dockerfiles + `Dockerfile.bench`, `mdb images` CLI (`31/31` images), Patroni 4.x/mTLS live E2E, EN/FR docs & governance | ✅ Complete | `./mdb images check`, `./mdb test patroni --suite`, `go test ./...`, `python -m unittest` |
 
 ---
 
@@ -81,6 +82,12 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-104 -- Document `mdb images` CLI, Self-Contained Patroni & 31/31 E2E Status in EN/FR READMEs (`#406`)
+- **Timestamp / Issue / Branch**: `2026-11-21T23:57Z` | Issue `#406` | `docs/issue-406-images-patroni-docs`
+- **Request**: Document `./mdb images list|build|pull|check` (and `Makefile` wrappers `build-images`/`pull-images`/`check-images`), self-contained Patroni Dockerfiles, and 31/31 live E2E coverage in `README.md` and `README_fr.md`.
+- **Changes**: Updated `README.md`, `README_fr.md` (Verification Status table, General Commands table, thin `Makefile` wrappers note, and self-contained Patroni ports/Dockerfiles note), and `docs/ACTION_LOGBOOK.md` (Phase 16 + `ACT-104`).
+- **Result**: Consolidates merged PRs `#398` (`#397`), `#400` (`#396`), `#403` (`#399`), `#404` (`#401`), and `#405` (`#402`) (`31/31` E2E images PRESENT: `7` custom incl. Patroni `131MB`/`513MB`/`117MB` + `24` upstream; `31/31` active topologies live E2E PASS); verified `go test -count=1 ./...`, `python -m unittest discover -s tests -v`, `mdb lint`, and `mdb images check`.
 
 ### ACT-103 -- Patroni 4.x Verifier (`streaming`/`Primary`), E2E Suites & Static Tests (`#402`)
 - **Timestamp / Issue / Branch**: `2026-11-21T22:49Z` | Issue `#402` | `fix/issue-402-patroni-verifier-tests`
