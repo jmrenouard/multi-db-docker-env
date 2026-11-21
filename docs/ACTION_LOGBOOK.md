@@ -80,6 +80,14 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-077 -- 18-Suite `yt-cluster-async` Runner (`#336`)
+- **Date**: `2026-11-21T00:25+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#336`
+- **Request**: Complete 18-suite `yt-cluster-async` runner and fix WAN/E3 issues.
+- **Changes**: `scripts/bench_yt_runner.sh` (`set_async()`, `YT_ASYNC_MISSING_ONLY=1`, non-Leader WAN, `prep_sb()` before `E3`), `RCA-071`.
+- **Result**: Diff `< 14,500` B; `test_config.sh`, `unittest`, `go test` pass; 36/36 rows (`E3=133.55`, `WAN 8.47->2.90`).
+
+---
+
 ### ACT-076 -- YT Cluster 1.21.3 (PG 18.7) Active-Active Topology, Benchmark Suite & `v2.4.0` Release (Issues `#288`, `#290`, `#292`, `#294`, `#296`, `#298`, `#300`)
 - **Date**: `2026-11-20T20:05+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#288`/`#289`, `#290`/`#291`, `#292`/`#293`, `#294`/`#295`, `#296`/`#297`, `#298`/`#299`, `#300`
 - **Request**: Land the live-verified 3-node YT Cluster 1.21.3 (`dbinvent/yt:1.21.3`, PG 18.7 + `yt_cluster 1.21` / `ytserv`) active-active Docker Compose stack, setup script, functional/limits/reversibility test suite, sequential benchmark runner, Makefile & Go `mdb` CLI integration (20 topologies), EN/FR documentation, governance registers, and annotated release tag `v2.4.0` via atomic `< 15K` PRs.

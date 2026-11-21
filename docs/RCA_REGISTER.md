@@ -529,6 +529,13 @@
 - **Applied Change / Fix**: Documented the operational caveat in `documentation/pg_multimaster{,_fr}.md` and verified clean `RPO=0` recovery (`20/20`) and `T_REVERT` (`DROP EXTENSION yt_cluster CASCADE;`) in `tests/test_yt_cluster.sh`.
 - **Result & Non-Regression Test**: `T16` (`RPO=0`, `post_restart=20/20`) and `T_REVERT` (`5/5` intact -> `6/6` plain PG write) verified in `tests/test_yt_cluster.sh`.
 
+### RCA-071 -- YT Async WAN Leader Bypass & `sbtest` `55000` (`#336`)
+- **Date / Linked Action**: `2026-11-21` (`ACT-077` / `#336`)
+- **Observed Symptom**: Non-monotonic WAN (`yt1`) and `E3_wo` `55000` after `E_rw`.
+- **Root Cause Analysis**: Leader `yt1` bypassed `netem`; async `E_rw` locked `sbtest`.
+- **Applied Change / Fix**: `r_wan` hits non-Leader `wn`; `r_sb` retry + `prep_sb()` + `YT_ASYNC_MISSING_ONLY=1`.
+- **Result & Non-Regression Test**: WAN `8.47->4.78->2.90`, `E3=133.55`, 36/36 `drift=0`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
