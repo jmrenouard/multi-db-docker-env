@@ -28,7 +28,7 @@ graph TD
 | `pg_node1` | `postgres:17` | `10.8.0.11` | Primary (read/write) |
 | `pg_node2` | `postgres:17` | `10.8.0.12` | Standby (read-only) |
 | `pg_node3` | `postgres:17` | `10.8.0.13` | Standby (read-only) |
-| `pgpool` | `pgpool/pgpool:4.6` | `10.8.0.20` | Connection pooling + LB |
+| `pgpool` | `pgpool/pgpool:4.4.3` | `10.8.0.20` | Connection pooling + LB |
 | `haproxy_pgpool` | `haproxy:lts` | `10.8.0.100` | External routing |
 
 ## Quick Start
