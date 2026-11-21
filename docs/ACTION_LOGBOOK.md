@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-112 -- Compose Env via `RunWithEnv` & `Client.ResolveContainer` (`#412`)
+- **Timestamp / Issue / Branch**: `2026-11-21T23:40Z` | `#412` | `refactor/issue-412-compose-env-resolve`
+- **Request**: Pass Compose env via `RunWithEnv`, add `wsl`/`wsl.exe` to `WSLENV`, add `ResolveContainer`.
+- **Changes**: `compose.go` (`runCompose`), `client.go` (`wsl`/`wsl.exe`, `ResolveContainer`, drop `extractComposeEnv`), tests, `RCA-094`.
+- **Result**: `go test ./...` (11/11), `go vet`, `mdb lint` (70 scripts, 21 compose) pass.
+
 ### ACT-111 -- Deduplicate `pb_run_opt`, `conv_chk_opt`, Container Checks & Pre-Drain `pg18-birep` (`#426`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:12Z` | Issue `#426` | `fix/issue-426-opt-common-dedup`
 - **Request**: Remove duplicate `pb_run_opt`, `conv_chk_opt`, `assert_zero_opt_containers`, and `ref_sub` logic in `scripts/bench_pg_opt_common.py`, add shared `tc_netem` in `scripts/bench_pg_lib.py`, and cover `pg18-birep` pre-drain/reset in `reset_ds`.

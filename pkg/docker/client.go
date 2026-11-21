@@ -24,23 +24,6 @@ type EnvCommandRunner interface {
 
 type RealCommandRunner struct{}
 
-func extractComposeEnv(name string, args []string) ([]string, []string) {
-	if name != "docker" || len(args) == 0 || args[0] != "compose" {
-		return args, nil
-	}
-	filtered := make([]string, 0, len(args))
-	var envVars []string
-	for i := 0; i < len(args); i++ {
-		if args[i] == "--env" && i+1 < len(args) {
-			envVars = append(envVars, args[i+1])
-			i++
-		} else {
-			filtered = append(filtered, args[i])
-		}
-	}
-	return filtered, envVars
-}
-
 // MergeEnv appends extra env vars to base and forwards their keys via WSLENV for Windows bash.
 func MergeEnv(base, extra []string, name string) []string {
 	return mergeEnv(base, extra, name, runtime.GOOS)
@@ -51,7 +34,7 @@ func mergeEnv(base, extra []string, name, goos string) []string {
 		return nil
 	}
 	b := strings.ToLower(filepath.Base(strings.ReplaceAll(name, `\`, "/")))
-	needWSL := goos == "windows" && (b == "bash" || b == "bash.exe" || b == "docker" || b == "docker.exe" || b == "docker.cmd")
+	needWSL := goos == "windows" && (b == "bash" || b == "bash.exe" || b == "docker" || b == "docker.exe" || b == "docker.cmd" || b == "wsl" || b == "wsl.exe")
 	out := make([]string, 0, len(base)+len(extra)+1)
 	var wslParts []string
 	seen := make(map[string]bool)
@@ -86,9 +69,8 @@ func mergeEnv(base, extra []string, name, goos string) []string {
 }
 
 func (r *RealCommandRunner) RunWithEnv(ctx context.Context, env []string, name string, args ...string) ([]byte, []byte, int, error) {
-	cleanArgs, envVars := extractComposeEnv(name, args)
-	cmd := exec.CommandContext(ctx, name, cleanArgs...)
-	if merged := MergeEnv(os.Environ(), append(envVars, env...), name); len(merged) > 0 {
+	cmd := exec.CommandContext(ctx, name, args...)
+	if merged := MergeEnv(os.Environ(), env, name); len(merged) > 0 {
 		cmd.Env = merged
 	}
 	var stdout, stderr bytes.Buffer
@@ -108,12 +90,7 @@ func (r *RealCommandRunner) Run(ctx context.Context, name string, args ...string
 }
 
 func (r *RealCommandRunner) RunCombined(ctx context.Context, name string, args ...string) ([]byte, error) {
-	cleanArgs, envVars := extractComposeEnv(name, args)
-	cmd := exec.CommandContext(ctx, name, cleanArgs...)
-	if merged := MergeEnv(os.Environ(), envVars, name); len(merged) > 0 {
-		cmd.Env = merged
-	}
-	return cmd.CombinedOutput()
+	return exec.CommandContext(ctx, name, args...).CombinedOutput()
 }
 
 type MockCommandRunner struct {
@@ -246,6 +223,21 @@ func (c *Client) PS(ctx context.Context, filter string) ([]string, error) {
 		return nil, fmt.Errorf("docker ps failed (%d): %w", code, err)
 	}
 	return splitLines(out), nil
+}
+
+// ResolveContainer returns the running container matching base.
+func (c *Client) ResolveContainer(ctx context.Context, base string) string {
+	if c != nil && c.runner != nil && base != "" {
+		if names, err := c.PS(ctx, "name="+base); err == nil && len(names) > 0 {
+			for _, n := range names {
+				if n == base {
+					return n
+				}
+			}
+			return names[0]
+		}
+	}
+	return base
 }
 
 func (c *Client) Exec(ctx context.Context, container string, env []string, cmd ...string) (string, error) {

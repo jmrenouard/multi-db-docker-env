@@ -80,8 +80,8 @@ func composePrefix(files, profiles []string) []string {
 	return args
 }
 
-func (c *Client) runCompose(ctx context.Context, sub string, args []string) error {
-	if _, se, code, err := c.runner.Run(ctx, "docker", args...); err != nil || code != 0 {
+func (c *Client) runCompose(ctx context.Context, env []string, sub string, args []string) error {
+	if _, se, code, err := c.RunWithEnv(ctx, env, "docker", args...); err != nil || code != 0 {
 		return fmt.Errorf("docker compose %s failed (%d): %s: %w", sub, code, strings.TrimSpace(string(se)), err)
 	}
 	return nil
@@ -90,14 +90,15 @@ func (c *Client) runCompose(ctx context.Context, sub string, args []string) erro
 // ComposeUpProfiles runs `docker compose up` with optional profiles, env vars, and services.
 func (c *Client) ComposeUpProfiles(ctx context.Context, files, profiles []string, env map[string]string, detach bool, services ...string) error {
 	args := composePrefix(files, profiles)
-	for _, k := range slices.Sorted(maps.Keys(env)) {
-		args = append(args, "--env", fmt.Sprintf("%s=%s", k, env[k]))
-	}
 	args = append(args, "up")
 	if detach {
 		args = append(args, "-d")
 	}
-	return c.runCompose(ctx, "up", append(args, services...))
+	envList := make([]string, 0, len(env))
+	for _, k := range slices.Sorted(maps.Keys(env)) {
+		envList = append(envList, k+"="+env[k])
+	}
+	return c.runCompose(ctx, envList, "up", append(args, services...))
 }
 
 // ComposeDownProfiles runs `docker compose down` with optional profile flags.
@@ -106,7 +107,7 @@ func (c *Client) ComposeDownProfiles(ctx context.Context, files, profiles []stri
 	if removeVolumes {
 		args = append(args, "-v")
 	}
-	return c.runCompose(ctx, "down", args)
+	return c.runCompose(ctx, nil, "down", args)
 }
 
 // ProjectName returns COMPOSE_PROJECT_NAME or the current directory's base name.
@@ -156,7 +157,7 @@ func (c *Client) ComposeDownAll(ctx context.Context, filesList [][]string, proje
 	}
 	for _, files := range filesList {
 		if len(files) > 0 {
-			rec(c.runCompose(ctx, "down", append(composePrefix(files, profilesFor(files)), "down", "-v", "--remove-orphans")))
+			rec(c.runCompose(ctx, nil, "down", append(composePrefix(files, profilesFor(files)), "down", "-v", "--remove-orphans")))
 		}
 	}
 	if projectName != "" {

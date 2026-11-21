@@ -67,8 +67,8 @@ func TestClient_Compose(t *testing.T) {
 	m := &MockCommandRunner{Output: []byte("s1\ns2\n")}
 	c := NewClientWithRunner(m)
 
-	if err := c.ComposeUp(ctx, []string{"f1.yml"}, map[string]string{"K": "V"}, true, "s1"); err != nil || !strings.Contains(strings.Join(m.Calls[0], " "), "compose -f f1.yml --env K=V up -d s1") {
-		t.Fatalf("compose up: %v", err)
+	if err := c.ComposeUp(ctx, []string{"f1.yml"}, map[string]string{"K": "V"}, true, "s1"); err != nil || !strings.Contains(strings.Join(m.Calls[0], " "), "compose -f f1.yml up -d s1") || strings.Contains(strings.Join(m.Calls[0], " "), "--env") || len(m.EnvCalls) != 1 || m.EnvCalls[0][0] != "K=V" {
+		t.Fatal(err)
 	}
 	if err := c.ComposeDown(ctx, []string{"f1.yml"}, true); err != nil || !strings.Contains(strings.Join(m.Calls[1], " "), "compose -f f1.yml down -v") {
 		t.Fatalf("compose down: %v", err)
@@ -119,9 +119,8 @@ func TestRealCommandRunner(t *testing.T) {
 	if NewClient().Runner() == nil {
 		t.Fatal("nil runner")
 	}
-	cleanArgs, envVars := extractComposeEnv("docker", []string{"compose", "-f", "f1.yml", "--env", "K=V", "up", "-d"})
-	if len(envVars) != 1 || envVars[0] != "K=V" || strings.Contains(strings.Join(cleanArgs, " "), "--env") {
-		t.Fatalf("extractComposeEnv: args=%v env=%v", cleanArgs, envVars)
+	if w := mergeEnv([]string{"PATH=x"}, []string{"MARIADB_GALERA_BOOTSTRAP=1"}, "wsl.exe", "windows"); !strings.Contains(strings.Join(w, ";"), "WSLENV=MARIADB_GALERA_BOOTSTRAP") {
+		t.Fatal(w)
 	}
 	winEnv := mergeEnv([]string{"PATH=x", "WSLENV=EXISTING/u"}, []string{"MONGO_NODES=a b", "DB_ROOT_PASSWORD=rootpass"}, `C:\Windows\system32\bash.exe`, "windows")
 	if got := strings.Join(winEnv, ";"); !strings.Contains(got, "WSLENV=EXISTING/u:MONGO_NODES:DB_ROOT_PASSWORD") {
@@ -140,7 +139,7 @@ func TestClient_ProfilesDownAllPSStatusAndImages(t *testing.T) {
 	m := &MockCommandRunner{Output: []byte("mariadb-11.4\tmariadb114\trunning\tUp 5s\t3306/tcp\n")}
 	c := NewClientWithRunner(m)
 
-	if err := c.ComposeUpProfiles(ctx, []string{"docker-compose.yml"}, []string{"traefik", "mariadb114"}, map[string]string{"A": "1"}, true); err != nil || !strings.Contains(strings.Join(m.Calls[0], " "), "--profile traefik --profile mariadb114 --env A=1 up -d") {
+	if err := c.ComposeUpProfiles(ctx, []string{"docker-compose.yml"}, []string{"traefik", "mariadb114"}, map[string]string{"A": "1"}, true); err != nil || !strings.Contains(strings.Join(m.Calls[0], " "), "--profile traefik --profile mariadb114 up -d") || strings.Contains(strings.Join(m.Calls[0], " "), "--env") || len(m.EnvCalls) != 1 || m.EnvCalls[0][0] != "A=1" {
 		t.Fatal(err)
 	}
 	if err := c.ComposeDownProfiles(ctx, []string{"docker-compose.yml"}, []string{"*"}, true); err != nil || !strings.Contains(strings.Join(m.Calls[1], " "), "--profile * down -v") {
@@ -149,7 +148,7 @@ func TestClient_ProfilesDownAllPSStatusAndImages(t *testing.T) {
 	if st, err := c.ComposePSStatusAll(ctx, [][]string{{"docker-compose.yml"}, {"docker-compose-galera.yml"}}); err != nil || len(st) != 1 || st[0].Service != "mariadb114" || !strings.Contains(strings.Join(m.Calls[2], " "), "ps --orphans=false --format") {
 		t.Fatal(st, err, m.Calls[2])
 	}
-	m.Calls = nil
+	m.Calls, m.EnvCalls = nil, nil
 	if err := c.ComposeDownAll(ctx, [][]string{{"docker-compose.yml"}}, "CustomProj"); err != nil || len(m.Calls) < 3 || !strings.Contains(strings.Join(m.Calls[1], " "), "project=CustomProj") {
 		t.Fatal(err, m.Calls)
 	}
@@ -226,5 +225,25 @@ func TestClient_ProfilesDownAllPSStatusAndImages(t *testing.T) {
 	_ = os.WriteFile("docker-compose-galera.yml", []byte("services: {}\n"), 0644)
 	if files := DiscoverComposeFiles(); len(files) != 2 || files[0][0] != "docker-compose.yml" {
 		t.Fatal(files)
+	}
+}
+
+func TestClient_ResolveContainer(t *testing.T) {
+	ctx := context.Background()
+	if (*Client)(nil).ResolveContainer(ctx, "x") != "x" {
+		t.Fatal("nil")
+	}
+	for _, tc := range []struct{ o, b, w string }{
+		{"", "", ""},
+		{"haproxy_pgpool\npgpool\n", "pgpool", "pgpool"},
+		{"mdb-galera_01-1\n", "galera_01", "mdb-galera_01-1"},
+		{"", "mongo1", "mongo1"},
+	} {
+		if NewClientWithRunner(&MockCommandRunner{Output: []byte(tc.o)}).ResolveContainer(ctx, tc.b) != tc.w {
+			t.Fatal(tc)
+		}
+	}
+	if NewClientWithRunner(&MockCommandRunner{Err: errors.New("x")}).ResolveContainer(ctx, "c") != "c" {
+		t.Fatal("err")
 	}
 }
