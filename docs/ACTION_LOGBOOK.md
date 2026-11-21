@@ -81,6 +81,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-083 -- E2E Fixes: Compose Orphan Isolation & Windows `WSLENV` Forwarding (`#357`)
+- **Timestamp / Issue / Branch**: `2026-11-21T19:35Z` | Issue `#357` | `fix/issue-357-e2e-compose-env-timeouts`
+- **Request**: Fix cross-topology `ComposePS` orphan leakage and Windows->WSL `bash.exe` `extraEnv` stripping.
+- **Changes**: Updated `pkg/docker/{client,compose,docker_test}.go`, `cmd/mdb/{commands_inspect,main_test}.go`, and `docs/RCA_REGISTER.md` (`RCA-074`).
+- **Result**: Verified `go test ./...` (11/11), `unittest` (52 ran: 46 ok, 6 skipped), `mdb lint`, diff `< 15,000` B, and CI `test-and-validate` green.
+
 ### ACT-082 -- Governance & Roadmap Sync for `v2.5.0` (`#355`)
 - **Timestamp / Issue / Branch**: `2026-11-21T01:03Z` | Issue `#355` | `docs/issue-355-governance-v250`
 - **Request**: Record the 12 Usability Audit RCAs, `./mdb` architecture decision, YT Cluster caveats, Phase 14, and PR metrics across governance files.

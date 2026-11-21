@@ -556,6 +556,15 @@
 
 ---
 
+### RCA-074 -- Cross-Topology `ComposePS` Orphan Leak & Windows `WSLENV` Stripping
+- **Date / Linked Action**: `2026-11-21` (`ACT-083` / Issue `#357`)
+- **Observed Symptom**: `mdb status <topo>` returned sibling-stack containers as running; Windows WSL `bash.exe` dropped `extraEnv` (`MONGO_NODES`, `CERT_DIR`, `DB_ROOT_PASSWORD`).
+- **Root Cause Analysis**: Docker Compose v2 `ps` defaults `--orphans=true` and `ComposePS` omitted `profilesFor(files)`; WSL strips Windows env vars absent from `WSLENV`.
+- **Applied Change / Fix**: Added `--orphans=false` to `ComposePS`/`ComposePSStatus` (plus `profilesFor(files)` in `ComposePS`) and added `docker.MergeEnv` forwarding `extraEnv` keys via `WSLENV` on Windows `bash`.
+- **Result & Non-Regression Test**: Verified in `pkg/docker/docker_test.go` and `cmd/mdb/main_test.go`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters

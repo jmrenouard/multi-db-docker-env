@@ -27,8 +27,8 @@ func loadPasswordWarn(stderr io.Writer) string {
 
 func streamCommand(ctx context.Context, extraEnv []string, stdin io.Reader, stdout, stderr io.Writer, name string, args ...string) error {
 	cmd := exec.CommandContext(ctx, name, args...)
-	if len(extraEnv) > 0 {
-		cmd.Env = append(os.Environ(), extraEnv...)
+	if merged := docker.MergeEnv(os.Environ(), extraEnv, name); len(merged) > 0 {
+		cmd.Env = merged
 	}
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = stdin, stdout, stderr
 	return cmd.Run()
