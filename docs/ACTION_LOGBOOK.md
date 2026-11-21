@@ -27,6 +27,7 @@
 | **Phase 11** | PostgreSQL 18.6 Native Topologies, Benchmark Suite & `v2.3.0` Release | `pg18-streaming`, `pg18-logical`, `pg18-birep` (`uuidv7`), `bench-pg18`, Go CLI 19 topologies, `v2.3.0` tag | ✅ Complete | `make bench-pg18`, `go test ./...`, `./bin/mdb topologies` |
 | **Phase 12** | Database Version Upgrades & EOL Decommissioning | Upgrade to MySQL 8.4/9.7 LTS, MariaDB 12.3 LTS, Percona 8.4 LTS, PG 18 standalone, CockroachDB v25.4, Traefik v3, HAProxy LTS; decommission 7 EOL versions | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...`, CI `test-and-validate` |
 | **Phase 13** | YT Cluster 1.21.3 (PG 18) Active-Active Topology & `v2.4.0` / `v2.4.1` | 3-node `yt-cluster` Compose stack, setup, `L1-L8`/`T11-T18`/`T_REVERT` tests, 36-row `bench-yt-cluster`, Go CLI 20 topologies | ✅ Complete | `make yt-cluster-test`, `make bench-yt-cluster`, `go test ./...`, `./bin/mdb topologies` |
+| **Phase 14** | Unified `./mdb` CLI, 12 Usability Audit Fixes & `v2.5.0` Release | `pkg/catalog`, unified `./mdb`/`mdb.cmd`, bilingual wizard, 13 PG stack wrappers, `make lint`/`test`, EN/FR docs, `v2.5.0` sync | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...`, CI `test-and-validate` |
 
 ---
 
@@ -79,6 +80,32 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-082 -- Governance & Roadmap Sync for `v2.5.0` (`#355`)
+- **Timestamp / Issue / Branch**: `2026-11-21T01:03Z` | Issue `#355` | `docs/issue-355-governance-v250`
+- **Request**: Record the 12 Usability Audit RCAs, `./mdb` architecture decision, YT Cluster caveats, Phase 14, and PR metrics across governance files.
+- **Changes**: Updated [`ROADMAP.md`](../ROADMAP.md) (Phases 1–14, `IDEA-001`–`IDEA-013`, `APP-001`–`APP-027`), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-072`–`073`, `IMP-015`, `APP-025`–`027`, `IDEA-012`–`013`), and [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) (Phase 14 + `ACT-080`–`082`).
+- **Result**: Verified `test_project_governance_rules.py`, `unittest` (52 ran: 46 ok, 6 skipped), `go test ./...` (11/11), `release_notes.py`, and `< 15K` B diff.
+
+### ACT-081 -- EN/FR Docs Sync, Rules, PG Stacks & `v2.5.0` Release (`#339`, `#348`, `#351`, `#353`)
+- **Timestamp / Issue / Branch**: `2026-11-21T00:58Z` | Issues `#339`, `#348`, `#351`, `#353` | PRs `#340`, `#341`, `#346`, `#349`, `#350`, `#352`, `#354`
+- **Request**: Establish `./mdb` (`mdb.cmd`) as unified entry point in EN/FR docs & rules, sync 13 PG stacks/YT Cluster 1.21.3/license/Jepsen notes, and release `v2.5.0`.
+- **Changes**:
+  - PR `#340` (`03eca84`, `13,974` B, CI `2m55s`): `README.md` (`./mdb`, Win/macOS, `pg17-baseline`, `yt-cluster`).
+  - PR `#341` (`53012c2`, `9,591` B, CI `3m19s`): `AGENTS.md`, `00_constitution.md`, `PREREQUISITES.txt`, `INDEX.md`, `architecture.md`.
+  - PR `#346` (`df06f6b`, `13,270` B, CI `2m47s`, Closes `#339`): `makefile.md`, `scripts.md`.
+  - PR `#349` (`b693234`, `13,565` B, CI `2m19s`) & `#350` (`1121270`, `13,799` B, CI `2m49s`, Closes `#348`): EN/FR `pg_multimaster` & `supported_products` (`haproxy:lts-alpine`, `cockroachdb:latest-v25.4`, 13 PG stacks, MIT vs PolyForm, Jepsen 49/49).
+  - PR `#352` (`663307d`, `13,034` B, CI `1m58s`) & `#354` (`449b6a8`, `12,685` B, CI `2m35s`, Closes `#351`, `#353`): `README_fr.md`, `INDEX_fr.md`, `makefile_fr.md`, `VERSION`/`main.go`/`main_test.go`/`Changelog` -> `2.5.0` (592 lines).
+- **Result**: All 7 PRs `< 15K` B passed CI `test-and-validate`, `@verifier-3` (WSL `go test -race -count=1 ./...` 11/11, `unittest`, `make lint`), and `release_notes.py --tag v2.5.0 --check`.
+
+### ACT-080 -- Environment Catalog, Unified `./mdb` CLI & 12 Usability Fixes (`#302`–`#337`)
+- **Timestamp / Issue / Branch**: `2026-11-20T22:05Z`–`2026-11-21T00:16Z` | 18 Issues (`#302`–`#337`) | 18 PRs
+- **Request**: Build queryable catalog, unify `./mdb`/`mdb.cmd` across engines + bilingual wizard, and resolve Usability Audit `#1`–`#12`.
+- **Changes**:
+  - **Catalog & Docker** (`#303` `dd1e30e`, `#305` `9487ebd`, `#307` `0116e61`, `#309` `e66e018`): `pkg/catalog`, `pkg/docker` profile/multi-compose/image helpers, auto-PKI, readiness polling, `MONGO_NODES` in `setup_rs.sh`, standalone/galera/repli hardening.
+  - **Unified `./mdb` & Wizard** (`#311` `6c31520`, `#313` `3dbc7c1`, `#315` `0816553`, `#317` `93df3d3`, `#320` `3461dd8`, `#324` `5392365`, `#329` `36b02ac`, `#333` `65325bb`, `#335` `19352ad`): unified `./mdb`/`mdb.cmd`, multi-engine `client`/`bench`, `status`/`info`/`logs`, `0600` `mycnf`, `doctor`, bilingual Go wizard (`html.EscapeString`), unconditional `yt-cluster`, `pg17-baseline`, `setup`/`lint`/`test --suite`.
+  - **Makefile & Python UX** (`#322` `3075581`, `#325` `9b3013e`, `#330` `80c23b2`, `#332` `6c41ee5`, `#338` `3d0d05d`): `./mdb` wrappers, `galera-*/repli-*` & 13 PG stack targets, `seq 1 60`, `docker exec` `pgpool-status`, `rootpass` fallback, Python UX fixes & deprecation warnings.
+- **Result**: All 18 PRs `< 15K` B merged (`dd1e30e`..`3d0d05d`) with CI `test-and-validate` green and verified on `origin/main` via `unittest` and `go test`.
 
 ### ACT-079 -- EN/FR Multi-Master Guide Sync for Full YT Async Matrix (`#345`)
 - **Date**: `2026-11-21T00:34+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#345`
