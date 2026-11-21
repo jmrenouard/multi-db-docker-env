@@ -284,11 +284,23 @@ func defaultContainer(topo string) string {
 	}
 }
 
+func pickContainerName(base string, names []string) string {
+	for _, n := range names {
+		if n == base {
+			return n
+		}
+	}
+	if len(names) > 0 {
+		return names[0]
+	}
+	return base
+}
+
 func resolveContainer(ctx context.Context, client *docker.Client, topo string) string {
 	base := defaultContainer(topo)
 	if client != nil {
 		if names, err := client.PS(ctx, "name="+base); err == nil && len(names) > 0 {
-			return names[0]
+			return pickContainerName(base, names)
 		}
 	}
 	return base

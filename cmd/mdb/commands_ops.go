@@ -71,7 +71,7 @@ func resolveEnvContainer(ctx context.Context, client *docker.Client, cat *catalo
 	}
 	if client != nil {
 		if names, err := client.PS(ctx, "name="+base); err == nil && len(names) > 0 {
-			return names[0], env, ok
+			return pickContainerName(base, names), env, ok
 		}
 	}
 	return base, env, ok

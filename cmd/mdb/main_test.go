@@ -39,6 +39,13 @@ func TestDefaultAndResolveContainer(t *testing.T) {
 	if got := resolveContainer(context.Background(), c, "galera"); got != "mdb-galera_01-1" {
 		t.Fatalf("resolve: %s", got)
 	}
+	pgC := docker.NewClientWithRunner(&docker.MockCommandRunner{Output: []byte("haproxy_pgpool\npgpool\n")})
+	if got := resolveContainer(context.Background(), pgC, "pgpool"); got != "pgpool" {
+		t.Fatalf("exact pgpool match failed: %s", got)
+	}
+	if got, _, _ := resolveEnvContainer(context.Background(), pgC, activeCatalog(), "pgpool"); got != "pgpool" {
+		t.Fatalf("exact env pgpool match failed: %s", got)
+	}
 	// Fallbacks: nil client, empty PS output, runner error
 	if got := resolveContainer(context.Background(), nil, "patroni"); got != "node1" {
 		t.Fatalf("nil client fallback: %s", got)

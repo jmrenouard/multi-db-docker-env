@@ -15,7 +15,7 @@ x-pg-template: &pg-template
     - -c
     - "mkdir -p /var/lib/postgresql/ssl && cp /tmp/ssl-src/* /var/lib/postgresql/ssl/ && chown -R postgres:postgres /var/lib/postgresql/ssl && chmod 600 /var/lib/postgresql/ssl/*.key && exec docker-entrypoint.sh postgres"
   environment:
-    - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-postgres}
+    - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-rootpass}
     - POSTGRES_USER=postgres
     - POSTGRES_DB=postgres
   networks:
@@ -95,7 +95,7 @@ services:
       - PGPOOL_PARAMS_SR_CHECK_PASSWORD=replipass
       - PGPOOL_PARAMS_SR_CHECK_PERIOD=5
       - PGPOOL_PARAMS_HEALTH_CHECK_USER=postgres
-      - PGPOOL_PARAMS_HEALTH_CHECK_PASSWORD=${DB_ROOT_PASSWORD:-postgres}
+      - PGPOOL_PARAMS_HEALTH_CHECK_PASSWORD=${DB_ROOT_PASSWORD:-rootpass}
       - PGPOOL_PARAMS_HEALTH_CHECK_PERIOD=10
       - PGPOOL_PARAMS_HEALTH_CHECK_MAX_RETRIES=3
       - PGPOOL_PARAMS_LOAD_BALANCE_MODE=on
