@@ -1,3 +1,9 @@
+2.5.0 2026-11-21
+- feat: introduce queryable pkg/catalog (11 standalone, 20 active clusters across 13 PG Compose stacks including pg17-baseline and yt-cluster, 5 EOL entries) and unify ./mdb + mdb.cmd as the single CLI entry point with help, catalog, up, setup, down, status, info, logs, client, mycnf, interactive, lint, test --suite, bench, doctor, pki, and report (Closes #302, #310, #312, #314, #316, #319, #321, #328, #331, #334).
+- fix: resolve all 12 usability audit findings across pkg/docker, pkg/topology, Makefile, interactive_runner.py, and mysql_docker.py (Traefik standalone profile up/down, auto-PKI, mariadb_ssh:004 auto-build, mongo8 setup args/env, dynamic project names, rootpass .env fallback, 0600 ~/.my.cnf.bak backup, containerized pgpool-status, bounded readiness polling, uniform galera-*/repli-* and 13 PG stack targets, PG inject skip, localized retry prompt) (Closes #304, #306, #308, #318, #323, #326, #327, #337).
+- doc: synchronize EN/FR documentation, cross-platform prerequisites, AGENTS.md, constitution, ROADMAP, and living governance registers for ./mdb unified entry point, YT Cluster 1.21.3 resources/licensing/Jepsen caveats, and v2.5.0 (Closes #339, #348, #351, #353).
+- test: expand Go (pkg/catalog, pkg/docker, pkg/topology, pkg/interactive, pkg/dbclient, cmd/mdb across 11 packages) and Python (52 tests incl. TestMakefileUsability and TestInteractiveRunner) regression suites (Closes #302, #326, #327, #337).
+
 2.4.1 2026-11-21
 - feat: complete full 18-suite empirical benchmark matrix for yt-cluster-async (cc=nodes>=0 sc=NO_SC) with YT_ASYNC_MISSING_ONLY=1 resume support and deterministic suite ordering (scripts/bench_yt_runner.sh) (Closes #336).
 - fix: target non-Leader node dynamically in YT Cluster WAN netem sweeps (8.47 -> 4.78 -> 2.90 TPS) and isolate sbtest1..4 table preparation before E3_sysbench_oltp_wo (133.55 TPS) to avoid async recon SQLSTATE 55000 row quarantine (scripts/bench_yt_runner.sh) (Closes #336).
