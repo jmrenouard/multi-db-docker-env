@@ -309,11 +309,15 @@ class TestMakefileUsability(unittest.TestCase):
         self.assertIn('docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pgpool psql -h 127.0.0.1 -p 9999 -U postgres -c "SHOW pool_nodes;"', mk)
         for alias in ("galera-up: up-galera", "galera-down: down-galera", "galera-status: check-galera", "galera-logs: logs-galera", "repli-up: up-repli", "repli-down: down-repli", "repli-status: check-repli", "repli-logs: logs-repli"):
             self.assertIn(alias, mk)
-        for sub in ("help", "catalog", "status", "info", "client", "mycnf", "stop", "doctor", "interactive"):
+        for sub in ("help", "catalog", "status", "info", "client", "mycnf", "stop", "doctor", "interactive", "lint"):
             self.assertIn(f"./mdb {sub}", mk)
         for fixed_sleep in ("sleep 20", "sleep 30", "sleep 15"):
             self.assertNotIn(fixed_sleep, mk)
-        self.assertIn('if [ -f "$(YT_CLUSTER_COMPOSE)" ]', mk)
+        self.assertNotIn('if [ -f "$(YT_CLUSTER_COMPOSE)" ]', mk)
+        self.assertIn("PG_STACKS =", mk)
+        for st in ("pg17-baseline", "pg-streaming", "pg-logical", "pg-birep", "pgedge", "bucardo", "citus", "cockroach", "yugabyte", "pg18-streaming", "pg18-logical", "pg18-birep", "yt-cluster"):
+            self.assertIn(st, mk)
+        self.assertIn("test: test-config", mk)
         self.assertIn('.my.cnf.bak', mk)
 
 if __name__ == '__main__':
