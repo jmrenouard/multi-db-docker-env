@@ -405,6 +405,9 @@ yt-cluster-test: test-yt-cluster
 bench-yt-cluster: ## Run sequential empirical benchmarks on YT Cluster 1.21.3 (sync-2PC & async)
 	@bash ./scripts/bench_yt_runner.sh
 
+bench-pg-optimized: ## Run sequential production-tuned benchmarks across 18 PG topologies
+	@bash ./scripts/bench_pg_optimized_runner.sh
+
 clean-pg18: pg18-streaming-down pg18-logical-down pg18-birep-down yt-cluster-down ## Stop and remove all PG 18 / YT Cluster stacks and volumes
 
 # --- Main Targets ---
@@ -428,7 +431,7 @@ clean-pg18: pg18-streaming-down pg18-logical-down pg18-birep-down yt-cluster-dow
         pg18-logical-up pg18-logical-down pg18-logical-status pg18-logical-logs pg18-logical-ps test-pg18-logical pg18-logical-test \
         pg18-birep-up pg18-birep-down pg18-birep-status pg18-birep-logs pg18-birep-ps test-pg18-birep pg18-birep-test \
         yt-cluster-up yt-cluster-down yt-cluster-status yt-cluster-logs yt-cluster-ps test-yt-cluster yt-cluster-test \
-        bench-pg-multimaster test-pg-extended bench-pg-v2 bench-pg18 bench-yt-cluster clean-pg18 \
+        bench-pg-multimaster test-pg-extended bench-pg-v2 bench-pg18 bench-yt-cluster bench-pg-optimized clean-pg18 \
         up-galera down-galera logs-galera up-repli down-repli logs-repli \
         clean-data clean-galera clean-repli full-galera full-repli clone-test-db inject-employee-galera \
         inject-sakila-galera inject-employee-repli inject-sakila-repli inject-employees inject-employee inject-sakila \
