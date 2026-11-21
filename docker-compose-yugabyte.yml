@@ -6,7 +6,7 @@ x-yb: &yb
   image: yugabytedb/yugabyte:2026.1.3.0-b100
   user: "0:0"
   restart: unless-stopped
-  mem_limit: 2048m
+  mem_limit: ${YB_MEM_LIMIT:-3072m}
   entrypoint:
     - /bin/bash
     - -c
@@ -16,8 +16,8 @@ x-yb: &yb
       /home/yugabyte/bin/yugabyted start --background=false --callhome=false --insecure
       --advertise_address="$$YB_NODE" --cloud_location="local.dc1.$$YB_ZONE" --fault_tolerance=zone
       --base_dir=/home/yugabyte/var $${YB_JOIN:+--join=$$YB_JOIN}
-      --master_flags=memory_limit_hard_bytes=335544320,yb_num_shards_per_tserver=1
-      --tserver_flags=memory_limit_hard_bytes=1073741824,yb_num_shards_per_tserver=1,ysql_num_shards_per_tserver=1
+      --master_flags=memory_limit_hard_bytes=${YB_MASTER_MEM_BYTES:-536870912},yb_enable_read_committed_isolation=${YB_ENABLE_RC:-true},enable_wait_queues=${YB_WAIT_QUEUES:-true},yb_num_shards_per_tserver=${YB_SHARDS_PER_TSERVER:-1}
+      --tserver_flags="memory_limit_hard_bytes=${YB_TSERVER_MEM_BYTES:-1610612736},yb_enable_read_committed_isolation=${YB_ENABLE_RC:-true},enable_wait_queues=${YB_WAIT_QUEUES:-true},ysql_enable_packed_row=${YB_PACKED_ROW:-true},yb_num_shards_per_tserver=${YB_SHARDS_PER_TSERVER:-1},ysql_num_shards_per_tserver=${YB_YSQL_SHARDS_PER_TSERVER:-1},ysql_max_connections=${YB_YSQL_MAX_CONN:-300},ysql_pg_conf_csv={yb_enable_cbo=on,jit=off}"
 
 services:
   yb_node1:
@@ -54,5 +54,15 @@ services:
     volumes: [yb_data3:/home/yugabyte/var]
     networks: { yb_net: { aliases: [yb-node3] } }
     depends_on: { yb_node1: { condition: service_healthy } }
+
+  haproxy_yugabyte:
+    image: haproxy:lts-alpine
+    container_name: haproxy_yugabyte
+    hostname: haproxy_yugabyte
+    restart: unless-stopped
+    ports: ["127.0.0.1:15470:5433", "127.0.0.1:15479:8404"]
+    volumes: ["./scripts/yugabyte/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro"]
+    depends_on: { yb_node1: { condition: service_healthy } }
+    networks: [yb_net]
 
 volumes: { yb_data1: {}, yb_data2: {}, yb_data3: {} }

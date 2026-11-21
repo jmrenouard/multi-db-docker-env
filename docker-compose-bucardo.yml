@@ -12,7 +12,44 @@ x-bucardo-pg: &bucardo-pg
     POSTGRES_USER: ${PG_USER:-postgres}
     POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
     POSTGRES_DB: ${PG_DB:-labdb}
-  command: ["postgres", "-c", "shared_buffers=128MB", "-c", "log_error_verbosity=verbose"]
+  command:
+    - postgres
+    - -c
+    - shared_buffers=${PG_SHARED_BUFFERS:-512MB}
+    - -c
+    - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-2GB}
+    - -c
+    - work_mem=${PG_WORK_MEM:-16MB}
+    - -c
+    - maintenance_work_mem=${PG_MAINT_WORK_MEM:-128MB}
+    - -c
+    - max_connections=${PG_MAX_CONNECTIONS:-200}
+    - -c
+    - wal_compression=${PG_WAL_COMPRESSION:-lz4}
+    - -c
+    - wal_buffers=${PG_WAL_BUFFERS:-16MB}
+    - -c
+    - max_wal_size=${PG_MAX_WAL_SIZE:-2GB}
+    - -c
+    - checkpoint_completion_target=${PG_CHECKPOINT_COMPLETION_TARGET:-0.9}
+    - -c
+    - random_page_cost=${PG_RANDOM_PAGE_COST:-1.1}
+    - -c
+    - effective_io_concurrency=${PG_EFFECTIVE_IO_CONCURRENCY:-16}
+    - -c
+    - jit=${PG_JIT:-off}
+    - -c
+    - autovacuum_naptime=${BUCARDO_AUTOVACUUM_NAPTIME:-5s}
+    - -c
+    - autovacuum_vacuum_scale_factor=${BUCARDO_AUTOVACUUM_VACUUM_SF:-0.05}
+    - -c
+    - autovacuum_analyze_scale_factor=${BUCARDO_AUTOVACUUM_ANALYZE_SF:-0.05}
+    - -c
+    - autovacuum_vacuum_cost_limit=${BUCARDO_AUTOVACUUM_COST_LIMIT:-2000}
+    - -c
+    - autovacuum_max_workers=${BUCARDO_AUTOVACUUM_WORKERS:-4}
+    - -c
+    - log_error_verbosity=verbose
   healthcheck:
     test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
     interval: 3s
