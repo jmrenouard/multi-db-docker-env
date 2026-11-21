@@ -81,6 +81,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-091 -- E2E Fixes: Standalone PFS CLI Flags & Galera Named Volumes / `gcache.size=128M` (`#387`)
+- **Timestamp / Issue / Branch**: `2026-11-21T20:45Z` | Issue `#387` | `fix/issue-387-pfs-cli-galera-volumes`
+- **Request**: Replace standalone `pfs.cnf` bind mounts with CLI flags to eliminate Windows `drvfs` `0777` ignores, and switch Galera to named Docker volumes with `gcache.size=128M`.
+- **Changes**: Updated `docker-compose.yml`, `docker-compose-galera.yml`, `conf/gcustom_{1,2,3}.cnf`, `tests/test_python_audit_fixes.py`, and `docs/RCA_REGISTER.md` (`RCA-082`).
+- **Result**: Verified `go test ./...` (11/11), `unittest`, `mdb lint`, diff `< 15,000` B, and CI `test-and-validate` green.
+
 ### ACT-090 -- E2E Fixes: Windows `docker` `WSLENV` & `pgpool` Exact Resolution / Clean Replication Setup (`#381`)
 - **Timestamp / Issue / Branch**: `2026-11-21T20:38Z` | Issue `#381` | `fix/issue-381-pfs-wslenv-pgpool-galera`
 - **Request**: Extend `WSLENV` forwarding to `docker` shims on Windows, prefer exact container match for `pgpool`, align `pgpool` `rootpass` default, and eliminate `pg_node2..3` `PANIC` during replication setup.

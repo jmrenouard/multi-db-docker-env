@@ -612,6 +612,13 @@
 - **Applied Change / Fix**: Added `docker`/`docker.exe`/`docker.cmd` to `MergeEnv` `WSLENV` (and `RunCombined`); added exact-match `pickContainerName` in `resolveContainer`/`resolveEnvContainer`; aligned `pgpool` `rootpass` default and switched `setup_replication.sh` to clean `docker stop` + `gosu postgres pg_basebackup` + `docker restart pgpool`.
 - **Result & Non-Regression Test**: Verified in `pkg/docker/docker_test.go`, `cmd/mdb/main_test.go`, and `mdb lint`.
 
+### RCA-082 -- Standalone `pfs.cnf` `drvfs` Ignore & Galera 9P NTFS `galera.cache` I/O Timeout
+- **Date / Linked Action**: `2026-11-21` (`ACT-091` / Issue `#387`)
+- **Observed Symptom**: Standalone MySQL/MariaDB/Percona ignored `0777` bind-mounted `pfs.cnf` on Windows/WSL2 (`@@performance_schema=0` on MariaDB, default `history_size=10` on MySQL); `galera_01` stalled `>120s` in kernel disk I/O allocating 512MB `galera.cache` over 9P drvfs NTFS and logged `lower_case_table_names=2`.
+- **Root Cause Analysis**: Windows `drvfs` exposes bind-mounted files as world-writable `0777` and incurs heavy 9P latency for database data directories (`./gdatadir_01..03`); `conf/gcustom_{1,2,3}.cnf` set `gcache.size=512M` vs `tests/test_galera.sh`'s expected `128M`.
+- **Applied Change / Fix**: Replaced all 14 standalone `pfs.cnf` bind mounts in `docker-compose.yml` with shared `x-pfs-command: &pfs-command` CLI flags; switched `docker-compose-galera.yml` to named Docker volumes (`galera_data_01..03`) and set `gcache.size=128M` in `conf/gcustom_{1,2,3}.cnf`.
+- **Result & Non-Regression Test**: Verified in `tests/test_python_audit_fixes.py` (`test_cluster_setup_and_sigkill_guards`) and `mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
