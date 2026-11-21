@@ -626,6 +626,13 @@
 - **Applied Change / Fix**: Switched Citus to 1-shard-per-statement routing + separate autocommit `DROP`s; created dedicated admin role `bench` for `cockroach-rc`; added `batch=50000` chunked `INSERT` loader (`//` for CRDB) + `CACHE 1000` sequences; drained peers before `pgedge` `hs[0]` reset; routed `sysbench` through `/tmp/sb_wrap.lua` `sql_error_ignorable` (`55409`/`40001`/`40P01` + `ROLLBACK`).
 - **Result & Non-Regression Test**: Empirically verified on live images and guarded by `TestBenchPgOptimizedLib` (`tests/test_pg_libs.py`).
 
+### RCA-084 -- `mdb inject` `/tmp` `tmpfs` Shadowing & `haproxy_galera` Recreating `galera_01`
+- **Date / Linked Action**: `2026-11-21` (`ACT-097` / Issue `#392`)
+- **Observed Symptom**: `mdb inject employees galera` failed (`cd: can't cd to /tmp/employees`, exit 2), and `mdb up galera` silently recreated `galera_01` when starting `haproxy_galera`, causing an immediate `mdb test galera` to race and fail exit 127.
+- **Root Cause Analysis**: `docker-compose-galera.yml` mounts `tmpfs` at `/tmp` (hiding `docker cp` writes to `/tmp`), and `haproxy_galera` declares `depends_on: [galera_01, galera_02, galera_03]` so `up -d haproxy_galera` without `MARIADB_GALERA_BOOTSTRAP=1` triggered Compose recreation of `galera_01`.
+- **Applied Change / Fix**: Switched `runInjectCmd` (`cmd/mdb/commands_admin.go`) to `/var/tmp/` and added `--no-deps` when starting `haproxy_galera` in `pkg/topology/galera.go`.
+- **Result & Non-Regression Test**: Verified in `pkg/topology/topology_test.go` and `tests/test_python_audit_fixes.py`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

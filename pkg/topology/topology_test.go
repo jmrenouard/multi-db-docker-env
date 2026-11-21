@@ -120,7 +120,7 @@ func TestGaleraAndRepli_BuildAndReadiness(t *testing.T) {
 		return strings.Join(lines, "\n")
 	}
 	joined := joinCalls()
-	for _, want := range []string{"docker build -t mariadb_ssh:004 .", "MARIADB_GALERA_BOOTSTRAP=1", "up -d galera_01", "up -d galera_02", "up -d galera_03", "up -d haproxy_galera"} {
+	for _, want := range []string{"docker build -t mariadb_ssh:004 .", "MARIADB_GALERA_BOOTSTRAP=1", "up -d galera_01", "up -d galera_02", "up -d galera_03", "up -d --no-deps haproxy_galera"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("missing %q in calls:\n%s", want, joined)
 		}

@@ -58,7 +58,7 @@ func (g *GaleraTopology) Up(ctx context.Context, client *docker.Client) error {
 			return err
 		}
 	}
-	return client.ComposeUp(ctx, g.ComposeFiles(), defaultComposeEnv(), true, "haproxy_galera")
+	return client.ComposeUp(ctx, g.ComposeFiles(), defaultComposeEnv(), true, "--no-deps", "haproxy_galera")
 }
 
 func waitGaleraSynced(ctx context.Context, client *docker.Client, node, pass string) error {
