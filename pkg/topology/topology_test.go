@@ -201,6 +201,28 @@ func TestBaseTopology_AutoCertsMongo8PgPoolAndTimeout(t *testing.T) {
 	if err := NewPatroniTopology().EnsureCerts(ctx, client); err != nil || !strings.Contains(strings.Join(mock.Calls[len(mock.Calls)-1], " "), "scripts/patroni/generate_certs.sh") {
 		t.Fatal(err)
 	}
+	var pBuilt int
+	pMock := &docker.MockCommandRunner{Custom: func(_ context.Context, n string, a ...string) ([]byte, []byte, int, error) {
+		j := strings.Join(append([]string{n}, a...), " ")
+		if strings.Contains(j, "image inspect patroni-rhel8-") {
+			if pBuilt >= 3 {
+				return []byte("[]"), nil, 0, nil
+			}
+			return nil, []byte("Error response from daemon: No such image"), 1, errors.New("missing")
+		}
+		if strings.Contains(j, "docker build -t patroni-rhel8-") {
+			pBuilt++
+		}
+		return []byte("ok\n"), nil, 0, nil
+	}}
+	pClient := docker.NewClientWithRunner(pMock)
+	if err := NewPatroniTopology().Up(ctx, pClient); err != nil || pBuilt != 3 {
+		t.Fatalf("Patroni Up auto-build: err=%v built=%d calls=%v", err, pBuilt, pMock.Calls)
+	}
+	pMock.Calls = nil
+	if err := NewPatroniTopology().Up(ctx, pClient); err != nil || pBuilt != 3 {
+		t.Fatalf("Patroni Up cached skip: err=%v built=%d", err, pBuilt)
+	}
 	fail := docker.NewClientWithRunner(&docker.MockCommandRunner{Err: errors.New("wait"), ExitCode: 1})
 	if err := NewInnoDBTopology().waitBeforeSetup(ctx, fail); err == nil || !strings.Contains(err.Error(), "timeout waiting for") {
 		t.Fatal(err)

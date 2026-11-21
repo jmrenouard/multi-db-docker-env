@@ -182,14 +182,48 @@ func (c *Client) ImageExists(ctx context.Context, tag string) (bool, error) {
 
 // BuildImage builds a Docker image from dir with tag.
 func (c *Client) BuildImage(ctx context.Context, tag, dir string) error {
+	return c.BuildImageFile(ctx, tag, "", dir)
+}
+
+// BuildImageFile builds a Docker image using an optional Dockerfile path and build context dir.
+func (c *Client) BuildImageFile(ctx context.Context, tag, dockerfile, dir string) error {
 	if dir == "" {
 		dir = "."
 	}
-	_, se, code, err := c.runner.Run(ctx, "docker", "build", "-t", tag, dir)
+	args := []string{"build", "-t", tag}
+	if dockerfile != "" {
+		args = append(args, "-f", dockerfile)
+	}
+	args = append(args, dir)
+	_, se, code, err := c.runner.Run(ctx, "docker", args...)
 	if err != nil || code != 0 {
 		return fmt.Errorf("docker build %s failed (%d): %s: %w", tag, code, strings.TrimSpace(string(se)), err)
 	}
 	return nil
+}
+
+// PullImage pulls a Docker image reference from its registry.
+func (c *Client) PullImage(ctx context.Context, ref string) error {
+	_, se, code, err := c.runner.Run(ctx, "docker", "pull", ref)
+	if err != nil || code != 0 {
+		return fmt.Errorf("docker pull %s failed (%d): %s: %w", ref, code, strings.TrimSpace(string(se)), err)
+	}
+	return nil
+}
+
+// ListLocalImages returns the set of locally available repository:tag image references.
+func (c *Client) ListLocalImages(ctx context.Context) (map[string]bool, error) {
+	out, se, code, err := c.runner.Run(ctx, "docker", "images", "--format", "{{.Repository}}:{{.Tag}}")
+	if err != nil || code != 0 {
+		return nil, fmt.Errorf("docker images failed (%d): %s: %w", code, strings.TrimSpace(string(se)), err)
+	}
+	res := make(map[string]bool)
+	for _, line := range splitLines(out) {
+		if !strings.Contains(line, "<none>") {
+			res[line] = true
+		}
+	}
+	return res, nil
 }
 
 func splitLines(b []byte) []string {

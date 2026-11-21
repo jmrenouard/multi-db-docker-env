@@ -82,6 +82,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-099 -- Reproducible `scripts/Dockerfile.bench`, Docker Image APIs & Patroni Auto-Build (`#397`)
+- **Timestamp / Issue / Branch**: `2026-11-21T23:16Z` | Issue `#397` | `feat/issue-397-mdb-images-cli`
+- **Request**: Add reproducible `scripts/Dockerfile.bench` for `multi-db-pgbench-sysbench:latest`, extend `pkg/docker` with `BuildImageFile`/`PullImage`/`ListLocalImages`, and add Patroni image auto-build in `pkg/topology/patroni.go`.
+- **Changes**: Added `scripts/Dockerfile.bench` (non-root `USER postgres` + `setcap cap_net_admin+ep` on `tc`), `pkg/docker/client.go` + `docker_test.go`, `pkg/topology/{galera,patroni,topology_test}.go`, and `APP-029` in `docs/RCA_REGISTER.md`.
+- **Result**: Verified `go test -count=1 ./...` (11/11), `python -m unittest discover -s tests -v` (61 ran: 55 ok, 6 skipped), `mdb lint`, `lint_dockerfile.py` (0 HIGH / 0 WARN), live `Dockerfile.bench` build + `tc netem` probe, and diff `< 15,000` B.
+
 ### ACT-098 -- Hotfix Release `v2.6.1`: Bucardo `sbtest4` Wait Skip & Runner `.env` Sourcing (`#394`)
 - **Timestamp / Issue / Branch**: `2026-11-21T21:58Z` | Issue `#394` | `fix/issue-394-bucardo-env-v261`
 - **Request**: Fix Bucardo `_sb_prepare` timeout on `bucardo_node2` `sbtest4`, align `.env` credential sourcing in `scripts/bench_pg_optimized_runner.sh`, add regression tests, update governance registers, and release `v2.6.1`.

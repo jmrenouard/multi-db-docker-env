@@ -860,6 +860,11 @@
 - **Nature & Justification**: Host RAM (`15 GiB` total) permits running only one distributed cluster stack at a time (`citus` `2048m` x3, `yugabyte`/`cockroach` `3072m` x3); full 18-topology `PG_SCALE=20` matrix generation (`318` rows) is left to on-demand `make bench-pg-optimized`, while CI verifies `pg18-standalone` live smoke semantics plus deterministic unit mocks.
 - **Removal Condition**: Execute `make bench-pg-optimized` on a dedicated `>= 16 GiB` Linux/WSL2 host to populate `reports/benchmark_optimized.csv`.
 
+### APP-029 -- Non-Root `tc` File Capability in `scripts/Dockerfile.bench`
+- **Target Files**: `scripts/Dockerfile.bench`
+- **Nature & Justification**: `scripts/Dockerfile.bench` runs as unprivileged `USER postgres` and grants `cap_net_admin+ep` solely to `tc` so ephemeral benchmark containers (`--cap-add NET_ADMIN`) can inject WAN `netem` latency without running as `root`.
+- **Removal Condition**: Permanent least-privilege pattern for containerized `pgbench`/`sysbench`/`tc netem` benchmarking.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
