@@ -1,3 +1,8 @@
+2.6.1 2026-11-21
+- fix: exclude bucardo from hs[1:] sbtest4 wait in _sb_prepare since trigger-based Bucardo replicates sync_pgbench only and run_sysbench_opt targets hs[0] (scripts/bench_pg_opt_workloads.py) (Closes #394).
+- fix: source .env from BENCH_ROOT before setting PG_PASS/DB_ROOT_PASSWORD in scripts/bench_pg_optimized_runner.sh so docker compose and setup_*.sh share identical credentials (Closes #394).
+- test: add regression assertions in tests/test_pg_libs.py for bucardo _sb_prepare wait skip and .env sourcing, and sync v2.6.1 release metadata (VERSION, cmd/mdb, governance registers).
+
 2.6.0 2026-11-21
 - feat: parameterize durable production-tuned PostgreSQL and Distributed SQL Compose defaults across all 13 PG stacks (preserving fsync, full_page_writes, and RPO=0), enforce 15 GiB host RAM cluster caps, and add HAProxy TCP load balancers for 3-node YugabyteDB and CockroachDB (Closes #361, #368).
 - feat: add unified 18-topology optimized PG benchmark harness (`make bench-pg-optimized`, `scripts/bench_pg_optimized_runner.sh --resume` -> `reports/benchmark_optimized.csv` at `PG_SCALE=20`, `5s` warmup, `fillfactor=90`, `sysbench` `4x25000` `/tmp/sb_wrap.lua` `55409`/`40001`/`40P01` retry hook, Citus 1-shard co-location, CRDB-RC `bench` role, pgEdge `delta_apply`, Bucardo `quick_delta_check=1`, and YT Leader affinity + `YT_MAX_PREPARED=300`) while keeping baseline runners untouched (Closes #372, #380).
@@ -589,10 +594,3 @@
 
 1.0.7 2026-01-12
  - feat: merge mariadb subdirectory into root and optimize Makefile for reliability and cross-version compatibility.
-
-1.0.6 2026-01-10
- - feat: relocate test_db cloning directory to /var/tmp/test_db in Makefile to optimize I/O.
- - feat: add check-galera and check-repli targets to Makefile for cluster health monitoring.
- - feat: add tmpfs mount for /tmp to all Galera nodes.
- - feat: standardize Makefile commands to use mariadb host client instead of docker exec.
- - fix: apply innodb_flush_method = O_DSYNC to fix ERROR 14 on WSL2.

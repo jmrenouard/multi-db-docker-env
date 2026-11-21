@@ -103,7 +103,7 @@ def _sb_prepare(t: str, hs: list[str], pt: int, u: str, pw: str, cm: str, sb_sz:
             time.sleep(1)
         if t in ("pg-birep", "pg18-birep"):
             ref_sub(hs[0], pt, u, pw, "sub_from_node2")
-    elif len(hs) > 1 and not t.startswith(("yugabyte", "cockroach")):
+    elif len(hs) > 1 and not t.startswith(("yugabyte", "cockroach", "bucardo")):
         for n in hs[1:]:
             wcnt_opt(n, pt, u, pw, "sbtest4", sb_sz, to_s=180)
     return 0
