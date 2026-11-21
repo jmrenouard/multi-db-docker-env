@@ -3,28 +3,36 @@ package dbclient
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 )
 
 func TestPostgresVerifier_VerifyCluster(t *testing.T) {
 	ctx := context.Background()
 	cases := []struct {
-		name, topo, out string
-		expStatus       HealthStatus
-		expNodes        int
+		name, topo, out, wantCmd string
+		expStatus                HealthStatus
+		expNodes                 int
 	}{
-		{"patroni_healthy", "patroni", `[{"Role":"Leader","State":"running"},{"Role":"Replica","State":"running"}]`, StatusHealthy, 2},
-		{"patroni_degraded", "patroni", `[{"Role":"Leader","State":"running"},{"Role":"Replica","State":"stopped"}]`, StatusDegraded, 2},
-		{"patroni_table", "patroni", "|p1|Leader|running\n|p2|Replica|stopped", StatusDegraded, 2},
-		{"patroni_unhealthy", "patroni", `[{"Role":"Replica","State":"stopped"}]`, StatusUnhealthy, 2},
-		{"pgpool_healthy", "pgpool", "0|h1|5432|up\n1|h2|5432|up\n", StatusHealthy, 2},
-		{"pgpool_degraded", "pgpool", "0|h1|5432|up\n1|h2|5432|down\n", StatusDegraded, 2},
-		{"pgpool_unhealthy", "pgpool", "0|h1|5432|down\n", StatusUnhealthy, 2},
-		{"standalone_ok", "postgres", "1\n", StatusHealthy, 1},
+		{"patroni_healthy", "patroni", `[{"Role":"Leader","State":"running"},{"Role":"Replica","State":"running"}]`, "patronictl", StatusHealthy, 2},
+		{"patroni_degraded", "patroni", `[{"Role":"Leader","State":"running"},{"Role":"Replica","State":"stopped"}]`, "patronictl", StatusDegraded, 2},
+		{"patroni_table", "patroni", "|p1|Leader|running\n|p2|Replica|stopped", "patronictl", StatusDegraded, 2},
+		{"patroni_unhealthy", "patroni", `[{"Role":"Replica","State":"stopped"}]`, "patronictl", StatusUnhealthy, 2},
+		{"pgpool_healthy", "pgpool", "0|h1|5432|up\n1|h2|5432|up\n", "-h 127.0.0.1 -p 9999", StatusHealthy, 2},
+		{"pgpool_degraded", "pgpool", "0|h1|5432|up\n1|h2|5432|down\n", "-h 127.0.0.1 -p 9999", StatusDegraded, 2},
+		{"pgpool_unhealthy", "pgpool", "0|h1|5432|down\n", "-h 127.0.0.1 -p 9999", StatusUnhealthy, 2},
+		{"cockroach_healthy", "cockroach", "count\n3\n", "/cockroach/cockroach sql", StatusHealthy, 3},
+		{"cockroach_degraded", "cockroach", "count\n2\n", "/cockroach/cockroach sql", StatusDegraded, 3},
+		{"yugabyte_healthy", "yugabyte", "3\n", "/home/yugabyte/bin/ysqlsh", StatusHealthy, 3},
+		{"yugabyte_degraded", "yugabyte", "1\n", "/home/yugabyte/bin/ysqlsh", StatusDegraded, 3},
+		{"standalone_ok", "postgres", "1\n", "psql -U postgres", StatusHealthy, 1},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			exec := &mockExecutor{response: func(ctx context.Context, c string, e []string, cmd ...string) (string, error) {
+				if joined := strings.Join(cmd, " "); !strings.Contains(joined, tc.wantCmd) {
+					t.Fatalf("%s: got cmd %q, want substring %q", tc.name, joined, tc.wantCmd)
+				}
 				return tc.out, nil
 			}}
 			v := NewPostgresVerifier(Config{ClusterType: tc.topo, Container: "pg", ExpectedNodes: tc.expNodes, Executor: exec})

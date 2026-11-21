@@ -584,6 +584,13 @@
 - **Applied Change / Fix**: Added `resolveNodeContainer` in `pkg/topology`, surfaced setup `stdout` when `stderr` is empty, added `execVerticalQuery` (no `-sN`) in `pkg/dbclient/mysql.go` and `tests/test_repli.sh`, and switched `removeGlobs` to `--mount` with `/mnt/<drive>` WSL fallback (plus slash normalization in `runInjectCmd`).
 - **Result & Non-Regression Test**: Verified in `pkg/topology/topology_test.go`, `pkg/dbclient/dbclient_test.go`, and `cmd/mdb/main_test.go`.
 
+### RCA-078 -- Nonexistent `pgpool:4.6` Image, Windows `0777` SSL Keys, Broken `pgpool`/`cockroach`/`yugabyte` Verifiers & `yb_node3` Join Race
+- **Date / Linked Action**: `2026-11-21` (`ACT-087` / Issue `#369`)
+- **Observed Symptom**: `mdb up pgpool` failed with `manifest for pgpool/pgpool:4.6 not found` (and Windows drvfs mounts expose `server.key` as `0777` to PostgreSQL); `mdb test pgpool` targeted port `5432` instead of `9999`; `mdb test cockroach`/`yugabyte` exited 127 trying `psql`; `yb_node3` crashed once (`Restarts=1`) racing `yb_node2` on `add_master`.
+- **Root Cause Analysis**: Docker Hub only publishes `pgpool/pgpool` up to `4.4.3`; PostgreSQL rejects world-readable keys; `PostgresVerifier` omitted `pgpool` `-h 127.0.0.1 -p 9999` and dedicated `cockroach`/`yugabyte` CLI paths; `yb_node2` lacked a healthcheck gating `yb_node3`.
+- **Applied Change / Fix**: Pinned `pgpool/pgpool:4.4.3` (Compose + `documentation/pgpool_cluster.md`), copied `pg_node1..3` SSL keys to container-local `0600` `postgres`-owned files, updated `PostgresVerifier` (`pgpool` `127.0.0.1:9999`, `cockroach`, `yugabyte`), and serialized `yb_node2 -> yb_node3` via healthcheck in `docker-compose-yugabyte.yml`.
+- **Result & Non-Regression Test**: Verified in `pkg/dbclient/postgres_mongo_test.go` and `mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

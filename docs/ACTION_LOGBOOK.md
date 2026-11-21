@@ -81,6 +81,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-087 -- E2E Fixes: `pgpool:4.4.3` + `0600` SSL Copy, `pgpool`/`cockroach`/`yugabyte` Verifiers & `yb_node3` Join Serialization (`#369`)
+- **Timestamp / Issue / Branch**: `2026-11-21T20:09Z` | Issue `#369` | `fix/issue-369-pgpool-crdb-yb`
+- **Request**: Fix `pgpool` broken tag & Windows `0777` SSL keys, `pgpool`/`cockroach`/`yugabyte` Go verifiers, and `yb_node3` join race crash.
+- **Changes**: Updated `docker-compose-pgpool.yml`, `documentation/pgpool_cluster.md`, `docker-compose-yugabyte.yml`, `pkg/dbclient/{postgres,postgres_mongo_test}.go`, and `docs/RCA_REGISTER.md` (`RCA-078`).
+- **Result**: Verified `go test ./...` (11/11), `unittest` (53 ran: 47 ok, 6 skipped), `mdb lint`, diff `< 15,000` B, and CI `test-and-validate` green.
+
 ### ACT-086 -- E2E Fixes: `repli`/`galera` Container Resolution, Vertical `\G` Queries & Windows `mdb clean` Mount (`#365`)
 - **Timestamp / Issue / Branch**: `2026-11-21T20:02Z` | Issue `#365` | `fix/issue-365-repli-galera-clean`
 - **Request**: Resolve Compose container names for `repli`/`galera`, remove `-sN` on `\G` replication queries, and fix Windows `mdb clean` alpine bind-mount path handling.

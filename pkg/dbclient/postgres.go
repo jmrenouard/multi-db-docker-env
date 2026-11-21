@@ -13,10 +13,16 @@ type PostgresVerifier struct{ cfg Config }
 func NewPostgresVerifier(cfg Config) *PostgresVerifier {
 	if cfg.User == "" { cfg.User = "postgres" }
 	if cfg.Database == "" { cfg.Database = "postgres" }
-	if cfg.Port <= 0 { cfg.Port = 5432 }
+	if cfg.Port <= 0 {
+		if strings.EqualFold(cfg.ClusterType, "pgpool") {
+			cfg.Port = 9999
+		} else {
+			cfg.Port = 5432
+		}
+	}
 	if cfg.ExpectedNodes <= 0 {
 		switch strings.ToLower(cfg.ClusterType) {
-		case "patroni": cfg.ExpectedNodes = 3
+		case "patroni", "cockroach", "yugabyte": cfg.ExpectedNodes = 3
 		case "pgpool": cfg.ExpectedNodes = 2
 		default: cfg.ExpectedNodes = 1
 		}
@@ -71,7 +77,9 @@ func (p *PostgresVerifier) verifyPatroni(ctx context.Context, h *ClusterHealth) 
 }
 
 func (p *PostgresVerifier) verifyPgPool(ctx context.Context, h *ClusterHealth) error {
-	out, err := p.execQuery(ctx, "SHOW POOL_NODES;")
+	var env []string
+	if p.cfg.Password != "" { env = []string{"PGPASSWORD=" + p.cfg.Password} }
+	out, err := p.cfg.Executor.Exec(ctx, p.cfg.Container, env, "psql", "-h", "127.0.0.1", "-p", strconv.Itoa(p.cfg.Port), "-U", p.cfg.User, "-d", p.cfg.Database, "-c", "SHOW POOL_NODES;")
 	if err != nil { return fmt.Errorf("show pool_nodes failed: %w", err) }
 	up := 0
 	for _, l := range strings.Split(out, "\n") {
@@ -81,6 +89,18 @@ func (p *PostgresVerifier) verifyPgPool(ctx context.Context, h *ClusterHealth) e
 	}
 	h.NodesActive = up
 	if up >= p.cfg.ExpectedNodes { h.Status = StatusHealthy } else if up > 0 { h.Status = StatusDegraded }
+	return nil
+}
+
+func (p *PostgresVerifier) verifyNodeCount(ctx context.Context, h *ClusterHealth, label string, cmd ...string) error {
+	out, err := p.cfg.Executor.Exec(ctx, p.cfg.Container, nil, cmd...)
+	if err != nil { return fmt.Errorf("%s query failed: %w", label, err) }
+	active := 0
+	for _, l := range strings.Split(out, "\n") {
+		if n, convErr := strconv.Atoi(strings.TrimSpace(l)); convErr == nil { active = n }
+	}
+	h.NodesActive = active
+	if active >= p.cfg.ExpectedNodes { h.Status = StatusHealthy } else if active > 0 { h.Status = StatusDegraded }
 	return nil
 }
 
@@ -97,6 +117,10 @@ func (p *PostgresVerifier) VerifyCluster(ctx context.Context) (*ClusterHealth, e
 	switch strings.ToLower(p.cfg.ClusterType) {
 	case "patroni": err = p.verifyPatroni(ctx, h)
 	case "pgpool": err = p.verifyPgPool(ctx, h)
+	case "cockroach":
+		err = p.verifyNodeCount(ctx, h, "cockroach", "/cockroach/cockroach", "sql", "--insecure", "--host=crdb_node1:26257", "--format=tsv", "-e", "SELECT count(*) FROM crdb_internal.gossip_nodes WHERE is_live;")
+	case "yugabyte":
+		err = p.verifyNodeCount(ctx, h, "yugabyte", "/home/yugabyte/bin/ysqlsh", "-h", "yb-node1", "-p", "5433", "-U", "yugabyte", "-tAc", "SELECT count(*) FROM yb_servers();")
 	default:
 		out, qErr := p.execQuery(ctx, "SELECT 1;")
 		if qErr != nil || !strings.Contains(out, "1") { return h, fmt.Errorf("standalone check failed: %w", qErr) }
