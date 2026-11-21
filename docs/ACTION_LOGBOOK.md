@@ -81,6 +81,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-090 -- E2E Fixes: Windows `docker` `WSLENV` & `pgpool` Exact Resolution / Clean Replication Setup (`#381`)
+- **Timestamp / Issue / Branch**: `2026-11-21T20:38Z` | Issue `#381` | `fix/issue-381-pfs-wslenv-pgpool-galera`
+- **Request**: Extend `WSLENV` forwarding to `docker` shims on Windows, prefer exact container match for `pgpool`, align `pgpool` `rootpass` default, and eliminate `pg_node2..3` `PANIC` during replication setup.
+- **Changes**: Updated `pkg/docker/{client,docker_test}.go`, `cmd/mdb/{main,commands_ops,main_test}.go`, `docker-compose-pgpool.yml`, `tests/test_pgpool.sh`, `scripts/pgpool/setup_replication.sh`, and `docs/RCA_REGISTER.md` (`RCA-081`).
+- **Result**: Verified `go test ./...` (11/11), `unittest` (54 ran: 48 ok, 6 skipped), `mdb lint`, diff `< 15,000` B, and CI `test-and-validate` green.
+
 ### ACT-089 -- E2E Fixes: `mdb report` Catalog Resolution, `mdb bench` MySQL/PG Execution & `mdb inject` Guard (`#376`)
 - **Timestamp / Issue / Branch**: `2026-11-21T20:27Z` | Issue `#376` | `fix/issue-376-pfs-report-bench-wslenv`
 - **Request**: Fix `mdb report` standalone catalog resolution, `mdb bench` standalone MySQL/MariaDB/Percona (`sysbench`) and PostgreSQL (`pgbench`) failures, and `mdb inject` MySQL warning.

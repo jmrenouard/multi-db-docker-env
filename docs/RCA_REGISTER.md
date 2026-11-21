@@ -605,6 +605,13 @@
 - **Applied Change / Fix**: Shared `resolveVerifierTarget` between `mdb test` and `mdb report`; added `runMySQLSysbench` (creates `sbtest`, runs `prepare`+`run` in-container or via transient `--network` container with TLS fallback) and `postgres` dbname in `pgbench`; gated `mariadb` in `runInjectCmd`.
 - **Result & Non-Regression Test**: Verified in `cmd/mdb/main_test.go`.
 
+### RCA-081 -- Windows `docker` `WSLENV` Stripping, `pgpool` Substring Collision & Replication Setup `PANIC`
+- **Date / Linked Action**: `2026-11-21` (`ACT-090` / Issue `#381`)
+- **Observed Symptom**: `mdb.cmd up galera`/`pgpool` dropped `MARIADB_GALERA_BOOTSTRAP=1`/`DB_ROOT_PASSWORD` via WSL `docker.cmd`; `mdb test`/`client pgpool` matched `haproxy_pgpool` (exit 127); `setup_replication.sh` caused `PANIC: pg_control Permission denied` leaving `pg_node2` down.
+- **Root Cause Analysis**: `MergeEnv` only set `WSLENV` for `bash`; `docker ps --filter name=pgpool` returned `haproxy_pgpool` first; `setup_replication.sh` wiped live PGDATA and ran `pg_basebackup` as `root`; `docker-compose-pgpool.yml` defaulted password to `postgres` instead of `rootpass`.
+- **Applied Change / Fix**: Added `docker`/`docker.exe`/`docker.cmd` to `MergeEnv` `WSLENV` (and `RunCombined`); added exact-match `pickContainerName` in `resolveContainer`/`resolveEnvContainer`; aligned `pgpool` `rootpass` default and switched `setup_replication.sh` to clean `docker stop` + `gosu postgres pg_basebackup` + `docker restart pgpool`.
+- **Result & Non-Regression Test**: Verified in `pkg/docker/docker_test.go`, `cmd/mdb/main_test.go`, and `mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

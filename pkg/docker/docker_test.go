@@ -127,6 +127,9 @@ func TestRealCommandRunner(t *testing.T) {
 	if got := strings.Join(winEnv, ";"); !strings.Contains(got, "WSLENV=EXISTING/u:MONGO_NODES:DB_ROOT_PASSWORD") {
 		t.Fatalf("mergeEnv windows bash: %v", winEnv)
 	}
+	if dEnv := mergeEnv([]string{"PATH=x"}, []string{"MARIADB_GALERA_BOOTSTRAP=1"}, "docker.cmd", "windows"); !strings.Contains(strings.Join(dEnv, ";"), "WSLENV=MARIADB_GALERA_BOOTSTRAP") {
+		t.Fatalf("mergeEnv windows docker: %v", dEnv)
+	}
 	if linEnv := mergeEnv([]string{"PATH=x"}, []string{"K=V"}, "bash", "linux"); strings.Contains(strings.Join(linEnv, ";"), "WSLENV=") {
 		t.Fatalf("mergeEnv linux unexpected WSLENV: %v", linEnv)
 	}

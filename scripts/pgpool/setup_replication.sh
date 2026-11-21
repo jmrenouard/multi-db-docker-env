@@ -73,46 +73,22 @@ done
 echo ""
 echo "3. ⛓️  Setting up Standby nodes..."
 
+NET="$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' "$PRIMARY_HOST" | awk '{print $1}')"
 for standby in "${STANDBYS[@]}"; do
     SLOT_NAME="${standby//-/_}_slot"
     echo ""
     echo ">> Setting up standby: $standby..."
 
-    # Stop the standby PostgreSQL
-    echo ">> Stopping PostgreSQL on $standby..."
-    docker exec "$standby" pg_ctl stop -D /var/lib/postgresql/data -m fast 2>/dev/null || true
-    sleep 3
-
-    # Clean the data directory completely (preserve mount point)
-    echo ">> Cleaning data directory on $standby..."
-    docker exec "$standby" bash -c 'find /var/lib/postgresql/data -mindepth 1 -delete 2>/dev/null || true'
-    sleep 1
-
-    # Take a base backup from the primary
-    echo ">> Taking base backup from primary..."
-    docker exec -e PGPASSWORD="$REPLI_PASS" "$standby" \
-        pg_basebackup -h "$PRIMARY_HOST" -p "$PRIMARY_PORT" -U "$REPLI_USER" \
-        -D /var/lib/postgresql/data -Fp -Xs -P -R -S "$SLOT_NAME"
-
-    # Verify standby.signal exists (created by -R flag)
-    if docker exec "$standby" test -f /var/lib/postgresql/data/standby.signal; then
-        echo "✅ standby.signal created for $standby."
-    else
-        echo ">> Creating standby.signal..."
-        docker exec "$standby" touch /var/lib/postgresql/data/standby.signal
-    fi
-
-    echo "✅ Base backup completed for $standby."
+    # Stop standby gracefully so PGDATA is never wiped beneath a live postgres process
+    docker stop "$standby" >/dev/null
+    docker run --rm --volumes-from "$standby" --network "$NET" -e PGPASSWORD="$REPLI_PASS" postgres:17 \
+        bash -c "find /var/lib/postgresql/data -mindepth 1 -delete && chown postgres:postgres /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data && exec gosu postgres pg_basebackup -h '$PRIMARY_HOST' -p '$PRIMARY_PORT' -U '$REPLI_USER' -D /var/lib/postgresql/data -Fp -Xs -P -R -S '$SLOT_NAME'"
+    docker start "$standby" >/dev/null
+    echo "✅ Base backup completed and $standby started."
 done
 
 echo ""
-echo "4. 🔄 Restarting standby containers..."
-for standby in "${STANDBYS[@]}"; do
-    docker restart "$standby"
-done
-
-echo ""
-echo "5. ⏳ Waiting for standbys to come up (max 60s)..."
+echo "4. ⏳ Waiting for standbys to come up (max 60s)..."
 for standby in "${STANDBYS[@]}"; do
     COUNTER=0
     until docker exec "$standby" pg_isready -U postgres > /dev/null 2>&1 || [ $COUNTER -eq 60 ]; do
@@ -127,6 +103,9 @@ for standby in "${STANDBYS[@]}"; do
     fi
     echo "✅ Standby $standby is ready."
 done
+
+echo ">> Restarting pgpool to refresh backend status..."
+docker restart pgpool >/dev/null
 
 echo ""
 echo "6. 📊 Verifying replication status..."

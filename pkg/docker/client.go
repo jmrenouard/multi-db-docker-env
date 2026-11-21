@@ -51,7 +51,7 @@ func mergeEnv(base, extra []string, name, goos string) []string {
 		return nil
 	}
 	b := strings.ToLower(filepath.Base(strings.ReplaceAll(name, `\`, "/")))
-	needWSL := goos == "windows" && (b == "bash" || b == "bash.exe")
+	needWSL := goos == "windows" && (b == "bash" || b == "bash.exe" || b == "docker" || b == "docker.exe" || b == "docker.cmd")
 	out := make([]string, 0, len(base)+len(extra)+1)
 	var wslParts []string
 	seen := make(map[string]bool)
@@ -110,8 +110,8 @@ func (r *RealCommandRunner) Run(ctx context.Context, name string, args ...string
 func (r *RealCommandRunner) RunCombined(ctx context.Context, name string, args ...string) ([]byte, error) {
 	cleanArgs, envVars := extractComposeEnv(name, args)
 	cmd := exec.CommandContext(ctx, name, cleanArgs...)
-	if len(envVars) > 0 {
-		cmd.Env = append(os.Environ(), envVars...)
+	if merged := MergeEnv(os.Environ(), envVars, name); len(merged) > 0 {
+		cmd.Env = merged
 	}
 	return cmd.CombinedOutput()
 }

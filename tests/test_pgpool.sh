@@ -11,7 +11,7 @@ if [ -f .env ]; then
 fi
 
 DB_USER="postgres"
-DB_PASS="${DB_ROOT_PASSWORD:-postgres}"
+DB_PASS="${DB_ROOT_PASSWORD:-rootpass}"
 NETWORK="multi-db-docker-env_backend_pgpool"
 
 # Create reports directory
