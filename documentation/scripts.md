@@ -46,9 +46,8 @@ This document describes the various shell scripts available in the root director
 
 ## 🧪 Testing
 
-- **[interactive_runner.py](../interactive_runner.py)**: Interactive and automated test orchestration dashboard.
-  - **Features**: Choice of installation type (Standalone, Galera, Replication), real-time progress, and beautiful auto-refreshing HTML report with Tailwind CSS.
-  - **Usage**: `python3 interactive_runner.py [-i|--interactive] [-a|--auto]`
+- **[interactive_runner.py](../interactive_runner.py)**: Legacy Python interactive test runner (prefer `./mdb interactive`; preserves `-i`, `-a`, `-l en|fr`, skips MySQL-only `inject` on PostgreSQL, uses `make info` for verification, localized retry prompt).
+  - **Usage**: `./mdb interactive [-i|--interactive] [-a|--auto] [-l en|fr]` (legacy fallback: `python3 interactive_runner.py`)
 - **[test_galera.sh](../tests/test_galera.sh)**: Full suite for Galera (sync, DDL, conflicts, Audit, SSL).
 - **[test_repli.sh](../tests/test_repli.sh)**: Verification for Master/Slave replication.
 - **[test_config.sh](../tests/test_config.sh)**: Central validation script that triggers `test_env.sh`, `test_security_ssl.sh`, and `test_profiles.sh`.
@@ -68,17 +67,16 @@ This document describes the various shell scripts available in the root director
   - **Usage**: `bash ./scripts/run_mysqltuner.sh [--topology NAME] [--port PORT] [EXTRA_ARGS...]`
   - **Options**: `--topology, -t` (target cluster), `--port, -p` (port). Env: `MYSQLTUNER_PATH`, `DB_ROOT_PASSWORD`. Output: `reports/mysqltuner_<topo>_<ts>.txt`.
 
-## 🚀 Go `mdb` CLI Orchestrator
+## 🚀 Unified `./mdb` (`mdb.cmd`) Go CLI Orchestrator
 
-Compiled pure-Go CLI (`cmd/mdb`, `bin/mdb` with zero external dependencies):
-- `mdb version`: Display binary version (`2.2.0`, synced with `VERSION`).
-- `mdb config [-env <path>]`: Dump active environment settings as JSON.
-- `mdb topologies`: List all 16 registered topologies.
-- `mdb up <topo>` / `mdb down <topo>` / `mdb status <topo>`: Orchestrate database topologies.
-- `mdb test <topo>`: Run cluster health verification assertions.
-- `mdb bench <topo> [-workload <w>] [-threads <n>] [-duration <d>]`: Run Sysbench OLTP benchmarks.
-- `mdb pki <generate|verify> [topo] [--dir <dir>]`: Generate or verify TLS/SSL certificates natively.
-- `mdb report [topos...] [-json <path>] [-html <path>]`: Execute multi-cluster verification and export reports.
+Single unified entry point (`./mdb` on Linux/macOS, `mdb.cmd` on Windows, pure-Go `cmd/mdb` / `bin/mdb` with zero external dependencies):
+- `mdb help` / `mdb version` / `mdb doctor`: Show usage, synced `VERSION`, or diagnose Docker/Compose/Go/OpenSSL/Bash/`.env`/`ssl/`.
+- `mdb catalog [--category ...] [--engine ...] [--eol] [--all] [--json]`: Query 31 active environments (11 standalone + 20 clusters) and 5 EOL entries (`aliases`: `list`, `envs`, `environments`, `topologies`).
+- `mdb up <env>` / `mdb start [env]` / `mdb setup <env>` / `mdb down [env|all]` / `mdb stop`: Deploy standalone profiles or clusters (auto-PKI, EOL guard), run setup scripts, or tear down active stacks.
+- `mdb status [env|all]` / `mdb info` / `mdb logs [env|svc]`: Inspect containers and tail/stream logs across standalone and cluster compose files.
+- `mdb client [env]` / `mdb mycnf` / `mdb interactive [-a|-i] [-l en|fr]`: Open engine-aware DB shells, back up/write `0600` `~/.my.cnf`, or launch the native bilingual catalog wizard.
+- `mdb lint` / `mdb test <env> [--suite]` / `mdb bench <env>`: Lint `.sh` + 21 compose stacks, verify health (or run `tests/test_<env>.sh`), and dispatch Sysbench/PG/Mongo benchmarks.
+- `mdb pki <generate|verify> [topo] [--dir <dir>]` / `mdb report` / `mdb config`: Native x509 PKI, HTML/JSON telemetry reports, and JSON config dump.
 
 ## 📦 Release Automation
 
