@@ -538,6 +538,24 @@
 
 ---
 
+### RCA-072 -- Fragmented CLI, Standalone Lifecycle & Missing Engine Routing (`#302`–`#317`)
+- **Date / Linked Action**: `2026-11-21` (`ACT-080` / Audit `#1`–`#4`, `#8`, `#11`)
+- **Observed Symptom**: `mdb client` hardcoded `mysql`; standalone up/down omitted `--profile`, `traefik`, auto-PKI, `mariadb_ssh:004`, and EOL rejection; `Status`/`Info` ignored `mdb_*` prefixes/HA files; `mdb logs` dropped `--profile`; `mdb mycnf` overwrote `~/.my.cnf` without backup.
+- **Root Cause Analysis**: Legacy subcommands targeted root `docker-compose.yml` and MySQL assumptions instead of a shared registry and uniform profile/compose helpers.
+- **Applied Change / Fix**: Added `pkg/catalog`, `pkg/docker` profile/multi-compose/image helpers (`#303`, `#305`), engine-aware `mdb client`, `UpProfile` / `--profile "*"`, dynamic `ProjectName()`, `mdb logs` `--profile`, `0600` `~/.my.cnf.bak`, unified `./mdb`/`mdb.cmd`, `setup`/`lint`/`test`, and `pg17-baseline` (`#310`–`#317`, `#333`, `#335`).
+- **Result & Non-Regression Test**: `go test ./...` (11/11) + CI `test-and-validate` pass.
+
+---
+
+### RCA-073 -- Non-Portable Timing, `.env` Fallbacks, Runner UX & Doc Drift (`#318`–`#354`)
+- **Date / Linked Action**: `2026-11-21` (`ACT-080`, `ACT-081` / Audit `#5`–`#7`, `#9`–`#10`, `#12`)
+- **Observed Symptom**: `mdb bench` skipped PG/Mongo; `Makefile` broke without `.env` `DB_ROOT_PASSWORD`, used GNU `timeout 120s` (non-macOS), required host `psql` in `pgpool-status`, and slept fixed `15–30s`; `interactive_runner.py` had PG `inject`, wrong `make info` check, broken HTML escape, and EN retry text in FR; docs omitted `pg17-baseline`/YT details and listed stale `haproxy:2.9-alpine`/`cockroachdb:v24.3.0`.
+- **Root Cause Analysis**: Shell/Python tooling and EN/FR docs diverged from the Go catalog and multi-engine Compose stacks without readiness polling or parity checks.
+- **Applied Change / Fix**: Added multi-engine `mdb bench` (`#320`), bilingual Go wizard (`#324`, `#329`), portable `seq 1 60` + `docker exec` polling + `rootpass` fallback + `pgpool-status` `docker exec` + `MONGO_NODES` (`setup_rs.sh`) + 13 PG stack targets (`#307`, `#322`, `#325`, `#330`, `#338`), Python fixes/deprecation (`#332`), and EN/FR docs + `v2.5.0` (`#340`, `#341`, `#346`, `#349`, `#350`, `#352`, `#354`).
+- **Result & Non-Regression Test**: `unittest` (52 ran: 46 ok, 6 skipped), `go test ./...` (11/11), `release_notes.py --tag v2.5.0 --check`, and CI `test-and-validate` green.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Monolithic Pull Requests Exceeding 15,000 Diff Characters
@@ -595,6 +613,12 @@
 ### IMP-014 -- Treating YT Cluster Default Mode as High-Throughput Async or Relying on `SAVEPOINT` Rollbacks
 - **Why It Is a Dead-End**: Default `cc=half` sync-2PC caps write throughput near `20.6`–`67.8 TPS` (`86 rows/s` bulk), and `SAVEPOINT` rollbacks over writes fail at `COMMIT` (`SQLSTATE 0A000`).
 - **Adopted Decision**: Benchmark both default `cc=half` and async `cc=nodes>=0` explicitly in `scripts/bench_yt_runner.sh` and avoid write-containing `SAVEPOINT`s in YT Cluster workloads.
+
+---
+
+### IMP-015 -- Retaining Python `interactive_runner.py` / `mysql_docker.py` as Primary Entry Points
+- **Why It Is a Dead-End**: Dual Python/Go/Makefile paths caused engine drift, missing Windows parity, and duplicated environment lists.
+- **Adopted Decision**: Consolidate all operations under `./mdb` (`mdb.cmd` on Windows) and `pkg/catalog`, keeping `Makefile` targets as thin compatibility wrappers and printing deprecation notices in Python runners (`#332`).
 
 ---
 
@@ -722,6 +746,27 @@
 
 ---
 
+### APP-025 -- Unset `.env` `DB_ROOT_PASSWORD` Laboratory Fallback (`rootpass`)
+- **Target Files**: `Makefile`, `cmd/mdb/`, `pkg/docker/`
+- **Nature & Justification**: Falls back to `rootpass` with an explicit warning when `.env` omits `DB_ROOT_PASSWORD`, preventing first-run setup errors in local labs.
+- **Removal Condition**: Enforce mandatory secret injection (`.env` / Vault / KeePass) for any shared or non-lab deployment.
+
+---
+
+### APP-026 -- YT Cluster 1.21.3 License Split & Jepsen 1.20.1 `cursor-stability` Caveat
+- **Target Files**: `documentation/pg_multimaster.md`, `documentation/pg_multimaster_fr.md`, `documentation/supported_products.md`, `documentation/supported_products_fr.md`
+- **Nature & Justification**: `dbinvent/yt:1.21.3` bundles MIT-licensed `yt_cluster` (`DBinvent/yt-cluster-lite`, single-DB leaf rejecting `0A000` on additional DBs) with PolyForm Noncommercial 1.0.0 / Commercial `ytserv` + `ytctl`; Jepsen passed 49/49 nemesis tests under `1.20.1` (`2` of `51` skipped: `cursor-stability` unsupported on `1.20.1`, added in `1.21.0`).
+- **Removal Condition**: Re-verify license terms and full-51 `1.21.x` Jepsen results prior to commercial or multi-database adoption.
+
+---
+
+### APP-027 -- Local Windows `go test -race` Requires CGO `gcc` Toolchain
+- **Target Files**: `AGENTS.md`, `.github/workflows/`
+- **Nature & Justification**: Native Windows hosts run `go test ./...` without `-race` when `gcc` is absent; full `-race` verification executes on Linux CI (`test-and-validate`) and WSL.
+- **Removal Condition**: Install MSYS2/mingw64 `gcc` if local Windows `-race` execution is required.
+
+---
+
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
 ### IDEA-001 — ClickHouse and Redis Standalone and Cluster Topologies
@@ -767,5 +812,13 @@
 ### IDEA-011 -- Dedicated Go Verifier Branch for `yt-cluster` (`yt_info('o')`)
 - **Priority / Target**: `Low` | `pkg/dbclient/postgres.go`
 - **Description**: Extend `PostgresVerifier` to inspect `SELECT yt_info('o');` directly and report active YT Cluster leader and working node count (`3` expected).
+
+### IDEA-012 -- Retire Legacy `mysql_docker.py` & `interactive_runner.py` in `v3.0`
+- **Priority / Target**: `Medium` | `mysql_docker.py`, `interactive_runner.py`
+- **Description**: Remove deprecated Python wrappers once external CI pipelines and course materials fully adopt `./mdb` / `mdb.cmd`.
+
+### IDEA-013 -- Full Parity Matrix Automated Drift Check (`pkg/catalog` vs `Makefile` vs Docs)
+- **Priority / Target**: `Low` | `tests/`
+- **Description**: Assert every environment key in `pkg/catalog` has matching `Makefile` wrapper targets and EN/FR documentation coverage.
 
 
