@@ -3,15 +3,15 @@
 set -euo pipefail
 
 export BENCH_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$BENCH_ROOT"
+[ -f .env ] && { set -a; . ./.env; set +a; }
 export PYTHONDONTWRITEBYTECODE=1
 export PG_SCALE="${PG_SCALE:-2}"
-export PG_PASS="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}"
+export PG_PASS="${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}"
 export DB_ROOT_PASSWORD="$PG_PASS"
 export PG_LAB_PASSWORD="$PG_PASS"
 export BENCH_IMAGE="${BENCH_IMAGE:-multi-db-pgbench-sysbench:latest}"
 export BENCH_OUT_DIR="${BENCH_OUT_DIR:-${BENCH_ROOT}/reports/pg18_benchmarks}"
-
-cd "$BENCH_ROOT"
 
 exec python3 - "$@" <<'PY'
 import os

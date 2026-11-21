@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Sequential empirical PG_SCALE=2 benchmark runner for 3-node YT Cluster 1.21.3 (PG 18).
 set -euo pipefail
-export BENCH_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" PYTHONDONTWRITEBYTECODE=1 PG_SCALE="${PG_SCALE:-2}"
-export PG_PASS="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}"
+export BENCH_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$BENCH_ROOT"
+[ -f .env ] && { set -a; . ./.env; set +a; }
+export PYTHONDONTWRITEBYTECODE=1 PG_SCALE="${PG_SCALE:-2}"
+export PG_PASS="${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}"
 export DB_ROOT_PASSWORD="$PG_PASS" PG_LAB_PASSWORD="$PG_PASS" BENCH_IMAGE="${BENCH_IMAGE:-multi-db-pgbench-sysbench:latest}"
 export BENCH_OUT_CSV="${BENCH_OUT_CSV:-${BENCH_ROOT}/reports/benchmark_yt_cluster.csv}"
 export BENCH_LOG_FILE="${BENCH_LOG_FILE:-${BENCH_ROOT}/reports/logs/yt-cluster-benchmark.log}"
-cd "$BENCH_ROOT"
 
 exec python3 - <<'PY'
 import csv,io,os,re,subprocess as sp,sys,time

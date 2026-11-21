@@ -3,8 +3,10 @@
 set -euo pipefail
 
 export EXT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$EXT_ROOT"
+[ -f .env ] && { set -a; . ./.env; set +a; }
 export PYTHONDONTWRITEBYTECODE=1
-export PG_LAB_PASSWORD="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}"
+export PG_LAB_PASSWORD="${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}"
 export DB_ROOT_PASSWORD="$PG_LAB_PASSWORD"
 export EXT_OUT_CSV="${EXT_OUT_CSV:-$EXT_ROOT/reports/extended_functional_matrix.csv}"
 
