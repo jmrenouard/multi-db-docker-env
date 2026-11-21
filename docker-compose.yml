@@ -1,3 +1,10 @@
+x-pfs-command: &pfs-command
+  - "--performance-schema=ON"
+  - "--performance-schema-events-transactions-history-size=2000"
+  - "--performance-schema-events-transactions-history-long-size=50000"
+  - "--performance-schema-consumer-events-transactions-history=ON"
+  - "--performance-schema-consumer-events-transactions-history-long=ON"
+
 services:
   # --- Reverse Proxy (Traefik) ---
   traefik:
@@ -44,8 +51,7 @@ services:
       MYSQL_ROOT_HOST: "%"
     volumes:
       - mysql_9_7_data:/var/lib/mysql
-      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
-      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
+    command: *pfs-command
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
@@ -65,8 +71,7 @@ services:
       MYSQL_ROOT_HOST: "%"
     volumes:
       - mysql_8_4_data:/var/lib/mysql
-      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
-      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
+    command: *pfs-command
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
@@ -86,8 +91,7 @@ services:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mariadb_12_3_data:/var/lib/mysql
-      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
-      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
+    command: *pfs-command
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
@@ -105,8 +109,7 @@ services:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mariadb_11_8_data:/var/lib/mysql
-      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
-      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
+    command: *pfs-command
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
@@ -125,8 +128,7 @@ services:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mariadb_11_4_data:/var/lib/mysql
-      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
-      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
+    command: *pfs-command
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
@@ -145,8 +147,7 @@ services:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mariadb_10_11_data:/var/lib/mysql
-      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
-      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
+    command: *pfs-command
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"
@@ -167,8 +168,7 @@ services:
       MYSQL_ROOT_HOST: "%"
     volumes:
       - percona_8_4_data:/var/lib/mysql
-      - ./conf/pfs.cnf:/etc/mysql/conf.d/pfs.cnf
-      - ./conf/pfs.cnf:/etc/my.cnf.d/pfs.cnf
+    command: *pfs-command
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.db-router.rule=HostSNI(`*`)"

@@ -40,7 +40,7 @@ server_id=3
 # Log replication conflicts
 wsrep_log_conflicts=ON
 # Enable detailed conflict logging in provider options and tune Flow Control
-wsrep_provider_options="cert.log_conflicts=YES;gcache.size=512M;evs.suspect_timeout=PT5S;evs.inactive_timeout=PT15S;evs.install_timeout=PT15S;gcs.fc_factor=0.8;gcs.fc_limit=32"
+wsrep_provider_options="cert.log_conflicts=YES;gcache.size=128M;evs.suspect_timeout=PT5S;evs.inactive_timeout=PT15S;evs.install_timeout=PT15S;gcs.fc_factor=0.8;gcs.fc_limit=32"
 
 # --- Advanced Replication & Networking ---
 # Enforce GTID consistency

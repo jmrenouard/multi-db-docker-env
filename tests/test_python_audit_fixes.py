@@ -102,6 +102,14 @@ class TestPythonAuditFixes(unittest.TestCase):
         self.assertIn("for i in range(15):", yt_test)
         self.assertIn("[ -f .env ]", (root / "scripts/yt_cluster/setup_yt_cluster.sh").read_text(encoding="utf-8"))
         self.assertIn("logging_collector = off", (root / "scripts/pgedge/setup_pgedge.sh").read_text(encoding="utf-8"))
+        standalone = (root / "docker-compose.yml").read_text(encoding="utf-8")
+        self.assertIn("x-pfs-command: &pfs-command", standalone)
+        self.assertNotIn("pfs.cnf", standalone)
+        galera = (root / "docker-compose-galera.yml").read_text(encoding="utf-8")
+        self.assertIn("galera_data_01:/var/lib/mysql", galera)
+        self.assertNotIn("gdatadir_01", galera)
+        for i in (1, 2, 3):
+            self.assertIn("gcache.size=128M", (root / f"conf/gcustom_{i}.cnf").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
