@@ -82,6 +82,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-102 -- Patroni Compose `build:`/`service_healthy` Wiring & HAProxy mTLS Checks (`#401`)
+- **Timestamp / Issue / Branch**: `2026-11-21T22:38Z` | Issue `#401` | `feat/issue-401-patroni-compose-mtls`
+- **Request**: Wire `build:` sections, `DB_ROOT_PASSWORD:-rootpass` parity, and `service_healthy` startup ordering into `docker-compose-patroni.yml`, and enable true mTLS health checks + Docker DNS resolution in `conf/haproxy-patroni.cfg`.
+- **Changes**: Added `build:` blocks and `condition: service_healthy` dependencies (`etcd1..3` -> `node1..3` -> `haproxy`) plus `rootpass` default in `docker-compose-patroni.yml`; updated `conf/haproxy-patroni.cfg` with stdout logging, `resolvers docker` (`127.0.0.11:53`), symmetric 3-node backends, and mTLS checks (`crt /certs/haproxy.pem ca-file /certs/ca.crt verify required`); logged `RCA-087`.
+- **Result**: Verified live `docker compose -f docker-compose-patroni.yml build`, `mdb up patroni` (7/7 healthy, HAProxy Layer7 mTLS 200 OK in 4-7ms, 0 ECONNREFUSED alerts), `go test -count=1 ./...`, and `mdb lint`.
+
 ### ACT-101 -- `mdb images` CLI (`list|build|pull|check`) & Thin `Makefile` Wrappers (`#399`)
 - **Timestamp / Issue / Branch**: `2026-11-21T23:22Z` | Issue `#399` | `feat/issue-399-mdb-images-cli`
 - **Request**: Implement `mdb images` (`list [--json]`, `build`, `pull`, `check`), thin `Makefile` wrappers (`build-images`, `pull-images`, `check-images`), and 21-compose parity tests covering all 31 E2E images.

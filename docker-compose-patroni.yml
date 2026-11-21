@@ -1,6 +1,9 @@
 services:
   etcd1:
     image: patroni-rhel8-etcd:latest
+    build:
+      context: .
+      dockerfile: scripts/patroni/Dockerfile.etcd
     container_name: etcd1
     hostname: etcd1
     entrypoint: /bin/bash /scripts/patroni/entrypoint_etcd.sh
@@ -21,6 +24,9 @@ services:
 
   etcd2:
     image: patroni-rhel8-etcd:latest
+    build:
+      context: .
+      dockerfile: scripts/patroni/Dockerfile.etcd
     container_name: etcd2
     hostname: etcd2
     entrypoint: /bin/bash /scripts/patroni/entrypoint_etcd.sh
@@ -39,6 +45,9 @@ services:
 
   etcd3:
     image: patroni-rhel8-etcd:latest
+    build:
+      context: .
+      dockerfile: scripts/patroni/Dockerfile.etcd
     container_name: etcd3
     hostname: etcd3
     entrypoint: /bin/bash /scripts/patroni/entrypoint_etcd.sh
@@ -57,6 +66,9 @@ services:
 
   node1:
     image: patroni-rhel8-postgresql:latest
+    build:
+      context: .
+      dockerfile: scripts/patroni/Dockerfile.postgresql
     container_name: node1
     hostname: node1
     entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/local/bin/supervisord -c /etc/supervisord.conf
@@ -75,7 +87,7 @@ services:
       - PATRONI_ETCD3_PROTOCOL=https
       - ETCD_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-postgres}
+      - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-rootpass}
       - PATRONI_VERIFY_CLIENT=required
       - PG_HBA_SSL_TYPE=hostssl
       - PG_HBA_METHOD=md5
@@ -88,14 +100,20 @@ services:
       - ./certs_patroni:/certs:ro
       - ./scripts:/scripts:ro
     depends_on:
-      - etcd1
-      - etcd2
-      - etcd3
+      etcd1:
+        condition: service_healthy
+      etcd2:
+        condition: service_healthy
+      etcd3:
+        condition: service_healthy
     networks:
       - patroni_net
 
   node2:
     image: patroni-rhel8-postgresql:latest
+    build:
+      context: .
+      dockerfile: scripts/patroni/Dockerfile.postgresql
     container_name: node2
     hostname: node2
     entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/local/bin/supervisord -c /etc/supervisord.conf
@@ -114,7 +132,7 @@ services:
       - PATRONI_ETCD3_PROTOCOL=https
       - ETCD_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-postgres}
+      - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-rootpass}
       - PATRONI_VERIFY_CLIENT=required
       - PG_HBA_SSL_TYPE=hostssl
       - PG_HBA_METHOD=md5
@@ -127,14 +145,20 @@ services:
       - ./certs_patroni:/certs:ro
       - ./scripts:/scripts:ro
     depends_on:
-      - etcd1
-      - etcd2
-      - etcd3
+      etcd1:
+        condition: service_healthy
+      etcd2:
+        condition: service_healthy
+      etcd3:
+        condition: service_healthy
     networks:
       - patroni_net
 
   node3:
     image: patroni-rhel8-postgresql:latest
+    build:
+      context: .
+      dockerfile: scripts/patroni/Dockerfile.postgresql
     container_name: node3
     hostname: node3
     entrypoint: /bin/bash /scripts/patroni/entrypoint_node.sh /usr/local/bin/supervisord -c /etc/supervisord.conf
@@ -153,7 +177,7 @@ services:
       - PATRONI_ETCD3_PROTOCOL=https
       - ETCD_HOSTS=etcd1:2379,etcd2:2379,etcd3:2379
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-postgres}
+      - POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-rootpass}
       - PATRONI_VERIFY_CLIENT=required
       - PG_HBA_SSL_TYPE=hostssl
       - PG_HBA_METHOD=md5
@@ -166,14 +190,20 @@ services:
       - ./certs_patroni:/certs:ro
       - ./scripts:/scripts:ro
     depends_on:
-      - etcd1
-      - etcd2
-      - etcd3
+      etcd1:
+        condition: service_healthy
+      etcd2:
+        condition: service_healthy
+      etcd3:
+        condition: service_healthy
     networks:
       - patroni_net
 
   haproxy:
     image: patroni-rhel8-haproxy:latest
+    build:
+      context: .
+      dockerfile: scripts/patroni/Dockerfile.haproxy
     container_name: haproxy-patroni
     networks:
       - patroni_net
@@ -185,9 +215,12 @@ services:
       - ./certs_patroni:/certs:ro
       - ./conf/haproxy-patroni.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     depends_on:
-      - node1
-      - node2
-      - node3
+      node1:
+        condition: service_healthy
+      node2:
+        condition: service_healthy
+      node3:
+        condition: service_healthy
 
 networks:
   patroni_net:

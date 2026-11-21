@@ -647,6 +647,13 @@
 - **Applied Change / Fix**: Added pinned non-root `scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}` and secret-free `conf/patroni.yml`; switched `conf/supervisord-patroni.conf` to `user=postgres` stdout logging without `sshd`; updated `scripts/patroni/entrypoint_node.sh` for non-root cert staging and `PATRONI_*` credential export.
 - **Result & Non-Regression Test**: All 3 images built cleanly with 0 HIGH/WARN/INFO on `lint_dockerfile.py`, and `go test`, `unittest`, and `mdb lint` pass.
 
+### RCA-087 -- HAProxy mTLS REST Check Rejection, Startup Race & Default Password Drift in Patroni
+- **Date / Linked Action**: `2026-11-21` (`ACT-102` / Issue `#401`)
+- **Observed Symptom**: Under `PATRONI_VERIFY_CLIENT=required`, HAProxy health checks without a client certificate fail TLS handshakes; starting `node1..3` and `haproxy` concurrently without `service_healthy` triggered etcd `3.0.0`/`/v3alpha` startup races and HAProxy `ECONNREFUSED` alerts; `POSTGRES_PASSWORD` defaulted to `postgres` instead of repo default `rootpass`.
+- **Root Cause Analysis**: `conf/haproxy-patroni.cfg` used `verify none` without `crt /certs/haproxy.pem` or `resolvers docker` and logged to non-existent `/dev/log`; `docker-compose-patroni.yml` omitted `build:` sections and `condition: service_healthy` dependencies.
+- **Applied Change / Fix**: Wired `build:`, `condition: service_healthy`, and `POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-rootpass}` in `docker-compose-patroni.yml`; configured HAProxy stdout logging, `resolvers docker`, and mTLS REST checks (`verify required ca-file /certs/ca.crt crt /certs/haproxy.pem`).
+- **Result & Non-Regression Test**: Live `mdb up patroni` reaches 7/7 healthy containers with HAProxy Layer7 mTLS 200 OK checks (`4-7ms`) and zero `ECONNREFUSED` alerts; `mdb lint` and `go test` pass.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
