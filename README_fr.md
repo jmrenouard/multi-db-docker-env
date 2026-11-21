@@ -27,54 +27,53 @@ Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que tout
 
 | Niveau | Nom du Niveau | Dernière Vérification | État |
 | :--- | :--- | :--- | :--- |
-| **T2** | **Matrice Standalone** | 2026-11-19 | ✅ 100% Réussi |
-| **T3** | **Cluster, HA & Multi-Maître (`v2.4.0`)** | 2026-11-20 | ✅ 20 Topologies Vérifiées |
+| **T2** | **Matrice Standalone** | 2026-11-20 | ✅ 11 Profils Actifs Vérifiés |
+| **T3** | **Cluster, HA & Multi-Maître (`v2.5.0`)** | 2026-11-21 | ✅ 20 Clusters Actifs (13 Piles PG Compose) |
 
 ## 📋 Prérequis
 
-Avant de commencer, assurez-vous d'avoir installé les outils suivants :
+Exécutez `./mdb doctor` (`mdb.cmd doctor` sous Windows) pour vérifier vos prérequis :
 
-* [Docker](https://docs.docker.com/get-docker/)
-* [Docker Compose](https://docs.docker.com/compose/install/) (généralement inclus avec Docker Desktop)
-* `make` (disponible sur la plupart des systèmes Linux/macOS. Pour Windows, vous pouvez utiliser Chocolatey : `choco install make`)
-* Liste complète des outils clients recommandés : voir [`PREREQUISITES.txt`](PREREQUISITES.txt).
+* [Docker](https://docs.docker.com/get-docker/) & [Docker Compose v2](https://docs.docker.com/compose/install/) (Docker Desktop sous Windows/macOS)
+* `./mdb` (`mdb.cmd` sous Windows) : exécute `bin/mdb` si compilé, ou bascule automatiquement vers [Go](https://go.dev/) (`>= 1.22`) via `go run ./cmd/mdb`
+* **macOS** : Docker Desktop + outils Homebrew (`brew install go bash openssl git python`)
+* **Windows** : exécutez `mdb.cmd` nativement dans PowerShell/CMD ; utilisez **WSL2** ou **Git Bash** (ou `choco install make`) pour les wrappers `make` et les tests bash
+* Liste complète multi-OS : voir [`PREREQUISITES.txt`](PREREQUISITES.txt).
 
 ## ⚙️ Configuration Initiale
 
-La seule étape de configuration requise est de définir le mot de passe root pour vos bases de données.
-
-1. Créez un fichier nommé `.env` dans le répertoire racine du projet.
-2. Ajoutez la ligne suivante, en remplaçant `your_super_secret_password` par un mot de passe fort de votre choix (ne mettez pas de guillemets autour du mot de passe) :
+1. *(Recommandé)* Copiez `.env.example` vers `.env` (`cp .env.example .env`) et définissez `DB_ROOT_PASSWORD` (sans guillemets) :
 
     ```env
     # Fichier : .env
     DB_ROOT_PASSWORD=your_super_secret_password
     ```
 
-⚠️ **Important** : Ce `DB_ROOT_PASSWORD` est crucial pour le bon fonctionnement des commandes `make mycnf` et `make client`.
+> [!NOTE]
+> Si `.env` est absent, `./mdb` et `Makefile` utilisent par défaut `DB_ROOT_PASSWORD=rootpass` avec un avertissement au lieu d'échouer. Tout `~/.my.cnf` existant est sauvegardé vers `~/.my.cnf.bak` (`0600`).
 
-## ✨ Utilisation avec Makefile
+## ✨ Point d'Entrée Unique Unifié : `./mdb` (`mdb.cmd` sous Windows)
 
-Le `Makefile` est le point d'entrée principal pour la gestion de l'environnement. Il simplifie toutes les opérations en commandes courtes et mémorisables.
+`./mdb` (`mdb.cmd` sous Windows) est le **point d'entrée unique unifié** pour toutes les opérations. `Makefile`, `interactive_runner.py` et `mysql_docker.py` servent de wrappers de compatibilité et d'helpers historiques déléguant à `./mdb`.
 
 ### Commandes Générales
 
-Ces commandes vous aident à gérer et à interagir avec l'ensemble de l'environnement.
+| Commande | Description | Exemple |
+| :--- | :--- | :--- |
+| `./mdb help` | Affiche l'aide CLI catégorisée (`--help`, `-h`). | `./mdb help` |
+| `./mdb catalog` | Liste les 31 environnements actifs + 5 EOL (`--category`, `--engine`, `--eol`, `--all`, `--json`). | `./mdb catalog --all` |
+| `./mdb up <env>` | Démarre un profil standalone ou cluster (auto-PKI, rejette EOL ; `start` défaut `mariadb114`). | `./mdb up mysql84` |
+| `./mdb setup <env>` | Exécute le script de configuration d'une topologie à la demande. | `./mdb setup yt-cluster` |
+| `./mdb down [env\|all]` | Arrête l'environnement ciblé ou toutes les piles actives (`alias` : `stop`). | `./mdb down` |
+| `./mdb status` / `info` | Affiche les conteneurs actifs sur toutes les piles (`--json`) + logs récents. | `./mdb status` |
+| `./mdb logs [env\|svc]` | Affiche ou suit les logs des conteneurs (`--tail N`, `-f`). | `./mdb logs galera` |
+| `./mdb client` / `mycnf` | Shell adaptatif (`mariadb`/`psql`/`mongosh`/etc.) ou `~/.my.cnf` + `.bak` (`0600`). | `./mdb client` |
+| `./mdb interactive` | Assistant bilingue natif (`-a`, `-i`, `-l en\|fr` ; `alias` : `wizard`). | `./mdb interactive -l fr` |
+| `./mdb lint` / `test` | Valide `.sh` + 21 Compose YAML ; lance le vérifieur Go (`--suite` exécute `tests/test_<env>.sh`). | `./mdb lint` |
+| `./mdb bench` / `doctor` | Benchmarks multi-moteurs (`bench`) et diagnostic des dépendances (`doctor`). | `./mdb doctor` |
+| `./mdb pki` / `report` | Certificats TLS x509 natifs (`pki`) et rapports JSON/HTML (`report`). | `./mdb pki verify all` |
 
-| Command                         | Icon | Description                                                                 | Exemple d'utilisation           |
-| :------------------------------ | :--- | :-------------------------------------------------------------------------- | :------------------------------ |
-| `make help`                     | 📜   | Affiche la liste complète de toutes les commandes disponibles.              | `make help`                     |
-| `make start`                    | 🚀   | Démarre le service de base de données par défaut (`mariadb114`).            | `make start`                    |
-| `make stop`                     | 🛑   | Arrête et supprime correctement tous les conteneurs et réseaux du projet.   | `make stop`                     |
-| `make status`                   | 📊   | Affiche l'état des conteneurs actifs du projet (Traefik + DB).              | `make status`                   |
-| `make info`                     | ℹ️   | Fournit des informations sur le service DB actif et les logs récents.       | `make info`                     |
-| `make logs`                     | 📄   | Affiche les logs du service de base de données actuellement actif.          | `make logs`                     |
-| `make mycnf`                    | 🔑   | Génère un fichier `~/.my.cnf` pour des connexions MySQL sans mot de passe.  | `make mycnf`                    |
-| `make client`                   | 💻   | Démarre un client MySQL connecté à la base de données active.               | `make client`                   |
-| `make verify`                   | ✅   | Exécute une validation complète de l'environnement (`test-config`).         | `make verify`                   |
-| `make build-go`                 | 🔨   | Compile le binaire Go natif `mdb` dans `bin/mdb` (`v2.4.0`, 20 topologies). | `make build-go`                 |
-| `make test-go`                  | 🧪   | Exécute la suite complète de tests unitaires Go.                            | `make test-go`                  |
-| `python3 interactive_runner.py` | 🚀   | Lance le coureur de tests interactif pour une configuration guidée.         | `python3 interactive_runner.py` |
+> **Wrappers** : `make help|catalog|status|info|stop|client|mycnf|doctor|interactive|lint` délèguent à `./mdb`. `interactive_runner.py` et `mysql_docker.py` affichent des bannières de migration vers `./mdb`.
 
 ### Gestion des Données
 
@@ -212,22 +211,16 @@ Architecture MongoDB avec ReplicaSet et routage HAProxy.
 > [!NOTE]
 > MongoDB 7.0 utilise le port 27100 (HAProxy), stats 8408, accès direct 27411-27413 (`10.10.0.0/24`). MongoDB 8.0 utilise le port 27200 (HAProxy), stats 8409, accès direct 27511-27513 (`10.11.0.0/24`). Les deux imposent TLS (`requireTLS`).
 
-### PostgreSQL Réplication, Multi-Maître & SQL Distribué (`v2.1.0`–`v2.4.0`)
+### PostgreSQL Réplication, Multi-Maître & SQL Distribué (13 Piles Compose, `v2.1.0`–`v2.5.0`)
 
-Douze topologies PostgreSQL supplémentaires (`pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) exposent chacune `<topo>-up`, `<topo>-down`, `<topo>-status`, `<topo>-logs`, `<topo>-ps` et `<topo>-test`, ainsi que `make test-pg-extended` (T11–T18), `make bench-pg-v2`, `make bench-pg18` et `make bench-yt-cluster`. Voir [PostgreSQL Multi-Maître & SQL Distribué](documentation/pg_multimaster_fr.md).
+Les 13 piles PostgreSQL Compose (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) exposent `./mdb up|setup|test|down <pile>`, `make up-<pile>|setup-<pile>|test-<pile>|down-<pile>`, `<pile>-{up,down,status,logs,ps,test}`, `make lint`, `make test`, `make test-pg-extended` (T11–T18), `make bench-pg-v2`, `make bench-pg18` et `make bench-yt-cluster`. Pour `yt-cluster` ([`dbinvent/yt:1.21.3`](https://hub.docker.com/r/dbinvent/yt), [Présentation](https://dbinvent.com/30p), [`agent.md`](https://dbinvent.com/agent.md)), notez la séparation de licence MIT ([`DBinvent/yt-cluster-lite`](https://github.com/DBinvent/yt-cluster-lite) nœud mono-BDD) vs PolyForm Noncommercial 1.0.0 / Commercial (`ytserv` + `ytctl`) et le [rapport Jepsen](https://dbinvent.com/cluster/articles/jepsen) (`cursor-stability`, `51` initial -> `49/49` retestées). Voir [pg_multimaster_fr.md](documentation/pg_multimaster_fr.md).
 
 **Exemple : Changer de Base de Données**
 
 ```bash
-# 1. Vous travaillez avec MySQL 8.4 LTS
-make mysql84
-
-# 2. Vous voulez passer à Percona 8.4 LTS. Pas besoin d'arrêter manuellement.
-make percona84
-# Cela arrêtera mysql84 puis démarrera percona84.
-
-# 3. Vérifier l'environnement
-make verify
+./mdb up mysql84   # Démarre MySQL 8.4 LTS (ou `make mysql84`)
+./mdb up percona84 # Arrête automatiquement mysql84 puis démarre Percona 8.4 LTS
+./mdb status && ./mdb lint && ./mdb doctor
 ```
 
 ## 🏛️ Architecture
@@ -270,7 +263,9 @@ graph TD
 ├── 🐳 docker-compose-repli.yml  # Définition du Cluster MariaDB Réplication
 ├── 🐳 docker-compose-patroni.yml # Cluster PostgreSQL HA Patroni
 ├── 🐳 docker-compose-pgpool.yml  # Cluster PostgreSQL PgPool-II
-├── 🛠️ Makefile             # Gestion unifiée des instances et clusters
+├── 🚀 mdb / mdb.cmd        # Point d'entrée CLI unifié multi-OS (Linux/macOS/Windows)
+├── 🚀 cmd/mdb/ & pkg/      # Source Go native (`catalog`, `interactive`, `docker`, `topology`, `pki`, `dbclient`, `bench`, `report`)
+├── 🛠️ Makefile             # Wrapper de compatibilité déléguant à `./mdb` (plus cibles CI/tests)
 ├── 📂 documentation/      # Guides détaillés pour les clusters et scripts
 ├── 📂 reports/            # Rapports de performance et de tests
 ├── 📚 [INDEX.md](documentation/INDEX.md) # Index de la documentation
@@ -303,57 +298,26 @@ Pour des informations détaillées, veuillez vous référer aux guides suivants 
 ```mermaid
 graph TD
     A[Début] --> B{Choisir Version DB};
-    B --> C[Ex: make mysql84];
+    B --> C[Ex: ./mdb up mysql84];
     C --> D{Lancement MySQL 8.4};
     D --> E[Travailler avec la DB];
     subgraph "Actions Possibles"
         direction LR
-        F[Utiliser make client]
-        G[Vérifier logs: make logs]
-        H[Vérifier état: make status]
+        F[Utiliser ./mdb client]
+        G[Vérifier logs: ./mdb logs]
+        H[Vérifier état: ./mdb status]
     end
     E --> F & G & H;
     H --> I[Arrêter l'Environnement];
-    I --> J[make stop];
+    I --> J[./mdb down];
     J --> K[Fin];
 ```
 
-1. **Choisissez et démarrez une version** :
-
-    ```bash
-    make mysql84
-    ```
-
-2. **(Optionnel mais recommandé)** Générez votre `~/.my.cnf` :
-
-    ```bash
-    make mycnf
-    ```
-
-3. **Connectez-vous** via `localhost:3306` ou via la commande Make :
-
-    ```bash
-    make client
-    ```
-
-4. **Développez et testez** contre la base de données.
-5. **Vérifiez les logs** si nécessaire :
-
-    ```bash
-    make logs
-    ```
-
-6. **Changez de version** si besoin :
-
-    ```bash
-    make mariadb114
-    ```
-
-7. Une fois terminé, **arrêtez tout** :
-
-    ```bash
-    make stop
-    ```
+1. **Choisissez et démarrez une version** : `./mdb catalog` puis `./mdb up mysql84` (ou `mdb.cmd up mysql84` sous Windows).
+2. **(Optionnel) Générez votre `~/.my.cnf`** (avec sauvegarde `.bak` `0600`) : `./mdb mycnf`.
+3. **Connectez-vous via le shell adaptatif** : `./mdb client` (`mariadb`, `psql`, `mongosh`, `cockroach` ou `ysqlsh`).
+4. **Vérifiez les logs ou changez de moteur** : `./mdb logs`, `./mdb status` ou `./mdb up mariadb114`.
+5. **Arrêtez tout** : `./mdb down` (ou `make stop`).
 
 ## 🚀 Pipeline de Release (GitHub Actions)
 
