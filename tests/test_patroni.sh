@@ -13,11 +13,13 @@ if [ -f .env ]; then
 fi
 
 DB_USER="postgres"
+DB_PASS="${DB_ROOT_PASSWORD:-rootpass}"
 DB_NAME="test_patroni_db"
 RW_PORT=5000
 RO_PORT=5001
 HAPROXY_HOST="127.0.0.1"
-PATRONI_NET="multi-db-docker-env_patroni_net"
+PATRONI_NET=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}' haproxy-patroni 2>/dev/null | head -n1 || true)
+PATRONI_NET="${PATRONI_NET:-multi-db-docker-env_patroni_net}"
 PG_IMAGE="postgres:17-alpine"
 
 # Reports
@@ -51,7 +53,7 @@ run_psql() {
     local host="$1"
     local port="$2"
     shift 2
-    docker run --rm --network "$PATRONI_NET" "$PG_IMAGE" psql -h "$host" -p "$port" -U "$DB_USER" -t -A "$@" 2>/dev/null
+    docker run --rm --network "$PATRONI_NET" -e PGPASSWORD="$DB_PASS" "$PG_IMAGE" psql -h "$host" -p "$port" -U "$DB_USER" -t -A "$@"
 }
 
 # ─── TEST 1: Cluster Status ───
@@ -63,7 +65,7 @@ STATUS_OUTPUT=$(docker exec node1 patronictl -c /etc/patroni.yml list 2>/dev/nul
 echo "$STATUS_OUTPUT"
 write_report "\`\`\`\n$STATUS_OUTPUT\n\`\`\`"
 
-LEADER_NODE=$(echo "$STATUS_OUTPUT" | grep "Leader" | awk '{print $2}')
+LEADER_NODE=$(echo "$STATUS_OUTPUT" | grep -E "Leader|Primary" | awk '{print $2}' | head -n1)
 if [ -n "$LEADER_NODE" ]; then
     PASS=$((PASS + 1))
     echo "✅ Leader detected: $LEADER_NODE"
@@ -222,7 +224,7 @@ write_report "## 7. Version Consistency"
 VERSIONS=""
 V_OK=true
 for node in node1 node2 node3; do
-    V=$(docker exec "$node" psql -U "$DB_USER" -t -A -c "SELECT version();" 2>/dev/null | head -1 | grep -oP 'PostgreSQL \K[0-9.]+')
+    V=$(docker exec "$node" psql -U "$DB_USER" -t -A -c "SELECT version();" 2>/dev/null | head -1 | awk '{print $2}')
     VERSIONS="$VERSIONS $node=$V"
     if [ -z "$V" ]; then V_OK=false; fi
 done
@@ -262,11 +264,11 @@ echo ""
 echo "9. ⚖️ HAProxy Stats Dashboard..."
 write_report "## 9. HAProxy Stats"
 
-STATS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:7000/ 2>/dev/null || echo "000")
+STATS_CODE=$(curl -sk -u "admin:adminpass" -o /dev/null -w "%{http_code}" https://127.0.0.1:7000/ 2>/dev/null || echo "000")
 if [ "$STATS_CODE" = "200" ]; then
     PASS=$((PASS + 1))
-    echo "✅ HAProxy dashboard UP (http://localhost:7000)"
-    write_report "- ✅ HAProxy dashboard: UP (HTTP $STATS_CODE)"
+    echo "✅ HAProxy dashboard UP (https://127.0.0.1:7000)"
+    write_report "- ✅ HAProxy dashboard: UP (HTTPS $STATS_CODE)"
 else
     FAIL=$((FAIL + 1))
     echo "⚠️ HAProxy dashboard unavailable (HTTP $STATS_CODE)"
