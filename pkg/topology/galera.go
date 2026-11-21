@@ -23,11 +23,15 @@ func NewGaleraTopology() *GaleraTopology {
 }
 
 func ensureImage(ctx context.Context, client *docker.Client, tag, dir string) error {
+	return ensureImageFile(ctx, client, tag, "", dir)
+}
+
+func ensureImageFile(ctx context.Context, client *docker.Client, tag, dockerfile, dir string) error {
 	exists, err := client.ImageExists(ctx, tag)
 	if err != nil || exists {
 		return err
 	}
-	return client.BuildImage(ctx, tag, dir)
+	return client.BuildImageFile(ctx, tag, dockerfile, dir)
 }
 
 // Up ensures certs and image exist, bootstraps galera_01, joins nodes 2-3 sequentially with readiness polling, and starts HAProxy.

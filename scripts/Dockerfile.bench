@@ -1,0 +1,20 @@
+FROM postgres:17
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Grant CAP_NET_ADMIN file capability to tc so WAN netem works under non-root USER postgres.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        sysbench \
+        iproute2 \
+        iputils-ping \
+        libcap2-bin \
+        python3 \
+        python3-psycopg && \
+    setcap cap_net_admin+ep "$(command -v tc)" && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+USER postgres
+ENTRYPOINT []
+CMD ["sleep", "infinity"]

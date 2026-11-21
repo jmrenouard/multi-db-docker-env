@@ -189,6 +189,24 @@ func TestClient_ProfilesDownAllPSStatusAndImages(t *testing.T) {
 	if err := c.BuildImage(ctx, "mariadb_ssh:004", ""); err != nil {
 		t.Fatal(err)
 	}
+	if err := c.BuildImageFile(ctx, "patroni-rhel8-etcd:latest", "scripts/patroni/Dockerfile.etcd", "."); err != nil || !strings.Contains(strings.Join(m.Calls[len(m.Calls)-1], " "), "build -t patroni-rhel8-etcd:latest -f scripts/patroni/Dockerfile.etcd .") {
+		t.Fatalf("BuildImageFile: %v %v", err, m.Calls[len(m.Calls)-1])
+	}
+	if err := c.PullImage(ctx, "postgres:17"); err != nil || !strings.Contains(strings.Join(m.Calls[len(m.Calls)-1], " "), "docker pull postgres:17") {
+		t.Fatalf("PullImage: %v %v", err, m.Calls[len(m.Calls)-1])
+	}
+	m.Output = []byte("postgres:17\n<none>:<none>\nmariadb_ssh:004\n")
+	if imgs, err := c.ListLocalImages(ctx); err != nil || !imgs["postgres:17"] || !imgs["mariadb_ssh:004"] || len(imgs) != 2 {
+		t.Fatalf("ListLocalImages: %v %v", imgs, err)
+	}
+	m.ExitCode, m.Err, m.Stderr = 1, errors.New("pull err"), []byte("denied")
+	if err := c.PullImage(ctx, "postgres:17"); err == nil {
+		t.Fatal("want PullImage err")
+	}
+	if _, err := c.ListLocalImages(ctx); err == nil {
+		t.Fatal("want ListLocalImages err")
+	}
+	m.ExitCode, m.Err, m.Stderr = 0, nil, nil
 	if _, _, _, err := c.RunWithEnv(ctx, []string{"K=V"}, "bash", "s.sh"); err != nil || len(m.EnvCalls) != 1 {
 		t.Fatal(err, m.EnvCalls)
 	}
