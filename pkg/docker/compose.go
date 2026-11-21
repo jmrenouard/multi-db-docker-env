@@ -35,7 +35,7 @@ func (c *Client) ComposeDown(ctx context.Context, files []string, removeVolumes 
 }
 
 func (c *Client) ComposePS(ctx context.Context, files []string) ([]string, error) {
-	out, _, code, err := c.runner.Run(ctx, "docker", composeArgs(files, "ps", "--format", "{{.Name}}")...)
+	out, _, code, err := c.runner.Run(ctx, "docker", append(composePrefix(files, profilesFor(files)), "ps", "--orphans=false", "--format", "{{.Name}}")...)
 	if err != nil || code != 0 {
 		return nil, fmt.Errorf("docker compose ps failed (%d): %w", code, err)
 	}
@@ -180,7 +180,7 @@ func (c *Client) ComposeDownAll(ctx context.Context, filesList [][]string, proje
 
 // ComposePSStatus inspects container statuses for the given compose files.
 func (c *Client) ComposePSStatus(ctx context.Context, files []string) ([]ContainerStatus, error) {
-	out, _, code, err := c.runner.Run(ctx, "docker", append(composePrefix(files, profilesFor(files)), "ps", "--format", "{{.Name}}\t{{.Service}}\t{{.State}}\t{{.Status}}\t{{.Ports}}")...)
+	out, _, code, err := c.runner.Run(ctx, "docker", append(composePrefix(files, profilesFor(files)), "ps", "--orphans=false", "--format", "{{.Name}}\t{{.Service}}\t{{.State}}\t{{.Status}}\t{{.Ports}}")...)
 	if err != nil || code != 0 {
 		return nil, fmt.Errorf("docker compose ps failed (%d): %w", code, err)
 	}

@@ -77,11 +77,14 @@ func TestClient_Compose(t *testing.T) {
 	if strings.Contains(strings.Join(m.Calls[2], " "), "-v") {
 		t.Fatal("unexpected -v")
 	}
-	if names, err := c.ComposePS(ctx, []string{"f.yml"}); err != nil || len(names) != 2 || names[0] != "s1" {
-		t.Fatalf("compose ps: %v, %v", names, err)
+	if names, err := c.ComposePS(ctx, []string{"f.yml"}); err != nil || len(names) != 2 || names[0] != "s1" || !strings.Contains(strings.Join(m.Calls[3], " "), "ps --orphans=false --format") {
+		t.Fatalf("compose ps: %v, %v, call=%v", names, err, m.Calls[3])
+	}
+	if _, err := c.ComposePS(ctx, []string{"docker-compose.yml"}); err != nil || !strings.Contains(strings.Join(m.Calls[4], " "), "--profile * ps --orphans=false") {
+		t.Fatalf("compose ps standalone: %v, call=%v", err, m.Calls[4])
 	}
 	m.Output = []byte("out")
-	if logs, err := c.ComposeLogs(ctx, []string{"f.yml"}, 50, "s1"); err != nil || logs != "out" || !strings.Contains(strings.Join(m.Calls[4], " "), "compose -f f.yml logs --tail 50 s1") {
+	if logs, err := c.ComposeLogs(ctx, []string{"f.yml"}, 50, "s1"); err != nil || logs != "out" || !strings.Contains(strings.Join(m.Calls[5], " "), "compose -f f.yml logs --tail 50 s1") {
 		t.Fatalf("compose logs: %s, %v", logs, err)
 	}
 	m.Output, m.Stderr = nil, []byte("errlog")
@@ -120,6 +123,13 @@ func TestRealCommandRunner(t *testing.T) {
 	if len(envVars) != 1 || envVars[0] != "K=V" || strings.Contains(strings.Join(cleanArgs, " "), "--env") {
 		t.Fatalf("extractComposeEnv: args=%v env=%v", cleanArgs, envVars)
 	}
+	winEnv := mergeEnv([]string{"PATH=x", "WSLENV=EXISTING/u"}, []string{"MONGO_NODES=a b", "DB_ROOT_PASSWORD=rootpass"}, `C:\Windows\system32\bash.exe`, "windows")
+	if got := strings.Join(winEnv, ";"); !strings.Contains(got, "WSLENV=EXISTING/u:MONGO_NODES:DB_ROOT_PASSWORD") {
+		t.Fatalf("mergeEnv windows bash: %v", winEnv)
+	}
+	if linEnv := mergeEnv([]string{"PATH=x"}, []string{"K=V"}, "bash", "linux"); strings.Contains(strings.Join(linEnv, ";"), "WSLENV=") {
+		t.Fatalf("mergeEnv linux unexpected WSLENV: %v", linEnv)
+	}
 }
 
 func TestClient_ProfilesDownAllPSStatusAndImages(t *testing.T) {
@@ -133,8 +143,8 @@ func TestClient_ProfilesDownAllPSStatusAndImages(t *testing.T) {
 	if err := c.ComposeDownProfiles(ctx, []string{"docker-compose.yml"}, []string{"*"}, true); err != nil || !strings.Contains(strings.Join(m.Calls[1], " "), "--profile * down -v") {
 		t.Fatal(err)
 	}
-	if st, err := c.ComposePSStatusAll(ctx, [][]string{{"docker-compose.yml"}, {"docker-compose-galera.yml"}}); err != nil || len(st) != 1 || st[0].Service != "mariadb114" {
-		t.Fatal(st, err)
+	if st, err := c.ComposePSStatusAll(ctx, [][]string{{"docker-compose.yml"}, {"docker-compose-galera.yml"}}); err != nil || len(st) != 1 || st[0].Service != "mariadb114" || !strings.Contains(strings.Join(m.Calls[2], " "), "ps --orphans=false --format") {
+		t.Fatal(st, err, m.Calls[2])
 	}
 	m.Calls = nil
 	if err := c.ComposeDownAll(ctx, [][]string{{"docker-compose.yml"}}, "CustomProj"); err != nil || len(m.Calls) < 3 || !strings.Contains(strings.Join(m.Calls[1], " "), "project=CustomProj") {

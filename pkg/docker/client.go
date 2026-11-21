@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 )
@@ -39,11 +41,55 @@ func extractComposeEnv(name string, args []string) ([]string, []string) {
 	return filtered, envVars
 }
 
+// MergeEnv appends extra env vars to base and forwards their keys via WSLENV for Windows bash.
+func MergeEnv(base, extra []string, name string) []string {
+	return mergeEnv(base, extra, name, runtime.GOOS)
+}
+
+func mergeEnv(base, extra []string, name, goos string) []string {
+	if len(extra) == 0 {
+		return nil
+	}
+	b := strings.ToLower(filepath.Base(strings.ReplaceAll(name, `\`, "/")))
+	needWSL := goos == "windows" && (b == "bash" || b == "bash.exe")
+	out := make([]string, 0, len(base)+len(extra)+1)
+	var wslParts []string
+	seen := make(map[string]bool)
+	addWSL := func(tok string) {
+		k := strings.ToUpper(strings.SplitN(tok, "/", 2)[0])
+		if tok != "" && !seen[k] {
+			seen[k] = true
+			wslParts = append(wslParts, tok)
+		}
+	}
+	for _, kv := range base {
+		if needWSL && len(kv) > 7 && strings.EqualFold(kv[:7], "WSLENV=") {
+			for _, tok := range strings.Split(kv[7:], ":") {
+				addWSL(tok)
+			}
+			continue
+		}
+		out = append(out, kv)
+	}
+	out = append(out, extra...)
+	if needWSL {
+		for _, kv := range extra {
+			if k, _, ok := strings.Cut(kv, "="); ok && k != "" {
+				addWSL(k)
+			}
+		}
+		if len(wslParts) > 0 {
+			out = append(out, "WSLENV="+strings.Join(wslParts, ":"))
+		}
+	}
+	return out
+}
+
 func (r *RealCommandRunner) RunWithEnv(ctx context.Context, env []string, name string, args ...string) ([]byte, []byte, int, error) {
 	cleanArgs, envVars := extractComposeEnv(name, args)
 	cmd := exec.CommandContext(ctx, name, cleanArgs...)
-	if merged := append(envVars, env...); len(merged) > 0 {
-		cmd.Env = append(os.Environ(), merged...)
+	if merged := MergeEnv(os.Environ(), append(envVars, env...), name); len(merged) > 0 {
+		cmd.Env = merged
 	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr

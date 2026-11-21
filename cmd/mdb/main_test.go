@@ -286,7 +286,7 @@ func TestStatusInfoAndLogs(t *testing.T) {
 	mock := &docker.MockCommandRunner{
 		Custom: func(_ context.Context, name string, args ...string) ([]byte, []byte, int, error) {
 			line := strings.Join(args, " ")
-			if strings.Contains(line, "ps --format") {
+			if strings.Contains(line, "ps --orphans=false --format") {
 				return []byte("mysql-9.7\tmysql97\trunning\tUp 5s\t3306/tcp\n"), nil, 0, nil
 			}
 			if len(args) > 0 && args[0] == "logs" {
