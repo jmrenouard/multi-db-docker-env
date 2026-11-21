@@ -182,13 +182,14 @@ func TestBaseTopology_AutoCertsMongo8PgPoolAndTimeout(t *testing.T) {
 	}}
 	client := docker.NewClientWithRunner(mock)
 
+	t.Setenv("DB_ROOT_PASSWORD", "")
 	if err := NewMongo8Topology().Up(ctx, client); err != nil {
 		t.Fatal(err)
 	}
 	if !filesExist("ssl/certs/mongo8/ca.pem", "ssl/certs/mongo8/mongodb.pem") {
 		t.Fatal("missing mongo8 certs")
 	}
-	if len(mock.EnvCalls) == 0 || mock.EnvCalls[0][0] != "MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3" {
+	if len(mock.EnvCalls) == 0 || !strings.Contains(strings.Join(mock.EnvCalls[0], ","), "MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3") || !strings.Contains(strings.Join(mock.EnvCalls[0], ","), "DB_ROOT_PASSWORD=rootpass") {
 		t.Fatal(mock.EnvCalls)
 	}
 	if !strings.Contains(strings.Join(mock.Calls[len(mock.Calls)-2], " "), "setup_rs.sh mongo8_n1 mongo8_n2 mongo8_n3") {

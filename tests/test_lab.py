@@ -20,20 +20,24 @@ class TestDatabaseLab(unittest.TestCase):
             "-uroot",
             "-h127.0.0.1",
             "-P3306",
+            "--connect-timeout=3",
             "-e", query,
             "--skip-column-names",
             "--batch"
         ]
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+            result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=5)
             return result
         except FileNotFoundError:
             return subprocess.CompletedProcess(cmd, returncode=-1, stdout="", stderr="mysql command not found")
+        except subprocess.TimeoutExpired:
+            return subprocess.CompletedProcess(cmd, returncode=-1, stdout="", stderr="mysql connection timed out")
 
     def run_pg_query(self, query):
         """Executes a SQL query against a running PostgreSQL container via Traefik (localhost:5432)."""
         env = os.environ.copy()
         env["PGPASSWORD"] = self.db_root_password
+        env["PGCONNECT_TIMEOUT"] = "3"
         cmd = [
             "psql",
             "-h", "127.0.0.1",
@@ -43,10 +47,12 @@ class TestDatabaseLab(unittest.TestCase):
             "-t", "-A"
         ]
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+            result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=5)
             return result
         except FileNotFoundError:
             return subprocess.CompletedProcess(cmd, returncode=-1, stdout="", stderr="psql command not found")
+        except subprocess.TimeoutExpired:
+            return subprocess.CompletedProcess(cmd, returncode=-1, stdout="", stderr="psql connection timed out")
 
     def test_version(self):
         """Check if the active database version is correctly reported."""

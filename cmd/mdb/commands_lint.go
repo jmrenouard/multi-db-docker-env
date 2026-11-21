@@ -42,6 +42,14 @@ func planSetup(cat *catalog.Catalog, target string) (string, []string, []string,
 	return env.SetupScript, nil, nil, true, nil
 }
 
+func withDefaultPasswordEnv(base []string) []string {
+	env := append([]string(nil), base...)
+	if os.Getenv("DB_ROOT_PASSWORD") == "" {
+		env = append(env, "DB_ROOT_PASSWORD="+loadPassword())
+	}
+	return env
+}
+
 func runSetupCmd(ctx context.Context, cat *catalog.Catalog, args []string, stdout, stderr io.Writer, execFn scriptExecFunc) error {
 	if len(args) < 1 {
 		return errors.New("usage: mdb setup <env>")
@@ -58,7 +66,7 @@ func runSetupCmd(ctx context.Context, cat *catalog.Catalog, args []string, stdou
 		return fmt.Errorf("setup script %s not found: %w", script, err)
 	}
 	fmt.Fprintf(stdout, "Running %s for %s...\n", script, args[0])
-	return execFn(ctx, sEnv, nil, stdout, stderr, "bash", append([]string{script}, sArgs...)...)
+	return execFn(ctx, withDefaultPasswordEnv(sEnv), nil, stdout, stderr, "bash", append([]string{script}, sArgs...)...)
 }
 
 func discoverLintFiles(ctx context.Context) (sh, compose []string) {
@@ -185,11 +193,12 @@ func runTestCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalog
 		if _, err := os.Stat(script); err != nil {
 			return fmt.Errorf("suite %s not found: %w", script, err)
 		}
-		var sEnv []string
+		var sEnv, sArgs []string
 		if strings.EqualFold(name, "mongo8") {
 			sEnv = []string{"MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3"}
+			sArgs = []string{"mongo8_n1", "mongo8_n2", "mongo8_n3"}
 		}
-		return execFn(ctx, sEnv, nil, stdout, stderr, "bash", script)
+		return execFn(ctx, withDefaultPasswordEnv(sEnv), nil, stdout, stderr, "bash", append([]string{script}, sArgs...)...)
 	}
 	return nil
 }

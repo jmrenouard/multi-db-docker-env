@@ -16,11 +16,16 @@ NODE3="${MONGO_NODE3:-mongo3}"
 HAPROXY_NODE="${MONGO_HAPROXY:-haproxy_mongo}"
 HAPROXY_PORT="${MONGO_HAPROXY_PORT:-27100}"
 
-# Allow passing nodes via MONGO_NODES env var (space-separated)
+# Allow passing nodes via positional args or MONGO_NODES env var (space-separated)
+if [ $# -ge 3 ]; then
+    MONGO_NODES="$1 $2 $3"
+fi
 if [ -n "${MONGO_NODES:-}" ]; then
     read -r NODE1 NODE2 NODE3 <<< "$MONGO_NODES"
-    HAPROXY_NODE="${MONGO_HAPROXY:-haproxy_mongo8}"
-    HAPROXY_PORT="${MONGO_HAPROXY_PORT:-27200}"
+    if [[ "$NODE1" == mongo8* ]]; then
+        HAPROXY_NODE="${MONGO_HAPROXY:-haproxy_mongo8}"
+        HAPROXY_PORT="${MONGO_HAPROXY_PORT:-27200}"
+    fi
 fi
 
 PASS=0

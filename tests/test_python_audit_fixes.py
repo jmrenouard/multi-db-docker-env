@@ -1,9 +1,10 @@
-import io, os, sys, tempfile, unittest
+import io, os, subprocess, sys, tempfile, unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
-import bench_pg_lib, interactive_runner, mysql_docker
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import bench_pg_lib, interactive_runner, mysql_docker, test_lab
 
 
 class TestPythonAuditFixes(unittest.TestCase):
@@ -68,6 +69,24 @@ class TestPythonAuditFixes(unittest.TestCase):
             mysql_docker.list_containers(status_filter="stopped")
         self.assertIn("db_stopped", buf2.getvalue())
         self.assertNotIn("db_running", buf2.getvalue())
+
+    def test_lab_query_timeouts(self):
+        lab = test_lab.TestDatabaseLab("test_version")
+        lab.db_root_password = "rootpass"
+        calls = []
+
+        def fake_timeout(cmd, **kw):
+            calls.append((cmd, kw))
+            raise subprocess.TimeoutExpired(cmd, kw.get("timeout", 5))
+
+        with patch.object(test_lab.subprocess, "run", side_effect=fake_timeout):
+            res_my = lab.run_mysql_query("SELECT 1")
+            res_pg = lab.run_pg_query("SELECT 1;")
+        self.assertEqual((res_my.returncode, res_pg.returncode), (-1, -1))
+        self.assertIn("--connect-timeout=3", calls[0][0])
+        self.assertEqual(calls[0][1]["timeout"], 5)
+        self.assertEqual(calls[1][1]["env"]["PGCONNECT_TIMEOUT"], "3")
+        self.assertEqual(calls[1][1]["timeout"], 5)
 
 
 if __name__ == "__main__":

@@ -563,6 +563,13 @@
 - **Applied Change / Fix**: Added `--orphans=false` to `ComposePS`/`ComposePSStatus` (plus `profilesFor(files)` in `ComposePS`) and added `docker.MergeEnv` forwarding `extraEnv` keys via `WSLENV` on Windows `bash`.
 - **Result & Non-Regression Test**: Verified in `pkg/docker/docker_test.go` and `cmd/mdb/main_test.go`.
 
+### RCA-075 -- Missing `DB_ROOT_PASSWORD` in Setup/Suite Scripts, `test_lab.py` Hang & `DefaultService` Drift
+- **Date / Linked Action**: `2026-11-21` (`ACT-084` / Issue `#359`)
+- **Observed Symptom**: Setup/`--suite` scripts defaulted PG passwords to `pg_poc_ephemeral` when `.env` was absent while containers used `rootpass`; `make test` hung on `tests/test_lab.py` under WSL; `mdb config` reported `mariadb118` instead of `mariadb114`.
+- **Root Cause Analysis**: `BaseTopology.Up`/`runSetupCmd`/`runTestCmd --suite` omitted `DB_ROOT_PASSWORD` when unset; `test_lab.py` lacked connect/subprocess timeouts; `DefaultConfig().DefaultService` was stale.
+- **Applied Change / Fix**: Propagated `DB_ROOT_PASSWORD` when unset, passed positional node args to `tests/test_mongo_rs.sh`, added connect/5s timeouts + `TimeoutExpired` handling in `tests/test_lab.py`, and aligned `DefaultService` to `mariadb114`.
+- **Result & Non-Regression Test**: Verified in `pkg/topology/topology_test.go`, `cmd/mdb/main_test.go`, `pkg/config/config_test.go`, and `tests/test_python_audit_fixes.py`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

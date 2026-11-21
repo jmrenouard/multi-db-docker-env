@@ -9,7 +9,7 @@ import (
 
 func TestConfig_DefaultAndValidate(t *testing.T) {
 	cfg := DefaultConfig()
-	if cfg.RootPassword != "rootpass" || cfg.Validate() != nil {
+	if cfg.RootPassword != "rootpass" || cfg.DefaultService != "mariadb114" || cfg.Validate() != nil {
 		t.Fatalf("invalid default config: %+v", cfg)
 	}
 
