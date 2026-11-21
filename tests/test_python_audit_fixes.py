@@ -79,13 +79,15 @@ class TestPythonAuditFixes(unittest.TestCase):
             calls.append((cmd, kw))
             raise subprocess.TimeoutExpired(cmd, kw.get("timeout", 5))
 
-        with patch.object(test_lab.subprocess, "run", side_effect=fake_timeout):
+        with patch.dict(os.environ, {"TRAEFIK_MYSQL_PORT": "13306", "TRAEFIK_PG_PORT": "15432"}), patch.object(test_lab.subprocess, "run", side_effect=fake_timeout):
             res_my = lab.run_mysql_query("SELECT 1")
             res_pg = lab.run_pg_query("SELECT 1;")
         self.assertEqual((res_my.returncode, res_pg.returncode), (-1, -1))
         self.assertIn("--connect-timeout=3", calls[0][0])
+        self.assertIn("-P13306", calls[0][0])
         self.assertEqual(calls[0][1]["timeout"], 5)
         self.assertEqual(calls[1][1]["env"]["PGCONNECT_TIMEOUT"], "3")
+        self.assertIn("15432", calls[1][0])
         self.assertEqual(calls[1][1]["timeout"], 5)
 
 

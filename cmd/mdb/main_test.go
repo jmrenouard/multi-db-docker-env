@@ -346,9 +346,10 @@ func TestClientMyCnfAndDoctor(t *testing.T) {
 	}
 	defer func() { _ = os.Chdir(wd) }()
 
-	// mycnf backup + warning without .env
+	// mycnf backup + warning without .env + TRAEFIK_MYSQL_PORT override
 	var warn bytes.Buffer
 	home := t.TempDir()
+	t.Setenv("TRAEFIK_MYSQL_PORT", "13306")
 	_ = os.WriteFile(filepath.Join(home, ".my.cnf"), []byte("old-cnf"), 0600)
 	backed, err := writeMyCnf(home, loadPasswordWarn(&warn))
 	if err != nil || !backed || !strings.Contains(warn.String(), "rootpass") {
@@ -357,7 +358,7 @@ func TestClientMyCnfAndDoctor(t *testing.T) {
 	if bak, err := os.ReadFile(filepath.Join(home, ".my.cnf.bak")); err != nil || string(bak) != "old-cnf" {
 		t.Fatalf("backup mismatch: %q err=%v", string(bak), err)
 	}
-	if cnf, err := os.ReadFile(filepath.Join(home, ".my.cnf")); err != nil || !strings.Contains(string(cnf), "password=rootpass") {
+	if cnf, err := os.ReadFile(filepath.Join(home, ".my.cnf")); err != nil || !strings.Contains(string(cnf), "password=rootpass") || !strings.Contains(string(cnf), "port=13306") {
 		t.Fatalf("mycnf mismatch: %q err=%v", string(cnf), err)
 	}
 
@@ -399,7 +400,10 @@ func TestClientMyCnfAndDoctor(t *testing.T) {
 		}
 		return os.Stat(tmp)
 	}
-	if err := runDoctorCmd(ctx, &out, "windows", okLook, noEnv, client); err != nil || !strings.Contains(out.String(), "mdb.cmd") || !strings.Contains(out.String(), "Docker Compose") {
+	origPortBound := doctorPortBound
+	doctorPortBound = func(port string) bool { return port == "3306" }
+	defer func() { doctorPortBound = origPortBound }()
+	if err := runDoctorCmd(ctx, &out, "windows", okLook, noEnv, client); err != nil || !strings.Contains(out.String(), "mdb.cmd") || !strings.Contains(out.String(), "Docker Compose") || !strings.Contains(out.String(), "TRAEFIK_MYSQL_PORT") {
 		t.Fatalf("doctor healthy err=%v out=%s", err, out.String())
 	}
 	out.Reset()

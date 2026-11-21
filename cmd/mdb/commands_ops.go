@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/jmrenouard/multi-db-docker-env/pkg/catalog"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
@@ -135,10 +137,23 @@ func writeMyCnf(homeDir, pass string) (bool, error) {
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return false, err
 	}
-	if err := os.WriteFile(cnf, []byte(fmt.Sprintf("[client]\nuser=root\npassword=%s\nhost=127.0.0.1\n", pass)), 0600); err != nil {
+	port := strings.TrimSpace(os.Getenv("TRAEFIK_MYSQL_PORT"))
+	if port == "" {
+		port = "3306"
+	}
+	if err := os.WriteFile(cnf, []byte(fmt.Sprintf("[client]\nuser=root\npassword=%s\nhost=127.0.0.1\nport=%s\n", pass, port)), 0600); err != nil {
 		return backedUp, err
 	}
 	return backedUp, os.Chmod(cnf, 0600)
+}
+
+var doctorPortBound = func(port string) bool {
+	c, err := net.DialTimeout("tcp", "127.0.0.1:"+port, 150*time.Millisecond)
+	if err != nil {
+		return false
+	}
+	_ = c.Close()
+	return true
 }
 
 func runMyCnfCmd(stdout, stderr io.Writer) error {
@@ -192,6 +207,13 @@ func runDoctorCmd(ctx context.Context, w io.Writer, goos string, lookPath func(s
 		fmt.Fprintln(w, "[OK]      .env       present")
 	} else {
 		fmt.Fprintln(w, "[WARN]    .env       missing (using default 'rootpass')")
+	}
+	for _, p := range []struct{ port, env string }{{"3306", "TRAEFIK_MYSQL_PORT"}, {"5432", "TRAEFIK_PG_PORT"}} {
+		if doctorPortBound(p.port) {
+			fmt.Fprintf(w, "[WARN]    port %-5s already bound on localhost (set %s=<port> to override)\n", p.port, p.env)
+		} else {
+			fmt.Fprintf(w, "[OK]      port %-5s available\n", p.port)
+		}
 	}
 	for _, d := range []string{"ssl", "ssl/innodb", "ssl/pgpool", "ssl/mongo", "ssl/certs/mongo8", "certs_patroni"} {
 		if _, err := stat(d); err == nil {

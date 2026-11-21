@@ -371,7 +371,7 @@ fi
 
 echo -e "\n12. 🎯 Router Connectivity Test..."
 write_report "### Router Connectivity Test"
-ROUTER_PORT=${GALERA_ROUTER_PORT:-3306}
+ROUTER_PORT="${GALERA_LB_PORT:-${GALERA_ROUTER_PORT:-3306}}"
 if run_sql $ROUTER_PORT "SELECT 1" > /dev/null 2>&1; then
     PASS=$((PASS + 1))
     echo "✅ Router connection verified on port $ROUTER_PORT"

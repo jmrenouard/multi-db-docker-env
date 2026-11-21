@@ -81,6 +81,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-085 -- Parameterizable Traefik & Galera Host Ports + `mycnf`/`doctor` Port Hints (`#362`)
+- **Timestamp / Issue / Branch**: `2026-11-21T19:55Z` | Issue `#362` | `feat/issue-362-configurable-host-ports`
+- **Request**: Parameterize Traefik (`3306`/`5432`) and Galera (`3306`) host ports with defaults preserved, wire `TRAEFIK_MYSQL_PORT` into `mdb mycnf`, and add localhost port-in-use warnings to `mdb doctor`.
+- **Changes**: Updated `docker-compose.yml`, `docker-compose-galera.yml`, `tests/{test_galera,test_haproxy_galera,test_lb_galera}.sh`, `tests/{test_lab,test_python_audit_fixes}.py`, `cmd/mdb/{commands_ops,main_test}.go`, and `docs/RCA_REGISTER.md` (`RCA-076`).
+- **Result**: Verified `go test ./...` (11/11), `unittest` (53 ran: 47 ok, 6 skipped), `mdb lint`, diff `< 15,000` B, and CI `test-and-validate` green.
+
 ### ACT-084 -- E2E Fixes: Setup/Suite `DB_ROOT_PASSWORD`, `test_mongo_rs.sh` Args, `test_lab.py` Timeouts & `DefaultService` (`#359`)
 - **Timestamp / Issue / Branch**: `2026-11-21T19:47Z` | Issue `#359` | `fix/issue-359-env-timeouts-defaults`
 - **Request**: Propagate `DB_ROOT_PASSWORD` to setup/`--suite` scripts when unset, accept positional node args in `tests/test_mongo_rs.sh`, bound `tests/test_lab.py` query timeouts, and align `DefaultService` to `mariadb114`.
