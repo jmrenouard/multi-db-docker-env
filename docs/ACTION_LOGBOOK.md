@@ -82,6 +82,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-101 -- `mdb images` CLI (`list|build|pull|check`) & Thin `Makefile` Wrappers (`#399`)
+- **Timestamp / Issue / Branch**: `2026-11-21T23:22Z` | Issue `#399` | `feat/issue-399-mdb-images-cli`
+- **Request**: Implement `mdb images` (`list [--json]`, `build`, `pull`, `check`), thin `Makefile` wrappers (`build-images`, `pull-images`, `check-images`), and 21-compose parity tests covering all 31 E2E images.
+- **Changes**: Added `cmd/mdb/commands_images{,_test}.go`, wired `images` in `cmd/mdb/{main,commands_lifecycle}.go`, and added thin wrappers in `Makefile`.
+- **Result**: Verified `go test -count=1 ./...` (11/11), `python -m unittest discover -s tests -v`, `mdb lint`, `mdb images check` (31/31 PRESENT), and diff `< 15,000` B.
+
 ### ACT-100 -- Self-Contained Patroni Dockerfiles, Config, Supervisor & Entrypoint (`#396`)
 - **Timestamp / Issue / Branch**: `2026-11-21T22:25Z` | Issue `#396` | `feat/issue-396-patroni-dockerfiles`
 - **Request**: Author missing Patroni Dockerfiles (`etcd`, `postgresql`, `haproxy`), `conf/patroni.yml`, non-root supervisor config, and non-root entrypoint support.

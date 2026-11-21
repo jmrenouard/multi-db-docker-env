@@ -154,6 +154,8 @@ func main() {
 		runOrExit(runTestCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:], os.Stdout, os.Stderr, streamCommand))
 	case "bench":
 		runOrExit(runBenchCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:]))
+	case "images":
+		runOrExit(runImagesCmd(ctx, docker.NewClient(), os.Args[2:], os.Stdout))
 	case "report":
 		fs := flag.NewFlagSet("report", flag.ExitOnError)
 		jsonOut := fs.String("json", "", "Path to export JSON telemetry report")

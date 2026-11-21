@@ -937,8 +937,18 @@ COMPOSE_GALERA = docker-compose-galera.yml
 COMPOSE_REPLI = docker-compose-repli.yml
 
 ## Image Management
+.PHONY: build-images pull-images check-images
 build-image: ## Build the base mariadb_ssh image
 	docker build -t $(IMAGE_NAME) .
+
+build-images: ## Build custom E2E images via ./mdb images build [TARGET]
+	@./mdb images build $(TARGET)
+
+pull-images: ## Pull upstream E2E images via ./mdb images pull [TARGET]
+	@./mdb images pull $(TARGET)
+
+check-images: ## Verify all required E2E images exist locally via ./mdb images check
+	@./mdb images check
 
 install-client: ## Install MariaDB client on the host (Ubuntu/Debian)
 	sudo apt-get update && sudo apt-get install -y mariadb-client
