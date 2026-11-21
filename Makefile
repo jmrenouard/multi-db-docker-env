@@ -173,6 +173,42 @@ test-mongo8: ## Run functional tests on MongoDB 8 ReplicaSet
 	@MONGO_NODES="mongo8_n1 mongo8_n2 mongo8_n3" bash ./tests/test_mongo_rs.sh
 
 # --- POSTGRESQL REPLICATION & MULTI-MASTER CLUSTERS ---
+PG_STACKS = pg17-baseline pg-streaming pg-logical pg-birep pgedge bucardo citus cockroach yugabyte pg18-streaming pg18-logical pg18-birep yt-cluster
+
+$(addprefix up-,$(PG_STACKS)): up-%:
+	docker compose -f docker-compose-$*.yml up -d
+
+$(addprefix down-,$(PG_STACKS)): down-%:
+	docker compose -f docker-compose-$*.yml down -v
+
+$(addprefix setup-,$(PG_STACKS)): setup-%:
+	@if $(MDB_CHECK); then ./mdb setup $*; else \
+		case "$*" in \
+			pg17-baseline) echo "No setup script required for pg17-baseline." ;; \
+			pg-birep) bash ./scripts/pg_birep/setup_birep.sh ;; \
+			pg18-birep) bash ./scripts/pg18_birep/setup_pg18_birep.sh ;; \
+			pg-*) s="$*"; s="$${s//-/_}"; PG_STREAM_MODE=$${PG_STREAM_MODE:-async} bash "./scripts/$${s}/setup_$${s}.sh" ;; \
+			pgedge|bucardo|citus|cockroach|yugabyte) bash "./scripts/$*/setup_$*.sh" ;; \
+			yt-cluster) bash ./scripts/yt_cluster/setup_yt_cluster.sh ;; \
+		esac; \
+	fi
+
+PG17_BASELINE_COMPOSE = docker-compose-pg17-baseline.yml
+pg17-baseline-up: up-pg17-baseline ## Start PG 17 baseline standalone + sync primary/standby cluster
+pg17-baseline-down: down-pg17-baseline ## Stop pg17-baseline cluster and remove volumes
+pg17-baseline-status: ## Show pg17-baseline status and containers
+	docker compose -f $(PG17_BASELINE_COMPOSE) ps && docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pg17_sync_primary psql -U postgres -d labdb -c "SELECT application_name, state, sync_state FROM pg_stat_replication;"
+pg17-baseline-logs: ## Follow pg17-baseline logs
+	docker compose -f $(PG17_BASELINE_COMPOSE) logs -f
+pg17-baseline-ps: ## List pg17-baseline containers
+	docker compose -f $(PG17_BASELINE_COMPOSE) ps
+test-pg17-baseline: ## Run pg17-baseline readiness and sync replication check
+	@if $(MDB_CHECK); then ./mdb test pg17-baseline; else \
+		docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pg17_standalone psql -U postgres -d labdb -c "SELECT 1;" >/dev/null && \
+		docker exec -e PGPASSWORD="$${DB_ROOT_PASSWORD:-rootpass}" pg17_sync_primary psql -U postgres -d labdb -c "SELECT application_name, state, sync_state FROM pg_stat_replication;"; \
+	fi
+pg17-baseline-test: test-pg17-baseline
+
 PG_STREAMING_COMPOSE = docker-compose-pg-streaming.yml
 pg-streaming-up: ## Start 2-node PG 17 physical streaming replication cluster (async/sync)
 	docker compose -f $(PG_STREAMING_COMPOSE) up -d && PG_STREAM_MODE=$${PG_STREAM_MODE:-async} bash ./scripts/pg_streaming/setup_pg_streaming.sh
@@ -372,8 +408,10 @@ bench-yt-cluster: ## Run sequential empirical benchmarks on YT Cluster 1.21.3 (s
 clean-pg18: pg18-streaming-down pg18-logical-down pg18-birep-down yt-cluster-down ## Stop and remove all PG 18 / YT Cluster stacks and volumes
 
 # --- Main Targets ---
-.PHONY: help catalog doctor interactive mycnf client info mysql97 mysql84 mysql96 mysql80 mysql57 mariadb123 mariadb118 mariadb114 mariadb1011 mariadb106 percona84 percona80 postgres18 postgres17 postgres16 postgres15 stop status logs \
+.PHONY: help catalog doctor interactive lint test mycnf client info mysql97 mysql84 mysql96 mysql80 mysql57 mariadb123 mariadb118 mariadb114 mariadb1011 mariadb106 percona84 percona80 postgres18 postgres17 postgres16 postgres15 stop status logs \
         build-image galera-up galera-down galera-status galera-logs repli-up repli-down repli-status repli-logs test-repli test-galera test-patroni \
+        $(addprefix up-,$(PG_STACKS)) $(addprefix setup-,$(PG_STACKS)) $(addprefix down-,$(PG_STACKS)) \
+        pg17-baseline-up pg17-baseline-down pg17-baseline-status pg17-baseline-logs pg17-baseline-ps test-pg17-baseline pg17-baseline-test \
         pgpool-up pgpool-down pgpool-status pgpool-logs pgpool-ps test-pgpool \
         innodb-up innodb-down innodb-status innodb-logs innodb-ps test-innodb \
         mongo-up mongo-down mongo-status mongo-logs mongo-ps test-mongo \
@@ -416,25 +454,24 @@ help:
 	@if $(MDB_CHECK); then \
 		./mdb help; \
 		printf "\nMake Compatibility Wrappers:\n"; \
-		printf "  General:    make start | stop | status | info | logs | client | mycnf | catalog | doctor | interactive\n"; \
+		printf "  General:    make start | stop | status | info | logs | client | mycnf | catalog | doctor | interactive | lint | test\n"; \
 		printf "  Standalone: make mysql97 | mysql84 | mariadb123 | mariadb118 | mariadb114 | mariadb1011 | percona84 | postgres18..15\n"; \
-		printf "  Clusters:   make <topo>-up | <topo>-down | <topo>-status | <topo>-logs (galera, repli, innodb, patroni, pgpool, mongo, mongo8, pg-*, citus, cockroach, yugabyte)\n"; \
-		if [ -f "$(YT_CLUSTER_COMPOSE)" ]; then printf "  Optional:   make yt-cluster-up | yt-cluster-down | yt-cluster-status | test-yt-cluster\n"; fi; \
+		printf "  Clusters:   make <topo>-up | <topo>-down | <topo>-status | <topo>-logs (galera, repli, innodb, patroni, pgpool, mongo, mongo8, pg-*, citus, cockroach, yugabyte, yt-cluster)\n"; \
+		printf "  PG Stacks:  make up-<stack> | setup-<stack> | test-<stack> | down-<stack> (13 stacks incl. pg17-baseline, pg-*, pgedge, bucardo, citus, cockroach, yugabyte, pg18-*, yt-cluster)\n"; \
 		printf "  CI/Tests:   make gen-ssl-all | check-ssl-all | test-config | test-backup-restore | test-failover | mysqltuner-galera | test-all-report\n"; \
 	else \
 		printf "Usage: make <target> (build bin/mdb or install Go to use unified ./mdb CLI)\n"; \
-		printf "  General:    stop status info logs mycnf client catalog doctor interactive\n"; \
+		printf "  General:    stop status info logs mycnf client catalog doctor interactive lint test\n"; \
 		printf "  Standalone: mysql97 mysql84 mariadb123 mariadb118 mariadb114 mariadb1011 percona84 postgres18 postgres17 postgres16 postgres15\n"; \
-		printf "  Clusters:   galera-up repli-up innodb-up patroni-up pgpool-up mongo-up mongo8-up pg-streaming-up pg-logical-up pg-birep-up pgedge-up bucardo-up citus-up cockroach-up yugabyte-up pg18-streaming-up pg18-logical-up pg18-birep-up\n"; \
-		if [ -f "$(YT_CLUSTER_COMPOSE)" ]; then printf "  Optional:   yt-cluster-up yt-cluster-down yt-cluster-status test-yt-cluster\n"; fi; \
-		printf "  Testing:    test-config test-galera test-repli test-all test-all-topologies\n"; \
+		printf "  Clusters:   galera-up repli-up innodb-up patroni-up pgpool-up mongo-up mongo8-up pg17-baseline-up pg-streaming-up pg-logical-up pg-birep-up pgedge-up bucardo-up citus-up cockroach-up yugabyte-up pg18-streaming-up pg18-logical-up pg18-birep-up yt-cluster-up\n"; \
+		printf "  PG Stacks:  up-<stack> setup-<stack> test-<stack> down-<stack>\n"; \
+		printf "  Testing:    lint test test-config test-galera test-repli test-all test-all-topologies\n"; \
 	fi
 
 catalog: ## List all supported database environments and clusters via mdb
 	@if $(MDB_CHECK); then ./mdb catalog; else \
 		echo "Standalone: mysql97 mysql84 mariadb123 mariadb118 mariadb114 mariadb1011 percona84 postgres18 postgres17 postgres16 postgres15"; \
-		echo "Clusters:   galera repli innodb patroni pgpool mongo mongo8 pg-streaming pg-logical pg-birep pg18-streaming pg18-logical pg18-birep pgedge bucardo citus cockroach yugabyte"; \
-		if [ -f "$(YT_CLUSTER_COMPOSE)" ]; then echo "Optional:   yt-cluster"; fi; \
+		echo "Clusters:   galera repli innodb patroni pgpool mongo mongo8 pg17-baseline pg-streaming pg-logical pg-birep pgedge bucardo citus cockroach yugabyte pg18-streaming pg18-logical pg18-birep yt-cluster"; \
 	fi
 
 doctor: ## Run environment and dependency diagnostics via mdb
@@ -446,6 +483,16 @@ interactive: ## Launch unified interactive wizard via mdb (with Python fallback)
 	@if $(MDB_CHECK) && ./mdb help 2>/dev/null | grep -qw "interactive"; then ./mdb interactive; else \
 		python3 interactive_runner.py; \
 	fi
+
+lint: ## Validate shell script syntax and all Docker Compose configurations
+	@if $(MDB_CHECK); then ./mdb lint; else \
+		rc=0; for f in $$(git ls-files '*.sh' 2>/dev/null || find . -maxdepth 4 -name '*.sh' -not -path './.git/*' -not -path './test_db/*'); do bash -n "$$f" || rc=1; done; \
+		ENV_ARG=""; [ ! -f .env ] && [ -f .env.example ] && ENV_ARG="--env-file .env.example"; \
+		for cf in docker-compose.yml docker-compose-*.yml; do [ -f "$$cf" ] && { docker compose $$ENV_ARG -f "$$cf" config -q || rc=1; }; done; \
+		exit $$rc; \
+	fi
+
+test: test-config ## Alias for test-config
 
 # 🚀 Starts the default database service
 start: $(DEFAULT_SERVICE)
