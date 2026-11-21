@@ -42,7 +42,7 @@ Comprehensive reference of all database engines and infrastructure components su
 **HA, Replication & Multi-Master Modes**:
 - Patroni Cluster (3 PG 17 + 3 ETCD + HAProxy, ports 5000/5001/7000)
 - PgPool-II Cluster (3 PG 17 + PgPool 4.6 + HAProxy, ports 5100/5101/8406)
-- Replication & Multi-Master (`v2.1.0`–`v2.3.0`): `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `pgedge` (Spock 5), `bucardo`, `citus` (14.2), `cockroach` (v25.4), `yugabyte` (2026.1) — see [pg_multimaster.md](pg_multimaster.md).
+- Replication, Multi-Master & Distributed SQL (all 13 PG Compose stacks, `v2.1.0`–`v2.5.0`): `pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster` ([`dbinvent/yt:1.21.3`](https://hub.docker.com/r/dbinvent/yt), PG 18.7; MIT [`DBinvent/yt-cluster-lite`](https://github.com/DBinvent/yt-cluster-lite) single-DB leaf vs PolyForm Noncommercial 1.0.0 / Commercial `ytserv`/`ytctl`; [Overview](https://dbinvent.com/30p) · [`agent.md`](https://dbinvent.com/agent.md) · [Jepsen `1.20.1`](https://dbinvent.com/cluster/articles/jepsen) `cursor-stability`, `51` -> `49/49`), `pgedge` (Spock 5), `bucardo`, `citus` (14.2), `cockroach` (`latest-v25.4`), `yugabyte` (`2026.1.3`) — see [pg_multimaster.md](pg_multimaster.md). Use `./mdb catalog` (`31` active + `5` EOL) or `./mdb up <env>`.
 
 ## 🍃 MongoDB
 
@@ -65,7 +65,7 @@ Comprehensive reference of all database engines and infrastructure components su
 
 ## 🛑 Decommissioned Versions (End-of-Life)
 
-The following versions have reached official community End-of-Life (EOL) and have been removed from active Compose stacks and CLI menus. Legacy `Makefile` targets print an EOL notice with the recommended upgrade target.
+The following versions have reached official community End-of-Life (EOL) and have been removed from active Compose stacks and CLI menus. `./mdb catalog --eol` lists them, and `./mdb up <eol>` or legacy `Makefile` targets exit with status `1`, the official EOL date, and the recommended replacement.
 
 | Product | Decommissioned Version | Official EOL Date | Decommissioning Note | Recommended Replacement |
 | :--- | :--- | :--- | :--- | :--- |
