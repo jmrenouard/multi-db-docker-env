@@ -82,6 +82,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-097 -- E2E Fixes: `mdb inject` `/var/tmp` & `haproxy_galera` `--no-deps` (`#392`)
+- **Timestamp / Issue / Branch**: `2026-11-21T21:02Z` | Issue `#392` | `fix/issue-392-galera-nodeps-inject-vartmp`
+- **Request**: Fix `mdb inject employees galera` under Galera's `/tmp` `tmpfs` mount and prevent `mdb up galera` from recreating `galera_01` when starting `haproxy_galera`.
+- **Changes**: Updated `cmd/mdb/commands_admin.go`, `pkg/topology/{galera,topology_test}.go`, `tests/test_python_audit_fixes.py`, and `docs/RCA_REGISTER.md` (`RCA-084`).
+- **Result**: Verified `go test ./...` (11/11), `unittest` (59 ran: 53 ok, 6 skipped), `mdb lint`, diff `< 15,000` B, and CI `test-and-validate` green.
+
 ### ACT-096 -- Documentation Sync, `v2.6.0` Release Bump & Governance Registers (`#386`)
 - **Timestamp / Issue / Branch**: `2026-11-21T20:51Z` | Issue `#386` | `docs/issue-386-v260-docs`, `chore/issue-386-release-v260`, `docs/issue-386-governance-v260`
 - **Request**: Document all durable `v2.6.0` Compose optimizations and 18-topology benchmark behavior in EN/FR guides, bump version to `2.6.0`, and synchronize governance registers.

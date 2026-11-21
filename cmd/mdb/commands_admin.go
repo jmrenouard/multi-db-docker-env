@@ -70,12 +70,12 @@ func runInjectCmd(ctx context.Context, client *docker.Client, cat *catalog.Catal
 		fmt.Println("Note: substituting 'sakila' for mysql97 (nested source compatibility).")
 		dbName = "sakila"
 	}
-	if err := streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", "cp", filepath.ToSlash(filepath.Join("test_db", dbName)), ctr+":/tmp/"); err != nil {
+	if err := streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", "cp", filepath.ToSlash(filepath.Join("test_db", dbName)), ctr+":/var/tmp/"); err != nil {
 		return err
 	}
-	sqlCmd := "cd /tmp/employees && if command -v mariadb >/dev/null 2>&1; then mariadb -uroot < employees.sql; else mysql -uroot < employees.sql; fi"
+	sqlCmd := "cd /var/tmp/employees && if command -v mariadb >/dev/null 2>&1; then mariadb -uroot < employees.sql; else mysql -uroot < employees.sql; fi"
 	if dbName == "sakila" {
-		sqlCmd = "cd /tmp/sakila && if command -v mariadb >/dev/null 2>&1; then mariadb -uroot < sakila-mv-schema.sql && mariadb -uroot < sakila-mv-data.sql; else mysql -uroot < sakila-mv-schema.sql && mysql -uroot < sakila-mv-data.sql; fi"
+		sqlCmd = "cd /var/tmp/sakila && if command -v mariadb >/dev/null 2>&1; then mariadb -uroot < sakila-mv-schema.sql && mariadb -uroot < sakila-mv-data.sql; else mysql -uroot < sakila-mv-schema.sql && mysql -uroot < sakila-mv-data.sql; fi"
 	}
 	return streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", "exec", "-i", "-e", "MYSQL_PWD="+pass, ctr, "sh", "-c", sqlCmd)
 }

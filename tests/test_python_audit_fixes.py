@@ -110,6 +110,9 @@ class TestPythonAuditFixes(unittest.TestCase):
         self.assertNotIn("gdatadir_01", galera)
         for i in (1, 2, 3):
             self.assertIn("gcache.size=128M", (root / f"conf/gcustom_{i}.cnf").read_text(encoding="utf-8"))
+        admin = (root / "cmd/mdb/commands_admin.go").read_text(encoding="utf-8")
+        self.assertIn('ctr+":/var/tmp/"', admin)
+        self.assertNotIn('ctr+":/tmp/"', admin)
 
 
 if __name__ == "__main__":
