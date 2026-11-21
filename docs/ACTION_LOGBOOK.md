@@ -82,6 +82,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-100 -- Self-Contained Patroni Dockerfiles, Config, Supervisor & Entrypoint (`#396`)
+- **Timestamp / Issue / Branch**: `2026-11-21T22:25Z` | Issue `#396` | `feat/issue-396-patroni-dockerfiles`
+- **Request**: Author missing Patroni Dockerfiles (`etcd`, `postgresql`, `haproxy`), `conf/patroni.yml`, non-root supervisor config, and non-root entrypoint support.
+- **Changes**: Added `scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}` (pinned bases, non-root `USER`, 0 HIGH/WARN/INFO lint, 0 baked secrets/SSH keys) and `conf/patroni.yml`; updated `conf/supervisord-patroni.conf`, `scripts/patroni/entrypoint_node.sh`, and `docs/RCA_REGISTER.md` (`RCA-086`).
+- **Result**: Built `patroni-rhel8-etcd:latest` (`130MB`), `patroni-rhel8-postgresql:latest` (`513MB`), and `patroni-rhel8-haproxy:latest` (`117MB`); verified `go test -count=1 ./...`, `unittest`, `mdb lint`, and `lint_dockerfile.py`.
+
 ### ACT-099 -- Reproducible `scripts/Dockerfile.bench`, Docker Image APIs & Patroni Auto-Build (`#397`)
 - **Timestamp / Issue / Branch**: `2026-11-21T23:16Z` | Issue `#397` | `feat/issue-397-mdb-images-cli`
 - **Request**: Add reproducible `scripts/Dockerfile.bench` for `multi-db-pgbench-sysbench:latest`, extend `pkg/docker` with `BuildImageFile`/`PullImage`/`ListLocalImages`, and add Patroni image auto-build in `pkg/topology/patroni.go`.
