@@ -633,6 +633,13 @@
 - **Applied Change / Fix**: Switched `runInjectCmd` (`cmd/mdb/commands_admin.go`) to `/var/tmp/` and added `--no-deps` when starting `haproxy_galera` in `pkg/topology/galera.go`.
 - **Result & Non-Regression Test**: Verified in `pkg/topology/topology_test.go` and `tests/test_python_audit_fixes.py`.
 
+### RCA-085 -- Bucardo `sbtest4` Peer Wait Timeout & Runner `.env` Credential Precedence (`v2.6.1`)
+- **Date / Linked Action**: `2026-11-21` (`ACT-098` / Issue `#394`)
+- **Observed Symptom**: (1) `bench_pg_optimized_runner.sh` timed out on `bucardo` during `run_sysbench_opt` (`RuntimeError: Timeout waiting for sbtest4 count=25000 on bucardo_node2`); (2) `pg17-logical` setup failed authentication when a local `.env` existed and credentials were not pre-exported before invoking the runner.
+- **Root Cause Analysis**: (1) Trigger-based Bucardo replicates `sync_pgbench` only (`pgbench_*`), does not replicate DDL or `sbtest1..4` to `bucardo_node2`, and `run_sysbench_opt` queries only `hs[0]`, yet `_sb_prepare` waited for `sbtest4` on `hs[1:]`; (2) `bench_pg_optimized_runner.sh` defaulted `PG_PASS`/`DB_ROOT_PASSWORD` to `pg_poc_ephemeral` before sourcing `.env`, causing `docker compose` to receive the fallback while `scripts/*/setup_*.sh` sourced `.env`.
+- **Applied Change / Fix**: Excluded `"bucardo"` in `_sb_prepare` (`scripts/bench_pg_opt_workloads.py`), added `cd "$BENCH_ROOT"` + `[ -f .env ] && { set -a; . ./.env; set +a; }` and `DB_ROOT_PASSWORD`-first precedence before `export PG_PASS` in `scripts/bench_pg_optimized_runner.sh`, and released `v2.6.1`.
+- **Result & Non-Regression Test**: Verified in `tests/test_pg_libs.py` (`test_sb_prepare_skips_bucardo_slave_wait`, `test_optimized_runner_sources_dotenv_before_pg_pass`), `go test -count=1 ./...`, `bash ./tests/test_config.sh`, and `release_notes.py --tag v2.6.1 --check`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

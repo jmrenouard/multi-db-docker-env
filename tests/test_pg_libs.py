@@ -1,6 +1,8 @@
 """Deterministic unit tests for PG benchmark and extended test libraries."""
 import csv
 import io
+import os
+import shutil
 import subprocess as sp
 import sys
 import tempfile
@@ -287,6 +289,46 @@ class TestBenchPgOptimizedLib(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 bopt.run_wan_netem_opt("citus", 25, 12, ["citus_coord"], 5432, "postgres", "pw", 20, ["citus_worker1", "citus_worker2"], "img")
         self.assertEqual(tc_ops, [("citus_worker1", "replace"), ("citus_worker2", "replace"), ("citus_worker1", "del"), ("citus_worker2", "del")])
+
+    def test_sb_prepare_skips_bucardo_slave_wait(self):
+        with patch.object(bow, "_sb_cleanup"), \
+             patch.object(bow, "bc", return_value=sp.CompletedProcess([], 0, "", "")), \
+             patch.object(bow, "wcnt_opt") as m_wcnt:
+            for topo, hosts in (
+                ("bucardo", ["bucardo_node1", "bucardo_node2"]),
+                ("yugabyte", ["yb-node1", "yb-node2", "yb-node3"]),
+                ("cockroach-rc", ["crdb_node1", "crdb_node2", "crdb_node3"]),
+            ):
+                self.assertEqual(bow._sb_prepare(topo, hosts, 5432, "postgres", "pw", "--tables=4", 25000, False), 0)
+            m_wcnt.assert_not_called()
+
+            self.assertEqual(bow._sb_prepare("pgedge", ["pgedge_node1", "pgedge_node2", "pgedge_node3"], 5432, "postgres", "pw", "--tables=4", 25000, False), 0)
+            self.assertEqual([c.args[0] for c in m_wcnt.call_args_list], ["pgedge_node2", "pgedge_node3"])
+
+    def test_optimized_runner_sources_dotenv_before_pg_pass(self):
+        runner = Path(__file__).resolve().parent.parent / "scripts" / "bench_pg_optimized_runner.sh"
+        src = runner.read_text(encoding="utf-8")
+        dotenv_stmt = "[ -f .env ] && { set -a; . ./.env; set +a; }"
+        self.assertIn(dotenv_stmt, src)
+        self.assertLess(src.index('cd "$BENCH_ROOT"'), src.index(dotenv_stmt))
+        self.assertLess(src.index(dotenv_stmt), src.index("export PG_PASS="))
+        if not shutil.which("bash"):
+            return
+        prologue = "\n".join(src.splitlines()[: src.splitlines().index("exec python3 - \"$@\" <<'PY'")])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "scripts").mkdir()
+            (root / "sub").mkdir()
+            (root / ".env").write_text("DB_ROOT_PASSWORD=dotenv_secret_check\n", encoding="utf-8", newline="\n")
+            (root / "scripts" / "env_probe.sh").write_text(
+                prologue + '\nprintf "%s|%s|%s" "$PG_PASS" "$DB_ROOT_PASSWORD" "$PG_LAB_PASSWORD"\n',
+                encoding="utf-8",
+                newline="\n",
+            )
+            env = {k: v for k, v in os.environ.items() if k not in ("DB_ROOT_PASSWORD", "PG_LAB_PASSWORD", "PG_PASS")}
+            env["PG_LAB_PASSWORD"] = "stale_shell_override"
+            res = sp.run(["bash", "../scripts/env_probe.sh"], cwd=root / "sub", env=env, capture_output=True, text=True, check=True)
+            self.assertEqual(res.stdout, "dotenv_secret_check|dotenv_secret_check|dotenv_secret_check")
 
 
 if __name__ == "__main__":

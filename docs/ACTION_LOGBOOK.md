@@ -82,6 +82,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-098 -- Hotfix Release `v2.6.1`: Bucardo `sbtest4` Wait Skip & Runner `.env` Sourcing (`#394`)
+- **Timestamp / Issue / Branch**: `2026-11-21T21:58Z` | Issue `#394` | `fix/issue-394-bucardo-env-v261`
+- **Request**: Fix Bucardo `_sb_prepare` timeout on `bucardo_node2` `sbtest4`, align `.env` credential sourcing in `scripts/bench_pg_optimized_runner.sh`, add regression tests, update governance registers, and release `v2.6.1`.
+- **Changes**: Excluded `"bucardo"` from `hs[1:]` `wcnt_opt` in `scripts/bench_pg_opt_workloads.py`; added `cd "$BENCH_ROOT"` and `.env` sourcing before `PG_PASS` in `scripts/bench_pg_optimized_runner.sh`; added unit tests in `tests/test_pg_libs.py`; bumped `VERSION`, `cmd/mdb/{main,main_test}.go`, and `Changelog` (trimmed `1.0.6`, `<= 600` lines); logged `RCA-085`.
+- **Result**: Verified `go test -count=1 ./...` (11/11), `python3 -m unittest discover -s tests -v` (61 ran: 55 ok, 6 skipped), `bash -n`, `bash ./tests/test_config.sh`, `release_notes.py --tag v2.6.1 --check`, and diff `< 14,800` B.
+
 ### ACT-097 -- E2E Fixes: `mdb inject` `/var/tmp` & `haproxy_galera` `--no-deps` (`#392`)
 - **Timestamp / Issue / Branch**: `2026-11-21T21:02Z` | Issue `#392` | `fix/issue-392-galera-nodeps-inject-vartmp`
 - **Request**: Fix `mdb inject employees galera` under Galera's `/tmp` `tmpfs` mount and prevent `mdb up galera` from recreating `galera_01` when starting `haproxy_galera`.
