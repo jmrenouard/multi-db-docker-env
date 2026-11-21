@@ -28,6 +28,7 @@
 | **Phase 12** | Database Version Upgrades & EOL Decommissioning | Upgrade to MySQL 8.4/9.7 LTS, MariaDB 12.3 LTS, Percona 8.4 LTS, PG 18 standalone, CockroachDB v25.4, Traefik v3, HAProxy LTS; decommission 7 EOL versions | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...`, CI `test-and-validate` |
 | **Phase 13** | YT Cluster 1.21.3 (PG 18) Active-Active Topology & `v2.4.0` / `v2.4.1` | 3-node `yt-cluster` Compose stack, setup, `L1-L8`/`T11-T18`/`T_REVERT` tests, 36-row `bench-yt-cluster`, Go CLI 20 topologies | ✅ Complete | `make yt-cluster-test`, `make bench-yt-cluster`, `go test ./...`, `./bin/mdb topologies` |
 | **Phase 14** | Unified `./mdb` CLI, 12 Usability Audit Fixes & `v2.5.0` Release | `pkg/catalog`, unified `./mdb`/`mdb.cmd`, bilingual wizard, 13 PG stack wrappers, `make lint`/`test`, EN/FR docs, `v2.5.0` sync | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...`, CI `test-and-validate` |
+| **Phase 15** | Durable Production-Tuned PG Compose Stacks & Unified 18-Topology Benchmark Harness (`v2.6.0`) | Tuned 13 PG Compose stacks (`fsync`/`RPO=0` preserved), YB/CRDB HAProxy LBs, `bench_pg_optimized_*` (`PG_SCALE=20`, `--resume`), unit/static tests, EN/FR docs, `v2.6.0` tag | ✅ Complete | `make bench-pg-optimized`, `bash ./tests/test_config.sh`, `python -m unittest`, `go test ./...` |
 
 ---
 
@@ -80,6 +81,36 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-096 -- Documentation Sync, `v2.6.0` Release Bump & Governance Registers (`#386`)
+- **Timestamp / Issue / Branch**: `2026-11-21T20:51Z` | Issue `#386` | `docs/issue-386-v260-docs`, `chore/issue-386-release-v260`, `docs/issue-386-governance-v260`
+- **Request**: Document all durable `v2.6.0` Compose optimizations and 18-topology benchmark behavior in EN/FR guides, bump version to `2.6.0`, and synchronize governance registers.
+- **Changes**: Updated `documentation/pg_multimaster{,_fr}.md` (PR `#388`), `VERSION`, `cmd/mdb/{main,main_test}.go`, `Changelog`, `ROADMAP.md` (PR `#390`), `docs/ACTION_LOGBOOK.md`, and `docs/RCA_REGISTER.md` (`RCA-083`, `IMP-016`, `APP-028`, `IDEA-014`).
+- **Result**: Verified `release_notes.py --tag v2.6.0 --check`, `test_config.sh`, `unittest` (59 ran: 53 ok, 6 skipped), and `go test -count=1 ./...` (11/11).
+
+### ACT-095 -- Unified 18-Topology Optimized Runner, Live Smoke Test & Regression Suite (`#380`, `#384`)
+- **Timestamp / Issue / Branch**: `2026-11-21T20:41Z` | Issues `#380`, `#384` | `feat/issue-380-bench-optimized-runner`, `test/issue-384-optimized-bench-tests`
+- **Request**: Implement `scripts/bench_pg_optimized_runner.sh` (`--resume`, `PG_SCALE=20`, `make bench-pg-optimized`) and comprehensive unit/static tests for optimized libs and compose tunings.
+- **Changes**: Added `scripts/bench_pg_optimized_runner.sh` + `Makefile` target (PR `#383`); added `TestBenchPgOptimizedLib` (`tests/test_pg_libs.py`) and `test_pg_compose_durable_tunings_and_haproxy_ram_caps` (`tests/test_repo_static.py`) (PR `#385`).
+- **Result**: Verified live `pg18-standalone` smoke test (`15/15` suites, `drift=0`, `--resume` skip, `0` residual containers), `unittest` (59 ran: 53 ok, 6 skipped), and `go test -count=1 ./...` (11/11).
+
+### ACT-094 -- Unified Optimized Benchmark Python Libraries (`#372`)
+- **Timestamp / Issue / Branch**: `2026-11-21T20:29Z` | Issue `#372` | `feat/issue-372-bench-optimized-lib`, `feat/issue-372-bench-opt-workloads`, `feat/issue-372-bench-optimized-lib-ops`
+- **Request**: Build modular Python libraries supporting `fillfactor=90`, `5s` warmup, `/tmp/sb_wrap.lua` `55409`/`40001`/`40P01` retries, Citus co-location, `yb`/`crdb` chunked loading, `pgedge` `delta_apply`, `bucardo` `quick_delta_check`, and `yt-cluster` parallel configs (`CgPIAQE=`/`CgcSAhACyAEB`).
+- **Changes**: Added `scripts/bench_pg_opt_common.py` (PR `#374`), `scripts/bench_pg_opt_workloads.py` (PR `#377`), and `scripts/bench_pg_optimized_lib.py` (PR `#379`), leaving legacy runners untouched.
+- **Result**: Verified via `py_compile`, live CRDB `v25.4` SQL/Lua probes, `test_config.sh`, `unittest`, and `go test -count=1 ./...`.
+
+### ACT-093 -- Multi-Master / Distributed Compose Tunings, RAM Caps & YB/CRDB HAProxy LBs (`#368`)
+- **Timestamp / Issue / Branch**: `2026-11-21T20:05Z` | Issue `#368` | `feat/issue-368-mm-dist-compose-haproxy`
+- **Request**: Apply durable tuned env-var defaults and 15 GiB host `mem_limit` caps across `pgedge`, `bucardo`, `citus`, `yugabyte`, `cockroach`, and `yt-cluster`, and add HAProxy TCP load balancers for 3-node YB and CRDB.
+- **Changes**: Updated 6 multi-master/distributed Compose files (`YT_MAX_PREPARED=300`, Citus `2048m`, YB/CRDB `3072m`) and created `scripts/{yugabyte,cockroach}/haproxy.cfg` (`15470`/`15480`, Docker `127.0.0.11:53` resolver) (PR `#371`).
+- **Result**: Verified `haproxy -c -f` (`haproxy:lts-alpine`), `test_config.sh`, `unittest`, and `go test -count=1 ./...`.
+
+### ACT-092 -- Durable Production-Tuned PG 17 & PG 18 Native Compose Defaults (`#361`)
+- **Timestamp / Issue / Branch**: `2026-11-21T19:55Z` | Issue `#361` | `feat/issue-361-pg17-pg18-compose-tunings`, `feat/issue-361-pg18-compose-tunings`
+- **Request**: Parameterize durable tuned defaults (`wal_compression=lz4`, `jit=off`, `checkpoint_completion_target=0.9`, `random_page_cost=1.1`, `logical_decoding_work_mem=256MB`, PG 18-only `io_method=worker`/`io_workers=4`) across PG 17 and PG 18 Compose stacks.
+- **Changes**: Updated `docker-compose-{pg17-baseline,pg-streaming,pg-logical,pg-birep}.yml` (PR `#364`) and `docker-compose-pg18-{streaming,logical,birep}.yml` (PR `#367`), keeping `fsync=on` and `full_page_writes=on`.
+- **Result**: Verified `test_config.sh`, `unittest`, and `go test -count=1 ./...` (11/11).
 
 ### ACT-091 -- E2E Fixes: Standalone PFS CLI Flags & Galera Named Volumes / `gcache.size=128M` (`#387`)
 - **Timestamp / Issue / Branch**: `2026-11-21T20:45Z` | Issue `#387` | `fix/issue-387-pfs-cli-galera-volumes`
