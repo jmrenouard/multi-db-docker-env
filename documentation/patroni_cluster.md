@@ -1,6 +1,6 @@
-# Patroni PostgreSQL Cluster (RHEL 8)
+# Patroni PostgreSQL HA Cluster
 
-This project includes a high-availability PostgreSQL 17 cluster based on RHEL 8 (UBI) images, orchestrating using Patroni and ETCD.
+This project includes a **self-contained**, high-availability PostgreSQL 17 cluster orchestrated with Patroni 4.x, etcd 3.5.17, and HAProxy LTS using pinned, non-root in-repo Dockerfiles (`scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}`) and a secret-free `conf/patroni.yml`. No external pre-built images are required; legacy `patroni-rhel8-*:latest` image tags are retained for Compose compatibility, completing **31/31** live E2E topology coverage.
 
 ## Architecture
 
@@ -33,73 +33,78 @@ graph TD
 - **PostgreSQL Nodes**: 3 nodes (`node1`, `node2`, `node3`) managed by Patroni.
 - **HAProxy**: Load balancer providing a single entry point for read-write and read-only traffic.
 
-## Quick Start (or use `mdb up patroni` / `mdb status patroni`)
+## Self-Contained Docker Images
 
-### 1. Generate Certificates
+| Image Tag | Dockerfile (Context `.`) | Pinned Base | Non-Root User |
+| :--- | :--- | :--- | :--- |
+| `patroni-rhel8-etcd:latest` | `scripts/patroni/Dockerfile.etcd` | `quay.io/coreos/etcd:v3.5.17` + `debian:bookworm-slim` | `etcd` |
+| `patroni-rhel8-postgresql:latest` | `scripts/patroni/Dockerfile.postgresql` | `postgres:17-bookworm` + PGDG `patroni` + `supervisor` | `postgres` |
+| `patroni-rhel8-haproxy:latest` | `scripts/patroni/Dockerfile.haproxy` | `haproxy:lts` + `conf/haproxy-patroni.cfg` | `haproxy` |
 
-The cluster uses mutual TLS for communication between nodes and ETCD.
-
-```bash
-make patroni-gen-certs
-```
-
-### 2. Start the Cluster
+`./mdb up patroni` auto-builds any missing Patroni image and auto-generates `certs_patroni/` PKI. To build explicitly:
 
 ```bash
-make patroni-up
+./mdb images build patroni       # or: make build-images TARGET=patroni
+./mdb images check               # verifies 31/31 E2E images locally
 ```
 
-### 3. Check Status
+## Quick Start
 
 ```bash
-make patroni-status
+./mdb up patroni                 # Auto-builds images, generates mTLS certs, starts 7 containers (or: make patroni-up)
+./mdb status patroni             # Check all 7 containers (etcd1..3, node1..3, haproxy-patroni)
+./mdb client patroni             # Connect via psql to Primary RW (port 5000)
 ```
+
+> Legacy wrappers `make patroni-gen-certs`, `make patroni-up`, and `make patroni-status` remain supported.
 
 ## Connection Details
 
 | Role | Port | Description |
 | :--- | :--- | :--- |
-| Read-Write | `5000` | Traffic routed to the current Leader node. |
-| Read-Only | `5001` | Traffic balanced across all healthy Replicas. |
-| PgBouncer | `6432` | Client connection pooling on PostgreSQL nodes. |
-| Stats | `7000` | HAProxy statistics dashboard. |
-| Patroni REST API | `8008` | Internal health check, config, and DCS election endpoint. |
-| etcd | `2379` | Distributed consensus store client endpoint (`etcd1`). |
+| Read-Write | `5000` | Traffic routed to the current Leader/Primary node via HAProxy. |
+| Read-Only | `5001` | Traffic balanced across all healthy Replicas via HAProxy. |
+| Stats (HTTPS) | `7000` | HAProxy HTTPS stats dashboard (`admin:adminpass`, self-signed TLS). |
+| Patroni REST API | `8008` | Internal mTLS health check, config, and DCS election endpoint (`verify required`). |
+| etcd | `2379` | Distributed consensus store mTLS client endpoint (`etcd1`). |
 
 ### Authenticated Connection Examples
 
 ```bash
-export PGPASSWORD="${DB_ROOT_PASSWORD:-postgres}"
+export PGPASSWORD="${DB_ROOT_PASSWORD:-rootpass}"
 psql -h 127.0.0.1 -p 5000 -U postgres -d postgres  # Primary RW (HAProxy)
 psql -h 127.0.0.1 -p 5001 -U postgres -d postgres  # Standby RO (HAProxy)
-psql -h 127.0.0.1 -p 6432 -U postgres -d postgres  # PgBouncer pooler
-curl -s http://127.0.0.1:7000/                     # HAProxy Stats
-docker exec node1 curl -s http://localhost:8008/cluster # Patroni REST API
+curl -sk -u admin:adminpass https://127.0.0.1:7000/ # HAProxy HTTPS Stats
+docker exec node1 patronictl -c /etc/patroni.yml list
+docker exec node1 curl -fsS --cacert /etc/patroni/certs/ca.crt --cert /etc/patroni/certs/patroni-api.crt --key /etc/patroni/certs/patroni-api.key https://localhost:8008/cluster
 ```
 
 ## Automated Testing
 
-A functional test suite validates cluster health, consensus, replication, and failover across **8 test groups** (11 assertions in `tests/test_patroni.sh`).
-
-### Run Tests
+`./mdb test patroni` runs the native Go verifier (`3/3` active: 1 Leader/Primary + 2 streaming replicas), while `./mdb test patroni --suite` runs **11 test groups** (`14` assertions in `tests/test_patroni.sh`). Automatic leader failover (`1/1`) is validated via `bash ./tests/test_failover.sh patroni`.
 
 ```bash
-make patroni-test          # (or: make test-patroni / mdb test patroni)
+./mdb test patroni               # Go health verifier (HEALTHY 3/3)
+./mdb test patroni --suite       # Full 14-assertion suite (or: make patroni-test / make test-patroni)
+bash ./tests/test_failover.sh patroni # Live leader failover & timeline rejoin
 ```
 
-### 8 Test Groups Breakdown
+### 11 Test Groups (`tests/test_patroni.sh`)
 
-1. **ETCD Cluster Health**: Consensus quorum and DCS health across etcd nodes.
-2. **Patroni REST API**: REST API endpoints (`:8008`) and DCS leader status query.
-3. **PostgreSQL Topology & Replication**: Leader election and streaming replication to standbys.
-4. **HAProxy Routing**: RW port 5000 leader routing and RO port 5001 replica balancing.
-5. **PgBouncer Connection Pooling**: Client connection pooling through port 6432.
-6. **Automatic Failover Simulation**: Leader stepdown/promotion and dynamic HAProxy routing updates.
-7. **Configuration Audit**: `patronictl show-config`, node parameter parity, and TLS certificates.
-8. **Sysbench Performance**: Transactional benchmark under concurrent OLTP workloads.
+1. **Cluster Status**: Patroni Leader/Primary election and `>= 2` healthy replicas (`patronictl list`).
+2. **HAProxy Connectivity**: RW (`5000`) and RO (`5001`) routing via Docker DNS `resolvers docker` and mTLS checks.
+3. **Write Replication**: Primary write propagation to standbys.
+4. **Write Isolation**: RO port (`5001`) rejects writes (`pg_is_in_recovery()`).
+5. **DDL Replication**: Schema creation replicated across nodes.
+6. **CRUD Operations**: `INSERT`/`UPDATE`/`DELETE` round-trip consistency.
+7. **Version Consistency**: Uniform PostgreSQL `17.x` version across nodes.
+8. **Config Consistency**: Parameter parity (`max_connections`, `shared_buffers`, `wal_level`).
+9. **HAProxy HTTPS Stats**: Authenticated `https://127.0.0.1:7000/` endpoint availability.
+10. **Concurrent Writes**: 30/30 parallel write integrity check.
+11. **TLS/SSL Verification**: Active `ssl=on` and negotiated TLS cipher across connections.
 
 ## Cleanup
 
 ```bash
-make patroni-down          # (or: mdb down patroni)
+./mdb down patroni               # Stops containers and removes volumes (or: make patroni-down)
 ```

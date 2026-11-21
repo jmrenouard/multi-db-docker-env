@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-105 -- Update Patroni Cluster Guide & Close Missing-Image Gap in RCA Register (`#408`)
+- **Timestamp / Issue / Branch**: `2026-11-22T00:06Z` | Issue `#408` | `docs/issue-408-patroni-guide-rca`
+- **Request**: Update `documentation/patroni_cluster.md` for self-contained non-root Patroni Dockerfiles, mTLS HAProxy, and 11-group/14-assertion E2E coverage, and update `docs/RCA_REGISTER.md` to close the external Patroni image gap and record the 31-image E2E architecture.
+- **Changes**: Updated `documentation/patroni_cluster.md` (Dockerfile matrix, `./mdb up patroni`/`./mdb images build patroni`, HTTPS stats `7000`, mTLS REST `8008`, `DB_ROOT_PASSWORD:-rootpass`, 11 test groups + `test_failover.sh`), `docs/RCA_REGISTER.md` (`APP-018`, `IMP-017`, `APP-030`), and `docs/ACTION_LOGBOOK.md` (`ACT-105`).
+- **Result**: Verified `go test -count=1 ./...` (11/11), `mdb lint` (70 scripts + 21 compose files), `mdb images check` (31/31 PRESENT), Python governance/static/unit suite, and diff `< 15,000` B.
+
 ### ACT-104 -- Document `mdb images` CLI, Self-Contained Patroni & 31/31 E2E Status in EN/FR READMEs (`#406`)
 - **Timestamp / Issue / Branch**: `2026-11-21T23:57Z` | Issue `#406` | `docs/issue-406-images-patroni-docs`
 - **Request**: Document `./mdb images list|build|pull|check` (and `Makefile` wrappers `build-images`/`pull-images`/`check-images`), self-contained Patroni Dockerfiles, and 31/31 live E2E coverage in `README.md` and `README_fr.md`.
