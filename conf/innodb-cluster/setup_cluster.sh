@@ -81,7 +81,7 @@ docker exec -e MYSQL_PWD="$DB_PASS" mysql_node1 mysql -uroot -e "
     SET GLOBAL group_replication_bootstrap_group=ON;
     START GROUP_REPLICATION;
     SET GLOBAL group_replication_bootstrap_group=OFF;
-" 2>/dev/null
+"
 echo "   ✅ Primary node bootstrapped."
 sleep 5
 
@@ -94,7 +94,7 @@ for node in "mysql_node2" "mysql_node3"; do
         CHANGE REPLICATION SOURCE TO SOURCE_USER='${REPL_USER}', SOURCE_PASSWORD='${REPL_PASS}' FOR CHANNEL 'group_replication_recovery';
         SET GLOBAL group_replication_recovery_use_ssl=ON;
         START GROUP_REPLICATION;
-    " 2>/dev/null
+    "
     echo "   ✅ $node join initiated."
     sleep 8
 done

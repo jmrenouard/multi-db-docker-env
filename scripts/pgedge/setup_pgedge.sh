@@ -16,7 +16,7 @@ for i in 1 2 3; do
         t=$((t+1)); [ "$t" -ge 40 ] && { echo "[FAIL] Timeout waiting for $n"; exit 1; }
         sleep 1
     done
-    docker exec "$n" sh -c "grep -q '^host replication all all' /var/lib/pgsql/17/data/pg_hba.conf || echo 'host replication all all scram-sha-256' >> /var/lib/pgsql/17/data/pg_hba.conf"
+    docker exec "$n" sh -c "sed -i 's/^[[:space:]]*logging_collector[[:space:]]*=[[:space:]]*on/logging_collector = off/' /var/lib/pgsql/17/data/postgresql.conf && (grep -q '^host replication all all' /var/lib/pgsql/17/data/pg_hba.conf || echo 'host replication all all scram-sha-256' >> /var/lib/pgsql/17/data/pg_hba.conf)"
     qn "$n" "SELECT pg_reload_conf();" >/dev/null
     qn "$n" "CREATE EXTENSION IF NOT EXISTS spock; CREATE EXTENSION IF NOT EXISTS snowflake;" >/dev/null
     if [ "$(qn "$n" "SELECT count(*) FROM spock.node WHERE node_name='n${i}';")" = "0" ]; then

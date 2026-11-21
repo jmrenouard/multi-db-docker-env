@@ -2,6 +2,7 @@
 # Verify 3-node YT Cluster 1.21.3 (PostgreSQL 18 + yt_cluster/ytserv) readiness and config.
 set -euo pipefail
 
+[ -f .env ] && { set -a; . ./.env; set +a; }
 PG_USER="${PG_USER:-postgres}"
 PG_DB="${PG_DB:-labdb}"
 PG_PASS="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}"

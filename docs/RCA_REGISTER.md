@@ -591,6 +591,13 @@
 - **Applied Change / Fix**: Pinned `pgpool/pgpool:4.4.3` (Compose + `documentation/pgpool_cluster.md`), copied `pg_node1..3` SSL keys to container-local `0600` `postgres`-owned files, updated `PostgresVerifier` (`pgpool` `127.0.0.1:9999`, `cockroach`, `yugabyte`), and serialized `yb_node2 -> yb_node3` via healthcheck in `docker-compose-yugabyte.yml`.
 - **Result & Non-Regression Test**: Verified in `pkg/dbclient/postgres_mongo_test.go` and `mdb lint`.
 
+### RCA-079 -- InnoDB `drvfs` `0777` `.cnf`, Bucardo Restart Race, YT `t16_sigkill_crash` WAL Reload Window & pgEdge Reload Warning
+- **Date / Linked Action**: `2026-11-21` (`ACT-088` / Issue `#373`)
+- **Observed Symptom**: `mdb up innodb` ignored world-writable `group_replication.cnf` on Windows/WSL2 `drvfs` (`@@gtid_mode=OFF`); `mdb setup bucardo` failed (`bucardo.mcp.pid exists`) leaving the daemon stopped; `tests/test_yt_cluster.sh:149` failed `57P03`/`YT-E1465` right after restarting `yt2`; `pgedge` logged `55P02`/`F0000` on `pg_reload_conf()`.
+- **Root Cause Analysis**: Windows `drvfs` exposes bind mounts as `0777`; `bucardo stop` is asynchronous; `yt2` needs 2-3s after `wcl()` to reload WAL files; `pgedge`'s image `postgresql.conf` sets `logging_collector = on` while compose runs `off`.
+- **Applied Change / Fix**: Mounted InnoDB `.cnf` to `.src:ro` + copied with `chmod 0644` and exposed `START GROUP_REPLICATION` stderr; waited up to 15s for `bucardo.mcp.pid` removal; added a 15-attempt retry in `t16_sigkill_crash` + `.env` sourcing in YT scripts; aligned `logging_collector = off` in `setup_pgedge.sh`.
+- **Result & Non-Regression Test**: Verified in `tests/test_python_audit_fixes.py` (`test_cluster_setup_and_sigkill_guards`) and `mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

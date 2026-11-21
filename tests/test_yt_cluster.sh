@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # YT Cluster 1.21.3 live L1-L8, T11-T18, and T_REVERT suite.
 set -euo pipefail
+[ -f .env ] && { set -a; . ./.env; set +a; }
 export YT_USER="${PG_USER:-postgres}" YT_DB="${PG_DB:-labdb}" YT_PASS="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}" YT_WITH_REVERT="${YT_WITH_REVERT:-0}" YT_CSV_OUT="${YT_CSV_OUT:-}" PYTHONDONTWRITEBYTECODE=1
 for a in "$@"; do case "$a" in --with-revert) YT_WITH_REVERT=1 ;; --csv=*) YT_CSV_OUT="${a#--csv=}" ;; esac; done
 exec python3 - <<'PY'
@@ -146,7 +147,12 @@ try: wcl(NS,25)
 except RuntimeError:
  if "YT-E1104" in dk("logs","--tail","15",N2,chk=False).stdout: pn=";YT-E1104"; dk("exec",N2,"rm","-f","/var/run/postgresql/.s.YT.5432.pid",chk=False)
  wcl(NS,60)
-if wout!="OK": ins(N1,"l7","21,'post'")
+if wout!="OK":
+ for i in range(15):
+  rcp,_,ep,_=qr(N1,I_("l7","21,'post'")+";")
+  if rcp==0: break
+  if i==14: raise RuntimeError(f"{N1}:{ep}")
+  S(1)
 ok16,ms16=wc(N2,"l7",21,35); rec(P if surv==20 and ok16 and not pn and wout=="OK" else (EL if surv==20 and ok16 else F),21,f"surv={surv}/20 RPO={20-surv} w={wout} post={cnt(N1,'l7')}/{cnt(N2,'l7')}({ms16:.0f}ms){pn}")
 if REV:
  TR("l7"); gs(N1,"l7","g,'r_'||g",5); wc(N3,"l7",5,20); q3("DROP EXTENSION yt_cluster CASCADE;")

@@ -81,6 +81,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-088 -- E2E Fixes: InnoDB `0644` Config Copy, Idempotent Bucardo Setup, YT `t16` Retry & pgEdge Reload (`#373`)
+- **Timestamp / Issue / Branch**: `2026-11-21T20:16Z` | Issue `#373` | `fix/issue-373-innodb-bucardo-yt-pgedge`
+- **Request**: Fix Windows `drvfs` `0777` `group_replication.cnf` ignore, `setup_bucardo.sh` restart race, `test_yt_cluster.sh` post-SIGKILL WAL reload race + `.env` sourcing, and `pgedge` `logging_collector` reload warning.
+- **Changes**: Updated `docker-compose-innodb-cluster.yml`, `conf/innodb-cluster/setup_cluster.sh`, `scripts/bucardo/setup_bucardo.sh`, `scripts/yt_cluster/setup_yt_cluster.sh`, `tests/test_yt_cluster.sh`, `scripts/pgedge/setup_pgedge.sh`, `tests/test_python_audit_fixes.py`, and `docs/RCA_REGISTER.md` (`RCA-079`).
+- **Result**: Verified `go test ./...` (11/11), `unittest` (54 ran: 48 ok, 6 skipped), `mdb lint`, diff `< 15,000` B, and CI `test-and-validate` green.
+
 ### ACT-087 -- E2E Fixes: `pgpool:4.4.3` + `0600` SSL Copy, `pgpool`/`cockroach`/`yugabyte` Verifiers & `yb_node3` Join Serialization (`#369`)
 - **Timestamp / Issue / Branch**: `2026-11-21T20:09Z` | Issue `#369` | `fix/issue-369-pgpool-crdb-yb`
 - **Request**: Fix `pgpool` broken tag & Windows `0777` SSL keys, `pgpool`/`cockroach`/`yugabyte` Go verifiers, and `yb_node3` join race crash.
