@@ -90,6 +90,19 @@ class TestPythonAuditFixes(unittest.TestCase):
         self.assertIn("15432", calls[1][0])
         self.assertEqual(calls[1][1]["timeout"], 5)
 
+    def test_cluster_setup_and_sigkill_guards(self):
+        root = Path(__file__).resolve().parent.parent
+        innodb = (root / "docker-compose-innodb-cluster.yml").read_text(encoding="utf-8")
+        self.assertIn("chmod 0644 /etc/mysql/conf.d/group_replication.cnf", innodb)
+        self.assertNotIn(":/etc/mysql/conf.d/group_replication.cnf", innodb)
+        buc = (root / "scripts/bucardo/setup_bucardo.sh").read_text(encoding="utf-8")
+        self.assertIn("while docker exec bucardo_daemon test -f /var/run/bucardo/bucardo.mcp.pid", buc)
+        yt_test = (root / "tests/test_yt_cluster.sh").read_text(encoding="utf-8")
+        self.assertIn("[ -f .env ]", yt_test)
+        self.assertIn("for i in range(15):", yt_test)
+        self.assertIn("[ -f .env ]", (root / "scripts/yt_cluster/setup_yt_cluster.sh").read_text(encoding="utf-8"))
+        self.assertIn("logging_collector = off", (root / "scripts/pgedge/setup_pgedge.sh").read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

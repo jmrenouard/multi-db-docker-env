@@ -74,6 +74,14 @@ if ! docker exec bucardo_daemon bucardo list sync | grep -q "Sync \"sync_mm\""; 
 fi
 
 docker exec bucardo_daemon bucardo stop >/dev/null 2>&1 || true
+i=0
+while docker exec bucardo_daemon test -f /var/run/bucardo/bucardo.mcp.pid && [ "$i" -lt 15 ]; do
+    sleep 1
+    i=$((i + 1))
+done
+if docker exec bucardo_daemon test -f /var/run/bucardo/bucardo.mcp.pid; then
+    docker exec bucardo_daemon sh -c 'pid=$(cat /var/run/bucardo/bucardo.mcp.pid 2>/dev/null || true); [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null || rm -f /var/run/bucardo/bucardo.mcp.pid'
+fi
 docker exec bucardo_daemon bucardo start
 sleep 2
 docker exec bucardo_daemon bucardo status sync_mm
