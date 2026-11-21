@@ -598,6 +598,13 @@
 - **Applied Change / Fix**: Mounted InnoDB `.cnf` to `.src:ro` + copied with `chmod 0644` and exposed `START GROUP_REPLICATION` stderr; waited up to 15s for `bucardo.mcp.pid` removal; added a 15-attempt retry in `t16_sigkill_crash` + `.env` sourcing in YT scripts; aligned `logging_collector = off` in `setup_pgedge.sh`.
 - **Result & Non-Regression Test**: Verified in `tests/test_python_audit_fixes.py` (`test_cluster_setup_and_sigkill_guards`) and `mdb lint`.
 
+### RCA-080 -- `mdb report` Standalone Resolution, `mdb bench` MySQL/PG Failures & `mdb inject` MySQL Warning
+- **Date / Linked Action**: `2026-11-21` (`ACT-089` / Issue `#376`)
+- **Observed Symptom**: `mdb report <standalone>` produced `clusters: 0`; `mdb bench` exited 127 on standalone MySQL/MariaDB/Percona and failed `database "root" does not exist` on PG; `mdb inject` printed `mariadb: command not found` on MySQL.
+- **Root Cause Analysis**: `mdb report` bypassed `activeCatalog()` engine/container lookup; `mdb bench` ran `sysbench` directly inside upstream DB images without `sysbench` or `sbtest` setup and omitted `postgres` dbname in `pgbench`; `runInjectCmd` invoked `mariadb` without `command -v`.
+- **Applied Change / Fix**: Shared `resolveVerifierTarget` between `mdb test` and `mdb report`; added `runMySQLSysbench` (creates `sbtest`, runs `prepare`+`run` in-container or via transient `--network` container with TLS fallback) and `postgres` dbname in `pgbench`; gated `mariadb` in `runInjectCmd`.
+- **Result & Non-Regression Test**: Verified in `cmd/mdb/main_test.go`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

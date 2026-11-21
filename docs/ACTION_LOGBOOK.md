@@ -81,6 +81,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-089 -- E2E Fixes: `mdb report` Catalog Resolution, `mdb bench` MySQL/PG Execution & `mdb inject` Guard (`#376`)
+- **Timestamp / Issue / Branch**: `2026-11-21T20:27Z` | Issue `#376` | `fix/issue-376-pfs-report-bench-wslenv`
+- **Request**: Fix `mdb report` standalone catalog resolution, `mdb bench` standalone MySQL/MariaDB/Percona (`sysbench`) and PostgreSQL (`pgbench`) failures, and `mdb inject` MySQL warning.
+- **Changes**: Updated `cmd/mdb/{commands_admin,commands_bench,commands_lint,main,main_test}.go` and `docs/RCA_REGISTER.md` (`RCA-080`).
+- **Result**: Verified `go test ./...` (11/11), `unittest` (54 ran: 48 ok, 6 skipped), `mdb lint`, diff `< 15,000` B, and CI `test-and-validate` green.
+
 ### ACT-088 -- E2E Fixes: InnoDB `0644` Config Copy, Idempotent Bucardo Setup, YT `t16` Retry & pgEdge Reload (`#373`)
 - **Timestamp / Issue / Branch**: `2026-11-21T20:16Z` | Issue `#373` | `fix/issue-373-innodb-bucardo-yt-pgedge`
 - **Request**: Fix Windows `drvfs` `0777` `group_replication.cnf` ignore, `setup_bucardo.sh` restart race, `test_yt_cluster.sh` post-SIGKILL WAL reload race + `.env` sourcing, and `pgedge` `logging_collector` reload warning.

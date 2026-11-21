@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jmrenouard/multi-db-docker-env/pkg/catalog"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/config"
@@ -501,6 +502,29 @@ func TestBenchRouting(t *testing.T) {
 	}
 	if err := runBenchCmd(ctx, client, cat, nil); err == nil {
 		t.Fatalf("expected usage error when env omitted")
+	}
+	if vt, ctr, err := resolveVerifierTarget(ctx, client, cat, "percona84"); err != nil || vt != "mysql" || ctr != "percona-server-8.4" {
+		t.Fatalf("resolveVerifierTarget percona84: vt=%s ctr=%s err=%v", vt, ctr, err)
+	}
+	if _, err := runMySQLSysbench(ctx, client, "mysql-9.7", "oltp;rm -rf /", "rootpass", 2, time.Second); err == nil {
+		t.Fatalf("expected invalid workload error")
+	}
+	sbOut := "transactions: 100 (50.00 per sec.)\nqueries: 2000 (1000.00 per sec.)\ntotal time: 2.0000s\ntotal number of events: 100\n"
+	sbMock := &docker.MockCommandRunner{Custom: func(_ context.Context, _ string, a ...string) ([]byte, []byte, int, error) {
+		j := strings.Join(a, " ")
+		if strings.Contains(j, "command -v sysbench") {
+			return nil, nil, 127, errors.New("missing")
+		}
+		if strings.Contains(j, "inspect -f") {
+			return []byte("multi-db-docker-env_db-network \n"), nil, 0, nil
+		}
+		if strings.Contains(j, "run --rm") {
+			return []byte(sbOut), nil, 0, nil
+		}
+		return []byte("ok\n"), nil, 0, nil
+	}}
+	if res, err := runMySQLSysbench(ctx, docker.NewClientWithRunner(sbMock), "mysql-9.7", "oltp_read_write", "rootpass", 2, 2*time.Second); err != nil || res.TPS != 50 {
+		t.Fatalf("transient sysbench: res=%+v err=%v", res, err)
 	}
 }
 
