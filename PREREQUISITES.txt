@@ -1,10 +1,15 @@
-# System Level Dependencies (Mandatory for Lab Environment)
-# Install via: sudo apt-get update && sudo apt-get install -y mariadb-client sysbench docker.io docker-compose-v2
+# System Level Dependencies (Multi-DB Docker Environment)
+# Unified entry point: ./mdb (Linux/macOS) or mdb.cmd (Windows). Run `./mdb doctor` to check prerequisites.
+# Linux (Debian/Ubuntu): sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 golang-go openssl git python3
+# macOS (Homebrew):      brew install go bash openssl git python && open -a Docker
+# Windows:               Use mdb.cmd natively with Docker Desktop + Go; use Git Bash or WSL2 for `make` and bash test suites.
 
-bash>=5.0
 docker>=20.10.0
 docker-compose-plugin>=2.0.0
-mariadb-client>=10.6
-sysbench>=1.0.20
+go>=1.22                # Required only if bin/mdb (or bin\mdb.exe) is not prebuilt
+bash>=5.0               # Linux/macOS native; Git Bash or WSL2 on Windows
+openssl>=3.0            # Optional fallback (native PKI is built into ./mdb pki)
 git>=2.25
-python>=3.10
+python>=3.10            # Optional (required for unit tests and legacy Python helpers)
+# Optional host clients (not required: `./mdb client` and `./mdb bench` execute inside containers):
+# mariadb-client>=10.6 | postgresql-client | sysbench>=1.0.20 | make (optional compatibility wrapper)

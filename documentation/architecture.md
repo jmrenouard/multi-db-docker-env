@@ -1,6 +1,8 @@
 # Global Architecture 🏗️
 
-This document describes the network and server topology of the MariaDB Docker environment.
+This document describes the network, orchestration, and server topology of the Multi-DB Docker Environment.
+
+**Unified Orchestration**: `./mdb` (`mdb.cmd` on Windows) is the single unified CLI entry point backed by `pkg/catalog` (11 standalone profiles, 20 active clusters across 13 PostgreSQL Compose stacks, and 5 EOL entries), `pkg/docker` (multi-compose discovery & dynamic project naming), and `pkg/topology` (auto-PKI generation, image auto-build, and bounded readiness polling). `Makefile`, `interactive_runner.py`, and `mysql_docker.py` serve as thin compatibility wrappers and legacy helpers.
 
 ## 🌐 1. Galera Cluster Architecture
 
@@ -103,9 +105,12 @@ The project follows a modular organization:
 
 | Directory | Content |
 | :--- | :--- |
-| `scripts/` | Core maintenance, backup, and setup scripts. |
+| `mdb`, `mdb.cmd` | Cross-platform unified CLI wrappers executing `bin/mdb` or `go run ./cmd/mdb`. |
+| `cmd/mdb/`, `pkg/` | Pure-Go CLI (`catalog`, `up`, `setup`, `down`, `status`, `info`, `logs`, `client`, `mycnf`, `interactive`, `lint`, `test`, `bench`, `doctor`, `pki`, `report`). |
+| `Makefile` | Thin compatibility wrapper delegating unified operations to `./mdb`. |
+| `scripts/` | Core maintenance, backup, benchmark, and setup scripts. |
 | `conf/` | Configuration files for MariaDB, HAProxy, and Supervisor. |
-| `tests/` | Functional and performance test suites. |
+| `tests/` | Functional, static, governance, and performance test suites. |
 | `documentation/` | Technical guides and architectural references. |
 | `reports/` | Generated test reports (Markdown and HTML). |
 | `ssl/` | Generated SSL certificates (CA, Server, Client). |
