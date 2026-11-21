@@ -619,6 +619,13 @@
 - **Applied Change / Fix**: Replaced all 14 standalone `pfs.cnf` bind mounts in `docker-compose.yml` with shared `x-pfs-command: &pfs-command` CLI flags; switched `docker-compose-galera.yml` to named Docker volumes (`galera_data_01..03`) and set `gcache.size=128M` in `conf/gcustom_{1,2,3}.cnf`.
 - **Result & Non-Regression Test**: Verified in `tests/test_python_audit_fixes.py` (`test_cluster_setup_and_sigkill_guards`) and `mdb lint`.
 
+### RCA-083 -- Citus Scatter/Deadlock, CRDB `root` `ALTER ROLE` Bypass, Yugabyte `COPY` OOM & pgEdge Pre-Reset Drain
+- **Date / Linked Action**: `2026-11-21` (`ACT-093`–`ACT-095` / Issues `#368`, `#372`, `#380`)
+- **Observed Symptom**: Citus scattered single-key `pgbench` across 32 shards (`40.56 TPS`) and hit distributed deadlocks on multi-table `DROP`; CRDB `ALTER ROLE ALL SET default_transaction_isolation='read committed'` failed silently for `root` (`42501`); Yugabyte `pgbench -i` `COPY` risked OOM at `PG_SCALE=20`; `pgedge` delta-apply resets diverged if run before peer drain; `sysbench` crashed on YT `55409`.
+- **Root Cause Analysis**: `bid`-distributed `pgbench_accounts`/`tellers` prevented single-shard pushdown on `WHERE aid=:aid`/`tid=:tid`; CRDB blocks `ALTER ROLE` on `root` and has no cluster GUC for default isolation; `3072m` Yugabyte containers enforce a `1.5 GiB` tserver hard limit; `spock.delta_apply` computes `-old` deltas relative to local peer state; `sysbench` `drv_pgsql.c` treats only `40001`/`40P01`/`23505` as built-in ignorable errors.
+- **Applied Change / Fix**: Switched Citus to 1-shard-per-statement routing + separate autocommit `DROP`s; created dedicated admin role `bench` for `cockroach-rc`; added `batch=50000` chunked `INSERT` loader (`//` for CRDB) + `CACHE 1000` sequences; drained peers before `pgedge` `hs[0]` reset; routed `sysbench` through `/tmp/sb_wrap.lua` `sql_error_ignorable` (`55409`/`40001`/`40P01` + `ROLLBACK`).
+- **Result & Non-Regression Test**: Empirically verified on live images and guarded by `TestBenchPgOptimizedLib` (`tests/test_pg_libs.py`).
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
@@ -684,6 +691,10 @@
 ### IMP-015 -- Retaining Python `interactive_runner.py` / `mysql_docker.py` as Primary Entry Points
 - **Why It Is a Dead-End**: Dual Python/Go/Makefile paths caused engine drift, missing Windows parity, and duplicated environment lists.
 - **Adopted Decision**: Consolidate all operations under `./mdb` (`mdb.cmd` on Windows) and `pkg/catalog`, keeping `Makefile` targets as thin compatibility wrappers and printing deprecation notices in Python runners (`#332`).
+
+### IMP-016 -- Disabling `fsync`/`full_page_writes`, Adding `io_method` on PG 17, or Overriding YT `shared_preload_libraries`
+- **Why It Is a Dead-End**: Disabling `fsync`/`full_page_writes` compromises durability (`RPO=0`); `io_method`/`io_workers` fails to boot on PostgreSQL 17; passing `-c shared_preload_libraries=...` on the YT Compose CLI erases `yt_cluster` from `conf.d/yt.conf`.
+- **Adopted Decision**: Keep `fsync=on` and `full_page_writes=on` across all 13 PG Compose stacks, restrict `io_method`/`io_workers` strictly to PG 18 and YT Compose files (enforced by static test), and inject YT tuning via `YT_MAX_PREPARED=300` + PostgreSQL GUCs without `-c shared_preload_libraries`.
 
 ---
 
@@ -830,6 +841,11 @@
 - **Nature & Justification**: Native Windows hosts run `go test ./...` without `-race` when `gcc` is absent; full `-race` verification executes on Linux CI (`test-and-validate`) and WSL.
 - **Removal Condition**: Install MSYS2/mingw64 `gcc` if local Windows `-race` execution is required.
 
+### APP-028 -- Sequential 1-Stack-at-a-Time `PG_SCALE=20` Cap (`15 GiB` Host RAM) & Static Mocked Coverage
+- **Target Files**: `docker-compose-{citus,yugabyte,cockroach}.yml`, `scripts/bench_pg_optimized_runner.sh`
+- **Nature & Justification**: Host RAM (`15 GiB` total) permits running only one distributed cluster stack at a time (`citus` `2048m` x3, `yugabyte`/`cockroach` `3072m` x3); full 18-topology `PG_SCALE=20` matrix generation (`318` rows) is left to on-demand `make bench-pg-optimized`, while CI verifies `pg18-standalone` live smoke semantics plus deterministic unit mocks.
+- **Removal Condition**: Execute `make bench-pg-optimized` on a dedicated `>= 16 GiB` Linux/WSL2 host to populate `reports/benchmark_optimized.csv`.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
@@ -885,5 +901,10 @@
 ### IDEA-013 -- Full Parity Matrix Automated Drift Check (`pkg/catalog` vs `Makefile` vs Docs)
 - **Priority / Target**: `Low` | `tests/`
 - **Description**: Assert every environment key in `pkg/catalog` has matching `Makefile` wrapper targets and EN/FR documentation coverage.
+
+### IDEA-014 -- Automated `PG_SCALE=20` Optimized vs Baseline Comparative Report Generator
+- **Priority / Target**: `Medium` | `scripts/bench_pg_optimized_runner.sh`, `reports/`
+- **Description**: Aggregate `reports/benchmark_optimized.csv` (`318` rows across 18 topologies) into comparative before/after delta tables and charts alongside `make bench-pg-v2` / `bench-pg18` / `bench-yt-cluster` baselines.
+
 
 
