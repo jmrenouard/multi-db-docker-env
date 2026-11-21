@@ -1,20 +1,45 @@
-# Makefile Reference 🛠️
+# Unified CLI (`./mdb`) & Makefile Compatibility Reference 🛠️
 
-The `Makefile` is the main entry point for managing database environments (Standalone, Galera, and Replication).
+> [!IMPORTANT]
+> **`./mdb` (`mdb.cmd` on Windows) is the single unified entry point** for all operations. `Makefile`, `interactive_runner.py`, and `mysql_docker.py` remain supported as thin compatibility wrappers and legacy helpers delegating to `./mdb` with POSIX fallbacks.
 
-## 🛠️ Global Commands
+## 🚀 Unified `./mdb` Commands
 
 | Command | Description |
 | :--- | :--- |
-| `make stop` | 🛑 Stop and remove all containers and networks. |
-| `make status` | 📊 Display the status of active containers. |
-| `make info` | ℹ️ Provide information about the active DB service. |
-| `make logs` | 📄 Display logs for the active database service. |
-| `make mycnf` | 🔑 Generate the `.my.cnf` file for password-less connections. |
-| `make client` | 💻 Start a MySQL client on the active database. |
+| `./mdb help` | Display categorized CLI usage (`--help`, `-h`). |
+| `./mdb catalog [--category standalone\|cluster] [--engine <name>] [--eol] [--all] [--json]` | List active/EOL environments (`aliases`: `list`, `envs`, `environments`, `topologies`). |
+| `./mdb up <env>` / `./mdb start [env]` | Start any standalone profile or cluster (auto-generates TLS certs, rejects EOL, default `mariadb114`). |
+| `./mdb setup <env>` | Run topology setup script on demand (no-op if none required). |
+| `./mdb down [env\|all]` / `./mdb stop [env]` | Stop specified environment or all active containers across all compose files. |
+| `./mdb status [env\|all] [--json]` / `./mdb info` | Aggregate container status across standalone + cluster compose stacks (`info` adds logs). |
+| `./mdb logs [env\|service] [--tail N] [-f]` | Stream or tail logs across standalone profiles and clusters. |
+| `./mdb client [env]` | Engine-aware interactive shell (`mariadb`/`mysql`, `psql`, `mongosh --tls`, `cockroach sql`, `ysqlsh`). |
+| `./mdb mycnf` | Back up `~/.my.cnf` -> `~/.my.cnf.bak` (`0600`) and write `~/.my.cnf` (`0600`). |
+| `./mdb interactive [-a\|-i] [-l en\|fr]` | Launch native bilingual interactive wizard across full catalog (`alias`: `wizard`). |
+| `./mdb lint` | Validate `bash -n` on tracked `.sh` scripts and `docker compose config -q` on all 21 Compose stacks. |
+| `./mdb test <env> [--suite]` | Run pure-Go health verification (`--suite` runs `tests/test_<env>.sh`). |
+| `./mdb bench <env> [--workload ...] [--threads N] [--duration D]` | Route benchmarks to Sysbench, PG V2/PG18/YT/`pgbench`, or MongoDB perf suite. |
+| `./mdb doctor` | Check Docker, Compose v2, Go, OpenSSL, Bash, `.env`, `ssl/`, and Windows/macOS notes. |
+| `./mdb pki <generate\|verify> [topo] [--dir <dir>]` | Native x509 certificate generation and verification. |
+| `./mdb report [topos...] [--json <path>] [--html <path>]` | Aggregate cluster health telemetry reports. |
+
+## 🛠️ Global `Makefile` Wrappers
+
+| Command | Description |
+| :--- | :--- |
+| `make stop` | 🛑 Delegates to `./mdb stop` (with multi-compose fallback). |
+| `make status` | 📊 Delegates to `./mdb status`. |
+| `make info` | ℹ️ Delegates to `./mdb info`. |
+| `make logs` | 📄 Display logs for the active database service (`service=<name>`). |
+| `make mycnf` | 🔑 Delegates to `./mdb mycnf` (`~/.my.cnf.bak` backup, `rootpass` warning if `.env` absent). |
+| `make client` | 💻 Delegates to `./mdb client` (engine-aware `psql`/`mariadb`/`mysql`). |
+| `make catalog` / `make doctor` | 📋 / 🩺 Delegate to `./mdb catalog` and `./mdb doctor`. |
+| `make interactive` | 🚀 Launch `./mdb interactive` (fallback `python3 interactive_runner.py`). |
+| `make lint` / `make test` | 🔍 / 🧪 Validate all `.sh` + Compose stacks (`./mdb lint`) / `test-config` alias. |
 | `make verify` | ✅ Runs complete environment validation (`test-config`). |
 | `make start` | 🚀 Starts the default service (`mariadb114`). |
-| `make help` | Show help message for all available tasks. |
+| `make help` | Delegates to `./mdb help` + displays Make compatibility wrapper summary. |
 | `make build-go` | 🔨 Compile native Go `mdb` binary into `bin/mdb`. |
 | `make test-go` | 🧪 Run complete Go unit test suite (`go test -v ./...`). |
 | `make test-all-topologies` | 🧪 Run E2E tests across all standalone DBs and HA topologies. |
@@ -67,11 +92,12 @@ The `Makefile` is the main entry point for managing database environments (Stand
 
 | Command | Description |
 | :--- | :--- |
-| `make up-galera` | Start the Galera cluster nodes and HAProxy. |
+| `make up-galera` / `make galera-up` | Start the Galera cluster nodes and HAProxy. |
 | `make bootstrap-galera`| Sequentially bootstrap a new cluster (ensures node 1 is primary). |
 | `make emergency-galera`| Emergency start of a single Galera node (Usage: `make emergency-galera NODE=1`). |
-| `make down-galera` | Stop and remove the Galera cluster. |
-| `make logs-galera` | View real-time logs for the Galera cluster. |
+| `make down-galera` / `make galera-down` | Stop and remove the Galera cluster. |
+| `make galera-status` / `make check-galera` | Inspect Galera cluster health and WSREP status. |
+| `make logs-galera` / `make galera-logs` | View real-time logs for the Galera cluster. |
 | `make test-galera` | Run the advanced Galera test suite (Replication, DDL, Audit, SSL). |
 | `make test-lb-galera` | Run the HAProxy validation suite (Performance, Failover, Reports). |
 | `make backup-galera` | Perform a logical SQL backup. |
@@ -98,11 +124,12 @@ These commands automate the deployment of a clean Galera cluster followed by the
 
 | Command | Description |
 | :--- | :--- |
-| `make up-repli` | Start the Replication cluster nodes and HAProxy. |
+| `make up-repli` / `make repli-up` | Start the Replication cluster nodes and HAProxy. |
 | `make setup-repli` | Configure Master/Slave relationship and initial sync. |
 | `make emergency-repli`| Emergency start of a single Replication node (Usage: `make emergency-repli NODE=1`). |
-| `make down-repli` | Stop and remove the Replication cluster. |
-| `make logs-repli` | View real-time logs for the Replication cluster. |
+| `make down-repli` / `make repli-down` | Stop and remove the Replication cluster. |
+| `make repli-status` / `make check-repli` | Inspect Replication cluster health and GTID slave status. |
+| `make logs-repli` / `make repli-logs` | View real-time logs for the Replication cluster. |
 | `make test-repli` | Run the Replication functional test suite. |
 | `make backup-repli` | Perform a logical SQL backup (on a slave). |
 | `make backup-phys-repli`| Perform a physical (MariaBackup) backup. |
@@ -183,17 +210,17 @@ These commands allow targeted access to logs within nodes without using `docker 
 | `make mysqltuner-repli` | Run MySQLTuner audit against MariaDB Replication. |
 | `make mysqltuner-all` | Run MySQLTuner audit across all HA topologies. |
 
-## 🐘 PostgreSQL Replication, Multi-Master & Distributed SQL (`v2.1.0`–`v2.2.0`)
+## 🐘 PostgreSQL Replication, Multi-Master & Distributed SQL (13 Compose Stacks)
 
-Each topology `<topo>` in `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte` provides the uniform target set:
+Each stack `<stack>` across all 13 PostgreSQL Compose topologies (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`) provides both `<stack>-*` and uniform `up-`/`setup-`/`test-`/`down-` wrapper targets:
 
 | Command Pattern | Description |
 | :--- | :--- |
-| `make <topo>-up` / `<topo>-down` | Start or tear down the topology (including volumes). |
-| `make <topo>-status` / `<topo>-ps` / `<topo>-logs` | Inspect cluster health, running containers, or logs. |
-| `make test-<topo>` (alias `<topo>-test`) | Run functional and empirical limits test suite. |
+| `make <stack>-up` / `<stack>-down` | Start (+ setup) or tear down the topology (including volumes). |
+| `make up-<stack>` / `setup-<stack>` / `down-<stack>` | Split lifecycle steps (e.g. `make up-yt-cluster && make setup-yt-cluster && make test-yt-cluster && make down-yt-cluster`). |
+| `make <stack>-status` / `<stack>-ps` / `<stack>-logs` | Inspect cluster health, running containers, or logs. |
+| `make test-<stack>` (alias `<stack>-test`) | Run functional and empirical limits test suite (`./mdb test <stack> --suite`). |
 | `make test-pg-extended` | Run extended T11–T18 verification matrix across PostgreSQL topologies. |
-| `make bench-pg-multimaster` | Run sequential V1 pgbench/sysbench/netem benchmark harness. |
-| `make bench-pg-v2` | Run V2 benchmark suites (E2–E4, H append-only, G concurrency, WAN netem). |
+| `make bench-pg-multimaster` / `bench-pg-v2` / `bench-pg18` / `bench-yt-cluster` | Run sequential V1, V2, PG 18.6, and YT Cluster 1.21.3 benchmark suites. |
 
 > See [pg_multimaster.md](pg_multimaster.md) for ports, node layouts, and benchmark parameters.
