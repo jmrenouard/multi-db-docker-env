@@ -26,8 +26,9 @@ A key feature is the **Traefik reverse proxy**, which ensures all database insta
 
 | Tier | Tier Name | Last Verified | Status |
 | :--- | :--- | :--- | :--- |
-| **T2** | **Standalone Matrix** | 2026-11-20 | ✅ 11 Active Profiles Verified |
-| **T3** | **Cluster, HA & Multi-Master (`v2.5.0`)** | 2026-11-21 | ✅ 20 Active Clusters (13 PG Compose Stacks) |
+| **T2** | **Standalone Matrix** | 2026-11-21 | ✅ 11/11 Active Profiles Verified Live E2E |
+| **T3** | **Cluster, HA & Multi-Master (`v2.6.1`)** | 2026-11-21 | ✅ 20/20 Active Clusters Verified Live E2E (31/31 Total, Self-Contained Patroni) |
+| **IMG** | **E2E Docker Image Inventory** | 2026-11-21 | ✅ 31/31 Images (`7` Custom + `24` Upstream) via `./mdb images check` |
 
 ## 📋 Prerequisites
 
@@ -71,6 +72,9 @@ Run `./mdb doctor` (`mdb.cmd doctor` on Windows) to verify workstation prerequis
 | `./mdb lint` / `test` | Lints `.sh` + 21 compose YAML; runs Go verifier (`--suite` runs `tests/test_<env>.sh`). | `./mdb lint` |
 | `./mdb bench` / `doctor` | Multi-engine benchmarks (`bench`) and host dependency diagnostics (`doctor`). | `./mdb doctor` |
 | `./mdb pki` / `report` | Native x509 cert gen/verify (`pki`) and JSON/HTML telemetry (`report`). | `./mdb pki verify all` |
+| `./mdb images` | Lists (`--json`), builds (`all\|mariadb\|bucardo\|patroni\|bench`), pulls (`all\|standalone\|clusters\|helpers`), and checks all 31 E2E images. | `./mdb images check` |
+
+> **Wrappers**: `make help|catalog|status|info|stop|client|mycnf|doctor|interactive|lint` and `make build-images|pull-images|check-images` (optional `TARGET=<group>`) delegate to `./mdb`.
 
 ### Data Management
 
@@ -175,7 +179,7 @@ Advanced PostgreSQL architectures with automatic failover or connection pooling.
 | `make pgpool-down`   | 🛑   | Stops PgPool-II cluster                            |
 
 > [!NOTE]
-> Patroni uses ports 5000 (Primary RW), 5001 (Replicas RO), 6432 (PgBouncer), 7000 (Stats), 8008 (REST API), and 2379 (etcd). PgPool-II uses ports 5100 (RW) / 5101 (RO) / 8406 (Stats).
+> Patroni builds self-contained non-root images from `scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}` (auto-built on `./mdb up patroni` or `./mdb images build patroni`) and uses ports 5000 (Primary RW), 5001 (Replicas RO), 7000 (HTTPS Stats), 8008 (mTLS REST API), and 2379 (etcd mTLS). PgPool-II uses ports 5100 (RW) / 5101 (RO) / 8406 (Stats).
 
 **MySQL InnoDB Cluster (Group Replication & HAProxy)**
 
