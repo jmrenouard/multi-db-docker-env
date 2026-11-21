@@ -136,8 +136,8 @@ func TestGaleraAndRepli_BuildAndReadiness(t *testing.T) {
 	if err := repli.Up(ctx, client); err != nil {
 		t.Fatalf("Repli Up: %v", err)
 	}
-	if repliCalls := joinCalls(); strings.Contains(repliCalls, "docker build") {
-		t.Fatalf("unexpected docker build when image present:\n%s", repliCalls)
+	if repliCalls := joinCalls(); strings.Contains(repliCalls, "docker build") || !strings.Contains(repliCalls, "docker exec -e MYSQL_PWD=ci-secret g1 mariadb") {
+		t.Fatalf("unexpected repli calls:\n%s", repliCalls)
 	}
 	if last := strings.Join(mock.Calls[len(mock.Calls)-1], " "); !strings.Contains(last, "bash scripts/setup_repli.sh") {
 		t.Fatalf("expected setup_repli.sh last, got %s", last)

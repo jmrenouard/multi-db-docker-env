@@ -44,6 +44,15 @@ func (m *MySQLVerifier) execQuery(ctx context.Context, q string) (string, error)
 	return out, err
 }
 
+func (m *MySQLVerifier) execVerticalQuery(ctx context.Context, q string) (string, error) {
+	env := []string{"MYSQL_PWD=" + m.cfg.Password}
+	out, err := m.cfg.Executor.Exec(ctx, m.cfg.Container, env, "mariadb", "-u"+m.cfg.User, "-e", q)
+	if err != nil {
+		out, err = m.cfg.Executor.Exec(ctx, m.cfg.Container, env, "mysql", "-u"+m.cfg.User, "-e", q)
+	}
+	return out, err
+}
+
 func (m *MySQLVerifier) verifyGalera(ctx context.Context, h *ClusterHealth) error {
 	out, err := m.execQuery(ctx, "SHOW STATUS LIKE 'wsrep_%';")
 	if err != nil { return fmt.Errorf("galera query failed: %w", err) }
@@ -59,8 +68,8 @@ func (m *MySQLVerifier) verifyGalera(ctx context.Context, h *ClusterHealth) erro
 }
 
 func (m *MySQLVerifier) verifyRepli(ctx context.Context, h *ClusterHealth) error {
-	out, err := m.execQuery(ctx, "SHOW REPLICA STATUS\\G;")
-	if err != nil || strings.TrimSpace(out) == "" { out, err = m.execQuery(ctx, "SHOW SLAVE STATUS\\G;") }
+	out, err := m.execVerticalQuery(ctx, "SHOW REPLICA STATUS\\G;")
+	if err != nil || strings.TrimSpace(out) == "" { out, err = m.execVerticalQuery(ctx, "SHOW SLAVE STATUS\\G;") }
 	if err != nil { return fmt.Errorf("replication query failed: %w", err) }
 	kv := parseVertical(out)
 	io, sql := kv["Slave_IO_Running"], kv["Slave_SQL_Running"]

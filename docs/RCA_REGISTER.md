@@ -577,6 +577,13 @@
 - **Applied Change / Fix**: Parameterized `${TRAEFIK_MYSQL_PORT:-3306}`, `${TRAEFIK_PG_PORT:-5432}`, and `${GALERA_LB_PORT:-3306}` in Compose and tests; updated `mdb mycnf` to write `port=${TRAEFIK_MYSQL_PORT:-3306}` and `mdb doctor` to warn when localhost `3306`/`5432` is already bound with override hints.
 - **Result & Non-Regression Test**: Verified in `cmd/mdb/main_test.go`, `tests/test_python_audit_fixes.py`, and `mdb lint`.
 
+### RCA-077 -- Hardcoded `repli`/`galera` Names, `-sN` Stripping `\G` Labels & Windows `mdb clean` Mount Colon Split
+- **Date / Linked Action**: `2026-11-21` (`ACT-086` / Issue `#365`)
+- **Observed Symptom**: `mdb up repli`/`galera` timed out (`No such container: mariadb_01`), `mdb test repli` always returned `UNHEALTHY`, `tests/test_repli.sh` exited 1 at line 135, and `mdb clean repli` on Windows failed with `invalid mode: /workspace`.
+- **Root Cause Analysis**: Compose omits `container_name` on `repli`/`galera` nodes; `-sN` suppresses vertical `\G` column labels; `-v C:\...:/workspace` splits on the Windows drive colon under WSL `docker.cmd`.
+- **Applied Change / Fix**: Added `resolveNodeContainer` in `pkg/topology`, surfaced setup `stdout` when `stderr` is empty, added `execVerticalQuery` (no `-sN`) in `pkg/dbclient/mysql.go` and `tests/test_repli.sh`, and switched `removeGlobs` to `--mount` with `/mnt/<drive>` WSL fallback (plus slash normalization in `runInjectCmd`).
+- **Result & Non-Regression Test**: Verified in `pkg/topology/topology_test.go`, `pkg/dbclient/dbclient_test.go`, and `cmd/mdb/main_test.go`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

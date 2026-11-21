@@ -40,6 +40,13 @@ func TestMySQLVerifier_VerifyCluster(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			exec := &mockExecutor{response: func(ctx context.Context, c string, e []string, cmd ...string) (string, error) {
+				if tc.topo == "repli" {
+					for _, a := range cmd {
+						if a == "-sN" {
+							t.Fatalf("repli vertical query must not pass -sN: %v", cmd)
+						}
+					}
+				}
 				return tc.out, nil
 			}}
 			v := NewMySQLVerifier(Config{ClusterType: tc.topo, Container: "db", ExpectedNodes: tc.expNodes, Executor: exec})

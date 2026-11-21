@@ -81,6 +81,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-086 -- E2E Fixes: `repli`/`galera` Container Resolution, Vertical `\G` Queries & Windows `mdb clean` Mount (`#365`)
+- **Timestamp / Issue / Branch**: `2026-11-21T20:02Z` | Issue `#365` | `fix/issue-365-repli-galera-clean`
+- **Request**: Resolve Compose container names for `repli`/`galera`, remove `-sN` on `\G` replication queries, and fix Windows `mdb clean` alpine bind-mount path handling.
+- **Changes**: Updated `pkg/topology/{topology,galera,topology_test}.go`, `pkg/dbclient/{mysql,dbclient_test}.go`, `tests/test_repli.sh`, `cmd/mdb/{commands_admin,main_test}.go`, and `docs/RCA_REGISTER.md` (`RCA-077`).
+- **Result**: Verified `go test ./...` (11/11), `unittest` (53 ran: 47 ok, 6 skipped), `mdb lint`, diff `< 15,000` B, and CI `test-and-validate` green.
+
 ### ACT-085 -- Parameterizable Traefik & Galera Host Ports + `mycnf`/`doctor` Port Hints (`#362`)
 - **Timestamp / Issue / Branch**: `2026-11-21T19:55Z` | Issue `#362` | `feat/issue-362-configurable-host-ports`
 - **Request**: Parameterize Traefik (`3306`/`5432`) and Galera (`3306`) host ports with defaults preserved, wire `TRAEFIK_MYSQL_PORT` into `mdb mycnf`, and add localhost port-in-use warnings to `mdb doctor`.

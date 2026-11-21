@@ -452,6 +452,21 @@ func TestAdminCommands(t *testing.T) {
 	if _, err := os.Stat(rpt); !os.IsNotExist(err) {
 		t.Fatalf("expected report removed")
 	}
+	if got := wslMountPath(`C:\Users\dev\repo`); got != "/mnt/c/Users/dev/repo" {
+		t.Fatalf("wslMountPath: %q", got)
+	}
+	var mountCalls []string
+	winMock := &docker.MockCommandRunner{Custom: func(_ context.Context, _ string, a ...string) ([]byte, []byte, int, error) {
+		s := strings.Join(a, " ")
+		mountCalls = append(mountCalls, s)
+		if strings.Contains(s, `source=C:\repo`) {
+			return nil, []byte("invalid mount"), 125, errors.New("win path")
+		}
+		return nil, nil, 0, nil
+	}}
+	if err := runAlpineCleanup(ctx, docker.NewClientWithRunner(winMock), `C:\repo`, []string{"datadir_01"}); err != nil || len(mountCalls) != 2 || !strings.Contains(mountCalls[1], "type=bind,source=/mnt/c/repo,target=/workspace") {
+		t.Fatalf("alpine cleanup fallback: err=%v calls=%v", err, mountCalls)
+	}
 }
 
 func TestBenchRouting(t *testing.T) {
