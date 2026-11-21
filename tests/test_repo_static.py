@@ -156,6 +156,15 @@ class TestRepoStaticValidation(unittest.TestCase):
         self.assertIn("crt /certs/haproxy.pem", ha)
         self.assertIn("ca-file /certs/ca.crt", ha)
         self.assertIn("resolvers docker", ha)
+        self.assertIn('"$HAPROXY_STATS_AUTH"', ha)
+        self.assertNotIn("adminpass", ha)
+        self.assertIn("HAPROXY_STATS_AUTH=${HAPROXY_STATS_AUTH:-admin:adminpass}", compose)
+        gen_certs = (ROOT / "scripts" / "patroni" / "generate_certs.sh").read_text(encoding="utf-8")
+        self.assertIn('chmod 755 "$CERT_DIR"', gen_certs)
+        self.assertNotRegex(gen_certs, r'(?<!")\$CERT_DIR/')
+        test_patroni_sh = (ROOT / "tests" / "test_patroni.sh").read_text(encoding="utf-8")
+        self.assertIn('${HAPROXY_STATS_AUTH:-admin:adminpass}', test_patroni_sh)
+        self.assertNotIn('-u "admin:adminpass"', test_patroni_sh)
 
 
 if __name__ == "__main__":
