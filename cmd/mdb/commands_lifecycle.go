@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/jmrenouard/multi-db-docker-env/pkg/catalog"
@@ -20,6 +19,7 @@ func printUsage(w io.Writer) {
 
 Lifecycle:
   up <env> | start [env]   Start profile or cluster (rejects EOL; default: mariadb114)
+  setup <env>              Run topology setup script (no-op if none required)
   down [env|all] | stop    Stop specified env or all active containers
   status [env|all] | info  Show active containers, status, and recent logs
   logs [env|svc] [flags]   Stream or tail logs (--tail N, -f)
@@ -29,26 +29,12 @@ Client, Diagnostics & Operations:
                            Aliases: list, envs, environments, topologies
   interactive | wizard     Bilingual wizard (-a/--auto, -i/--interactive, -l en|fr)
   client [env] | mycnf     Open DB shell or backup/write ~/.my.cnf (0600)
-  profiles | inject | backup | restore | audit | clean
-  doctor | config | pki | test | bench | report | version | help
+  lint | test <env> [--suite] | bench <env> | doctor | config | pki | report
+  profiles | inject | backup | restore | audit | clean | version | help
 `)
 }
 
-func hasComposeFile(name string) bool {
-	for i, dir := 0, "."; i < 5; i, dir = i+1, filepath.Join("..", dir) {
-		if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
-			return true
-		}
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return false
-		}
-	}
-	return false
-}
-
-func activeCatalog() *catalog.Catalog {
-	return catalog.NewCatalog(hasComposeFile("docker-compose-yt-cluster.yml"))
-}
+func activeCatalog() *catalog.Catalog { return catalog.DefaultCatalog() }
 
 func resolveDefaultEnv() string {
 	if v := strings.TrimSpace(os.Getenv("DEFAULT_SERVICE")); v != "" {

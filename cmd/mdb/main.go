@@ -146,40 +146,12 @@ func main() {
 		runOrExit(err)
 		opts.Catalog = activeCatalog()
 		runOrExit(interactive.Run(ctx, opts))
+	case "setup":
+		runOrExit(runSetupCmd(ctx, activeCatalog(), os.Args[2:], os.Stdout, os.Stderr, streamCommand))
+	case "lint":
+		runOrExit(runLintCmd(ctx, docker.NewClient(), os.Stdout, os.Stderr))
 	case "test":
-		if len(os.Args) < 3 {
-			fmt.Println("Usage: mdb test <topology>")
-			os.Exit(1)
-		}
-		name := os.Args[2]
-		if _, err := topology.DefaultRegistry().Get(name); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
-		client, ctx := docker.NewClient(), context.Background()
-		cfg := dbclient.Config{
-			Name:        name,
-			ClusterType: name,
-			Container:   resolveContainer(ctx, client, name),
-			Password:    loadPassword(),
-			Executor:    client,
-		}
-		verifier, err := dbclient.NewVerifier(name, cfg)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Verifier error: %v\n", err)
-			os.Exit(1)
-		}
-		defer verifier.Close()
-		health, err := verifier.VerifyCluster(ctx)
-		if err != nil && health == nil {
-			fmt.Fprintf(os.Stderr, "Verification failed: %v\n", err)
-			os.Exit(1)
-		}
-		data, _ := json.MarshalIndent(health, "", "  ")
-		fmt.Println(string(data))
-		if health.Status == dbclient.StatusUnhealthy {
-			os.Exit(1)
-		}
+		runOrExit(runTestCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:], os.Stdout, os.Stderr, streamCommand))
 	case "bench":
 		runOrExit(runBenchCmd(ctx, docker.NewClient(), activeCatalog(), os.Args[2:]))
 	case "report":
@@ -276,6 +248,8 @@ func defaultContainer(topo string) string {
 		return "mongo1"
 	case "mongo8":
 		return "mongo8_n1"
+	case "pg17-baseline":
+		return "pg17_standalone"
 	case "pg-streaming":
 		return "pg_stream_primary"
 	case "pg-logical":
