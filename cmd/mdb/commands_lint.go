@@ -149,6 +149,24 @@ func suiteScriptPath(name string) string {
 	}
 }
 
+func resolveVerifierTarget(ctx context.Context, client *docker.Client, cat *catalog.Catalog, name string) (string, string, error) {
+	env, ok := cat.Lookup(name)
+	if ok && env.Status == catalog.StatusEOL {
+		return "", "", checkEOLError(env)
+	}
+	vType := name
+	if _, err := topology.DefaultRegistry().Get(name); err != nil {
+		if !ok {
+			return "", "", err
+		}
+		if vType = env.Engine; vType == "percona" {
+			vType = "mysql"
+		}
+	}
+	ctr, _, _ := resolveEnvContainer(ctx, client, cat, name)
+	return vType, ctr, nil
+}
+
 func runTestCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalog, args []string, stdout, stderr io.Writer, execFn scriptExecFunc) error {
 	fs := flag.NewFlagSet("test", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
@@ -161,20 +179,10 @@ func runTestCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalog
 		return errors.New("Usage: mdb test <topology> [--suite]")
 	}
 	name := pos[0]
-	env, ok := cat.Lookup(name)
-	if ok && env.Status == catalog.StatusEOL {
-		return checkEOLError(env)
+	vType, ctr, err := resolveVerifierTarget(ctx, client, cat, name)
+	if err != nil {
+		return err
 	}
-	vType := name
-	if _, err := topology.DefaultRegistry().Get(name); err != nil {
-		if !ok {
-			return err
-		}
-		if vType = env.Engine; vType == "percona" {
-			vType = "mysql"
-		}
-	}
-	ctr, _, _ := resolveEnvContainer(ctx, client, cat, name)
 	v, err := dbclient.NewVerifier(vType, dbclient.Config{Name: name, ClusterType: vType, Container: ctr, Password: loadPassword(), Executor: client})
 	if err != nil {
 		return fmt.Errorf("verifier error: %w", err)

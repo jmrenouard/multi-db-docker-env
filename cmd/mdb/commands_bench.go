@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jmrenouard/multi-db-docker-env/pkg/bench"
@@ -51,6 +52,54 @@ func planBenchmark(env catalog.Environment) benchPlan {
 	}
 }
 
+func runMySQLSysbench(ctx context.Context, client *docker.Client, ctr, workload, pass string, threads int, duration time.Duration) (*bench.SysbenchResult, error) {
+	if workload == "" || strings.ContainsAny(workload, " \t\n\r;'\"$`\\&|<>") {
+		return nil, fmt.Errorf("invalid sysbench workload %q", workload)
+	}
+	sec, thr := max(1, int(duration.Seconds())), max(1, threads)
+	if _, err := client.Exec(ctx, ctr, []string{"MYSQL_PWD=" + pass}, "sh", "-c", "if command -v mariadb >/dev/null 2>&1; then mariadb -uroot -e 'CREATE DATABASE IF NOT EXISTS sbtest;'; else mysql -uroot -e 'CREATE DATABASE IF NOT EXISTS sbtest;'; fi"); err != nil {
+		return nil, fmt.Errorf("create sbtest db failed: %w", err)
+	}
+	if _, err := client.Exec(ctx, ctr, nil, "sh", "-c", "command -v sysbench >/dev/null 2>&1"); err == nil {
+		script := fmt.Sprintf(`sb="sysbench %s --db-driver=mysql --mysql-user=root --mysql-db=sbtest --tables=1 --table-size=1000"; $sb --mysql-password="$MYSQL_PWD" cleanup >/dev/null 2>&1 || true; $sb --mysql-password="$MYSQL_PWD" prepare >/dev/null && $sb --mysql-password="$MYSQL_PWD" --threads=%d --time=%d run`, workload, thr, sec)
+		out, err := client.Exec(ctx, ctr, []string{"MYSQL_PWD=" + pass}, "sh", "-c", script)
+		if err != nil {
+			return nil, fmt.Errorf("sysbench execution failed: %w", err)
+		}
+		res, err := bench.ParseSysbenchOutput(out)
+		if err == nil && res.Workload == "" {
+			res.Workload = workload
+		}
+		return res, err
+	}
+	netOut, se, code, err := client.Runner().Run(ctx, "docker", "inspect", "-f", "{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}", ctr)
+	if err != nil || code != 0 {
+		return nil, fmt.Errorf("inspect container network failed (%d): %s: %w", code, strings.TrimSpace(string(se)), err)
+	}
+	nets := strings.Fields(string(netOut))
+	if len(nets) == 0 {
+		return nil, fmt.Errorf("no docker network found for %s", ctr)
+	}
+	img := "mariadb_ssh:004"
+	if ok, _ := client.ImageExists(ctx, img); !ok {
+		if ok2, _ := client.ImageExists(ctx, "multi-db-pgbench-sysbench:latest"); ok2 {
+			img = "multi-db-pgbench-sysbench:latest"
+		} else if bErr := client.BuildImage(ctx, img, "."); bErr != nil {
+			return nil, bErr
+		}
+	}
+	script := fmt.Sprintf(`sb="sysbench %s --db-driver=mysql --mysql-host=%s --mysql-port=3306 --mysql-user=root --mysql-db=sbtest --tables=1 --table-size=1000"; $sb --mysql-password="$MYSQL_PWD" cleanup >/dev/null 2>&1 || true; if ! $sb --mysql-password="$MYSQL_PWD" prepare >/dev/null 2>&1; then sb="$sb --mysql-ssl=on"; $sb --mysql-password="$MYSQL_PWD" cleanup >/dev/null 2>&1 || true; $sb --mysql-password="$MYSQL_PWD" prepare >/dev/null; fi && $sb --mysql-password="$MYSQL_PWD" --threads=%d --time=%d run`, workload, ctr, thr, sec)
+	out, se, code, err := client.RunWithEnv(ctx, []string{"MYSQL_PWD=" + pass}, "docker", "run", "--rm", "--entrypoint", "sh", "--network", nets[0], "-e", "MYSQL_PWD", img, "-c", script)
+	if err != nil || code != 0 {
+		return nil, fmt.Errorf("sysbench container failed (%d): %s: %w", code, strings.TrimSpace(string(se)), err)
+	}
+	res, err := bench.ParseSysbenchOutput(string(out))
+	if err == nil && res.Workload == "" {
+		res.Workload = workload
+	}
+	return res, err
+}
+
 func runBenchCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalog, args []string) error {
 	fs := flag.NewFlagSet("bench", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
@@ -80,10 +129,7 @@ func runBenchCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalo
 	switch plan.Strategy {
 	case "sysbench":
 		ctr, _, _ := resolveEnvContainer(ctx, client, cat, env.ID)
-		res, err := bench.NewSysbenchRunner(bench.SysbenchConfig{
-			Workload: *workload, Container: ctr, User: "root", Password: loadPasswordWarn(os.Stderr),
-			Threads: *threads, Duration: *duration, Executor: client,
-		}).Run(ctx)
+		res, err := runMySQLSysbench(ctx, client, ctr, *workload, loadPasswordWarn(os.Stderr), *threads, *duration)
 		if err != nil {
 			return err
 		}
@@ -109,9 +155,9 @@ func runBenchCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalo
 		if env.ID == "pgpool" {
 			base = append(base, "-h", "127.0.0.1", "-p", "9999")
 		}
-		if err := streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", append(append([]string{}, base...), "-i", "-s", "1", "-U", "postgres")...); err != nil {
+		if err := streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", append(append([]string{}, base...), "-i", "-s", "1", "-U", "postgres", "postgres")...); err != nil {
 			return err
 		}
-		return streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", append(append([]string{}, base...), "-c", thr, "-T", sec, "-U", "postgres")...)
+		return streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", append(append([]string{}, base...), "-c", thr, "-T", sec, "-U", "postgres", "postgres")...)
 	}
 }

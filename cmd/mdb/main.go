@@ -171,6 +171,7 @@ func main() {
 			}
 		}
 
+		cat := activeCatalog()
 		var mu sync.Mutex
 		steps := make([]runner.Step, 0, len(topos))
 		for _, name := range topos {
@@ -178,7 +179,11 @@ func main() {
 			steps = append(steps, runner.Step{
 				Name: "verify-" + n,
 				Run: func(sCtx context.Context) error {
-					v, err := dbclient.NewVerifier(n, dbclient.Config{Name: n, ClusterType: n, Container: resolveContainer(sCtx, client, n), Password: pass, Executor: client})
+					vType, ctr, err := resolveVerifierTarget(sCtx, client, cat, n)
+					if err != nil {
+						return err
+					}
+					v, err := dbclient.NewVerifier(vType, dbclient.Config{Name: n, ClusterType: vType, Container: ctr, Password: pass, Executor: client})
 					if err != nil {
 						return err
 					}
