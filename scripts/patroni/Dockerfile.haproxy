@@ -1,0 +1,11 @@
+FROM haproxy:lts
+
+COPY --chown=haproxy:haproxy conf/haproxy-patroni.cfg /usr/local/etc/haproxy/haproxy.cfg
+
+USER haproxy
+EXPOSE 5000 5001 7000
+
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
+    CMD ["test", "-S", "/tmp/haproxy.sock"]
+
+CMD ["haproxy", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]

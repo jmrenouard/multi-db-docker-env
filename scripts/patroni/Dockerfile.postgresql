@@ -1,0 +1,25 @@
+FROM postgres:17-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Patroni (PGDG) and supervisor without SSH or baked host keys
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends patroni supervisor curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    ln -sf /usr/bin/supervisord /usr/local/bin/supervisord && \
+    mkdir -p /datas/pgdata /etc/patroni/certs /var/log/supervisor /var/run/supervisor && \
+    chown -R postgres:postgres /datas /etc/patroni /var/log/supervisor /var/run/supervisor && \
+    chmod 700 /datas/pgdata
+
+COPY --chown=postgres:postgres conf/supervisord-patroni.conf /etc/supervisord.conf
+COPY --chown=postgres:postgres conf/patroni.yml /etc/patroni.yml
+
+USER postgres
+WORKDIR /datas
+EXPOSE 5432 8008
+VOLUME ["/datas"]
+
+HEALTHCHECK --interval=3s --timeout=3s --start-period=5s --retries=15 \
+    CMD ["pg_isready", "-U", "postgres"]
+
+CMD ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]

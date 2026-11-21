@@ -1,0 +1,27 @@
+FROM quay.io/coreos/etcd:v3.5.17 AS etcd-bin
+
+FROM debian:bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends bash curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd -r etcd && \
+    useradd -r -g etcd -d /etcd-data -s /sbin/nologin etcd && \
+    mkdir -p /etcd-data && \
+    chown -R etcd:etcd /etcd-data && \
+    chmod 700 /etcd-data
+
+COPY --from=etcd-bin /usr/local/bin/etcd /usr/bin/etcd
+COPY --from=etcd-bin /usr/local/bin/etcdctl /usr/bin/etcdctl
+
+USER etcd
+WORKDIR /etcd-data
+EXPOSE 2379 2380
+VOLUME ["/etcd-data"]
+
+HEALTHCHECK --interval=3s --timeout=3s --start-period=2s --retries=10 \
+    CMD ["curl", "-fsS", "--cacert", "/certs/ca.crt", "--cert", "/certs/etcd-client.crt", "--key", "/certs/etcd-client.key", "https://127.0.0.1:2379/health"]
+
+ENTRYPOINT ["/usr/bin/etcd"]

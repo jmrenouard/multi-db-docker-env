@@ -640,6 +640,13 @@
 - **Applied Change / Fix**: Excluded `"bucardo"` in `_sb_prepare` (`scripts/bench_pg_opt_workloads.py`), added `cd "$BENCH_ROOT"` + `[ -f .env ] && { set -a; . ./.env; set +a; }` and `DB_ROOT_PASSWORD`-first precedence before `export PG_PASS` in `scripts/bench_pg_optimized_runner.sh`, and released `v2.6.1`.
 - **Result & Non-Regression Test**: Verified in `tests/test_pg_libs.py` (`test_sb_prepare_skips_bucardo_slave_wait`, `test_optimized_runner_sources_dotenv_before_pg_pass`), `go test -count=1 ./...`, `bash ./tests/test_config.sh`, and `release_notes.py --tag v2.6.1 --check`.
 
+### RCA-086 -- Missing Self-Contained Patroni Dockerfiles, `conf/patroni.yml` & Root Supervisor Coupling
+- **Date / Linked Action**: `2026-11-21` (`ACT-100` / Issue `#396`)
+- **Observed Symptom**: `docker-compose-patroni.yml` referenced `patroni-rhel8-{etcd,postgresql,haproxy}:latest` images with no Dockerfiles or `conf/patroni.yml`, while `conf/supervisord-patroni.conf` ran as `root` with an unused `sshd` program and `entrypoint_node.sh` ran unconditional `chown`.
+- **Root Cause Analysis**: Patroni originally relied on external RHEL8 builds; running `supervisord` as root violated `IMP-005`, invoking `/usr/sbin/sshd` without `openssh-server` caused crash loops, and Patroni needed `PATRONI_*` env mapping to avoid hardcoded secrets in `/etc/patroni.yml`.
+- **Applied Change / Fix**: Added pinned non-root `scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}` and secret-free `conf/patroni.yml`; switched `conf/supervisord-patroni.conf` to `user=postgres` stdout logging without `sshd`; updated `scripts/patroni/entrypoint_node.sh` for non-root cert staging and `PATRONI_*` credential export.
+- **Result & Non-Regression Test**: All 3 images built cleanly with 0 HIGH/WARN/INFO on `lint_dockerfile.py`, and `go test`, `unittest`, and `mdb lint` pass.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
