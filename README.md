@@ -26,54 +26,51 @@ A key feature is the **Traefik reverse proxy**, which ensures all database insta
 
 | Tier | Tier Name | Last Verified | Status |
 | :--- | :--- | :--- | :--- |
-| **T2** | **Standalone Matrix** | 2026-11-19 | ✅ 100% Passed |
-| **T3** | **Cluster, HA & Multi-Master (`v2.4.0`)** | 2026-11-20 | ✅ 20 Topologies Verified |
+| **T2** | **Standalone Matrix** | 2026-11-20 | ✅ 11 Active Profiles Verified |
+| **T3** | **Cluster, HA & Multi-Master (`v2.5.0`)** | 2026-11-21 | ✅ 20 Active Clusters (13 PG Compose Stacks) |
 
 ## 📋 Prerequisites
 
-Before you begin, ensure you have the following tools installed:
+Run `./mdb doctor` (`mdb.cmd doctor` on Windows) to verify workstation prerequisites:
 
-* [Docker](https://docs.docker.com/get-docker/)
-* [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
-* `make` (available on most Linux/macOS systems. For Windows, you can use Chocolatey: `choco install make`)
-* Full host CLI and optional client tool list: see [`PREREQUISITES.txt`](PREREQUISITES.txt).
+* [Docker](https://docs.docker.com/get-docker/) & [Docker Compose v2](https://docs.docker.com/compose/install/) (Docker Desktop on Windows/macOS)
+* `./mdb` (`mdb.cmd` on Windows): runs `bin/mdb` if prebuilt, else falls back automatically to [Go](https://go.dev/) (`>= 1.22`)
+* **macOS**: Docker Desktop + Homebrew tools (`brew install go bash openssl git python`)
+* **Windows**: Run `mdb.cmd` natively in PowerShell/CMD; use **WSL2** or **Git Bash** (or `choco install make`) for `make` wrappers and bash tests
+* Full cross-platform dependency list: [`PREREQUISITES.txt`](PREREQUISITES.txt).
 
 ## ⚙️ Initial Setup
 
-The only required configuration step is to set the root password for your databases.
-
-1. Copy `.env.example` to `.env` in the project's root directory (`cp .env.example .env`).
-2. Adjust `DB_ROOT_PASSWORD` with a strong password of your choice (do not use quotes around the password):
+1. *(Recommended)* Copy `.env.example` to `.env` (`cp .env.example .env`) and set `DB_ROOT_PASSWORD` (no quotes):
 
     ```env
     # File: .env
     DB_ROOT_PASSWORD=your_super_secret_password
     ```
 
-⚠️ **Important**: This `DB_ROOT_PASSWORD` is crucial for the `make mycnf` and `make client` commands to function correctly.
+> [!NOTE]
+> If `.env` is absent, `./mdb` and `Makefile` default to `DB_ROOT_PASSWORD=rootpass` with a warning instead of failing. Existing `~/.my.cnf` files are backed up to `~/.my.cnf.bak` (`0600`).
 
-## ✨ Usage with Makefile
+## ✨ Single Unified Entry Point: `./mdb` (`mdb.cmd` on Windows)
 
-The `Makefile` is the main entry point for managing the environment. It simplifies all operations into short, memorable commands.
+`./mdb` (`mdb.cmd` on Windows) is the **single unified entry point** for all operations. `Makefile`, `interactive_runner.py`, and `mysql_docker.py` act as thin compatibility wrappers and legacy helpers delegating to `./mdb`.
 
 ### General Commands
 
-These commands help you manage and interact with the overall environment.
-
-| Command         | Icon | Description                                                                 | Example Usage         |
-| :-------------- | :--- | :-------------------------------------------------------------------------- | :-------------------- |
-| `make help`     | 📜   | Displays the full list of all available commands.                           | `make help`           |
-| `make start`    | 🚀   | Starts the default database service (`mariadb114`).                         | `make start`          |
-| `make stop`     | 🛑   | Stops and properly removes all containers and networks for this project.    | `make stop`           |
-| `make status`   | 📊   | Shows the status of the project's active containers (Traefik + DB).         | `make status`         |
-| `make info`     | ℹ️   | Provides information about the active DB service and recent logs.           | `make info`           |
-| `make logs`     | 📄   | Displays logs for the currently active database service (or all if none).   | `make logs`           |
-| `make mycnf`    | 🔑   | Generates a `~/.my.cnf` file for password-less MySQL connections.          | `make mycnf`          |
-| `make client`   | 💻   | Starts a MySQL client connected to the active database.                     | `make client`         |
-| `make verify`   | ✅   | Runs complete environment and configuration validation (test-config).       | `make verify`         |
-| `make build-go` | 🔨   | Compiles the native Go `mdb` CLI binary into `bin/mdb`.                     | `make build-go`       |
-| `make test-go`  | 🧪   | Runs the complete Go unit test suite (67+ tests).                           | `make test-go`        |
-| `python3 interactive_runner.py` | 🚀 | Starts the interactive test runner for guided setup and testing. | `python3 interactive_runner.py` |
+| Command | Description | Example |
+| :--- | :--- | :--- |
+| `./mdb help` | Displays categorized CLI usage (`--help`, `-h`). | `./mdb help` |
+| `./mdb catalog` | Lists 31 active + 5 EOL envs (`--category`, `--engine`, `--eol`, `--all`, `--json`). | `./mdb catalog --all` |
+| `./mdb up <env>` | Starts standalone/cluster (auto-PKI, rejects EOL; `start` defaults `mariadb114`). | `./mdb up mysql84` |
+| `./mdb setup <env>` | Runs topology setup script on demand (no-op if none). | `./mdb setup yt-cluster` |
+| `./mdb down [env\|all]` | Stops specified env or all active compose stacks (`alias`: `stop`). | `./mdb down` |
+| `./mdb status` / `info` | Shows active containers across all stacks (`--json`) + recent logs. | `./mdb status` |
+| `./mdb logs [env\|svc]` | Streams or tails container logs (`--tail N`, `-f`). | `./mdb logs galera` |
+| `./mdb client` / `mycnf` | Engine-aware shell (`mariadb`/`psql`/`mongosh`/etc.) or `~/.my.cnf` + `.bak`. | `./mdb client` |
+| `./mdb interactive` | Native bilingual (`en`/`fr`) wizard (`-a`, `-i`, `-l en\|fr`; `alias`: `wizard`). | `./mdb interactive -l en` |
+| `./mdb lint` / `test` | Lints `.sh` + 21 compose YAML; runs Go verifier (`--suite` runs `tests/test_<env>.sh`). | `./mdb lint` |
+| `./mdb bench` / `doctor` | Multi-engine benchmarks (`bench`) and host dependency diagnostics (`doctor`). | `./mdb doctor` |
+| `./mdb pki` / `report` | Native x509 cert gen/verify (`pki`) and JSON/HTML telemetry (`report`). | `./mdb pki verify all` |
 
 ### Data Management
 
@@ -211,22 +208,16 @@ MongoDB architecture with ReplicaSet and HAProxy routing.
 > [!NOTE]
 > MongoDB 7.0 uses port 27100 (HAProxy), stats 8408, direct 27411-27413 (`10.10.0.0/24`). MongoDB 8.0 uses port 27200 (HAProxy), stats 8409, direct 27511-27513 (`10.11.0.0/24`). Both enforce TLS (`requireTLS`).
 
-**PostgreSQL Replication, Multi-Master & Distributed SQL (`v2.1.0`–`v2.4.0`)**
+**PostgreSQL Replication, Multi-Master & Distributed SQL (13 Compose Stacks, `v2.1.0`–`v2.5.0`)**
 
-Twelve additional PostgreSQL topologies (`pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) each expose `<topo>-up`, `<topo>-down`, `<topo>-status`, `<topo>-logs`, `<topo>-ps`, and `<topo>-test` targets, plus `make test-pg-extended` (T11–T18), `make bench-pg-v2`, `make bench-pg18`, and `make bench-yt-cluster`. See [PostgreSQL Multi-Master & Distributed SQL](documentation/pg_multimaster.md) for ports, architecture, and benchmark commands.
+All 13 PostgreSQL Compose topologies (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) expose `./mdb up|setup|test|down <stack>`, `make up-<stack>|setup-<stack>|test-<stack>|down-<stack>`, `<stack>-{up,down,status,logs,ps,test}`, `make lint`, `make test`, `make test-pg-extended` (T11–T18), `make bench-pg-v2`, `make bench-pg18`, and `make bench-yt-cluster`. For `yt-cluster` ([`dbinvent/yt:1.21.3`](https://hub.docker.com/r/dbinvent/yt), [Overview](https://dbinvent.com/30p), [`agent.md`](https://dbinvent.com/agent.md)), note the MIT ([`DBinvent/yt-cluster-lite`](https://github.com/DBinvent/yt-cluster-lite) single-DB leaf) vs PolyForm Noncommercial 1.0.0 / Commercial (`ytserv` + `ytctl`) license split and the [Jepsen report](https://dbinvent.com/cluster/articles/jepsen) (`cursor-stability`, `51` initial -> `49/49` retested). See [pg_multimaster.md](documentation/pg_multimaster.md).
 
 **Example: Switching Databases**
 
 ```bash
-# 1. You are working with MySQL 8.4 LTS
-make mysql84
-
-# 2. You want to switch to Percona 8.4 LTS. No need to stop manually.
-make percona84
-# This will stop mysql84 and then start percona84.
-
-# 3. Verify environment
-make verify
+./mdb up mysql84   # Start MySQL 8.4 LTS (or `make mysql84`)
+./mdb up percona84 # Automatically stops mysql84 and starts Percona 8.4 LTS
+./mdb status && ./mdb lint && ./mdb doctor
 ```
 
 ## 🏛️ Architecture
@@ -273,11 +264,12 @@ graph TD
 ├── 🐳 docker-compose-mongo-rs.yml  # MongoDB 7.0 ReplicaSet
 ├── 🐳 docker-compose-mongo8-rs.yml # MongoDB 8.0 ReplicaSet
 ├── 🐳 docker-compose-pg-*.yml      # PostgreSQL streaming, logical, bi-rep, pgEdge, Citus, Bucardo, Cockroach, Yugabyte
-├── 🚀 cmd/mdb/             # Native Go CLI entrypoint (main.go)
-├── 📦 pkg/                 # Pure-Go orchestration modules (bench, pki, dbclient, report)
+├── 🚀 mdb / mdb.cmd        # Single unified cross-platform CLI entrypoint (Linux/macOS/Windows)
+├── 🚀 cmd/mdb/             # Native Go CLI source (`main.go`, `commands_*.go`)
+├── 📦 pkg/                 # Pure-Go orchestration modules (`catalog`, `interactive`, `docker`, `topology`, `bench`, `pki`, `dbclient`, `report`)
 ├── 📜 go.mod               # Go module definition (zero external dependencies)
-├── 🏛️ docs/                # Project governance registers (ACTION_LOGBOOK, RCA_REGISTER)
-├── 🛠️ Makefile             # Unified management of single DBs and clusters
+├── 🏛️ docs/                # Project governance registers (`ACTION_LOGBOOK`, `RCA_REGISTER`)
+├── 🛠️ Makefile             # Thin compatibility wrapper delegating to `./mdb` (plus CI/test targets)
 ├── 📂 documentation/      # Detailed guides for clusters and scripts
 ├── 📂 reports/            # Performance and test reports
 ├── 📚 [INDEX.md](documentation/INDEX.md) # Documentation Index
@@ -312,79 +304,66 @@ Here is a diagram illustrating a common workflow:
 ```mermaid
 graph TD
     A[Start] --> B{Choose DB Version};
-    B --> C[Ex: make mysql84];
+    B --> C[Ex: ./mdb up mysql84];
     C --> D{Launch MySQL 8.4};
     D --> E[Work with DB];
     subgraph "Possible Actions"
         direction LR
-        F[Use make client]
-        G[Check logs with make logs]
-        H[Check status with make status]
+        F[Use ./mdb client]
+        G[Check logs with ./mdb logs]
+        H[Check status with ./mdb status]
     end
     E --> F & G & H;
     H --> I[Stop Environment];
-    I --> J[make stop];
+    I --> J[./mdb down];
     J --> K[End];
 ```
 
 1. **Choose and start a database version**:
 
     ```bash
-    make mysql84
+    ./mdb up mysql84
     ```
 
 2. **(Optional but Recommended)** Generate your `~/.my.cnf` for easy client access:
 
     ```bash
-    make mycnf
+    ./mdb mycnf
     ```
 
-3. **Connect using your preferred SQL client** to `localhost:3306` or use the provided Make command:
+3. **Connect using your preferred SQL client** to `localhost:3306` or use the engine-aware shell:
 
     ```bash
-    make client
+    ./mdb client
     ```
 
 4. **Develop and test** against the database.
 5. **Check logs** if needed:
 
     ```bash
-    make logs
+    ./mdb logs
     ```
 
 6. **Switch to another database version** if required:
 
     ```bash
-    make mariadb114
+    ./mdb up mariadb114
     ```
 
 7. When done, **stop the environment**:
 
     ```bash
-    make stop
+    ./mdb down
     ```
 
-## 🚀 Go mdb CLI Orchestrator (v2.2.0)
+## 🚀 Go `mdb` CLI Build & Testing (`v2.5.0`)
 
-A native compiled CLI (`cmd/mdb`, `bin/mdb`) written in pure Go (zero external dependencies).
+A native CLI (`./mdb`, `mdb.cmd`, `cmd/mdb`, `bin/mdb`) written in pure Go (zero external dependencies). See [General Commands](#general-commands) above for the full subcommand matrix.
 
 ```bash
-make build-go    # Build binary into bin/mdb
-make test-go     # Run Go test suite
+make build-go    # Optional: build bin/mdb (./mdb auto-falls back to go run ./cmd/mdb)
+make test-go     # Run Go test suite across all 11 packages
 ```
-
-| Command | Usage | Description |
-| :--- | :--- | :--- |
-| `version` | `mdb version` | Prints CLI version (`2.4.0`). |
-| `config` | `mdb config [-env <path>]` | Dumps configuration as JSON. |
-| `topologies` | `mdb topologies` | Lists all 20 supported topologies. |
-| `up` | `mdb up <topology>` | Deploys topology with bootstrap & setup. |
-| `down` | `mdb down <topology>` | Tears down containers and volumes. |
-| `status` | `mdb status <topology>` | Returns JSON running status. |
-| `test` | `mdb test <topology>` | Executes cluster health verification. |
-| `bench` | `mdb bench <topology> [flags]` | Runs Sysbench benchmarks (`-workload`, `-threads`, `-duration`). |
-| `pki` | `mdb pki <generate\|verify> [topo]` | Generates or verifies TLS certificates natively. |
-| `report` | `mdb report [topos...] [flags]` | Aggregates health & exports telemetry reports. |
 
 ## 🚀 Release Pipeline (GitHub Actions)
 
