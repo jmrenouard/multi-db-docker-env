@@ -731,6 +731,10 @@
 - **Why It Is a Dead-End**: Disabling `fsync`/`full_page_writes` compromises durability (`RPO=0`); `io_method`/`io_workers` fails to boot on PostgreSQL 17; passing `-c shared_preload_libraries=...` on the YT Compose CLI erases `yt_cluster` from `conf.d/yt.conf`.
 - **Adopted Decision**: Keep `fsync=on` and `full_page_writes=on` across all 13 PG Compose stacks, restrict `io_method`/`io_workers` strictly to PG 18 and YT Compose files (enforced by static test), and inject YT tuning via `YT_MAX_PREPARED=300` + PostgreSQL GUCs without `-c shared_preload_libraries`.
 
+### IMP-017 -- Relying on External Pre-Built Patroni RHEL 8 Images Without In-Repo Dockerfiles
+- **Why It Is a Dead-End**: `docker-compose-patroni.yml` referenced `patroni-rhel8-{etcd,postgresql,haproxy}:latest` with no local build definitions, leaving Patroni the lone skipped topology (30/31) in live E2E suites.
+- **Adopted Decision**: Replaced external image reliance with pinned, non-root in-repo Dockerfiles (`scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}`), secret-free `conf/patroni.yml`, Compose `build:` + `service_healthy` ordering, `pkg/topology/patroni.go` auto-build, and unified `mdb images` orchestration (`#396`–`#405`), closing the 31/31 E2E gap.
+
 ---
 
 ## 3. Current Approximations & Simplifying Assumptions (`APP`)
@@ -820,10 +824,10 @@
 - **Nature & Justification**: Added cert mounts and 3-tier fallback in setup.
 - **Removal Condition**: Permanent pattern for lab/CI connection resilience.
 
-### APP-018 — Patroni HAProxy Client TLS & PgBouncer Port Exposure
-- **Target Files**: `docker-compose-patroni.yml`, `documentation/patroni_cluster.md`
-- **Nature & Justification**: Mutual TLS is active internally across nodes/ETCD; HAProxy (5000/5001) and PgBouncer (6432) allow plaintext client connections in lab mode.
-- **Removal Condition**: Enforce client TLS termination at HAProxy in production.
+### APP-018 — Patroni HAProxy Client TLS Termination & TCP Passthrough
+- **Target Files**: `docker-compose-patroni.yml`, `conf/haproxy-patroni.cfg`, `documentation/patroni_cluster.md`
+- **Nature & Justification**: Mutual TLS (`verify required`) is active across etcd (`:2379`), Patroni REST API (`:8008`), HAProxy stats (`:7000` HTTPS), and PostgreSQL (`hostssl`); HAProxy TCP frontends (`5000`/`5001`) forward PostgreSQL TLS connections to backend nodes without separate PgBouncer deployment.
+- **Removal Condition**: Add dedicated PgBouncer service or HAProxy TLS termination if required in production.
 
 ### APP-019 — Single-Host `tc netem 25ms` WAN Approximation & `PG_SCALE=2` Lab Scaling
 - **Target Files**: `scripts/bench_pg_multimaster.sh`, `scripts/bench_pg_lib.py`
@@ -885,6 +889,11 @@
 - **Target Files**: `scripts/Dockerfile.bench`
 - **Nature & Justification**: `scripts/Dockerfile.bench` runs as unprivileged `USER postgres` and grants `cap_net_admin+ep` solely to `tc` so ephemeral benchmark containers (`--cap-add NET_ADMIN`) can inject WAN `netem` latency without running as `root`.
 - **Removal Condition**: Permanent least-privilege pattern for containerized `pgbench`/`sysbench`/`tc netem` benchmarking.
+
+### APP-030 -- Self-Contained 31-Image E2E Architecture, Legacy Patroni Tags & Native Linux Cert Ownership
+- **Target Files**: `cmd/mdb/commands_images.go`, `scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}`, `scripts/patroni/generate_certs.sh`
+- **Nature & Justification**: All 31 E2E images (`7` custom builds + `24` pinned upstream images) are centrally inventoried and verified by `./mdb images` and 21-compose parity tests; Patroni retains legacy `patroni-rhel8-{etcd,postgresql,haproxy}:latest` tags on pinned Debian/upstream bases (`quay.io/coreos/etcd:v3.5.17`, `postgres:17-bookworm`, `haproxy:lts`) for Compose compatibility. On native Linux hosts (non-drvfs), `generate_certs.sh` `0700`/`0600` host-owned keys may require UID/GID alignment for non-root `etcd`/`postgres`/`haproxy` containers.
+- **Removal Condition**: Rename Patroni tags only in a breaking `v3.0` release; align host cert group readability if running rootless on native Linux.
 
 ---
 
