@@ -5,7 +5,7 @@ networks:
 x-crdb-node: &crdb-node
   image: cockroachdb/cockroach:latest-v25.4
   restart: unless-stopped
-  mem_limit: 1280m
+  mem_limit: ${CRDB_MEM_LIMIT:-3072m}
   networks:
     - crdb_net
 
@@ -20,8 +20,8 @@ services:
       --listen-addr=0.0.0.0:26257
       --http-addr=0.0.0.0:8080
       --join=crdb_node1:26257,crdb_node2:26257,crdb_node3:26257
-      --cache=256MiB
-      --max-sql-memory=256MiB
+      --cache=${CRDB_CACHE:-1GiB}
+      --max-sql-memory=${CRDB_MAX_SQL_MEM:-1GiB}
       --store=/cockroach/cockroach-data
     ports:
       - "127.0.0.1:15481:26257"
@@ -39,8 +39,8 @@ services:
       --listen-addr=0.0.0.0:26257
       --http-addr=0.0.0.0:8080
       --join=crdb_node1:26257,crdb_node2:26257,crdb_node3:26257
-      --cache=256MiB
-      --max-sql-memory=256MiB
+      --cache=${CRDB_CACHE:-1GiB}
+      --max-sql-memory=${CRDB_MAX_SQL_MEM:-1GiB}
       --store=/cockroach/cockroach-data
     ports:
       - "127.0.0.1:15482:26257"
@@ -57,13 +57,30 @@ services:
       --listen-addr=0.0.0.0:26257
       --http-addr=0.0.0.0:8080
       --join=crdb_node1:26257,crdb_node2:26257,crdb_node3:26257
-      --cache=256MiB
-      --max-sql-memory=256MiB
+      --cache=${CRDB_CACHE:-1GiB}
+      --max-sql-memory=${CRDB_MAX_SQL_MEM:-1GiB}
       --store=/cockroach/cockroach-data
     ports:
       - "127.0.0.1:15483:26257"
     volumes:
       - crdb_data3:/cockroach/cockroach-data
+
+  haproxy_cockroach:
+    image: haproxy:lts-alpine
+    container_name: haproxy_cockroach
+    hostname: haproxy_cockroach
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:15480:26257"
+      - "127.0.0.1:15489:8404"
+    volumes:
+      - ./scripts/cockroach/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - crdb_node1
+      - crdb_node2
+      - crdb_node3
+    networks:
+      - crdb_net
 
 volumes:
   crdb_data1:

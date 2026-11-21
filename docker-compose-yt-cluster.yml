@@ -14,8 +14,38 @@ x-yt-common: &yt-common
     YT_PEERS: "yt1 yt2 yt3"
     YT_CLUSTER: "11111111-2222-4333-8444-555555555555"
     YT_TABLES: "public.%"
-    YT_MAX_PREPARED: "100"
+    YT_MAX_PREPARED: "${YT_MAX_PREPARED:-300}"
     YT_CONFIG_TRIGGER: "1"
+  command:
+    - postgres
+    - -c
+    - shared_buffers=${YT_SHARED_BUFFERS:-512MB}
+    - -c
+    - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-2GB}
+    - -c
+    - work_mem=${PG_WORK_MEM:-16MB}
+    - -c
+    - maintenance_work_mem=${PG_MAINT_WORK_MEM:-128MB}
+    - -c
+    - max_connections=${PG_MAX_CONNECTIONS:-200}
+    - -c
+    - wal_compression=${PG_WAL_COMPRESSION:-lz4}
+    - -c
+    - wal_buffers=${PG_WAL_BUFFERS:-16MB}
+    - -c
+    - max_wal_size=${PG_MAX_WAL_SIZE:-2GB}
+    - -c
+    - checkpoint_completion_target=${PG_CHECKPOINT_COMPLETION_TARGET:-0.9}
+    - -c
+    - random_page_cost=${PG_RANDOM_PAGE_COST:-1.1}
+    - -c
+    - effective_io_concurrency=${PG_EFFECTIVE_IO_CONCURRENCY:-16}
+    - -c
+    - jit=${PG_JIT:-off}
+    - -c
+    - io_method=${PG18_IO_METHOD:-worker}
+    - -c
+    - io_workers=${PG18_IO_WORKERS:-4}
   healthcheck:
     test:
       - CMD-SHELL

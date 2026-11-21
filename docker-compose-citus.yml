@@ -5,7 +5,7 @@ networks:
 x-citus-node: &citus-node
   image: citusdata/citus:14.2.0-pg17
   restart: unless-stopped
-  mem_limit: 512m
+  mem_limit: ${CITUS_MEM_LIMIT:-2048m}
   environment:
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: ${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}
@@ -16,11 +16,39 @@ x-citus-node: &citus-node
     - -c
     - shared_preload_libraries=citus
     - -c
-    - shared_buffers=128MB
+    - shared_buffers=${CITUS_SHARED_BUFFERS:-512MB}
     - -c
-    - max_connections=100
+    - effective_cache_size=${CITUS_EFFECTIVE_CACHE_SIZE:-1536MB}
     - -c
-    - citus.shard_count=8
+    - work_mem=${PG_WORK_MEM:-16MB}
+    - -c
+    - maintenance_work_mem=${PG_MAINT_WORK_MEM:-128MB}
+    - -c
+    - max_connections=${PG_MAX_CONNECTIONS:-200}
+    - -c
+    - wal_compression=${PG_WAL_COMPRESSION:-lz4}
+    - -c
+    - wal_buffers=${PG_WAL_BUFFERS:-16MB}
+    - -c
+    - max_wal_size=${PG_MAX_WAL_SIZE:-2GB}
+    - -c
+    - checkpoint_completion_target=${PG_CHECKPOINT_COMPLETION_TARGET:-0.9}
+    - -c
+    - random_page_cost=${PG_RANDOM_PAGE_COST:-1.1}
+    - -c
+    - effective_io_concurrency=${PG_EFFECTIVE_IO_CONCURRENCY:-16}
+    - -c
+    - jit=${PG_JIT:-off}
+    - -c
+    - citus.shard_count=${CITUS_SHARD_COUNT:-32}
+    - -c
+    - citus.max_adaptive_executor_pool_size=${CITUS_MAX_ADAPTIVE_EXECUTOR_POOL_SIZE:-16}
+    - -c
+    - citus.multi_shard_modify_mode=${CITUS_MULTI_SHARD_MODIFY_MODE:-parallel}
+    - -c
+    - citus.local_shared_pool_size=${CITUS_LOCAL_SHARED_POOL_SIZE:-50}
+    - -c
+    - log_error_verbosity=verbose
   healthcheck:
     test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres -d postgres"]
     interval: 5s
