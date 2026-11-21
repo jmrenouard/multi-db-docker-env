@@ -26,7 +26,7 @@
 | **Phase 10** | Ponytail Quality Audit, Release CI, Test Expansion & Governance Consolidation | Automated release pipeline, 18 audit fixes, 46 Python + 9 Go test suites, unified registers | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...` |
 | **Phase 11** | PostgreSQL 18.6 Native Topologies, Benchmark Suite & `v2.3.0` Release | `pg18-streaming`, `pg18-logical`, `pg18-birep` (`uuidv7`), `bench-pg18`, Go CLI 19 topologies, `v2.3.0` tag | ✅ Complete | `make bench-pg18`, `go test ./...`, `./bin/mdb topologies` |
 | **Phase 12** | Database Version Upgrades & EOL Decommissioning | Upgrade to MySQL 8.4/9.7 LTS, MariaDB 12.3 LTS, Percona 8.4 LTS, PG 18 standalone, CockroachDB v25.4, Traefik v3, HAProxy LTS; decommission 7 EOL versions | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...`, CI `test-and-validate` |
-| **Phase 13** | YT Cluster 1.21.3 (PG 18) Active-Active Topology & `v2.4.0` Release | 3-node `yt-cluster` Compose stack, setup, `L1-L8`/`T11-T18`/`T_REVERT` tests, `bench-yt-cluster`, Go CLI 20 topologies, `v2.4.0` tag | ✅ Complete | `make yt-cluster-test`, `make bench-yt-cluster`, `go test ./...`, `./bin/mdb topologies` |
+| **Phase 13** | YT Cluster 1.21.3 (PG 18) Active-Active Topology & `v2.4.0` / `v2.4.1` | 3-node `yt-cluster` Compose stack, setup, `L1-L8`/`T11-T18`/`T_REVERT` tests, 36-row `bench-yt-cluster`, Go CLI 20 topologies | ✅ Complete | `make yt-cluster-test`, `make bench-yt-cluster`, `go test ./...`, `./bin/mdb topologies` |
 
 ---
 
@@ -79,6 +79,12 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-078 -- Release `v2.4.1` Version Bump & EN/FR YT Async Matrix Docs (Issue `#343`)
+- **Date**: `2026-11-21T00:32+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#343`
+- **Request**: Bump `multi-db-docker-env` to `v2.4.1` and document the complete 18-suite `yt-cluster-async` benchmarks and `SQLSTATE 55000` `recon` quarantine finding.
+- **Changes**: Bumped `VERSION`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, `Makefile` to `2.4.1`; prepended `2.4.1` to `Changelog` (trimmed <= 600 lines); updated `documentation/pg_multimaster{,_fr}.md`, `Phase 13`, and `RCA-071`.
+- **Result**: Diff `< 14,500` B; `release_notes.py --tag v2.4.1 --check`, `test_config.sh`, `unittest`, and `go test` pass.
 
 ### ACT-077 -- 18-Suite `yt-cluster-async` Runner (`#336`)
 - **Date**: `2026-11-21T00:25+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#336`

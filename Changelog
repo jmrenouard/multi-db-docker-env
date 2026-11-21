@@ -1,3 +1,8 @@
+2.4.1 2026-11-21
+- feat: complete full 18-suite empirical benchmark matrix for yt-cluster-async (cc=nodes>=0 sc=NO_SC) with YT_ASYNC_MISSING_ONLY=1 resume support and deterministic suite ordering (scripts/bench_yt_runner.sh) (Closes #336).
+- fix: target non-Leader node dynamically in YT Cluster WAN netem sweeps (8.47 -> 4.78 -> 2.90 TPS) and isolate sbtest1..4 table preparation before E3_sysbench_oltp_wo (133.55 TPS) to avoid async recon SQLSTATE 55000 row quarantine (scripts/bench_yt_runner.sh) (Closes #336).
+- doc: synchronize VERSION (2.4.1), cmd/mdb, EN/FR multi-master guides, and governance registers with full 36-row YT Cluster sync/async benchmarks (Closes #343).
+
 2.4.0 2026-11-20
 - feat: add 3-node YT Cluster 1.21.3 (PostgreSQL 18.7 + yt_cluster 1.21 / ytserv) active-active Docker Compose stack and leader-election readiness setup script (docker-compose-yt-cluster.yml, scripts/yt_cluster/setup_yt_cluster.sh) (Closes #288).
 - feat: add sequential YT Cluster 1.21.3 empirical benchmark runner covering Suites A-H, WAN 10/25/50ms netem sweeps, concurrency scaling, and sync-2PC (cc=half) vs async (cc=nodes>=0) modes (scripts/bench_yt_runner.sh) (Closes #292).
@@ -579,20 +584,3 @@
  - feat: add tmpfs mount for /tmp to all Galera nodes.
  - feat: standardize Makefile commands to use mariadb host client instead of docker exec.
  - fix: apply innodb_flush_method = O_DSYNC to fix ERROR 14 on WSL2.
-
-1.0.5 2026-01-09
- - feat: improve Galera cluster resilience with wsrep_slave_threads=1 and Flow Control tuning.
- - feat: implement make renew-ssl-repli for zero-downtime SSL rotation.
- - feat: optimize MariaDB configuration in gcustom_*.cnf with recommended parameters.
- - feat: add make inject-*-galera and make inject-*-repli for automated deployment and data injection.
- - fix: corrected emergency startup targets and replaced docker exec with mariadb host client.
- - doc: full translation of CONTEXT.md into English.
-
-1.0.4 2026-01-08
- - feat: centralization of ALL test reports (Galera, Replication, Sysbench, HAProxy) in reports/ directory.
- - feat: integration of SSL expiration monitoring and "Best Practices" Galera audit.
- - feat: implementation of hot SSL rotation (make renew-ssl) with FLUSH SSL.
- - feat: redesign of Galera Provider Options display in reports.
- - feat: optimization of gen_ssl.sh script with validity check.
- - feat: integration of formatted validation of wsrep_provider_options in reports.
- - fix: resolve "Aborted connection" errors by switching HAProxy check to mysql-check.
