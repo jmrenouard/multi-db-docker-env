@@ -42,7 +42,7 @@ Référence complète de tous les moteurs de bases de données et composants d'i
 **Modes HA, Réplication & Multi-Maître** :
 - Cluster Patroni (3 PG 17 + 3 ETCD + HAProxy, ports 5000/5001/7000)
 - Cluster PgPool-II (3 PG 17 + PgPool 4.6 + HAProxy, ports 5100/5101/8406)
-- Réplication & Multi-Maître (`v2.1.0`–`v2.3.0`) : `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `pgedge` (Spock 5), `bucardo`, `citus` (14.2), `cockroach` (v25.4), `yugabyte` (2026.1) — voir [pg_multimaster_fr.md](pg_multimaster_fr.md).
+- Réplication, Multi-Maître & SQL Distribué (13 piles PG Compose, `v2.1.0`–`v2.5.0`) : `pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster` ([`dbinvent/yt:1.21.3`](https://hub.docker.com/r/dbinvent/yt), PG 18.7 ; MIT [`DBinvent/yt-cluster-lite`](https://github.com/DBinvent/yt-cluster-lite) mono-BDD vs PolyForm Noncommercial 1.0.0 / Commercial `ytserv`/`ytctl` ; [Présentation](https://dbinvent.com/30p) · [`agent.md`](https://dbinvent.com/agent.md) · [Jepsen `1.20.1`](https://dbinvent.com/cluster/articles/jepsen) `cursor-stability`, `51` -> `49/49`), `pgedge` (Spock 5), `bucardo`, `citus` (14.2), `cockroach` (`latest-v25.4`), `yugabyte` (`2026.1.3`) — voir [pg_multimaster_fr.md](pg_multimaster_fr.md). Utilisez `./mdb catalog` (`31` actifs + `5` EOL) ou `./mdb up <env>`.
 
 ## 🍃 MongoDB
 
@@ -65,7 +65,7 @@ Référence complète de tous les moteurs de bases de données et composants d'i
 
 ## 🛑 Versions Décommissionnées (Fin de Vie / EOL)
 
-Les versions suivantes ont atteint leur fin de vie officielle communautaire (End-of-Life) et ont été retirées des stacks Compose actifs et des menus CLI. Les anciennes cibles `Makefile` affichent un avis EOL avec la cible de remplacement recommandée.
+Les versions suivantes ont atteint leur fin de vie officielle communautaire (End-of-Life) et ont été retirées des stacks Compose actifs et des menus CLI. `./mdb catalog --eol` les liste, et `./mdb up <eol>` ou les anciennes cibles `Makefile` retournent `exit 1` avec la date EOL officielle et le remplacement recommandé.
 
 | Produit | Version Décommissionnée | Date EOL Officielle | Note de Décommissionnement | Remplacement Recommandé |
 | :--- | :--- | :--- | :--- | :--- |
