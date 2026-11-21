@@ -15,8 +15,9 @@ func TestPostgresVerifier_VerifyCluster(t *testing.T) {
 		expNodes                 int
 	}{
 		{"patroni_healthy", "patroni", `[{"Role":"Leader","State":"running"},{"Role":"Replica","State":"running"}]`, "patronictl", StatusHealthy, 2},
+		{"patroni4_streaming", "patroni", `[{"Role":"Primary","State":"running"},{"Role":"Replica","State":"streaming"},{"Role":"Replica","State":"streaming"}]`, "patronictl", StatusHealthy, 3},
 		{"patroni_degraded", "patroni", `[{"Role":"Leader","State":"running"},{"Role":"Replica","State":"stopped"}]`, "patronictl", StatusDegraded, 2},
-		{"patroni_table", "patroni", "|p1|Leader|running\n|p2|Replica|stopped", "patronictl", StatusDegraded, 2},
+		{"patroni_table", "patroni", "|p1|Primary|running\n|p2|Replica|streaming\n|p3|Replica|stopped", "patronictl", StatusDegraded, 3},
 		{"patroni_unhealthy", "patroni", `[{"Role":"Replica","State":"stopped"}]`, "patronictl", StatusUnhealthy, 2},
 		{"pgpool_healthy", "pgpool", "0|h1|5432|up\n1|h2|5432|up\n", "-h 127.0.0.1 -p 9999", StatusHealthy, 2},
 		{"pgpool_degraded", "pgpool", "0|h1|5432|up\n1|h2|5432|down\n", "-h 127.0.0.1 -p 9999", StatusDegraded, 2},

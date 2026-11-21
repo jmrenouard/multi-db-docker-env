@@ -82,6 +82,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-103 -- Patroni 4.x Verifier (`streaming`/`Primary`), E2E Suites & Static Tests (`#402`)
+- **Timestamp / Issue / Branch**: `2026-11-21T22:49Z` | Issue `#402` | `fix/issue-402-patroni-verifier-tests`
+- **Request**: Support Patroni 3.x/4.x `streaming` and `Primary` states in `PostgresVerifier`, fix live E2E bugs in `tests/test_patroni.sh` and `tests/test_failover.sh`, and add static regression coverage in `tests/test_repo_static.py`.
+- **Changes**: Extended `pkg/dbclient/postgres.go` (`verifyPatroni`) and `pkg/dbclient/postgres_mongo_test.go`; updated `tests/test_patroni.sh` (dynamic `PATRONI_NET`, `PGPASSWORD`, `Leader|Primary`, POSIX `awk` version check, HTTPS stats `https://127.0.0.1:7000/`) and `tests/test_failover.sh`; added `test_patroni_self_contained_dockerfiles_and_mtls` in `tests/test_repo_static.py`; logged `RCA-088`.
+- **Result**: Verified live Patroni E2E (`mdb test patroni` HEALTHY `3/3`, `--suite` `14/14`, `test_failover.sh patroni` `1/1`, `mdb client patroni` PG `17.12`, `mdb down patroni` 0 leftovers), `go test -count=1 ./...` (11/11), `mdb lint`, and static Python tests.
+
 ### ACT-102 -- Patroni Compose `build:`/`service_healthy` Wiring & HAProxy mTLS Checks (`#401`)
 - **Timestamp / Issue / Branch**: `2026-11-21T22:38Z` | Issue `#401` | `feat/issue-401-patroni-compose-mtls`
 - **Request**: Wire `build:` sections, `DB_ROOT_PASSWORD:-rootpass` parity, and `service_healthy` startup ordering into `docker-compose-patroni.yml`, and enable true mTLS health checks + Docker DNS resolution in `conf/haproxy-patroni.cfg`.

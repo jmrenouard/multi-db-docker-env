@@ -654,6 +654,13 @@
 - **Applied Change / Fix**: Wired `build:`, `condition: service_healthy`, and `POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-rootpass}` in `docker-compose-patroni.yml`; configured HAProxy stdout logging, `resolvers docker`, and mTLS REST checks (`verify required ca-file /certs/ca.crt crt /certs/haproxy.pem`).
 - **Result & Non-Regression Test**: Live `mdb up patroni` reaches 7/7 healthy containers with HAProxy Layer7 mTLS 200 OK checks (`4-7ms`) and zero `ECONNREFUSED` alerts; `mdb lint` and `go test` pass.
 
+### RCA-088 -- Patroni 4.x `streaming`/`Primary` Verifier Gap & Hardcoded Network/HTTP Checks in `test_patroni.sh`
+- **Date / Linked Action**: `2026-11-21` (`ACT-103` / Issue `#402`)
+- **Observed Symptom**: `mdb test patroni` undercounted Patroni 4.1.5 replicas reporting `State: "streaming"` (degrading 3/3 to 1/3); `tests/test_patroni.sh` hardcoded `multi-db-docker-env_patroni_net`, omitted `PGPASSWORD` in `run_psql`, used GNU-only `grep -oP`, and queried `http://localhost:7000/` against HTTPS+auth HAProxy stats.
+- **Root Cause Analysis**: `pkg/dbclient/postgres.go` checked only `running` and `Leader` (omitting Patroni 3.x/4.x `streaming` and `Primary`); `tests/test_patroni.sh` predated worktree compose project names, TLS-authenticated `pg_hba.conf`, and HTTPS HAProxy stats.
+- **Applied Change / Fix**: Updated `verifyPatroni` in `pkg/dbclient/postgres.go` for `running`/`streaming` and `Leader`/`Primary` (+ unit tests); updated `tests/test_patroni.sh` and `tests/test_failover.sh` (dynamic network inspection, `PGPASSWORD`, `Leader|Primary`, `awk`, HTTPS stats); added static Patroni Dockerfile/mTLS test in `tests/test_repo_static.py`.
+- **Result & Non-Regression Test**: Verified live `mdb test patroni` HEALTHY `3/3`, `--suite` `14/14`, failover `1/1`, `TestPostgresVerifier_VerifyCluster`, and `test_patroni_self_contained_dockerfiles_and_mtls`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

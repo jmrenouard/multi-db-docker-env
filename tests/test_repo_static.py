@@ -134,6 +134,29 @@ class TestRepoStaticValidation(unittest.TestCase):
             self.assertIn("nameserver dns 127.0.0.11:53", cfg)
             self.assertIn("init-addr last,libc,none resolvers docker", cfg)
 
+    def test_patroni_self_contained_dockerfiles_and_mtls(self):
+        for name, base, user in (
+            ("Dockerfile.etcd", "quay.io/coreos/etcd:v3.5.17", "USER etcd"),
+            ("Dockerfile.postgresql", "postgres:17-bookworm", "USER postgres"),
+            ("Dockerfile.haproxy", "haproxy:lts", "USER haproxy"),
+        ):
+            txt = (ROOT / "scripts" / "patroni" / name).read_text(encoding="utf-8")
+            self.assertIn(base, txt, name)
+            self.assertIn(user, txt, name)
+            self.assertNotIn("ssh-keygen", txt, name)
+        patroni_yml = (ROOT / "conf" / "patroni.yml").read_text(encoding="utf-8")
+        self.assertIn("verify_client: required", patroni_yml)
+        self.assertNotIn("password:", patroni_yml)
+        compose = (ROOT / "docker-compose-patroni.yml").read_text(encoding="utf-8")
+        for df in ("Dockerfile.etcd", "Dockerfile.postgresql", "Dockerfile.haproxy"):
+            self.assertIn(f"dockerfile: scripts/patroni/{df}", compose)
+        self.assertIn("POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-rootpass}", compose)
+        self.assertNotIn("POSTGRES_PASSWORD=${DB_ROOT_PASSWORD:-postgres}", compose)
+        ha = (ROOT / "conf" / "haproxy-patroni.cfg").read_text(encoding="utf-8")
+        self.assertIn("crt /certs/haproxy.pem", ha)
+        self.assertIn("ca-file /certs/ca.crt", ha)
+        self.assertIn("resolvers docker", ha)
+
 
 if __name__ == "__main__":
     unittest.main()

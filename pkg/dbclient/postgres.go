@@ -58,16 +58,17 @@ func (p *PostgresVerifier) verifyPatroni(ctx context.Context, h *ClusterHealth) 
 	hasLeader, active := false, 0
 	if json.Unmarshal([]byte(out), &members) == nil && len(members) > 0 {
 		for _, m := range members {
-			if strings.EqualFold(m.State, "running") {
+			if strings.EqualFold(m.State, "running") || strings.EqualFold(m.State, "streaming") {
 				active++
-				if strings.EqualFold(m.Role, "Leader") { hasLeader = true }
+				if strings.EqualFold(m.Role, "Leader") || strings.EqualFold(m.Role, "Primary") { hasLeader = true }
 			}
 		}
 	} else {
 		for _, l := range strings.Split(out, "\n") {
-			if strings.Contains(strings.ToLower(l), "running") {
+			low := strings.ToLower(l)
+			if strings.Contains(low, "running") || strings.Contains(low, "streaming") {
 				active++
-				if strings.Contains(strings.ToLower(l), "leader") { hasLeader = true }
+				if strings.Contains(low, "leader") || strings.Contains(low, "primary") { hasLeader = true }
 			}
 		}
 	}
