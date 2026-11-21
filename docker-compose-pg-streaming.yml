@@ -24,9 +24,20 @@ services:
           -c max_wal_senders=10 \
           -c max_replication_slots=10 \
           -c hot_standby=on \
-          -c wal_keep_size=64MB \
-          -c shared_buffers=128MB \
-          -c max_connections=100 \
+          -c wal_keep_size=${PG_WAL_KEEP_SIZE:-256MB} \
+          -c shared_buffers=${PG_SHARED_BUFFERS:-512MB} \
+          -c effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-2GB} \
+          -c work_mem=${PG_WORK_MEM:-16MB} \
+          -c maintenance_work_mem=${PG_MAINT_WORK_MEM:-128MB} \
+          -c max_connections=${PG_MAX_CONNECTIONS:-200} \
+          -c wal_compression=${PG_WAL_COMPRESSION:-lz4} \
+          -c wal_buffers=${PG_WAL_BUFFERS:-16MB} \
+          -c max_wal_size=${PG_MAX_WAL_SIZE:-2GB} \
+          -c min_wal_size=${PG_MIN_WAL_SIZE:-512MB} \
+          -c checkpoint_completion_target=${PG_CHECKPOINT_COMPLETION_TARGET:-0.9} \
+          -c random_page_cost=${PG_RANDOM_PAGE_COST:-1.1} \
+          -c effective_io_concurrency=${PG_EFFECTIVE_IO_CONCURRENCY:-16} \
+          -c jit=${PG_JIT:-off} \
           -c log_error_verbosity=verbose
     ports:
       - "127.0.0.1:15434:5432"
@@ -66,8 +77,19 @@ services:
         fi
         exec /usr/local/bin/docker-entrypoint.sh postgres \
           -c hot_standby=on \
-          -c shared_buffers=128MB \
-          -c max_connections=100 \
+          -c shared_buffers=${PG_SHARED_BUFFERS:-512MB} \
+          -c effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-2GB} \
+          -c work_mem=${PG_WORK_MEM:-16MB} \
+          -c maintenance_work_mem=${PG_MAINT_WORK_MEM:-128MB} \
+          -c max_connections=${PG_MAX_CONNECTIONS:-200} \
+          -c wal_compression=${PG_WAL_COMPRESSION:-lz4} \
+          -c wal_buffers=${PG_WAL_BUFFERS:-16MB} \
+          -c max_wal_size=${PG_MAX_WAL_SIZE:-2GB} \
+          -c min_wal_size=${PG_MIN_WAL_SIZE:-512MB} \
+          -c checkpoint_completion_target=${PG_CHECKPOINT_COMPLETION_TARGET:-0.9} \
+          -c random_page_cost=${PG_RANDOM_PAGE_COST:-1.1} \
+          -c effective_io_concurrency=${PG_EFFECTIVE_IO_CONCURRENCY:-16} \
+          -c jit=${PG_JIT:-off} \
           -c log_error_verbosity=verbose
     ports:
       - "127.0.0.1:15435:5432"
