@@ -67,17 +67,17 @@ func TestResolveVersion(t *testing.T) {
 
 	// Fallback to package-level version when VERSION file is absent
 	_ = os.Remove("VERSION")
-	if got := resolveVersion(); got != "2.4.0" {
-		t.Errorf("expected fallback 2.4.0, got %s", got)
+	if got := resolveVersion(); got != "2.4.1" {
+		t.Errorf("expected fallback 2.4.1, got %s", got)
 	}
 
 	// Reads and trims VERSION file from disk when present
-	if err := os.WriteFile("VERSION", []byte("  2.4.0 \n"), 0644); err != nil {
+	if err := os.WriteFile("VERSION", []byte("  2.4.1 \n"), 0644); err != nil {
 		t.Fatalf("failed to write test VERSION file: %v", err)
 	}
 
-	if got := resolveVersion(); got != "2.4.0" {
-		t.Errorf("expected 2.4.0 from VERSION file, got %s", got)
+	if got := resolveVersion(); got != "2.4.1" {
+		t.Errorf("expected 2.4.1 from VERSION file, got %s", got)
 	}
 
 	// Trim whitespace / custom release version

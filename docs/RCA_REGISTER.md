@@ -534,7 +534,7 @@
 - **Observed Symptom**: Non-monotonic WAN (`yt1`) and `E3_wo` `55000` after `E_rw`.
 - **Root Cause Analysis**: Leader `yt1` bypassed `netem`; async `E_rw` locked `sbtest`.
 - **Applied Change / Fix**: `r_wan` hits non-Leader `wn`; `r_sb` retry + `prep_sb()` + `YT_ASYNC_MISSING_ONLY=1`.
-- **Result & Non-Regression Test**: WAN `8.47->4.78->2.90`, `E3=133.55`, 36/36 `drift=0`.
+- **Result & Non-Regression Test**: WAN `8.47->4.78->2.90`, `E3=133.55`, 36/36 `drift=0`; documented and tagged in `v2.4.1` (`#343`).
 
 ---
 
