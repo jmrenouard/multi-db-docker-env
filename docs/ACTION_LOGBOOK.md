@@ -81,6 +81,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-084 -- E2E Fixes: Setup/Suite `DB_ROOT_PASSWORD`, `test_mongo_rs.sh` Args, `test_lab.py` Timeouts & `DefaultService` (`#359`)
+- **Timestamp / Issue / Branch**: `2026-11-21T19:47Z` | Issue `#359` | `fix/issue-359-env-timeouts-defaults`
+- **Request**: Propagate `DB_ROOT_PASSWORD` to setup/`--suite` scripts when unset, accept positional node args in `tests/test_mongo_rs.sh`, bound `tests/test_lab.py` query timeouts, and align `DefaultService` to `mariadb114`.
+- **Changes**: Updated `pkg/topology/{topology,topology_test}.go`, `cmd/mdb/{commands_lint,main_test}.go`, `pkg/config/{config,config_test}.go`, `tests/{test_mongo_rs.sh,test_lab.py,test_python_audit_fixes.py}`, and `docs/RCA_REGISTER.md` (`RCA-075`).
+- **Result**: Verified `go test ./...` (11/11), `unittest` (53 ran: 47 ok, 6 skipped), `mdb lint`, diff `< 15,000` B, and CI `test-and-validate` green.
+
 ### ACT-083 -- E2E Fixes: Compose Orphan Isolation & Windows `WSLENV` Forwarding (`#357`)
 - **Timestamp / Issue / Branch**: `2026-11-21T19:35Z` | Issue `#357` | `fix/issue-357-e2e-compose-env-timeouts`
 - **Request**: Fix cross-topology `ComposePS` orphan leakage and Windows->WSL `bash.exe` `extraEnv` stripping.

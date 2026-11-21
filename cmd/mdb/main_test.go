@@ -502,10 +502,11 @@ func TestSetupLintAndTestSuite(t *testing.T) {
 		ran = append(ran, append([]string{strings.Join(e, ","), n}, a...))
 		return nil
 	}
+	t.Setenv("DB_ROOT_PASSWORD", "")
 	if err := runSetupCmd(context.Background(), cat, []string{"pg17-baseline"}, &out, &errBuf, fx); err != nil || !strings.Contains(out.String(), "No setup script") {
 		t.Fatalf("pg17 setup: %v %s", err, out.String())
 	}
-	if err := runSetupCmd(context.Background(), cat, []string{"yt-cluster"}, &out, &errBuf, fx); err != nil || ran[0][2] != "scripts/yt_cluster/setup_yt_cluster.sh" {
+	if err := runSetupCmd(context.Background(), cat, []string{"yt-cluster"}, &out, &errBuf, fx); err != nil || ran[0][2] != "scripts/yt_cluster/setup_yt_cluster.sh" || !strings.Contains(ran[0][0], "DB_ROOT_PASSWORD=rootpass") {
 		t.Fatalf("yt setup: %v %v", err, ran)
 	}
 	if err := runSetupCmd(context.Background(), cat, []string{"mysql80"}, &out, &errBuf, fx); err == nil {
@@ -526,7 +527,7 @@ func TestSetupLintAndTestSuite(t *testing.T) {
 
 	out.Reset()
 	ran = nil
-	if err := runTestCmd(context.Background(), client, cat, []string{"yt-cluster", "--suite"}, &out, &errBuf, fx); err != nil || !strings.Contains(out.String(), `"HEALTHY"`) || ran[0][2] != "tests/test_yt_cluster.sh" {
+	if err := runTestCmd(context.Background(), client, cat, []string{"yt-cluster", "--suite"}, &out, &errBuf, fx); err != nil || !strings.Contains(out.String(), `"HEALTHY"`) || ran[0][2] != "tests/test_yt_cluster.sh" || !strings.Contains(ran[0][0], "DB_ROOT_PASSWORD=rootpass") {
 		t.Fatalf("test --suite: %v %s %v", err, out.String(), ran)
 	}
 	if err := runTestCmd(context.Background(), client, cat, []string{"pg17-baseline", "--suite"}, &out, &errBuf, fx); err == nil {

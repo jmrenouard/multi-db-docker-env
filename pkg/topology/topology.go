@@ -104,7 +104,7 @@ func (b *BaseTopology) Up(ctx context.Context, client *docker.Client) error {
 	}
 	if s := setupScripts[b.name]; s != "" {
 		args := append([]string{s}, setupScriptArgs[b.name]...)
-		if _, stderr, code, err := client.RunWithEnv(ctx, setupScriptEnv[b.name], "bash", args...); err != nil || code != 0 {
+		if _, stderr, code, err := client.RunWithEnv(ctx, defaultScriptEnv(setupScriptEnv[b.name]), "bash", args...); err != nil || code != 0 {
 			return fmt.Errorf("topology %s setup %s failed (%d): %s: %w", b.name, s, code, string(stderr), err)
 		}
 	}
@@ -227,6 +227,14 @@ func defaultComposeEnv() map[string]string {
 		return map[string]string{"DB_ROOT_PASSWORD": rootPassword()}
 	}
 	return nil
+}
+
+func defaultScriptEnv(base []string) []string {
+	env := append([]string(nil), base...)
+	if os.Getenv("DB_ROOT_PASSWORD") == "" {
+		env = append(env, "DB_ROOT_PASSWORD="+rootPassword())
+	}
+	return env
 }
 
 func waitUntil(ctx context.Context, timeout time.Duration, desc string, check func() (bool, error)) error {
