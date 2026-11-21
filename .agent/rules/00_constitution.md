@@ -15,8 +15,8 @@ This document constitutes the unique and absolute source of truth for the projec
 
 - **Primary Goal**: Rapidly setup different types of databases to demonstrate proofs of concept (PoC) for database architectures and configure viable solutions for production environments.
 - **Modularity**: The environment must remain modular, allowing on-demand DB version switching.
-- **Orchestration**: `Makefile` is the EXCLUSIVE entry point for all operations.
-- **Transparency**: All routing must pass through the Traefik reverse proxy for single-port access (`3306`).
+- **Orchestration**: `./mdb` (`mdb.cmd` on Windows) is the EXCLUSIVE unified CLI entry point for all operations (`Makefile` targets act as thin compatibility wrappers delegating to `./mdb`).
+- **Transparency**: All standalone routing must pass through the Traefik reverse proxy for single-port access (`3306` / `5432`).
 - **Standardization**: All governance assets must follow the Agent-Friendly Format (AFF).
 
 ### 2. Operational Authority

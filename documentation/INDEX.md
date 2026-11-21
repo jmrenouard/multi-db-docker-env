@@ -33,8 +33,8 @@ Welcome to the Multi-DB Docker Environment documentation. This index provides a 
 
 | Document | Description |
 | --- | --- |
-| **[Main README](../README.md)** | Overview, quick start, build instructions, and basic usage. |
-| **[Architecture](architecture.md)** | Global topology, network layout, and detailed Mermaid diagrams. |
+| **[Main README](../README.md)** | Overview, unified `./mdb` (`mdb.cmd`) quick start, cross-platform setup, and CLI usage. |
+| **[Architecture](architecture.md)** | Global topology, unified orchestrator routing, network layout, and Mermaid diagrams. |
 
 ## 🏛️ Governance & Orchestration
 
@@ -52,7 +52,7 @@ Welcome to the Multi-DB Docker Environment documentation. This index provides a 
 
 | Document | Description |
 | --- | --- |
-| **[Makefile Reference](makefile.md)** | Detailed breakdown of all `make` commands for automated deployment and maintenance. |
+| **[CLI & Makefile Reference](makefile.md)** | Unified `./mdb` (`mdb.cmd`) commands (`catalog`, `up`, `setup`, `lint`, `interactive`, `doctor`) and `Makefile` compatibility wrappers. |
 | **[Utility Scripts](scripts.md)** | Deep dive into backup, restore, security (SSL), and setup scripts. |
 
 ## 🔄 Replication & Galera
@@ -68,8 +68,8 @@ Welcome to the Multi-DB Docker Environment documentation. This index provides a 
 
 | Document | Description |
 | --- | --- |
-| **[PostgreSQL Support](postgresql_support.md)** | Complete guide: standalone (15/16/17), Patroni HA, and PgPool-II clusters. |
-| **[PostgreSQL Multi-Master & Distributed SQL](pg_multimaster.md)** | pg-birep, pgEdge Spock 5, Bucardo 5, Citus 14.2, YugabyteDB 2026.1, and CockroachDB v24.3 guide & benchmarks. |
+| **[PostgreSQL Support](postgresql_support.md)** | Complete guide: standalone (15/16/17/18), Patroni HA, and PgPool-II clusters. |
+| **[PostgreSQL Multi-Master & Distributed SQL](pg_multimaster.md)** | `pg17-baseline`, `pg-streaming`/`logical`/`birep`, `pg18-*`, `yt-cluster` 1.21.3, pgEdge Spock 5, Bucardo 5, Citus 14.2, YugabyteDB 2026.1, and CockroachDB v25.4 guide & benchmarks. |
 | **[Patroni Cluster](patroni_cluster.md)** | 3-node PostgreSQL 17 HA cluster with ETCD and automatic failover. |
 | **[PgPool-II Cluster](pgpool_cluster.md)** | Connection pooling + load balancing with streaming replication. |
 
@@ -77,7 +77,7 @@ Welcome to the Multi-DB Docker Environment documentation. This index provides a 
 
 | Document | Description |
 | --- | --- |
-| **[InnoDB Cluster](innodb_cluster.md)** | MySQL 8.0 Group Replication with HAProxy for transparent routing. |
+| **[InnoDB Cluster](innodb_cluster.md)** | MySQL 8.4 LTS Group Replication with HAProxy for transparent routing. |
 
 ## 🍃 MongoDB ReplicaSet
 

@@ -8,13 +8,13 @@ These rules apply **without exception** to every session and every agent working
 
 1. **Modular Multi-Database Laboratory**:
    - Provide a reproducible, isolated platform for testing standalone databases (MySQL 8.0/8.4/9.6, MariaDB 10.6/10.11/11.4/11.8, Percona Server, PostgreSQL 15/16/17) and high-availability topologies (Galera, InnoDB Cluster, MongoDB ReplicaSet, Patroni, PgPool-II).
-   - `Makefile` is the **exclusive entry point** for all operations (`make up-*`, `make down-*`, `make test-*`, `make clean-*`).
+   - `./mdb` (`mdb.cmd` on Windows) is the **single unified CLI entry point** for all operations (`./mdb catalog`, `./mdb up <env>`, `./mdb setup <env>`, `./mdb down`, `./mdb status`, `./mdb info`, `./mdb logs`, `./mdb client`, `./mdb mycnf`, `./mdb interactive`, `./mdb lint`, `./mdb test <env>`, `./mdb bench <env>`, `./mdb doctor`); `Makefile` targets remain thin compatibility wrappers delegating to `./mdb`.
    - Reverse proxy routing passes through Traefik for single-port access (`3306` for MySQL/MariaDB, `5432` for PostgreSQL).
 2. **Strict Pull Request Diff Size Limit (`< 15,000` characters)**:
    - Every Pull Request diff (`git diff main...HEAD | wc -c`) **MUST** remain under **15,000 characters**. Split larger changes into sequential, atomic Issues and Pull Requests to ensure smooth review by automated review bots (Sourcery AI) and humans.
 3. **Portability, Immutability & Safe Shell Scripting**:
    - All Bash scripts MUST use `set -euo pipefail` and quote all variables (`"$VAR"`).
-   - Clean lifecycle management: containers and volumes must reset cleanly via `make stop` or topology-specific down targets, with root-owned artifact cleanup handled safely.
+   - Clean lifecycle management: containers and volumes must reset cleanly via `./mdb down` (`make stop`) or topology-specific down targets, with root-owned artifact cleanup handled safely.
 
 ---
 
