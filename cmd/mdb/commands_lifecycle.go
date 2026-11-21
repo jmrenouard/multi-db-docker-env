@@ -29,7 +29,7 @@ Client, Diagnostics & Operations:
                            Aliases: list, envs, environments, topologies
   interactive | wizard     Bilingual wizard (-a/--auto, -i/--interactive, -l en|fr)
   client [env] | mycnf     Open DB shell or backup/write ~/.my.cnf (0600)
-  lint | test <env> [--suite] | bench <env> | doctor | config | pki | report
+  lint | test <env> [--suite] | bench <env> | images | doctor | config | pki | report
   profiles | inject | backup | restore | audit | clean | version | help
 `)
 }
