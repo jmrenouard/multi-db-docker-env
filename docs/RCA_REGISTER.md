@@ -661,6 +661,13 @@
 - **Applied Change / Fix**: Updated `verifyPatroni` in `pkg/dbclient/postgres.go` for `running`/`streaming` and `Leader`/`Primary` (+ unit tests); updated `tests/test_patroni.sh` and `tests/test_failover.sh` (dynamic network inspection, `PGPASSWORD`, `Leader|Primary`, `awk`, HTTPS stats); added static Patroni Dockerfile/mTLS test in `tests/test_repo_static.py`.
 - **Result & Non-Regression Test**: Verified live `mdb test patroni` HEALTHY `3/3`, `--suite` `14/14`, failover `1/1`, `TestPostgresVerifier_VerifyCluster`, and `test_patroni_self_contained_dockerfiles_and_mtls`.
 
+### RCA-089 -- Benchmark Runner `.env` Bypass, Ignored `BENCH_OUT_DIR` & Windows `TemporaryDirectory` Lock
+- **Date / Linked Action**: `2026-11-22` (`ACT-107` / Issue `#418`)
+- **Observed Symptom**: V1/V2/PG18/YT/extended runners skipped `.env` or passed `.env.example`, causing auth mismatches against `setup_*.sh`; V1 and optimized runners ignored `BENCH_OUT_DIR`; `bench_pg_multimaster.sh` left CSV read handle open; Windows `TemporaryDirectory` cleanup raised `PermissionError`.
+- **Root Cause Analysis**: Five runners lacked `cd "$BENCH_ROOT"` + `.env` sourcing + `DB_ROOT_PASSWORD`-first precedence; V1/opt runners lacked `BENCH_OUT_DIR` wiring; WSL `bash.EXE` held `cwd` during temp cleanup on Windows.
+- **Applied Change / Fix**: Added `cd` + `.env` sourcing + `DB_ROOT_PASSWORD` precedence across all 5 runners and `test_pg_extended_matrix.sh`, removed `--env-file .env.example` and closed/atomized CSV I/O in `bench_pg_multimaster.sh`, wired `BENCH_OUT_DIR` in V1/optimized runners, and passed `ignore_cleanup_errors=True` in `tests/test_pg_libs.py`.
+- **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest` (`0` errors), `go test -count=1 ./...`, `bash -n`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

@@ -137,7 +137,7 @@ class TestBenchPgV2Lib(unittest.TestCase):
         r_a = b1.row("topoA", "S1", 10, 8, 20, 100, 0, 1, 0, 2, 10, 0, 0, "PASS", 0, "a")
         r_b1 = b1.row("topoB", "S2", 10, 8, 20, 200, 0, 1, 0, 2, 20, 0, 0, "PASS", 0, "b2")
         r_b2 = b1.row("topoB", "S1", 10, 8, 20, 250, 0, 1, 0, 2, 25, 0, 0, "PASS", 0, "b1")
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             p = Path(tmp) / "summary.csv"
             b2.upsert_modular_csv(p, "topoB", [r_b1], ["topoA", "topoB"], ["S1", "S2"])
             b2.upsert_modular_csv(p, "topoA", [r_a], ["topoA", "topoB"], ["S1", "S2"])
@@ -205,7 +205,7 @@ class TestBenchPgOptimizedLib(unittest.TestCase):
                     bopt.assert_zero_opt_containers()
 
     def test_completed_topologies_and_upsert_opt_csv(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             p = Path(tmp) / "benchmark_optimized.csv"
             self.assertEqual(bopt.completed_topologies(p), set())
             bopt.upsert_opt_csv(p, "cockroach-rc", [bopt.row("cockroach-rc", s, 20, 8, 15, 10, "N/A", 1, 0, 2, 100, 0, 0, "PASS", 0, "ok") for s in bopt.expected_suites("cockroach-rc")[:-1]])
@@ -315,7 +315,7 @@ class TestBenchPgOptimizedLib(unittest.TestCase):
         if not shutil.which("bash"):
             return
         prologue = "\n".join(src.splitlines()[: src.splitlines().index("exec python3 - \"$@\" <<'PY'")])
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             root = Path(tmp)
             (root / "scripts").mkdir()
             (root / "sub").mkdir()

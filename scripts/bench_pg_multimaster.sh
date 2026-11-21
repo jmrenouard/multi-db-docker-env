@@ -3,10 +3,15 @@
 set -euo pipefail
 
 export BENCH_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$BENCH_ROOT"
+[ -f .env ] && { set -a; . ./.env; set +a; }
 export PYTHONDONTWRITEBYTECODE=1
 export PG_SCALE="${PG_SCALE:-2}"
-export PG_PASS="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}"
+export PG_PASS="${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}"
+export DB_ROOT_PASSWORD="$PG_PASS"
+export PG_LAB_PASSWORD="$PG_PASS"
 export BENCH_IMAGE="${BENCH_IMAGE:-multi-db-pgbench-sysbench:latest}"
+export BENCH_OUT_DIR="${BENCH_OUT_DIR:-}"
 
 exec python3 - "$@" <<'PY'
 import csv, json, os, sys, time
@@ -18,9 +23,9 @@ from bench_pg_lib import B, COLS, bc, conv_chk, de, init_ds, mk_scripts, pb_run,
 
 SC = int(os.environ["PG_SCALE"])
 NA, HF = 100000 * SC, 50000 * SC
-PW, IMG, ENVF = os.environ["PG_PASS"], os.environ["BENCH_IMAGE"], str(R / ".env.example")
+PW, IMG = os.environ["PG_PASS"], os.environ["BENCH_IMAGE"]
 MODE = "cps" if (R / "stacks").is_dir() else "mddb"
-OUT = R / ("results" if MODE == "cps" else "reports/pg_benchmarks")
+OUT = Path(os.environ["BENCH_OUT_DIR"]) if os.environ.get("BENCH_OUT_DIR") else (R / ("results" if MODE == "cps" else "reports/pg_benchmarks"))
 LOGD = OUT / "logs"
 LOGD.mkdir(parents=True, exist_ok=True)
 CSVP = OUT / "benchmark_summary.csv"
@@ -49,7 +54,7 @@ def run_topo(t):
     rows = []
     with open(LOGD / f"{t}.log", "w", encoding="utf-8") as logf:
         logf.write(f"=== [{t}] Start ===\n")
-        sh(["docker", "compose", "--env-file", ENVF, "-f", cf, "up", "-d", *svcs])
+        sh(["docker", "compose", "-f", cf, "up", "-d", *svcs])
         try:
             if ss and Path(ss).is_file():
                 wlog(logf, sh(["bash", ss]).stdout)
@@ -104,21 +109,26 @@ def run_topo(t):
                 rows.append(row(t, "F_wan_netem_25ms", SC, 8, 15, tps, "N/A", avg, sdv, p95, ok, fl, rt, "PASS_NETEM_25MS", 0, f"tc netem 25ms ({','.join(netem)})"))
         finally:
             sh(["docker", "rm", "-f", "bench_client"], False)
-            sh(["docker", "compose", "--env-file", ENVF, "-f", cf, "down", "-v"])
+            sh(["docker", "compose", "-f", cf, "down", "-v"])
             logf.write(f"=== [{t}] Down ===\n")
     return rows
 
 
 arg = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("BENCH_TOPOLOGIES", "all")
 rlist = list(SPEC.keys()) if arg == "all" else arg.split(",")
-rows = [] if (arg == "all" or not CSVP.exists()) else [r for r in csv.DictReader(CSVP.open(encoding="utf-8")) if r["topology"] not in set(rlist) and not (r["topology"] == "pgedge-delta-apply" and "pgedge" in rlist)]
+rows = []
+if arg != "all" and CSVP.exists():
+    with CSVP.open(encoding="utf-8", newline="") as fh:
+        rows = [r for r in csv.DictReader(fh) if r["topology"] not in set(rlist) and not (r["topology"] == "pgedge-delta-apply" and "pgedge" in rlist)]
 for topo in rlist:
     print(f"Running {topo}...", flush=True)
     rows.extend(run_topo(topo))
-    with CSVP.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=COLS)
+    tmp = CSVP.with_suffix(".csv.tmp")
+    with tmp.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=COLS, lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
+    tmp.replace(CSVP)
     mid = len(rows) // 2
     (OUT / "benchmark_summary_part1.json").write_text(json.dumps(rows[:mid], separators=(",", ":")) + "\n", encoding="utf-8")
     (OUT / "benchmark_summary_part2.json").write_text(json.dumps(rows[mid:], separators=(",", ":")) + "\n", encoding="utf-8")

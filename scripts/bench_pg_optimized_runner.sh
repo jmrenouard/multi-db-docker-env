@@ -13,8 +13,9 @@ export PG_PASS="${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}"
 export DB_ROOT_PASSWORD="$PG_PASS"
 export PG_LAB_PASSWORD="$PG_PASS"
 export BENCH_IMAGE="${BENCH_IMAGE:-multi-db-pgbench-sysbench:latest}"
-export BENCH_OUT_CSV="${BENCH_OUT_CSV:-${BENCH_ROOT}/reports/benchmark_optimized.csv}"
-export BENCH_LOG_DIR="${BENCH_LOG_DIR:-${BENCH_ROOT}/reports/logs_optimized}"
+export BENCH_OUT_DIR="${BENCH_OUT_DIR:-${BENCH_ROOT}/reports}"
+export BENCH_OUT_CSV="${BENCH_OUT_CSV:-${BENCH_OUT_DIR}/benchmark_optimized.csv}"
+export BENCH_LOG_DIR="${BENCH_LOG_DIR:-${BENCH_OUT_DIR}/logs_optimized}"
 
 exec python3 - "$@" <<'PY'
 import argparse

@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-107 -- Benchmark Runner `.env` Sourcing, `BENCH_OUT_DIR` Parity & Windows Temp Fix (`#418`)
+- **Timestamp / Issue / Branch**: `2026-11-22T00:54Z` | Issue `#418` | `fix/issue-418-bench-env-csv-retry`
+- **Request**: Fix `.env` sourcing across V1/V2/PG18/YT/extended runners, honor `BENCH_OUT_DIR` in V1 and optimized runners, close/atomize V1 CSV I/O, and fix Windows `TemporaryDirectory` cleanup error.
+- **Changes**: Updated `scripts/bench_pg_multimaster.sh` (`.env` sourcing, remove `--env-file .env.example`, `BENCH_OUT_DIR`, closed read + atomic `.csv.tmp` rename), `scripts/bench_pg_{v2_runner,pg18_runner,optimized_runner}.sh`, `scripts/bench_yt_runner.sh`, `scripts/test_pg_extended_matrix.sh`, and `tests/test_pg_libs.py` (`ignore_cleanup_errors=True`); logged `RCA-089`.
+- **Result**: Verified Windows + WSL Python `unittest`, `go test -count=1 ./...`, `bash -n`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-106 -- Sync EN/FR Supported Products Matrices & `Changelog` FIFO for Phase 16 (`#410`)
 - **Timestamp / Issue / Branch**: `2026-11-22T00:11Z` | Issue `#410` | `docs/issue-410-products-changelog`
 - **Request**: Update `documentation/supported_products{,_fr}.md` for self-contained Patroni Dockerfiles, pinned `etcd:v3.5.17` / `PgPool 4.4.3`, 31-image E2E inventory, and 31/31 live E2E coverage, and update `Changelog` synced with `VERSION` (`2.6.1`) within `<= 600` lines FIFO.
