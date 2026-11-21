@@ -80,6 +80,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-079 -- EN/FR Multi-Master Guide Sync for Full YT Async Matrix (`#345`)
+- **Date**: `2026-11-21T00:34+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#345`
+- **Request**: Update `documentation/pg_multimaster{,_fr}.md` with `v2.4.1`, 18-suite `yt-cluster-async` benchmarks, non-Leader WAN methodology, and `SQLSTATE 55000` `recon` quarantine notes.
+- **Changes**: Updated `documentation/pg_multimaster.md`, `documentation/pg_multimaster_fr.md`, and `RCA-071` reference.
+- **Result**: Diff `< 14,500` B; `test_config.sh`, `unittest`, and `go test` pass cleanly prior to tagging `v2.4.1`.
+
 ### ACT-078 -- Release `v2.4.1` Version Bump & EN/FR YT Async Matrix Docs (Issue `#343`)
 - **Date**: `2026-11-21T00:32+01:00` | **Status**: `COMPLETED` | **Issues / PRs**: `#343`
 - **Request**: Bump `multi-db-docker-env` to `v2.4.1` and document the complete 18-suite `yt-cluster-async` benchmarks and `SQLSTATE 55000` `recon` quarantine finding.
