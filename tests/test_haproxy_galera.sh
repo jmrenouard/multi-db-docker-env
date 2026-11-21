@@ -10,7 +10,7 @@ if [ -f .env ]; then
 fi
 
 LB_IP="127.0.0.1"
-LB_PORT="3306"
+LB_PORT="${GALERA_LB_PORT:-3306}"
 STATS_PORT="8404"
 USER="root"
 PASS="${DB_ROOT_PASSWORD:-rootpass}"

@@ -570,6 +570,13 @@
 - **Applied Change / Fix**: Propagated `DB_ROOT_PASSWORD` when unset, passed positional node args to `tests/test_mongo_rs.sh`, added connect/5s timeouts + `TimeoutExpired` handling in `tests/test_lab.py`, and aligned `DefaultService` to `mariadb114`.
 - **Result & Non-Regression Test**: Verified in `pkg/topology/topology_test.go`, `cmd/mdb/main_test.go`, `pkg/config/config_test.go`, and `tests/test_python_audit_fixes.py`.
 
+### RCA-076 -- Hardcoded Host Ports `3306`/`5432` Colliding with Local DB Daemons
+- **Date / Linked Action**: `2026-11-21` (`ACT-085` / Issue `#362`)
+- **Observed Symptom**: `traefik-db-proxy` (`docker-compose.yml`) and `haproxy_galera` (`docker-compose-galera.yml`) failed to bind `0.0.0.0:3306` when host/WSL `mariadb.service` occupied `3306`.
+- **Root Cause Analysis**: Only `TRAEFIK_DASHBOARD_PORT` was parameterized, while `3306` and `5432` were hardcoded across Compose, `mdb mycnf`, `tests/test_lab.py`, and Galera HAProxy tests.
+- **Applied Change / Fix**: Parameterized `${TRAEFIK_MYSQL_PORT:-3306}`, `${TRAEFIK_PG_PORT:-5432}`, and `${GALERA_LB_PORT:-3306}` in Compose and tests; updated `mdb mycnf` to write `port=${TRAEFIK_MYSQL_PORT:-3306}` and `mdb doctor` to warn when localhost `3306`/`5432` is already bound with override hints.
+- **Result & Non-Regression Test**: Verified in `cmd/mdb/main_test.go`, `tests/test_python_audit_fixes.py`, and `mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

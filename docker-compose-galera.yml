@@ -85,7 +85,7 @@ services:
     volumes:
       - ./conf/haproxy-galera.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
-      - "3306:3306"
+      - "${GALERA_LB_PORT:-3306}:3306"
       - "8404:8404"
     networks:
       backend_galera:

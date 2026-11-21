@@ -12,14 +12,15 @@ class TestDatabaseLab(unittest.TestCase):
         cls.db_root_password = os.getenv("DB_ROOT_PASSWORD", "rootpass")
 
     def run_mysql_query(self, query):
-        """Executes a SQL query against a running container via Traefik (localhost:3306)."""
+        """Executes a SQL query against a running container via Traefik."""
         env = os.environ.copy()
         env["MYSQL_PWD"] = self.db_root_password
+        port = os.getenv("TRAEFIK_MYSQL_PORT", "3306")
         cmd = [
             "mysql",
             "-uroot",
             "-h127.0.0.1",
-            "-P3306",
+            f"-P{port}",
             "--connect-timeout=3",
             "-e", query,
             "--skip-column-names",
@@ -34,14 +35,15 @@ class TestDatabaseLab(unittest.TestCase):
             return subprocess.CompletedProcess(cmd, returncode=-1, stdout="", stderr="mysql connection timed out")
 
     def run_pg_query(self, query):
-        """Executes a SQL query against a running PostgreSQL container via Traefik (localhost:5432)."""
+        """Executes a SQL query against a running PostgreSQL container via Traefik."""
         env = os.environ.copy()
         env["PGPASSWORD"] = self.db_root_password
         env["PGCONNECT_TIMEOUT"] = "3"
+        port = os.getenv("TRAEFIK_PG_PORT", "5432")
         cmd = [
             "psql",
             "-h", "127.0.0.1",
-            "-p", "5432",
+            "-p", port,
             "-U", "postgres",
             "-c", query,
             "-t", "-A"
@@ -68,8 +70,10 @@ class TestDatabaseLab(unittest.TestCase):
             print(f"\n✅ PostgreSQL Version detected: {res_pg.stdout.strip()}")
             return
         
+        my_port = os.getenv("TRAEFIK_MYSQL_PORT", "3306")
+        pg_port = os.getenv("TRAEFIK_PG_PORT", "5432")
         self.skipTest(
-            f"No running database detected on 3306 or 5432 "
+            f"No running database detected on {my_port} or {pg_port} "
             f"(MySQL error: {res_mysql.stderr.strip()}; Postgres error: {res_pg.stderr.strip()})."
         )
 
