@@ -127,12 +127,12 @@ done
 
 # Populate variables for HTML report and MD summary
 MASTER_VARS=$(run_sql $MASTER_PORT "SHOW VARIABLES LIKE '%binlog%'; SHOW VARIABLES LIKE '%gtid%';")
-MASTER_STATUS=$(run_sql $MASTER_PORT "SHOW MASTER STATUS\G")
+MASTER_STATUS=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $MASTER_PORT -u"$USER" -e "SHOW MASTER STATUS\G")
 MASTER_STATUS_JS=$(echo "$MASTER_STATUS" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $0}' | tr -d '\r\n' | sed 's/\\n$/ /')
 MASTER_VARS_JS=$(echo "$MASTER_VARS" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $0}' | tr -d '\r\n' | sed 's/\\n$/ /')
 
 for port in $SLAVE1_PORT $SLAVE2_PORT; do
-    REPL_STATUS=$(run_sql $port "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Master_Host|Seconds_Behind_Master")
+    REPL_STATUS=$(MYSQL_PWD="$DB_PASS" mariadb $SSL_FLAGS -h 127.0.0.1 -P $port -u"$USER" -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Master_Host|Seconds_Behind_Master")
     REPL_INFO="$REPL_INFO{\"port\":\"$port\",\"status\":\"$(echo "$REPL_STATUS" | tr '\n' ' ')\"},"
 done
 

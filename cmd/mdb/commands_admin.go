@@ -70,7 +70,7 @@ func runInjectCmd(ctx context.Context, client *docker.Client, cat *catalog.Catal
 		fmt.Println("Note: substituting 'sakila' for mysql97 (nested source compatibility).")
 		dbName = "sakila"
 	}
-	if err := streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", "cp", filepath.Join("test_db", dbName), ctr+":/tmp/"); err != nil {
+	if err := streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "docker", "cp", filepath.ToSlash(filepath.Join("test_db", dbName)), ctr+":/tmp/"); err != nil {
 		return err
 	}
 	sqlCmd := "cd /tmp/employees && (mariadb -uroot < employees.sql || mysql -uroot < employees.sql)"
@@ -141,6 +141,31 @@ func runAuditCmd(ctx context.Context, args []string) error {
 	return nil
 }
 
+func wslMountPath(p string) string {
+	if len(p) >= 2 && p[1] == ':' {
+		return "/mnt/" + strings.ToLower(p[:1]) + strings.ReplaceAll(p[2:], `\`, "/")
+	}
+	return p
+}
+
+func runAlpineCleanup(ctx context.Context, client *docker.Client, wd string, failed []string) error {
+	buildArgs := func(src string) []string {
+		rmArgs := []string{"run", "--rm", "--mount", fmt.Sprintf("type=bind,source=%s,target=/workspace", src), "alpine", "rm", "-rf"}
+		for _, f := range failed {
+			rmArgs = append(rmArgs, "/workspace/"+filepath.ToSlash(f))
+		}
+		return rmArgs
+	}
+	_, se, code, err := client.Runner().Run(ctx, "docker", buildArgs(wd)...)
+	if (err != nil || code != 0) && wslMountPath(wd) != wd {
+		_, se, code, err = client.Runner().Run(ctx, "docker", buildArgs(wslMountPath(wd))...)
+	}
+	if err != nil || code != 0 {
+		return fmt.Errorf("cleanup failed (%d): %s: %w", code, strings.TrimSpace(string(se)), err)
+	}
+	return nil
+}
+
 func removeGlobs(ctx context.Context, client *docker.Client, patterns ...string) error {
 	var failed []string
 	for _, pat := range patterns {
@@ -153,13 +178,7 @@ func removeGlobs(ctx context.Context, client *docker.Client, patterns ...string)
 	}
 	if len(failed) > 0 && client != nil {
 		if wd, err := os.Getwd(); err == nil {
-			rmArgs := []string{"run", "--rm", "-v", wd + ":/workspace", "alpine", "rm", "-rf"}
-			for _, f := range failed {
-				rmArgs = append(rmArgs, "/workspace/"+filepath.ToSlash(f))
-			}
-			if _, se, code, err := client.Runner().Run(ctx, "docker", rmArgs...); err != nil || code != 0 {
-				return fmt.Errorf("cleanup failed (%d): %s: %w", code, strings.TrimSpace(string(se)), err)
-			}
+			return runAlpineCleanup(ctx, client, wd, failed)
 		}
 	}
 	return nil

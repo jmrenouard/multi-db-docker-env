@@ -104,8 +104,12 @@ func (b *BaseTopology) Up(ctx context.Context, client *docker.Client) error {
 	}
 	if s := setupScripts[b.name]; s != "" {
 		args := append([]string{s}, setupScriptArgs[b.name]...)
-		if _, stderr, code, err := client.RunWithEnv(ctx, defaultScriptEnv(setupScriptEnv[b.name]), "bash", args...); err != nil || code != 0 {
-			return fmt.Errorf("topology %s setup %s failed (%d): %s: %w", b.name, s, code, string(stderr), err)
+		if stdout, stderr, code, err := client.RunWithEnv(ctx, defaultScriptEnv(setupScriptEnv[b.name]), "bash", args...); err != nil || code != 0 {
+			msg := strings.TrimSpace(string(stderr))
+			if msg == "" {
+				msg = strings.TrimSpace(string(stdout))
+			}
+			return fmt.Errorf("topology %s setup %s failed (%d): %s: %w", b.name, s, code, msg, err)
 		}
 	}
 	return b.waitAfterSetup(ctx, client)
@@ -296,11 +300,23 @@ func (b *BaseTopology) EnsureCerts(ctx context.Context, client *docker.Client) e
 	return pki.NewPKIEngine("ssl").GenerateTopologyCerts(pkiTarget)
 }
 
+func resolveNodeContainer(ctx context.Context, client *docker.Client, node string) string {
+	if names, err := client.PS(ctx, "name="+node); err == nil && len(names) > 0 {
+		for _, n := range names {
+			if n == node {
+				return n
+			}
+		}
+		return names[0]
+	}
+	return node
+}
+
 func (b *BaseTopology) waitBeforeSetup(ctx context.Context, client *docker.Client) error {
 	sqlEnv := []string{"MYSQL_PWD=" + rootPassword()}
 	sqlProbe := func(bin string) func(string) (bool, error) {
 		return func(node string) (bool, error) {
-			out, err := client.Exec(ctx, node, sqlEnv, bin, "-uroot", "-sN", "-e", "SELECT 1")
+			out, err := client.Exec(ctx, resolveNodeContainer(ctx, client, node), sqlEnv, bin, "-uroot", "-sN", "-e", "SELECT 1")
 			return err == nil && strings.Contains(out, "1"), err
 		}
 	}

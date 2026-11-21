@@ -64,7 +64,7 @@ func (g *GaleraTopology) Up(ctx context.Context, client *docker.Client) error {
 func waitGaleraSynced(ctx context.Context, client *docker.Client, node, pass string) error {
 	env := []string{"MYSQL_PWD=" + pass}
 	return waitUntil(ctx, defaultReadyTimeout, node+" Galera Synced", func() (bool, error) {
-		out, err := client.Exec(ctx, node, env, "mariadb", "-uroot", "-e", "SHOW STATUS LIKE 'wsrep_local_state_comment'")
+		out, err := client.Exec(ctx, resolveNodeContainer(ctx, client, node), env, "mariadb", "-uroot", "-e", "SHOW STATUS LIKE 'wsrep_local_state_comment'")
 		if err != nil {
 			return false, err
 		}
