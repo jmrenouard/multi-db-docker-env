@@ -13,6 +13,9 @@ if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
 
 import bench_pg_lib as b1
+import bench_pg_opt_common as boc
+import bench_pg_opt_workloads as bow
+import bench_pg_optimized_lib as bopt
 import bench_pg_v2_lib as b2
 import test_pg_extended_lib as ext
 
@@ -185,6 +188,105 @@ class TestPgExtendedLib(unittest.TestCase):
              patch.object(ext, "wait_eq", return_value=(True, 1.0)):
             fid = ext.run_t14_fidelity("birep", [self.node, {**self.node, "ct": "n2"}], set())
         self.assertIn("PASS: 2/2 identical md5=abcdef12", fid)
+
+
+class TestBenchPgOptimizedLib(unittest.TestCase):
+    def test_expected_suites_318_and_zero_containers(self):
+        self.assertEqual(len(bopt.TOPO_ORDER), 18)
+        self.assertEqual(sum(len(bopt.expected_suites(t)) for t in bopt.TOPO_ORDER), 318)
+        self.assertEqual(len(bopt.expected_suites("pg18-standalone")), 15)
+        with patch.object(boc, "sh", return_value=sp.CompletedProcess([], 0, "lp_pg18_user_1\ntradingai\n", "")):
+            bopt.assert_zero_opt_containers()
+        for bad in ("haproxy_yugabyte\n", "crdb_node1\n", "yt2\n", "bench_client\n"):
+            with patch.object(boc, "sh", return_value=sp.CompletedProcess([], 0, bad, "")):
+                with self.assertRaises(RuntimeError):
+                    bopt.assert_zero_opt_containers()
+
+    def test_completed_topologies_and_upsert_opt_csv(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "benchmark_optimized.csv"
+            self.assertEqual(bopt.completed_topologies(p), set())
+            bopt.upsert_opt_csv(p, "cockroach-rc", [bopt.row("cockroach-rc", s, 20, 8, 15, 10, "N/A", 1, 0, 2, 100, 0, 0, "PASS", 0, "ok") for s in bopt.expected_suites("cockroach-rc")[:-1]])
+            self.assertEqual(bopt.completed_topologies(p), set())
+            bopt.upsert_opt_csv(p, "pg18-standalone", [bopt.row("pg18-standalone", s, 20, 8, 15, 500, "N/A", 2, 0, 4, 5000, 0, 0, "PASS", 0, "ok") for s in bopt.expected_suites("pg18-standalone")])
+            self.assertEqual(bopt.completed_topologies(p), {"pg18-standalone"})
+            bopt.upsert_opt_csv(p, "pg17-standalone", [bopt.row("pg17-standalone", "A_single_rw", 20, 8, 15, 400, "N/A", 2, 0, 4, 4000, 0, 0, "PASS", 0, "ok")])
+            with p.open(encoding="utf-8", newline="") as fh:
+                rows = list(csv.DictReader(fh))
+            self.assertEqual(rows[0]["topology"], "pg17-standalone")
+            self.assertEqual(rows[-1]["topology"], "cockroach-rc")
+
+    def test_init_ds_opt_engine_specific_paths(self):
+        calls = []
+        with patch.object(bopt, "pq", side_effect=lambda *a: (calls.append(("pq", a[0], a[4])), "1")[1]), \
+             patch.object(bopt, "bc", side_effect=lambda *a: calls.append(("bc", a[0]))), \
+             patch.object(bopt, "sh", side_effect=lambda *a: calls.append(("sh", a[0]))), \
+             patch.object(bopt, "bctl"), patch.object(bopt, "wcnt_opt"), \
+             patch.object(bow, "pq", side_effect=lambda *a: calls.append(("ypq", a[0], a[4]))), \
+             patch.object(bopt, "time") as mt:
+            mt.sleep = lambda *_: None
+            bopt.init_ds_opt("citus", ["citus_coord"], 5432, "postgres", "pw", 20, 2000000)
+            citus_sql = [c[2] for c in calls if c[0] == "pq"]
+            self.assertIn("DROP TABLE IF EXISTS pgbench_history CASCADE;", citus_sql)
+            self.assertTrue(any("colocate_with=>'pgbench_accounts'" in s for s in citus_sql))
+            self.assertTrue(any("fillfactor=90" in s for s in citus_sql))
+
+            calls.clear()
+            bopt.init_ds_opt("yugabyte", ["yb-node1"], 5433, "yugabyte", "", 1, 100000)
+            yb_sql = "\n".join(c[2] for c in calls if c[0] == "pq")
+            self.assertIn("ALTER SEQUENCE pgbench_history_hid_seq CACHE 1000;", yb_sql)
+            self.assertIn("ANALYZE pgbench_branches;", yb_sql)
+            self.assertFalse(any(c[0] == "bc" for c in calls))
+
+            calls.clear()
+            bopt.init_ds_opt("cockroach-rc", ["crdb_node1"], 26257, "bench", "", 1, 100000)
+            crdb_sql = "\n".join(c[2] for c in calls if c[0] == "pq")
+            self.assertIn("(g-1)//100000+1", crdb_sql)
+            self.assertIn("fillfactor=90", crdb_sql)
+
+            calls.clear()
+            bopt.init_ds_opt("pgedge", ["pgedge_node1", "pgedge_node2"], 5432, "postgres", "pw", 1, 100000)
+            self.assertTrue(any("spock.delta_apply" in c[2] for c in calls if c[0] == "pq"))
+
+            calls.clear()
+            bopt.init_ds_opt("bucardo", ["bucardo_node1", "bucardo_node2"], 5432, "postgres", "pw", 1, 100000)
+            self.assertTrue(any("quick_delta_check=1" in " ".join(c[1]) for c in calls if c[0] == "sh"))
+            self.assertTrue(any("autokick=1" in " ".join(c[1]) for c in calls if c[0] == "sh"))
+
+            calls.clear()
+            bopt.init_ds_opt("yt-cluster-async", ["yt1", "yt2", "yt3"], 5432, "postgres", "pw", 1, 100000, yt_am=True)
+            self.assertTrue(any("uuidv7()" in c[2] for c in calls if c[0] == "pq"))
+            self.assertTrue(any(bow.YT_ASYNC_CFG in c[2] for c in calls if c[0] == "ypq"))
+
+    def test_reset_ds_opt_sysbench_retry_and_wan_netem_cleanup(self):
+        rst_calls = []
+        with patch.object(bow, "pq", side_effect=lambda *a: (rst_calls.append((a[0], a[4])), "5")[1]), \
+             patch.object(bow, "wcnt_opt"), patch.object(bow, "time"):
+            bopt.reset_ds_opt("pgedge", ["n1", "n2", "n3"], 5432, "postgres", "pw")
+        updates = [q for h, q in rst_calls if "UPDATE pgbench_accounts" in q]
+        self.assertEqual(len(updates), 1)
+        self.assertEqual(rst_calls[-1][0], "n1")
+
+        sb_out = "transactions: 500 (50.00 per sec.)\nqueries: 10000 (1000.00 per sec.)\nignored errors: 4 (0.40 per sec.)\navg: 20.0\n95th percentile: 45.0\n"
+        cmds = []
+        def fake_bc(a, pw="", chk=True):
+            cmds.append(" ".join(a))
+            return sp.CompletedProcess(a, 0, sb_out if a == ["cat", "/tmp/sb_r.out"] else "", "")
+        with patch.object(bow, "bc", side_effect=fake_bc), patch.object(bow, "pq", return_value="1"), \
+             patch.object(bow, "de", return_value=sp.CompletedProcess([], 0, "", "")), \
+             patch.object(bow, "yt_setup_opt"), patch.object(bow.sp, "run"), patch.object(bow, "time"):
+            res = bopt.run_sysbench_opt("yt-cluster-async", ["yt1", "yt2"], 5432, "postgres", "pw", 20, [("E_sysbench_oltp_rw", "oltp_read_write", 8, 15, True), ("E3_sysbench_oltp_wo", "oltp_write_only", 8, 12, False)], sb_sz=25000, yt_am=True)
+        self.assertEqual(res["E_sysbench_oltp_rw"]["retries_40001"], 4)
+        self.assertEqual(sum(1 for c in cmds if "sysbench oltp_read_write" in c and "prepare" in c), 2)
+        self.assertTrue(any("/tmp/sb_wrap.lua" in c and "--table-size=25000" in c for c in cmds))
+
+        tc_ops = []
+        with patch.object(bow, "reset_ds_opt"), \
+             patch.object(bow, "_tc", side_effect=lambda pc, img, args, chk=True: tc_ops.append((pc, args[0]))), \
+             patch.object(bow, "pb_run_opt", side_effect=RuntimeError("abort")), patch.object(bow, "time"):
+            with self.assertRaises(RuntimeError):
+                bopt.run_wan_netem_opt("citus", 25, 12, ["citus_coord"], 5432, "postgres", "pw", 20, ["citus_worker1", "citus_worker2"], "img")
+        self.assertEqual(tc_ops, [("citus_worker1", "replace"), ("citus_worker2", "replace"), ("citus_worker1", "del"), ("citus_worker2", "del")])
 
 
 if __name__ == "__main__":

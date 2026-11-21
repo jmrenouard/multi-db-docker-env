@@ -108,6 +108,32 @@ class TestRepoStaticValidation(unittest.TestCase):
             self.assertIn(":/var/lib/postgresql", block)
             self.assertNotIn(":/var/lib/postgresql/data", block)
 
+    def test_pg_compose_durable_tunings_and_haproxy_ram_caps(self):
+        pg17_files = ("docker-compose-pg17-baseline.yml", "docker-compose-pg-streaming.yml", "docker-compose-pg-logical.yml", "docker-compose-pg-birep.yml")
+        pg18_files = ("docker-compose-pg18-streaming.yml", "docker-compose-pg18-logical.yml", "docker-compose-pg18-birep.yml", "docker-compose-yt-cluster.yml")
+        mm_files = ("docker-compose-pgedge.yml", "docker-compose-bucardo.yml", "docker-compose-citus.yml", "docker-compose-yugabyte.yml", "docker-compose-cockroach.yml")
+        for fname in pg17_files + pg18_files + mm_files:
+            txt = (ROOT / fname).read_text(encoding="utf-8")
+            self.assertNotRegex(txt, r"(?i)\b(?:fsync\s*=\s*off|full_page_writes\s*=\s*off|fs_sync\s*=\s*false)\b", fname)
+        for fname in pg17_files:
+            txt = (ROOT / fname).read_text(encoding="utf-8")
+            self.assertNotIn("io_method", txt, fname)
+        for fname in pg18_files:
+            txt = (ROOT / fname).read_text(encoding="utf-8")
+            self.assertIn("io_method", txt, fname)
+            self.assertIn("io_workers", txt, fname)
+        yt_txt = (ROOT / "docker-compose-yt-cluster.yml").read_text(encoding="utf-8")
+        self.assertIn('YT_MAX_PREPARED: "${YT_MAX_PREPARED:-300}"', yt_txt)
+        self.assertNotIn("shared_preload_libraries", yt_txt)
+        self.assertIn('mem_limit: ${CITUS_MEM_LIMIT:-2048m}', (ROOT / "docker-compose-citus.yml").read_text(encoding="utf-8"))
+        self.assertIn('mem_limit: ${YB_MEM_LIMIT:-3072m}', (ROOT / "docker-compose-yugabyte.yml").read_text(encoding="utf-8"))
+        self.assertIn('mem_limit: ${CRDB_MEM_LIMIT:-3072m}', (ROOT / "docker-compose-cockroach.yml").read_text(encoding="utf-8"))
+        for lb in ("yugabyte", "cockroach"):
+            self.assertIn(f"haproxy_{lb}:", (ROOT / f"docker-compose-{lb}.yml").read_text(encoding="utf-8"))
+            cfg = (ROOT / "scripts" / lb / "haproxy.cfg").read_text(encoding="utf-8")
+            self.assertIn("nameserver dns 127.0.0.11:53", cfg)
+            self.assertIn("init-addr last,libc,none resolvers docker", cfg)
+
 
 if __name__ == "__main__":
     unittest.main()
