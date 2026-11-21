@@ -1,6 +1,10 @@
 2.6.1 2026-11-21
+- feat: add self-contained non-root Patroni Dockerfiles (scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}), secret-free conf/patroni.yml, Compose build/service_healthy wiring, and HAProxy mTLS REST checks (Closes #396, #401).
+- feat: add mdb images CLI (list/build/pull/check), reproducible scripts/Dockerfile.bench, pkg/docker image helpers, Patroni auto-build, and Makefile build-images/pull-images/check-images wrappers covering all 31 E2E images (Closes #397, #399).
+- fix: support Patroni 3.x/4.x streaming/Primary states in pkg/dbclient/postgres.go and align tests/test_patroni.sh and tests/test_failover.sh for live 31/31 E2E parity (Closes #402).
 - fix: exclude bucardo from hs[1:] sbtest4 wait in _sb_prepare since trigger-based Bucardo replicates sync_pgbench only and run_sysbench_opt targets hs[0] (scripts/bench_pg_opt_workloads.py) (Closes #394).
 - fix: source .env from BENCH_ROOT before setting PG_PASS/DB_ROOT_PASSWORD in scripts/bench_pg_optimized_runner.sh so docker compose and setup_*.sh share identical credentials (Closes #394).
+- doc: document mdb images CLI, self-contained Patroni Dockerfiles, 31/31 E2E coverage, and governance registers across EN/FR READMEs, guides, and docs/ (Closes #406, #408, #410).
 - test: add regression assertions in tests/test_pg_libs.py for bucardo _sb_prepare wait skip and .env sourcing, and sync v2.6.1 release metadata (VERSION, cmd/mdb, governance registers).
 
 2.6.0 2026-11-21
@@ -591,6 +595,3 @@
 1.0.8 2026-01-16
  - feat: add test_lb_galera.sh for lightweight load balancing distribution tests.
  - doc: sync documentation with recent Makefile and script changes.
-
-1.0.7 2026-01-12
- - feat: merge mariadb subdirectory into root and optimize Makefile for reliability and cross-version compatibility.

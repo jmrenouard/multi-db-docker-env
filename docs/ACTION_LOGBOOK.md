@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-106 -- Sync EN/FR Supported Products Matrices & `Changelog` FIFO for Phase 16 (`#410`)
+- **Timestamp / Issue / Branch**: `2026-11-22T00:11Z` | Issue `#410` | `docs/issue-410-products-changelog`
+- **Request**: Update `documentation/supported_products{,_fr}.md` for self-contained Patroni Dockerfiles, pinned `etcd:v3.5.17` / `PgPool 4.4.3`, 31-image E2E inventory, and 31/31 live E2E coverage, and update `Changelog` synced with `VERSION` (`2.6.1`) within `<= 600` lines FIFO.
+- **Changes**: Updated `documentation/supported_products.md`, `documentation/supported_products_fr.md`, `Changelog` (597 lines FIFO, trimmed `1.0.7`, prioritized `feat:`/`fix:`/`doc:`/`test:` under `2.6.1`), and `docs/ACTION_LOGBOOK.md` (`ACT-106`).
+- **Result**: Completes Phase 16 across merged PRs `#398` (`#397`), `#400` (`#396`), `#403` (`#399`), `#404` (`#401`), `#405` (`#402`), `#407` (`#406`), and `#409` (`#408`): `31/31` E2E images PRESENT (`7` custom + `24` upstream) and `31/31` active topologies verified live E2E; verified `go test -count=1 ./...`, `mdb lint`, `mdb images check`, `release_notes.py --tag v2.6.1 --check`, and Python tests.
+
 ### ACT-105 -- Update Patroni Cluster Guide & Close Missing-Image Gap in RCA Register (`#408`)
 - **Timestamp / Issue / Branch**: `2026-11-22T00:06Z` | Issue `#408` | `docs/issue-408-patroni-guide-rca`
 - **Request**: Update `documentation/patroni_cluster.md` for self-contained non-root Patroni Dockerfiles, mTLS HAProxy, and 11-group/14-assertion E2E coverage, and update `docs/RCA_REGISTER.md` to close the external Patroni image gap and record the 31-image E2E architecture.
