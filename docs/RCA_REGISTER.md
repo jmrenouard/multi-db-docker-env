@@ -787,6 +787,13 @@
 - **Applied Change / Fix**: Replaced all 7 hardcoded `/tmp/*.out` paths with `mktemp` variables guarded by `trap 'rm -f ...' EXIT`.
 - **Result & Non-Regression Test**: Verified `bash -n`, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
 
+### RCA-107 -- Duplicated PG 17/18 Physical Streaming Setup Scripts Across Directories
+- **Date / Linked Action**: `2026-11-22` (`ACT-125` / Issue `#449`)
+- **Observed Symptom**: `scripts/pg18_streaming/setup_pg18_streaming.sh` duplicated `scripts/pg_streaming/setup_pg_streaming.sh` verbatim apart from container, slot, and `io_method` output names.
+- **Root Cause Analysis**: Separate PG 17 and PG 18 setup files lacked a shared helper library and parameterized runner, causing fixes to drift across versions.
+- **Applied Change / Fix**: Extracted `scripts/pg_common/lib.sh` and `scripts/pg_common/setup_streaming.sh`, replacing both setup scripts with thin wrappers so all `Makefile`/`mdb`/benchmark callers stay compatible. Logical and birep parameterization split to a follow-up PR (`< 14,800` B).
+- **Result & Non-Regression Test**: Verified `bash -n`, mock-docker smoke test, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
