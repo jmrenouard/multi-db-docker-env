@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-134 -- Fix `.agent/` Links, Nonexistent Targets/Scripts, and Version/CLI Drift (`#466`)
+- **Timestamp / Issue / Branch**: `2026-11-22T22:27Z` | Issue `#466` | `docs/issue-466-fix-agent-links-and-rules-drift`
+- **Request**: Fix documentation audit findings #1, #3, #4, and #7: replace `file://` local URI links in `.agent/workflows/doc-sync.md`, remove nonexistent targets/scripts in workflows/rules, and align `./mdb` + active DBMS versions in `.agent/rules/` and `AGENTS.md`.
+- **Changes**: Rewrote `.agent/workflows/doc-sync.md` links to verified relative `../../` paths; updated `.agent/workflows/maintenance.md` (`make clean-reports`, `./mdb down`), `.agent/workflows/architecture-audit.md`, `.agent/rules/02_architecture.md` (multi-engine catalog, `./mdb doctor`), `.agent/rules/03_execution_rules.md` (`./mdb` primary CLI), and `AGENTS.md` (active LTS/supported versions); logged `RCA-116`.
+- **Result**: Verified zero `file://` links, Windows + WSL `-W error::ResourceWarning` `unittest` (73 tests OK, 6 skipped), `go test -count=1 ./...`, `tests/test_config.sh`, `./mdb lint`, and diff `< 14,800` B.
+
 ### ACT-133 -- Remove Duplicate Root Rule Files and Align Governance Test Paths (`#464`)
 - **Timestamp / Issue / Branch**: `2026-11-22T22:22Z` | Issue `#464` | `docs/issue-464-fix-doc-links-rules-dedup`
 - **Request**: Fix documentation audit duplicate-rule finding: remove root `03_execution_rules.md` and `04_best_practices.md` duplicating `.agent/rules/`, and update `tests/test_project_governance_rules.py` to check `.agent/rules/`.

@@ -18,10 +18,11 @@ This workflow performs routine cleanup and health checks on the development envi
 
 // turbo
 
-1. Clean up generated reports and temporary files.
+1. Clean up generated reports and stop active lab containers if needed.
 
    ```bash
-   make clean
+   make clean-reports
+   ./mdb down
    ```
 
 2. Check the status of the MariaDB container.

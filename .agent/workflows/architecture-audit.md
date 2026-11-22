@@ -21,11 +21,11 @@ This workflow performs a structural audit of the codebase to identify inconsiste
    - Check script naming in `scripts/` (ensure standardized prefixing or categorization).
 
 2. **Parameter Consistency**:
-   - Audit variable names across `Makefile`, `scripts/test_runner.sh`, and `scripts/verify_data.sh` (e.g., `CONTAINER_NAME` vs `DB_CONTAINER`).
+   - Audit variable names across `Makefile`, `scripts/*.sh`, `tests/lib/common.sh`, and `tests/test_*.sh` (e.g., `CONTAINER_NAME` vs `DB_CONTAINER`).
 
 3. **Code Consolidation**:
-   - Identify redundant logic between `test_runner.sh` and `verify_data.sh`.
-   - Propose "Generic Wrappers" to replace duplicated Docker execution commands.
+   - Identify redundant logic across `scripts/*.sh`, `tests/lib/common.sh`, and `tests/test_*.sh`.
+   - Propose shared helpers or `./mdb` CLI subcommands to replace duplicated Docker execution commands.
 
 4. **Output Report**:
    - Generate a "Structural Health Report" highlighting:
