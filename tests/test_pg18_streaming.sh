@@ -99,15 +99,16 @@ echo "$tmp_err" | grep -q "25006" \
 
 # 6. Sync stall proof + async standby outage WAL retention
 docker stop "$STB" >/dev/null
+TMP_STALL=$(mktemp)
+trap 'rm -f "$TMP_STALL"' EXIT
 docker exec -e PGPASSWORD="$P" "$PRI" psql -v VERBOSITY=verbose -U "$U" -d "$D" -c \
-    "INSERT INTO accounts (owner, email, balance) VALUES ('stall_test','stall@lab',1);" >/tmp/pg18_sync_stall.out 2>&1 &
+    "INSERT INTO accounts (owner, email, balance) VALUES ('stall_test','stall@lab',1);" >"$TMP_STALL" 2>&1 &
 spid=$!
 weq "$PRI" "SELECT count(*) FROM pg_stat_activity WHERE wait_event='SyncRep';" "1" 10 || true
 syncrep_cnt="$(qn "$PRI" "SELECT count(*) FROM pg_stat_activity WHERE wait_event='SyncRep';")"
 qn "$PRI" "SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE wait_event='SyncRep';" >/dev/null || true
 wait "$spid" || true
-stall_out="$(cat /tmp/pg18_sync_stall.out 2>/dev/null || true)"
-rm -f /tmp/pg18_sync_stall.out
+stall_out="$(cat "$TMP_STALL" 2>/dev/null || true)"
 [ "${syncrep_cnt:-0}" -ge 1 ] \
     && lim "Sync primary stalled on SyncRep wait when sync standby stopped (count=$syncrep_cnt)" \
     || bad "Expected SyncRep stall on primary, got count=$syncrep_cnt out=$stall_out"

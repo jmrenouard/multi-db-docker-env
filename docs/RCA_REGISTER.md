@@ -780,6 +780,13 @@
 - **Applied Change / Fix**: Recovered and verified `sub_from_node2` after `9102` and `9201`, replaced `/tmp/lb18.out` with `mktemp` + `trap`, updated `v25.4` labels in `test_cockroach.sh`/`test_pg_extended_matrix.sh`, and aligned `DB_ROOT_PASSWORD`-first order in `test_citus.sh`/`test_yt_cluster.sh`. Remaining 7 fixed-`/tmp` test scripts split to a follow-up PR to stay `< 14,800` B.
 - **Result & Non-Regression Test**: Verified `bash -n`, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
 
+### RCA-106 -- Concurrent Fixed `/tmp/*.out` Collisions Across Seven PG Bash Test Suites
+- **Date / Linked Action**: `2026-11-22` (`ACT-124` / Issue `#447`)
+- **Observed Symptom**: Seven PG functional test scripts wrote host temporary logs to hardcoded `/tmp/{lb,lbuc,ll,ll18,ls,pg_sync_stall,pg18_sync_stall}.out` paths without `EXIT` cleanup traps.
+- **Root Cause Analysis**: Ad-hoc output redirections omitted `mktemp` and `trap`, leaving stale artifacts on interruption and risking races across concurrent runs.
+- **Applied Change / Fix**: Replaced all 7 hardcoded `/tmp/*.out` paths with `mktemp` variables guarded by `trap 'rm -f ...' EXIT`.
+- **Result & Non-Regression Test**: Verified `bash -n`, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
