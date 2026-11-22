@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-148 -- Replace `INDEX.md` and `INDEX_fr.md` HTML Logo Blocks and Fix STE (`#494`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:45Z` | Issue `#494` | `docs/issue-494-diataxis-index`
+- **Request**: Resolve 60-word HTML logo block STE errors in `documentation/INDEX.md` and `documentation/INDEX_fr.md`, clear remaining `-ing` warnings in `INDEX.md`, and note English-only deep guide availability in `INDEX_fr.md` (Diataxis 4-quadrant reorganization split cleanly into the next two sub-15K PRs).
+- **Changes**: Converted raw `<p>` HTML logo blocks to Markdown pipe tables in `INDEX.md` and `INDEX_fr.md`, fixed `-ing` wording in `INDEX.md`, and added language note in `INDEX_fr.md`; logged `RCA-129`.
+- **Result**: Verified `ste_check.py --mode mixed --no-vocab` (0 errors, 0 warnings on both files), 100% valid TOC anchors and relative links, Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-147 -- Align `supported_products_fr.md` with ASD-STE100 (`#492`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:40Z` | Issue `#492` | `docs/issue-492-ste-supported-products-fr`
 - **Request**: Bring `documentation/supported_products_fr.md` to 0 STE procedural errors and 0 `via`/forbidden words while preserving the French EOL H2 anchor and verified EOL data.

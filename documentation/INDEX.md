@@ -1,14 +1,8 @@
 # Multi-DB Docker Environment Documentation Index 📚
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="50" height="50">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="50" height="50">
-  <img src="https://static.cdnlogo.com/logos/p/6/percona.svg" alt="Percona" width="50" height="50">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="50" height="50">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mongodb/mongodb-original.svg" alt="MongoDB" width="50" height="50">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefikproxy/traefikproxy-original.svg" alt="Traefik" width="50" height="50">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" width="50" height="50">
-</p>
+| MariaDB | MySQL | Percona | PostgreSQL | MongoDB | Traefik | Docker |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="44" height="44"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="44" height="44"> | <img src="https://static.cdnlogo.com/logos/p/6/percona.svg" alt="Percona" width="44" height="44"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="44" height="44"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mongodb/mongodb-original.svg" alt="MongoDB" width="44" height="44"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefikproxy/traefikproxy-original.svg" alt="Traefik" width="44" height="44"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" width="44" height="44"> |
 
 Welcome to the Multi-DB Docker Environment documentation. This index provides a structured overview of all available guides and technical references.
 
@@ -24,7 +18,7 @@ Welcome to the Multi-DB Docker Environment documentation. This index provides a 
   - [🔄 Replication \& Galera](#-replication--galera)
   - [🐘 PostgreSQL \& HA Architectures](#-postgresql--ha-architectures)
   - [🐬 Standalone Matrix](#-standalone-matrix)
-  - [🧪 Testing \& Performance](#-testing--performance)
+  - [🧪 Test Suites \& Benchmarks](#-test-suites--benchmarks)
   - [🔗 MariaDB Replication Overview](#-mariadb-replication-overview)
 
 ---
@@ -91,7 +85,7 @@ Welcome to the Multi-DB Docker Environment documentation. This index provides a 
 | --- | --- |
 | **[Standalone Engines](tests.md#00-standalone-matrix-t2-tier)** | Overview of supported standalone engines (MySQL, MariaDB, Percona, PostgreSQL). |
 
-## 🧪 Testing & Performance
+## 🧪 Test Suites & Benchmarks
 
 | Document | Description |
 | --- | --- |
@@ -107,8 +101,8 @@ The Replication setup in this project implements a traditional **Master/Slave** 
 - **GTID-based**: Uses Global Transaction IDs for easy slave promotion and robust consistency.
 - **SSL Encrypted**: All replication traffic between the master and slaves is fully encrypted.
 - **Automated Setup**: The `make setup-repli` command automates the entire process (user creation, SSL distribution, and linkage).
-- **Read-Only Slaves**: Slaves are automatically configured in read-only mode to prevent data drift.
-- **Proxy Protocol**: Prepared for HAProxy integration to handle intelligent read/write splitting.
+- **Read-Only Slaves**: Slaves stay read-only to prevent data drift.
+- **Proxy Protocol**: Prepared for HAProxy integration to handle clean read/write routing.
 
 ---
 
