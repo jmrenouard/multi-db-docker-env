@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-150 -- Organize `documentation/INDEX_fr.md` into Four Diataxis Quadrants (`#498`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:53Z` | Issue `#498` | `docs/issue-498-diataxis-index-fr`
+- **Request**: Reorganize `documentation/INDEX_fr.md` into the 4 Diataxis quadrants and mark English-only deep guides with `[en anglais]` while preserving STE 0 errors and valid TOC anchors.
+- **Changes**: Grouped all links under `Tutoriels & Demarrage Rapide`, `Guides Pratiques`, `Reference`, and `Explication & Architecture` (`U+FE0F`-free) with synced TOC `#anchor` slugs and `[en anglais]` labels in `documentation/INDEX_fr.md`; logged `RCA-131`.
+- **Result**: Verified `ste_check.py --mode mixed --lang fr --no-vocab` (0 errors, 0 warnings), 100% valid TOC anchors/links, Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-149 -- Organize `documentation/INDEX.md` into Four Diataxis Quadrants (`#496`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:49Z` | Issue `#496` | `docs/issue-496-diataxis-index-en`
 - **Request**: Reorganize `documentation/INDEX.md` into Tutorials/Quickstart, How-To Guides, Reference, and Explanation while maintaining STE 0 errors and valid TOC anchors.
