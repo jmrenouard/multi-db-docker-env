@@ -15,6 +15,7 @@ export BENCH_OUT_DIR="${BENCH_OUT_DIR:-${BENCH_ROOT}/reports/pg_benchmarks_v2}"
 
 exec python3 - "$@" <<'PY'
 import csv, os, sys, time
+from contextlib import nullcontext
 from pathlib import Path
 
 R, OUT = Path(os.environ["BENCH_ROOT"]), Path(os.environ["BENCH_OUT_DIR"])
@@ -70,7 +71,7 @@ def load_wan25(topo: str) -> dict | None:
     return None
 
 
-def run_topo(t: str) -> None:
+def run_topo(t: str, logf=None) -> None:
     """Bring up one topology, run all required suites, and tear down cleanly."""
     assert_zero_poc_containers()
     cf_n, ss_cmd, sv_s, hs_s, pt_s, u, pw, ne_s = SPEC[t].split("|")
@@ -78,7 +79,6 @@ def run_topo(t: str) -> None:
     netem = [x for x in ne_s.split(",") if x]
     nc, cf, is_new = ("yb_node1" if t == "yugabyte" else hs[0]), str(R / f"docker-compose-{cf_n}.yml"), t in NEW_CORE
     core_rows, ext_rows, wan_rows, conc_rows = [], [], [], []
-    logf = (LOGD / f"{t}.log").open("w", encoding="utf-8", newline="\n") if is_new else None
     try:
         if logf is not None:
             logf.write(f"=== [{t}] Start ===\n")
@@ -166,7 +166,6 @@ def run_topo(t: str) -> None:
         sh(["docker", "compose", "-f", cf, "down", "-v"], False)
         if logf is not None:
             logf.write(f"=== [{t}] Down ===\n")
-            logf.close()
         time.sleep(1)
         assert_zero_poc_containers()
 
@@ -183,6 +182,7 @@ for topo in (TOPO_ORDER if arg == "all" else [x.strip() for x in arg.split(",") 
     if topo not in SPEC:
         raise SystemExit(f"Unknown topology: {topo}")
     print(f"=== Running V2 suite for {topo} ===", flush=True)
-    run_topo(topo)
+    with ((LOGD / f"{topo}.log").open("w", encoding="utf-8", newline="\n") if topo in NEW_CORE else nullcontext()) as logf:
+        run_topo(topo, logf)
     print(f"=== Completed {topo} ===", flush=True)
 PY
