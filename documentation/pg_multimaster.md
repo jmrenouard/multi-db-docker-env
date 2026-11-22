@@ -104,16 +104,23 @@ Run all benchmarks sequentially inside the Docker bridge network (`multi-db-pgbe
 
 ## V2 Extended Matrix (`T11`–`T18`) & V2 Benchmarks (`bench-pg-v2`)
 
-Running `make test-pg-extended` executes 8 deep empirical probes across all 10 topologies:
-- **`T11` Bulk 10k Catch-Up**: `pgedge` (`67,406 rows/s`), `pg-birep` (`65,881 rows/s`), `pg17-logical` (`52,816 rows/s`), `cockroach` (`22,079 rows/s`); peer catch-up `105–417 ms`.
-- **`T12` UPDATE vs DELETE Tombstone Race**: `pg17-logical` diverged (`pub=upd_n1`, `sub=DELETED`, missing-row `UPDATE` ignored); async multi-master silently let `DELETE` win; physical streaming rejected standby writes (`25006`); Raft consensus serialized deterministically.
-- **`T13` Cross-Node FK Race**: `bucardo` failed `0/10` (`23503x10`) due to async polling lag (`p50=548.74 ms`); physical standby rejected writes (`25006x10`); logical/mesh/Raft passed `10/10`.
-- **`T14` Rich-Data MD5 Fidelity (`64 KiB` BYTEA / JSONB / UTF-8)**: `pgedge` Rocky UBI defaulted to `SQL_ASCII` (`chr()` raised `SQLSTATE 54000`; escaped UTF-8 converged `3/3`); all other engines converged identically (`md5=00493e3a`).
-- **`T15` Raw Visibility Lag (`n=30`)**: `pgedge` `p50=1.16 ms` (`p95=1.63`), `pg-birep` `1.47/2.28 ms`, `pg17-logical` `1.68/2.14 ms`, `pg17-sync-streaming` `1.88/2.74 ms`, `yugabyte` `2.01/2.83 ms`, `cockroach` `4.09/4.98 ms`, `bucardo` `548.74/1275.25 ms`.
-- **`T16` `SIGKILL` Crash RPO & `T17` Long Open TX**: `RPO=0` across 9/10 engines; `citus` worker2 `SIGKILL` raised `08006` until restart; `bucardo` metadata-node `SIGKILL` left the outage peer write un-replicated (`post_restart=20/21`); zero dirty reads in `T17` (`cockroach` `serializable_intent_wait=2.1s`).
-- **`T18` Sequence Sync after 50 Inserts**: Physical streaming preserved sequence state across `pg_promote()` (`last_value=66|true`, zero `23505`); Raft global sequences passed; `pg17-logical`, `pg-birep`, `pgedge`, and `bucardo` left peer sequences at `1|false` -> **`SQLSTATE 23505`** unless using `setval()`, stepped sequences, or `snowflake.nextval()`.
+Run `make test-pg-extended` to run 8 probes across 10 topologies:
+- **`T11` Bulk 10k Catch-Up**: `pgedge` (`67,406 rows/s`), `pg-birep` (`65,881 rows/s`), `pg17-logical` (`52,816 rows/s`), `cockroach` (`22,079 rows/s`). Peer catch-up took `105–417 ms`.
+- **`T12` UPDATE vs DELETE Tombstone Race**:
+  - `pg17-logical` diverged (`pub=upd_n1`, `sub=DELETED`, missing-row `UPDATE` skipped).
+  - Async multi-master engines let `DELETE` win silently.
+  - Physical streaming rejected standby writes (`25006`), while Raft serialized deterministically.
+- **`T13` Cross-Node FK Race**: `bucardo` failed `0/10` (`23503x10`) under async poll lag (`p50=548.74 ms`). Physical standby rejected writes (`25006x10`), while logical/mesh/Raft passed `10/10`.
+- **`T14` Rich-Data MD5 (`64 KiB` BYTEA / JSONB / UTF-8)**: `pgedge` Rocky UBI defaulted to `SQL_ASCII` (`chr()` raised `54000`). Escaped UTF-8 converged `3/3`, while all other engines matched (`md5=00493e3a`).
+- **`T15` Raw Visibility Lag (`n=30`)**: `pgedge` `p50=1.16 ms` (`p95=1.63`), `pg-birep` `1.47/2.28 ms`, `pg17-logical` `1.68/2.14 ms`, `pg17-sync-streaming` `1.88/2.74 ms`. Remaining: `yugabyte` `2.01/2.83 ms`, `cockroach` `4.09/4.98 ms`, `bucardo` `548.74/1275.25 ms`.
+- **`T16` `SIGKILL` Crash RPO & `T17` Long Open TX**:
+  - `RPO=0` held across 9/10 engines. `citus` worker2 `SIGKILL` raised `08006` until restart.
+  - `bucardo` metadata `SIGKILL` dropped 1 outage write (`post_restart=20/21`). `T17` had zero dirty reads (`cockroach` `serializable_intent_wait=2.1s`).
+- **`T18` Sequence Sync after 50 Inserts**:
+  - Physical streaming preserved sequence state across `pg_promote()` (`last_value=66|true`, `0` `23505`). Raft global sequences passed.
+  - `pg17-logical`, `pg-birep`, `pgedge`, and `bucardo` left peer sequences at `1|false` (`23505`). Use `setval()`, stepped sequences, or `snowflake.nextval()`.
 
-Running `make bench-pg-v2` adds extended sysbench workloads (`E2` read-only, `E3` write-only, `E4` point-select peaking at `148,022 TPS` on `pg17-async-streaming`), `H_append_only_insert` (`3,108 TPS` standalone, `2,987 TPS` 2-node YugabyteDB, `2,207 TPS` 2-node pgEdge), concurrency scaling (`G_conc_c1..c32`), and WAN latency sweeps (`10 / 25 / 50 ms`, collapsing `pg17-sync-streaming` `121.75 -> 57.00 -> 25.79 TPS` and `yugabyte` `15.38 -> 5.78 -> 3.06 TPS`). See [ClusterPostgreSQL-Series](https://github.com/jmrenouard/ClusterPostgreSQL-Series) for full CSV datasets, Log10 charts, and interactive dashboard.
+Run `make bench-pg-v2` for `E2` read-only, `E3` write-only, and `E4` point-select (`148,022 TPS` on `pg17-async-streaming`). It adds `H_append_only_insert` (`3,108 TPS` standalone, `2,987 TPS` YugabyteDB, `2,207 TPS` pgEdge), `G_conc_c1..c32`, and WAN sweeps (`10/25/50 ms`: `pg17-sync-streaming` `121.75 -> 57.00 -> 25.79 TPS`, `yugabyte` `15.38 -> 5.78 -> 3.06 TPS`). See [ClusterPostgreSQL-Series](https://github.com/jmrenouard/ClusterPostgreSQL-Series) for CSV datasets, Log10 charts, and interactive dashboards.
 
 ## PostgreSQL 18.6 Native Stacks & Benchmark Highlights (`v2.3.0`)
 
@@ -127,10 +134,10 @@ Running `make bench-pg-v2` adds extended sysbench workloads (`E2` read-only, `E3
 | `pg18-logical` | `314.26` | `45,862.68` | `1,027.84` | `1,517.26` | `1,582.39` | `131,542.35` | `3,518.49` | `844.10` | `69,827` |
 | `pg18-birep` (`uuidv7`) | `514.28` | `42,190.66` | `1,055.55` | `2,053.07` | `1,492.99` | `146,907.74` | `2,066.70` | `747.42` | `70,470` |
 
-- **Docker `PGDATA` layout**: `postgres:18` moved `PGDATA` to `/var/lib/postgresql/18/docker` (`VOLUME /var/lib/postgresql`); all three PG 18 compose stacks mount `/var/lib/postgresql` and target `${PGDATA:-/var/lib/postgresql/18/docker}`.
-- **AIO `io_method` & Checksums**: Defaults are `io_method=worker` (`io_workers=3`) and `data_checksums=on`. `io_method=io_uring` fails with `Operation not permitted` under default Docker seccomp; `worker` cut cold post-checkpoint seq-scan latency by `-18.5%` (`829.4 ms` vs `1018.3 ms` on `sync`).
-- **Native `uuidv7()` & 7 `confl_*` Counters**: `id UUID PRIMARY KEY DEFAULT uuidv7()` achieved `50/50` collision-free dual-node writes (`0` `23505`, `0` B-tree inversions) and `2,066.70 TPS` on `H_append_only_insert` (`3.30x` vs PG 17 `pg-birep`). All 7 `pg_stat_subscription_stats` counters — including `confl_multiple_unique_conflicts` — are verified in `tests/test_pg18_birep.sh`.
-- **Logical Sequence Sync Deferred to PG 19**: `CREATE SUBSCRIPTION` defaults to `substream=p` and `publish_generated_columns=stored` works (`pubgencols=s`), but `FOR ALL SEQUENCES` and `REFRESH SEQUENCES` still return `SQLSTATE 42601` in PG 18.6 (subscriber sequences remain `1|false` -> `23505` on failover).
+- **Docker `PGDATA` layout**: `postgres:18` moved `PGDATA` to `/var/lib/postgresql/18/docker` (`VOLUME /var/lib/postgresql`). All three PG 18 stacks mount `/var/lib/postgresql` and target `${PGDATA:-/var/lib/postgresql/18/docker}`.
+- **AIO `io_method` & Checksums**: Defaults set `io_method=worker` (`io_workers=3`) and `data_checksums=on`. `io_method=io_uring` fails (`Operation not permitted`) under Docker seccomp. Worker I/O cut cold scan latency by `-18.5%` (`829.4 ms` vs `1018.3 ms`).
+- **Native `uuidv7()` & 7 `confl_*` Counters**: `id UUID PRIMARY KEY DEFAULT uuidv7()` completed `50/50` dual-node writes (`0` `23505`, `0` B-tree inversions) and `2,066.70 TPS` on `H_append_only_insert` (`3.30x` vs `pg-birep`). `tests/test_pg18_birep.sh` verifies all 7 `pg_stat_subscription_stats` counters (`confl_multiple_unique_conflicts` included).
+- **Logical Sequence Sync Deferred to PG 19**: `CREATE SUBSCRIPTION` defaults to `substream=p` and `publish_generated_columns=stored` works (`pubgencols=s`). `FOR ALL SEQUENCES` and `REFRESH SEQUENCES` return `SQLSTATE 42601` in PG 18.6 (peer sequences remain `1|false`).
 
 ## YT Cluster 1.21.3 (PostgreSQL 18.7) Active-Active Stack (`v2.4.1`–`v2.5.0`)
 

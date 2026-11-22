@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-152 -- Align `pg_multimaster.md` Part 2 (V2 Matrix and PG 18.6) with ASD-STE100 (`#502`)
+- **Timestamp / Issue / Branch**: `2026-11-23T00:06Z` | Issue `#502` | `docs/issue-502-pg-multimaster-en-part2`
+- **Request**: Refactor `V2 Extended Matrix (T11-T18)` + `bench-pg-v2` and `PostgreSQL 18.6 Native Stacks` sections of `documentation/pg_multimaster.md` into `<= 20`-word active STE sentences without semicolons (`YT Cluster` + `v2.6.0` follow in Part 3).
+- **Changes**: Split semicolon-chained `T11`-`T18`, `bench-pg-v2`, and PG 18.6 bullets into short active sentences while preserving all SQLSTATEs, TPS, and latency metrics verbatim; logged `RCA-133`.
+- **Result**: Verified 0 STE errors up to `## YT Cluster` (`ste_check.py --mode procedural --lang en --no-vocab`), Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-151 -- Align `pg_multimaster.md` Part 1 (Overview & Empirical Limits) with ASD-STE100 (`#500`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:58Z` | Issue `#500` | `docs/issue-500-pg-multimaster-en-part1`
 - **Request**: Refactor `documentation/pg_multimaster.md` overview, V1 takeaways, and Empirical Limits into <= 20-word STE sentences with 0 semicolons and update `v2.5.0` -> `v2.6.2` (V2 matrix, PG18, YT, and `v2.6.0` sections follow in the next atomic PRs to stay `< 14,800` B).
