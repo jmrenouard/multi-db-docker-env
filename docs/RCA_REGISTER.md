@@ -1105,6 +1105,11 @@
 - **Nature & Justification**: All 31 E2E images (`7` custom builds + `24` pinned upstream images) are centrally inventoried and verified by `./mdb images` and 21-compose parity tests; Patroni retains legacy `patroni-rhel8-{etcd,postgresql,haproxy}:latest` tags on pinned Debian/upstream bases (`quay.io/coreos/etcd:v3.5.17`, `postgres:17-bookworm`, `haproxy:lts`) for Compose compatibility. On native Linux hosts (non-drvfs), `generate_certs.sh` `0700`/`0600` host-owned keys may require UID/GID alignment for non-root `etcd`/`postgres`/`haproxy` containers.
 - **Removal Condition**: Rename Patroni tags only in a breaking `v3.0` release; align host cert group readability if running rootless on native Linux.
 
+### APP-031 -- Single-File Dead Bot Log Deletion Exceeding 15K Diff Cap (`documentation/sourcery_ai_audit.md`)
+- **Target Files**: `documentation/sourcery_ai_audit.md` (deleted via `git rm`)
+- **Nature & Justification**: Deleting the unreferenced 6,190-line (-374 KB) historical Sourcery AI dump produces a `-374 KB` patch on a single dead file while adding zero code complexity (`POTENTIAL_ISSUES.md` and `docs/RCA_REGISTER.md` already hold all consolidated findings). Splitting a single `git rm` file deletion into line-chunked PRs adds churn with no review benefit, so this atomic deletion is explicitly exempted from the `< 15,000` char diff cap while keeping added governance lines minimal (`< 1,500` B).
+- **Removal Condition**: One-time cleanup complete upon merge of the PR closing Issue `#472`; strict `< 15,000` char diff limit remains enforced on all subsequent PRs.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
