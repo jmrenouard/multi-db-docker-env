@@ -128,11 +128,60 @@ class TestRepoStaticValidation(unittest.TestCase):
         self.assertIn('mem_limit: ${CITUS_MEM_LIMIT:-2048m}', (ROOT / "docker-compose-citus.yml").read_text(encoding="utf-8"))
         self.assertIn('mem_limit: ${YB_MEM_LIMIT:-3072m}', (ROOT / "docker-compose-yugabyte.yml").read_text(encoding="utf-8"))
         self.assertIn('mem_limit: ${CRDB_MEM_LIMIT:-3072m}', (ROOT / "docker-compose-cockroach.yml").read_text(encoding="utf-8"))
-        for lb in ("yugabyte", "cockroach"):
-            self.assertIn(f"haproxy_{lb}:", (ROOT / f"docker-compose-{lb}.yml").read_text(encoding="utf-8"))
-            cfg = (ROOT / "scripts" / lb / "haproxy.cfg").read_text(encoding="utf-8")
-            self.assertIn("nameserver dns 127.0.0.11:53", cfg)
-            self.assertIn("init-addr last,libc,none resolvers docker", cfg)
+        haproxy_specs = (
+            ("pg_birep", "docker-compose-pg-birep.yml", "option pgsql-check user postgres"),
+            ("pg18_birep", "docker-compose-pg18-birep.yml", "option pgsql-check user postgres"),
+            ("pgedge", "docker-compose-pgedge.yml", "option pgsql-check user postgres"),
+            ("yugabyte", "docker-compose-yugabyte.yml", "option pgsql-check user yugabyte"),
+            ("cockroach", "docker-compose-cockroach.yml", "option httpchk"),
+        )
+        for lb, compose_name, l7_check in haproxy_specs:
+            with self.subTest(haproxy=lb):
+                compose_txt = (ROOT / compose_name).read_text(encoding="utf-8")
+                self.assertIn(f"haproxy_{lb}:", compose_txt, compose_name)
+                cfg = (ROOT / "scripts" / lb / "haproxy.cfg").read_text(encoding="utf-8")
+                self.assertIn("nameserver dns 127.0.0.11:53", cfg)
+                self.assertIn("init-addr last,libc,none resolvers docker", cfg)
+                self.assertIn(l7_check, cfg)
+                self.assertNotIn("option tcp-check", cfg)
+                m_ha = re.search(rf"(?ms)^  haproxy_{lb}:\n(.*?)(?=^  [A-Za-z0-9_-]+:|\nvolumes:|\Z)", compose_txt)
+                self.assertIsNotNone(m_ha, f"haproxy_{lb} block missing in {compose_name}")
+                self.assertIn("127.0.0.1:8404/stats", m_ha.group(1), compose_name)
+
+        yb_txt = (ROOT / "docker-compose-yugabyte.yml").read_text(encoding="utf-8")
+        m_yb3 = re.search(r"(?ms)^  yb_node3:\n(.*?)(?=^  haproxy_yugabyte:)", yb_txt)
+        self.assertIsNotNone(m_yb3)
+        self.assertIn("healthcheck:", m_yb3.group(1))
+        m_ybh = re.search(r"(?ms)^  haproxy_yugabyte:\n(.*?)(?=\nvolumes:|\Z)", yb_txt)
+        self.assertIsNotNone(m_ybh)
+        for node in ("yb_node1", "yb_node2", "yb_node3"):
+            self.assertRegex(m_ybh.group(1), rf"{node}:.*service_healthy")
+
+        crdb_txt = (ROOT / "docker-compose-cockroach.yml").read_text(encoding="utf-8")
+        self.assertIn("/health?ready=1", crdb_txt)
+        m_crdbh = re.search(r"(?ms)^  haproxy_cockroach:\n(.*?)(?=\nvolumes:|\Z)", crdb_txt)
+        self.assertIsNotNone(m_crdbh)
+        self.assertNotIn("service_healthy", m_crdbh.group(1))
+        if yaml is not None:
+            crdb_svcs = yaml.safe_load(crdb_txt).get("services", {})
+            for node in ("crdb_node1", "crdb_node2", "crdb_node3"):
+                hc = crdb_svcs[node].get("healthcheck") or crdb_svcs[node].get("<<", {}).get("healthcheck") or {}
+                self.assertIn("/health?ready=1", str(hc.get("test", "")), node)
+
+        pgedge_txt = (ROOT / "docker-compose-pgedge.yml").read_text(encoding="utf-8")
+        self.assertIn("127.0.0.1:15459:8404", pgedge_txt)
+
+        for rel in (
+            "docker-compose-citus.yml",
+            "docker-compose-yt-cluster.yml",
+            "scripts/citus/setup_citus.sh",
+            "scripts/yt_cluster/setup_yt_cluster.sh",
+            "tests/test_citus.sh",
+            "tests/test_yt_cluster.sh",
+        ):
+            txt = (ROOT / rel).read_text(encoding="utf-8")
+            self.assertIn("${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}", txt, rel)
+            self.assertNotIn("${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD", txt, rel)
 
     def test_patroni_self_contained_dockerfiles_and_mtls(self):
         for name, base, user in (

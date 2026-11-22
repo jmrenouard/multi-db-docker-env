@@ -822,6 +822,13 @@
 - **Applied Change / Fix**: Added `resolvers docker`, `init-addr last,libc,none resolvers docker`, and `option pgsql-check` across all PG/Yugabyte HAProxy configs; added `yb_node3` + `crdb_node1..3` (`/health?ready=1`) + all 5 HAProxy `:8404/stats` healthchecks, `yb_node1..3` `service_healthy` dependencies on `haproxy_yugabyte`, and `127.0.0.1:15459:8404` on `haproxy_pgedge`.
 - **Result & Non-Regression Test**: Verified all 5 `haproxy -c -f` checks, `docker compose config -q`, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
 
+### RCA-112 -- Incomplete Static Coverage of HAProxy Configs, Compose Healthchecks & Env Order
+- **Date / Linked Action**: `2026-11-22` (`ACT-130` / Issue `#458`)
+- **Observed Symptom**: `tests/test_repo_static.py` checked DNS resolvers only on `yugabyte` and `cockroach` HAProxy configs and omitted checks for L7 protocol probes, `yb_node3`/`crdb_node1..3`/HAProxy healthchecks, `15459:8404` on `haproxy_pgedge`, and Citus/YT `DB_ROOT_PASSWORD` precedence.
+- **Root Cause Analysis**: Initial static guard asserted only 2 HAProxy stacks and skipped healthcheck/port/env regression assertions.
+- **Applied Change / Fix**: Extended `test_pg_compose_durable_tunings_and_haproxy_ram_caps` across all 5 HAProxy PG stacks and Citus/YT files; benchmark library unit test expansion follows in PR 9B (`< 14,800` B).
+- **Result & Non-Regression Test**: Verified Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
