@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-135 -- Remove Stale Audit/Plan Docs, Clean `tests/README.md`, and Fix `ACT-001` Link (`#468`)
+- **Timestamp / Issue / Branch**: `2026-11-22T22:34Z` | Issue `#468` | `docs/issue-468-fix-stale-docs-and-gfm-anchors`
+- **Request**: Fix audit #2/#9 stale file and path items: delete `audit_report.md` and `INTEGRAL_TEST_PLAN.md`, clean `tests/README.md`, and fix `ACT-001` `.agents/rules/` link (9 GFM anchors split to next PR).
+- **Changes**: Deleted `documentation/audit_report.md` and `documentation/INTEGRAL_TEST_PLAN.md`; dropped `test_perf_threads.sh` and updated `tests/README.md` for multi-DB suites; fixed `ACT-001` link (`../.agents/AGENTS.md`); logged `RCA-117`.
+- **Result**: Verified Windows + WSL `-W error::ResourceWarning` `unittest` (73 tests OK, 6 skipped), `go test -count=1 ./...`, `tests/test_config.sh`, `./mdb lint`, and diff `< 14,800` B.
+
 ### ACT-134 -- Fix `.agent/` Links, Nonexistent Targets/Scripts, and Version/CLI Drift (`#466`)
 - **Timestamp / Issue / Branch**: `2026-11-22T22:27Z` | Issue `#466` | `docs/issue-466-fix-agent-links-and-rules-drift`
 - **Request**: Fix documentation audit findings #1, #3, #4, and #7: replace `file://` local URI links in `.agent/workflows/doc-sync.md`, remove nonexistent targets/scripts in workflows/rules, and align `./mdb` + active DBMS versions in `.agent/rules/` and `AGENTS.md`.
@@ -1052,5 +1058,5 @@
 - **Status**: `COMPLETED`
 - **Issue / Branch**: `main` (commit `b7c664e`)
 - **Request**: Reintegrate development and governance rules from the CIS Benchmarks Tools project (`AGENTS.md`, `.agents/AGENTS.md`, `.agents/rules/`, `03_execution_rules.md`, `04_best_practices.md`, `docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`, and `tests/test_project_governance_rules.py`).
-- **Changes**: Created root [`AGENTS.md`](../AGENTS.md), workspace [`.agents/AGENTS.md`](../.agents/AGENTS.md), rule files in [`.agents/rules/`](../.agents/rules/), root `03_execution_rules.md` and `04_best_practices.md` (later consolidated into [`.agent/rules/`](../.agent/rules/03_execution_rules.md)), [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md), and automated test suite [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py).
+- **Changes**: Created root [`AGENTS.md`](../AGENTS.md), workspace [`.agents/AGENTS.md`](../.agents/AGENTS.md), rule files in [`.agents/AGENTS.md`](../.agents/AGENTS.md), root `03_execution_rules.md` and `04_best_practices.md` (later consolidated into [`.agent/rules/`](../.agent/rules/03_execution_rules.md)), [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md), and automated test suite [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py).
 - **Result**: 3/3 governance unit tests passed, PR diff strictly within `< 15,000` characters.
