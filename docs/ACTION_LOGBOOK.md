@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-140 -- Align `README_fr.md` with STE (0 Errors) and `v2.6.2` (`#478`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:03Z` | Issue `#478` | `docs/issue-478-ste-readme-fr-sync`
+- **Request**: Resolve STE procedural violations (`<= 20` words, 0 semicolons, 0 `via`/weak modals) and stale `v2.5.0`/`v2.6.1` tags in `README_fr.md`.
+- **Changes**: Converted HTML logo/badge blocks to Markdown, shortened sentences, removed semicolons and `via`, and synced `v2.6.2` in `README_fr.md`; logged `RCA-121`.
+- **Result**: Verified `ste_check.py --mode procedural --lang fr --no-vocab README_fr.md` (0 errors, 0 warnings), Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-139 -- Add STE `CAUTION` Block to `makefile.md` and Sync `ROADMAP`/`README` Tags (`#476`)
 - **Timestamp / Issue / Branch**: `2026-11-22T22:58Z` | Issue `#476` | `docs/issue-476-makefile-caution-and-version-sync`
 - **Request**: Replace `**DANGER**` with ASD-STE100 Rule 7.1-7.3 `CAUTION:` block in `documentation/makefile.md`, achieve 0 STE errors/forbidden words in `makefile.md`, sync `ROADMAP.md` and `README.md:215` to `v2.6.2`, and remove `via` in `README_fr.md:148,183,197`.

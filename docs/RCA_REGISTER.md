@@ -885,6 +885,13 @@
 - **Applied Change / Fix**: Replaced `**DANGER**` with `CAUTION:` block covering `clean-data`/`clean-galera`/`clean-repli`, fixed STE wording (`0 errors, 0 warnings`), synced `v2.6.2` tags, and removed `via` at `README_fr.md:148,183,197`.
 - **Result & Non-Regression Test**: Verified 0 STE errors/forbidden words on `makefile.md`/`ROADMAP.md`/`README.md`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-121 -- `README_fr.md` Procedural STE Errors and Version Drift (`v2.5.0`/`v2.6.1`)
+- **Date / Linked Action**: `2026-11-22` (`ACT-140` / Issue `#478`)
+- **Observed Symptom**: `README_fr.md` failed `ste_check.py --mode procedural --lang fr` (9 errors: HTML `<p>` logo/badge blocks, >20-word sentences, semicolons, `via`) with stale `v2.5.0`/`v2.6.1` labels.
+- **Root Cause Analysis**: French README layout predated STE checks and `v2.6.2`.
+- **Applied Change / Fix**: Replaced HTML `<p>` logo/badge blocks with Markdown table/badges, split >20-word sentences, removed semicolons and `via`, and synced `v2.6.2`.
+- **Result & Non-Regression Test**: Verified 0 STE errors/warnings (`ste_check.py`), Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
