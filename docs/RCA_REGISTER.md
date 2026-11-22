@@ -773,6 +773,13 @@
 - **Applied Change / Fix**: Added `INIT_OK`/`LIVE=3`/`TS_CNT=3` `exit 1` guards, `mktemp` + `v25.4`, `<<'EOF'` + `chmod 600` + `-e PGPASSWORD`, SQL/env escaping, `docker inspect` network + `--max-time 5`, and non-mutating `test_config.sh` check.
 - **Result & Non-Regression Test**: Verified `bash -n`, `tests/test_config.sh`, Windows + WSL Python `unittest`, and `go test -count=1 ./...`.
 
+### RCA-105 -- Halted `sub_from_node2` After Dual Conflicts, Fixed `/tmp/lb18.out`, `v24.3.0` Labels & Citus/YT Order
+- **Date / Linked Action**: `2026-11-22` (`ACT-123` / Issue `#445`)
+- **Observed Symptom**: `test_pg18_birep.sh` disabled `sub_from_node2` across both `9101` and `9201` blocks with one `skerr`, halting `N2->N1` apply on the second `23505`; it also wrote fixed `/tmp/lb18.out`, Citus/YT tests reversed `DB_ROOT_PASSWORD` fallback order, and Cockroach labels still said `v24.3.0`.
+- **Root Cause Analysis**: Conflict skip lacked intermediate recovery before `9201`, `/tmp/lb18.out` lacked `mktemp` + `trap`, and test strings drifted after `v25.4`.
+- **Applied Change / Fix**: Recovered and verified `sub_from_node2` after `9102` and `9201`, replaced `/tmp/lb18.out` with `mktemp` + `trap`, updated `v25.4` labels in `test_cockroach.sh`/`test_pg_extended_matrix.sh`, and aligned `DB_ROOT_PASSWORD`-first order in `test_citus.sh`/`test_yt_cluster.sh`. Remaining 7 fixed-`/tmp` test scripts split to a follow-up PR to stay `< 14,800` B.
+- **Result & Non-Regression Test**: Verified `bash -n`, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

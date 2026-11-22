@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-123 -- Recover `sub_from_node2` in `test_pg18_birep.sh`, Sync `v25.4` Labels & Citus/YT Auth Order (`#445`)
+- **Timestamp / Issue / Branch**: `2026-11-22T02:04Z` | Issue `#445` | `fix/issue-445-birep-sub-mktemp-labels`
+- **Request**: Recover and verify `sub_from_node2` worker `= 1` after `9102` and `9201` in `test_pg18_birep.sh` (`#191.10`), use `mktemp` + `trap` in `test_pg18_birep.sh`, update stale `v24.3.0` labels to `v25.4` in `test_cockroach.sh` and `test_pg_extended_matrix.sh` (`#191.20`), and align `DB_ROOT_PASSWORD`-first order in `test_citus.sh` and `test_yt_cluster.sh` (`#191.17`).
+- **Changes**: Updated `tests/test_pg18_birep.sh`, `tests/test_cockroach.sh`, `tests/test_citus.sh`, `tests/test_yt_cluster.sh`, and `scripts/test_pg_extended_matrix.sh`; logged `RCA-105`.
+- **Result**: Verified `bash -n`, `test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, and diff `< 14,800` B.
+
 ### ACT-122 -- Harden Setup Creds, Fail on YB/CRDB Quorum Timeout & Fix `test_pgpool`/`test_config` (`#443`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:58Z` | Issue `#443` | `fix/issue-443-setup-quorum-pgpool-tests`
 - **Request**: Harden Bucardo/PgPool credential passing and `/root/.bucardorc` mode `600`, fail on CockroachDB/YugabyteDB quorum timeouts, use `mktemp` + `v25.4` in `setup_cockroach.sh`, inspect PgPool network dynamically + `curl --max-time 5`, and avoid `+x` mutations in `tests/test_config.sh`.

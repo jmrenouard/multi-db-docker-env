@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_cockroach.sh - Functional and empirical limits suite for CockroachDB v24.3.0
+# test_cockroach.sh - Functional and empirical limits suite for CockroachDB v25.4
 set -euo pipefail
 DB="${CRDB_DB:-labdb}"
 

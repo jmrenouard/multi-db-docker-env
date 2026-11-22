@@ -2,7 +2,7 @@
 # test_citus.sh - Functional and empirical limits suite for Citus 14.2 (PG 17)
 set -euo pipefail
 [ -f .env ] && { set -a; . ./.env; set +a; }
-PG_PASS="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}"
+PG_PASS="${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}"
 DB="${CITUS_DB:-labdb}"
 
 ep() {
