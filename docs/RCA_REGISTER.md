@@ -976,6 +976,13 @@
 - **Applied Change / Fix**: Split V2 and PG 18.6 clauses into active short sub-bullets `<= 20` words without semicolons while keeping every metric and SQLSTATE exact.
 - **Result & Non-Regression Test**: Verified 0 STE errors up to `## YT Cluster`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-134 -- `documentation/pg_multimaster.md` Part 3 (YT Cluster and `v2.6.0`) Completing Full-File STE Cleanliness
+- **Date / Linked Action**: `2026-11-23` (`ACT-153` / Issue `#504`)
+- **Observed Symptom**: `YT Cluster 1.21.3` and `v2.6.0` optimization sections held the remaining 11 STE errors (semicolons, `> 20`-word paragraphs/bullets, `root`'s possessive) in `documentation/pg_multimaster.md`.
+- **Root Cause Analysis**: Dense benchmark and memory-cap clauses grew inline; finishing Part 3 completes the 3-PR split keeping every PR `< 14,800` B.
+- **Applied Change / Fix**: Broke YT Cluster sync/async/limits and `bench_pg_optimized` items into `<= 20`-word sub-bullets without semicolons or possessives while keeping all metrics and SQLSTATEs verbatim.
+- **Result & Non-Regression Test**: Verified full-file `0 errors` under `ste_check.py --mode procedural --lang en --no-vocab`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
