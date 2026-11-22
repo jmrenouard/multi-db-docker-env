@@ -724,6 +724,13 @@
 - **Applied Change / Fix**: Added `wait_wal_replay`, `wait_sub_ready`, and `drop_sb_sub` in `bench_pg_lib.py`; updated `bench_pg_opt_workloads.py` to pass `pw` via `PGPASSWORD` with `shlex.quote`, pre-drain/reset `pg-birep`/`pg18-birep` peers, and enforce WAL/subscription readiness.
 - **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest` (`-W error::ResourceWarning`), `go test -count=1 ./...`, and `tests/test_config.sh`.
 
+### RCA-098 -- Split Hardcoded Catalog Metadata & Inline Container Resolution into Atomic Slice 4A (`#415`)
+- **Date / Linked Action**: `2026-11-22` (`ACT-116` / Issue `#415`)
+- **Observed Symptom**: `pkg/catalog.Environment` lacked `SetupArgs`, `SetupEnv`, and `DefaultDB` fields (forcing hardcoded `mongo8` overrides and missing `labdb` defaults downstream), `pkg/interactive.VerifyEnvironment` duplicated `client.PS` resolution without exact-match preference or nil/empty guards, and combining all 5 cleanup slices produced `25,260` diff bytes (`> 15,000` `IMP-001` limit).
+- **Root Cause Analysis**: Setup arguments/env and `POSTGRES_DB` defaults evolved per caller before `catalog.Environment` carried them, `interactive` predated `Client.ResolveContainer`, and multi-package dead-code deletion plus catalog refactoring exceeded a single `< 15,000`-byte PR.
+- **Applied Change / Fix**: Executed sequential 3-PR split (`#415` -> `#432` -> `#433`); in Slice 4A (`#415`), added `DefaultDB`/`SetupArgs`/`SetupEnv` + `cloneEnv` copies + `mongo8` & 10 PG `labdb` entries in `pkg/catalog/catalog.go`, unit tests in `pkg/catalog/catalog_test.go`, and `client.ResolveContainer` in `pkg/interactive/steps.go`.
+- **Result & Non-Regression Test**: Verified `go test -count=1 ./...` (`11/11`), `go vet ./...`, `go run ./cmd/mdb lint` (`70` scripts + `21` Compose files), and `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped in `test_lab.py`).
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

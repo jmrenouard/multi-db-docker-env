@@ -32,7 +32,10 @@ type Environment struct {
 	EOLDate       string   `json:"eol_date,omitempty"`
 	Replacement   string   `json:"replacement,omitempty"`
 	DefaultPort   int      `json:"default_port,omitempty"`
+	DefaultDB     string   `json:"default_db,omitempty"`
 	SetupScript   string   `json:"setup_script,omitempty"`
+	SetupArgs     []string `json:"setup_args,omitempty"`
+	SetupEnv      []string `json:"setup_env,omitempty"`
 	RequiredCerts []string `json:"required_certs,omitempty"`
 }
 
@@ -78,6 +81,17 @@ func pgC(id, ver, ctr, setup, desc string, port int, certs []string) Environment
 	return cEnv(id, "postgres", ver, "", ctr, setup, desc, port, certs)
 }
 
+func pgLab(id, ver, ctr, setup, desc string, port int, certs []string) Environment {
+	e := pgC(id, ver, ctr, setup, desc, port, certs)
+	e.DefaultDB = "labdb"
+	return e
+}
+
+func withSetup(e Environment, args, env []string) Environment {
+	e.SetupArgs, e.SetupEnv = args, env
+	return e
+}
+
 func eEnv(id, eng, ver, eol, repl, desc string) Environment {
 	return Environment{ID: id, Category: CategoryStandalone, Engine: eng, Version: ver, Description: desc, Status: StatusEOL, EOLDate: eol, Replacement: repl}
 }
@@ -101,20 +115,20 @@ var baseEnvs = []Environment{
 	pgC("patroni", "17", "node1", "", "PG 17 Patroni HA + etcd + HAProxy", 5000, paCerts),
 	pgC("pgpool", "17", "pgpool", "pgpool/setup_replication.sh", "PG 17 HA + PgPool-II", 9999, ppCerts),
 	cEnv("mongo", "mongodb", "7.0", "docker-compose-mongo-rs.yml", "mongo1", "conf/mongo-rs/setup_rs.sh", "MongoDB 7 ReplicaSet + HAProxy", 27100, mgCerts),
-	cEnv("mongo8", "mongodb", "8.0", "docker-compose-mongo8-rs.yml", "mongo8_n1", "conf/mongo-rs/setup_rs.sh", "MongoDB 8 ReplicaSet + HAProxy", 27200, mg8Cert),
-	pgC("pg17-baseline", "17", "pg17_standalone", "", "PG 17 baseline standalone + sync standby", 15431, nil),
-	pgC("pg-streaming", "17", "pg_stream_primary", "pg_streaming/setup_pg_streaming.sh", "PG 17 physical streaming", 15434, nil),
-	pgC("pg-logical", "17", "pg_logical_pub", "pg_logical/setup_pg_logical.sh", "PG 17 uni-directional logical", 15436, nil),
-	pgC("pg-birep", "17", "pg_birep_node1", "pg_birep/setup_birep.sh", "PG 17 bidirectional + HAProxy", 15440, nil),
-	pgC("pg18-streaming", "18.6", "pg18_stream_primary", "pg18_streaming/setup_pg18_streaming.sh", "PG 18.6 physical streaming (AIO)", 15534, nil),
-	pgC("pg18-logical", "18.6", "pg18_logical_pub", "pg18_logical/setup_pg18_logical.sh", "PG 18.6 uni-directional logical", 15536, nil),
-	pgC("pg18-birep", "18.6", "pg18_birep_node1", "pg18_birep/setup_pg18_birep.sh", "PG 18.6 bidirectional (uuidv7)", 15540, nil),
-	pgC("pgedge", "17", "pgedge_node1", "pgedge/setup_pgedge.sh", "PG 17 pgEdge Spock 5 mesh", 15450, nil),
-	pgC("bucardo", "17", "bucardo_node1", "bucardo/setup_bucardo.sh", "PG 17 Bucardo 5 multi-master", 15461, nil),
+	withSetup(cEnv("mongo8", "mongodb", "8.0", "docker-compose-mongo8-rs.yml", "mongo8_n1", "conf/mongo-rs/setup_rs.sh", "MongoDB 8 ReplicaSet + HAProxy", 27200, mg8Cert), []string{"mongo8_n1", "mongo8_n2", "mongo8_n3"}, []string{"MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3"}),
+	pgLab("pg17-baseline", "17", "pg17_standalone", "", "PG 17 baseline standalone + sync standby", 15431, nil),
+	pgLab("pg-streaming", "17", "pg_stream_primary", "pg_streaming/setup_pg_streaming.sh", "PG 17 physical streaming", 15434, nil),
+	pgLab("pg-logical", "17", "pg_logical_pub", "pg_logical/setup_pg_logical.sh", "PG 17 uni-directional logical", 15436, nil),
+	pgLab("pg-birep", "17", "pg_birep_node1", "pg_birep/setup_birep.sh", "PG 17 bidirectional + HAProxy", 15440, nil),
+	pgLab("pg18-streaming", "18.6", "pg18_stream_primary", "pg18_streaming/setup_pg18_streaming.sh", "PG 18.6 physical streaming (AIO)", 15534, nil),
+	pgLab("pg18-logical", "18.6", "pg18_logical_pub", "pg18_logical/setup_pg18_logical.sh", "PG 18.6 uni-directional logical", 15536, nil),
+	pgLab("pg18-birep", "18.6", "pg18_birep_node1", "pg18_birep/setup_pg18_birep.sh", "PG 18.6 bidirectional (uuidv7)", 15540, nil),
+	pgLab("pgedge", "17", "pgedge_node1", "pgedge/setup_pgedge.sh", "PG 17 pgEdge Spock 5 mesh", 15450, nil),
+	pgLab("bucardo", "17", "bucardo_node1", "bucardo/setup_bucardo.sh", "PG 17 Bucardo 5 multi-master", 15461, nil),
 	pgC("citus", "17", "citus_coord", "citus/setup_citus.sh", "Citus 14.2 distributed PG 17", 15490, nil),
 	cEnv("cockroach", "cockroachdb", "25.4", "", "crdb_node1", "cockroach/setup_cockroach.sh", "CockroachDB v25.4 3-node Raft", 15481, nil),
 	cEnv("yugabyte", "yugabytedb", "2026.1.3", "", "yb_node1", "yugabyte/setup_yugabyte.sh", "YugabyteDB 2026.1.3 3-node Raft", 15471, nil),
-	pgC("yt-cluster", "18.7", "yt1", "yt_cluster/setup_yt_cluster.sh", "YT Cluster 1.21.3 (PG 18.7) active-active", 5491, nil),
+	pgLab("yt-cluster", "18.7", "yt1", "yt_cluster/setup_yt_cluster.sh", "YT Cluster 1.21.3 (PG 18.7) active-active", 5491, nil),
 
 	eEnv("mysql57", "mysql", "5.7", "2023-10-31", "mysql84, mysql97", "MySQL 5.7 (EOL)"),
 	eEnv("mysql80", "mysql", "8.0", "2026-04-30", "mysql84, mysql97", "MySQL 8.0 (EOL)"),
@@ -136,7 +150,10 @@ func NewCatalog(_ bool) *Catalog {
 func DefaultCatalog() *Catalog { return NewCatalog(true) }
 
 func cloneEnv(e Environment) Environment {
-	e.ComposeFiles, e.RequiredCerts = slices.Clone(e.ComposeFiles), slices.Clone(e.RequiredCerts)
+	e.ComposeFiles = slices.Clone(e.ComposeFiles)
+	e.SetupArgs = slices.Clone(e.SetupArgs)
+	e.SetupEnv = slices.Clone(e.SetupEnv)
+	e.RequiredCerts = slices.Clone(e.RequiredCerts)
 	return e
 }
 
