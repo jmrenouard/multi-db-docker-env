@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-125 -- Extract Shared PG Setup Helpers & Parameterize PG 17/18 Streaming (`#449`)
+- **Timestamp / Issue / Branch**: `2026-11-22T02:13Z` | Issue `#449` | `refactor/issue-449-parameterize-pg-setup`
+- **Request**: Deduplicate PG 17 and PG 18 physical streaming setup scripts via shared parameterized helpers while preserving existing script entry paths (`#191.20` part 3a).
+- **Changes**: Added `scripts/pg_common/lib.sh` (`run_sql`, `wait_pg_nodes`, `esc_conn_val`) and `scripts/pg_common/setup_streaming.sh`; converted `scripts/pg_streaming/setup_pg_streaming.sh` and `scripts/pg18_streaming/setup_pg18_streaming.sh` to thin wrappers; logged `RCA-107`.
+- **Result**: Verified `bash -n`, mock-docker smoke test, `test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, and diff `< 14,800` B.
+
 ### ACT-124 -- Replace Fixed `/tmp/*.out` Test Logs with `mktemp` & `EXIT` Traps (`#447`)
 - **Timestamp / Issue / Branch**: `2026-11-22T02:09Z` | Issue `#447` | `fix/issue-447-mktemp-pg-test-logs`
 - **Request**: Replace fixed host `/tmp/*.out` paths with `mktemp` + `EXIT` trap cleanup across `tests/test_{pg_birep,bucardo,pg_logical,pg18_logical,pgedge,pg_streaming,pg18_streaming}.sh` (`#191.20` part 2).
