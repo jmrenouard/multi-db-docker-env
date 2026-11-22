@@ -205,6 +205,8 @@ services:
       context: .
       dockerfile: scripts/patroni/Dockerfile.haproxy
     container_name: haproxy-patroni
+    environment:
+      - HAPROXY_STATS_AUTH=${HAPROXY_STATS_AUTH:-admin:adminpass}
     networks:
       - patroni_net
     ports:

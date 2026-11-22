@@ -28,7 +28,7 @@ ETCD_PATRONI_USER="${ETCD_PATRONI_USER:-patroni}"
 REPLICATOR_USER="${REPLICATOR_USER:-replicator}"
 
 # Temporary OpenSSL config file for SANs
-cat > $CERT_DIR/openssl.cnf <<EOF
+cat > "$CERT_DIR/openssl.cnf" <<EOF
 [req]
 distinguished_name = req_distinguished_name
 req_extensions = v3_req
@@ -50,16 +50,16 @@ authorityKeyIdentifier = keyid:always,issuer
 EOF
 
 echo "🔐 Generating Certificate Authority (CA)..."
-openssl genrsa -out $CERT_DIR/ca.key 2048
-openssl req -x509 -new -nodes -key $CERT_DIR/ca.key -subj "/CN=Patroni-Cluster-CA" -days 3650 -out $CERT_DIR/ca.crt -config $CERT_DIR/openssl.cnf -extensions v3_ca
+openssl genrsa -out "$CERT_DIR/ca.key" 2048
+openssl req -x509 -new -nodes -key "$CERT_DIR/ca.key" -subj "/CN=Patroni-Cluster-CA" -days 3650 -out "$CERT_DIR/ca.crt" -config "$CERT_DIR/openssl.cnf" -extensions v3_ca
 
 generate_cert_with_cn() {
-    local name=$1
+    local name="$1"
     local cn="${2:-$1}"
     echo "📜 Generating certificate for $name (CN=$cn)..."
-    openssl genrsa -out $CERT_DIR/$name.key 2048
-    openssl req -new -key $CERT_DIR/$name.key -subj "/CN=$cn" -out $CERT_DIR/$name.csr -config $CERT_DIR/openssl.cnf
-    openssl x509 -req -in $CERT_DIR/$name.csr -CA $CERT_DIR/ca.crt -CAkey $CERT_DIR/ca.key -CAcreateserial -out $CERT_DIR/$name.crt -days 365 -sha256 -extfile $CERT_DIR/openssl.cnf -extensions v3_req
+    openssl genrsa -out "$CERT_DIR/$name.key" 2048
+    openssl req -new -key "$CERT_DIR/$name.key" -subj "/CN=$cn" -out "$CERT_DIR/$name.csr" -config "$CERT_DIR/openssl.cnf"
+    openssl x509 -req -in "$CERT_DIR/$name.csr" -CA "$CERT_DIR/ca.crt" -CAkey "$CERT_DIR/ca.key" -CAcreateserial -out "$CERT_DIR/$name.crt" -days 365 -sha256 -extfile "$CERT_DIR/openssl.cnf" -extensions v3_req
 }
 
 generate_cert() {
@@ -82,11 +82,11 @@ generate_cert "pgbouncer"
 
 # Combined PEM file for HAProxy (Certificate + Key)
 echo "📜 Generating combined PEM for HAProxy..."
-cat $CERT_DIR/postgresql-server.crt $CERT_DIR/postgresql-server.key > $CERT_DIR/haproxy.pem
+cat "$CERT_DIR/postgresql-server.crt" "$CERT_DIR/postgresql-server.key" > "$CERT_DIR/haproxy.pem"
 
 echo "✅ Certificates generated in $CERT_DIR"
 
-chmod 700 "$CERT_DIR"
+chmod 755 "$CERT_DIR"
 chmod 600 "$CERT_DIR"/*.key "$CERT_DIR/haproxy.pem"
 chmod 644 "$CERT_DIR"/*.crt
-rm -f $CERT_DIR/openssl.cnf $CERT_DIR/*.csr $CERT_DIR/ca.srl
+rm -f "$CERT_DIR/openssl.cnf" "$CERT_DIR"/*.csr "$CERT_DIR/ca.srl"

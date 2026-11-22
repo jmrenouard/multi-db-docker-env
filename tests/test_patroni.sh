@@ -264,7 +264,7 @@ echo ""
 echo "9. ⚖️ HAProxy Stats Dashboard..."
 write_report "## 9. HAProxy Stats"
 
-STATS_CODE=$(curl -sk -u "admin:adminpass" -o /dev/null -w "%{http_code}" https://127.0.0.1:7000/ 2>/dev/null || echo "000")
+STATS_CODE=$(curl -sk -u "${HAPROXY_STATS_AUTH:-admin:adminpass}" -o /dev/null -w "%{http_code}" https://127.0.0.1:7000/ 2>/dev/null || echo "000")
 if [ "$STATS_CODE" = "200" ]; then
     PASS=$((PASS + 1))
     echo "✅ HAProxy dashboard UP (https://127.0.0.1:7000)"

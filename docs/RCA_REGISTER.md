@@ -710,6 +710,13 @@
 - **Applied Change / Fix**: Imported `nullcontext` in `scripts/bench_pg_v2_runner.sh` and wrapped `run_topo(topo, logf)` in a `with` block in the topology loop; added `TestBenchPg18Lib` (`assert_zero_pg18_containers`, `pb_run_pg18`, `upsert_pg18_csv`) and `TestBenchResourceHygiene` (`ResourceWarning` check on `upsert_modular_csv`/`upsert_pg18_csv` + static `.open(` `with`-guard scan) in `tests/test_pg_libs.py`.
 - **Result & Non-Regression Test**: Verified `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped in `test_lab.py`), `go test -count=1 ./...` (`11/11`), and `go run ./cmd/mdb lint` (`70` scripts, `21` compose files).
 
+### RCA-096 -- Hardcoded HAProxy Stats Credentials & Unquoted Paths / `700` Cert Dir in Patroni `generate_certs.sh`
+- **Date / Linked Action**: `2026-11-22` (`ACT-114` / Issue `#414`)
+- **Observed Symptom**: `conf/haproxy-patroni.cfg` and `tests/test_patroni.sh` hardcoded `admin:adminpass` for the HAProxy HTTPS stats endpoint without Compose/`.env.example` parameterization, while `scripts/patroni/generate_certs.sh` left `$CERT_DIR`, `$name`, `$cn`, and `$1` unquoted and used `chmod 700 "$CERT_DIR"` instead of `755` (`IMP-003` / `04_best_practices.md`).
+- **Root Cause Analysis**: HAProxy stats auth was originally authored before `.env` credential decoupling, and `generate_certs.sh` omitted quotes around path expansions while tightening the parent certificate directory to `700` rather than restricting only private keys (`*.key`, `haproxy.pem`) to `600`.
+- **Applied Change / Fix**: Parameterized HAProxy stats auth via `"$HAPROXY_STATS_AUTH"` in `conf/haproxy-patroni.cfg`, `docker-compose-patroni.yml` (`${HAPROXY_STATS_AUTH:-admin:adminpass}`), `tests/test_patroni.sh`, and `.env.example`; quoted all variable expansions and aligned `chmod 755 "$CERT_DIR"` in `scripts/patroni/generate_certs.sh`; added static assertions in `tests/test_repo_static.py`.
+- **Result & Non-Regression Test**: Verified live `haproxy -c -V` and Basic Auth enforcement (`200`/`401`) inside `patroni-rhel8-haproxy:latest`, live `generate_certs.sh` execution with spaces in `CERT_DIR`, `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped), `go test -count=1 ./...` (`11/11`), and `go run ./cmd/mdb lint` (`70` scripts, `21` compose files).
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
