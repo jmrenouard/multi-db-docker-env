@@ -59,12 +59,17 @@ services:
     container_name: haproxy_pgedge
     hostname: haproxy_pgedge
     restart: unless-stopped
-    ports: ["127.0.0.1:15450:5432"]
+    ports: ["127.0.0.1:15450:5432", "127.0.0.1:15459:8404"]
     volumes: ["./scripts/pgedge/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro"]
     depends_on:
       pgedge_node1: {condition: service_healthy}
       pgedge_node2: {condition: service_healthy}
       pgedge_node3: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8404/stats >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks: [pgedge_net]
 
 volumes:

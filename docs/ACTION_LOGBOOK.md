@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-129 -- Add HAProxy Docker Resolvers, L7 Checks & Compose Healthchecks (`#456`)
+- **Timestamp / Issue / Branch**: `2026-11-22T02:38Z` | Issue `#456` | `fix/issue-456-haproxy-resolvers-compose-health`
+- **Request**: Add `resolvers docker` + `init-addr last,libc,none resolvers docker` + `option pgsql-check` across `pg_birep`, `pg18_birep`, `pgedge`, and `yugabyte` `haproxy.cfg` (`#191.12`); add `yb_node3`, `crdb_node1..3`, and all 5 HAProxy `healthcheck`s plus `127.0.0.1:15459:8404` on `haproxy_pgedge` (`#191.18`).
+- **Changes**: Updated `scripts/{pg_birep,pg18_birep,pgedge,yugabyte}/haproxy.cfg` and `docker-compose-{yugabyte,cockroach,pgedge,pg-birep,pg18-birep}.yml`; logged `RCA-111`.
+- **Result**: Verified `haproxy -c -f` on all 5 configs, `docker compose config -q`, `test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, and diff `< 14,800` B.
+
 ### ACT-128 -- Parameterize Shared PG 17/18 Bidirectional Setup (`#454`)
 - **Timestamp / Issue / Branch**: `2026-11-22T02:25Z` | Issue `#454` | `refactor/issue-454-parameterize-pg-birep`
 - **Request**: Deduplicate PG 17 and PG 18 bidirectional logical replication setup scripts via shared `scripts/pg_common/setup_birep.sh` while preserving CLI paths (`#191.20` part 3c).
