@@ -689,6 +689,13 @@
 - **Applied Change / Fix**: Hardened `pb_run` in `bench_pg_lib.py` (stream exit capture, abort/`tps==0` `RuntimeError`, `--sampling-rate=0.05` on `C_multinode_ro`, `/tmp/pb_*` `finally` cleanup), added `history` pre-drain + `hs[1:]` balance reset in `reset_ds`, and quoted `run_sb` password via `PGPASSWORD`.
 - **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest`, `go test -count=1 ./...`, and `tests/test_config.sh`.
 
+### RCA-093 -- Duplicated `pb_run_opt`/`conv_chk_opt` Loops & Missing `pg18-birep` Pre-Drain in `reset_ds`
+- **Date / Linked Action**: `2026-11-22` (`ACT-111` / Issue `#426`)
+- **Observed Symptom**: `bench_pg_opt_common.py` still ran its own copy of `pb_run_opt` (`||true`, unsampled `C_multinode_ro`, unclosed handles) and `conv_chk_opt`, while `reset_ds` pre-drain skipped `pg18-birep`.
+- **Root Cause Analysis**: Shared helpers were split across `bench_pg_lib.py` and `bench_pg_opt_common.py` without callback injection for unit test patches.
+- **Applied Change / Fix**: Added `assert_zero_containers`, `tc_netem`, `ref_sub`, generalized `conv_chk`, and `pg18-birep` pre-drain/reset to `bench_pg_lib.py` with `sh_fn`/`pq_fn`/`bc_fn` hooks, and rewired `bench_pg_opt_common.py` to delegate directly.
+- **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest`, `go test -count=1 ./...`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

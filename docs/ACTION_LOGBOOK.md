@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-111 -- Deduplicate `pb_run_opt`, `conv_chk_opt`, Container Checks & Pre-Drain `pg18-birep` (`#426`)
+- **Timestamp / Issue / Branch**: `2026-11-22T01:12Z` | Issue `#426` | `fix/issue-426-opt-common-dedup`
+- **Request**: Remove duplicate `pb_run_opt`, `conv_chk_opt`, `assert_zero_opt_containers`, and `ref_sub` logic in `scripts/bench_pg_opt_common.py`, add shared `tc_netem` in `scripts/bench_pg_lib.py`, and cover `pg18-birep` pre-drain/reset in `reset_ds`.
+- **Changes**: Added `assert_zero_containers`, `tc_netem`, `ref_sub`, parameterized `conv_chk`, and `pg18-birep` `reset_ds` drain/reset to `scripts/bench_pg_lib.py`; delegated `scripts/bench_pg_opt_common.py`; logged `RCA-093`.
+- **Result**: Verified Windows + WSL Python `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-110 -- Fail on Crashed `pgbench`, Drain/Reset `pg-birep` & Quote `run_sb` (`#424`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:08Z` | Issue `#424` | `fix/issue-424-pb-exit-checks-birep-reset-drain`
 - **Request**: Capture `pgbench` exit codes and abort strings instead of `||true`, lower `C_multinode_ro` logging with `--sampling-rate=0.05` and clean `/tmp/pb_*`, drain/reset `pg-birep` in `reset_ds`, and quote `run_sb` password via `PGPASSWORD`.
