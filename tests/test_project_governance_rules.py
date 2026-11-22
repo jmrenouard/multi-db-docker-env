@@ -18,16 +18,16 @@ class TestProjectGovernanceRules(unittest.TestCase):
         gov_rule_md = ROOT / ".agents" / "rules" / "project-governance.md"
         git_rule_md = ROOT / ".agents" / "rules" / "git-workflow.md"
         gh_rule_md = ROOT / ".agents" / "rules" / "github-workflow.md"
-        exec_rule_md = ROOT / "03_execution_rules.md"
-        bp_rule_md = ROOT / "04_best_practices.md"
+        exec_rule_md = ROOT / ".agent" / "rules" / "03_execution_rules.md"
+        bp_rule_md = ROOT / ".agent" / "rules" / "04_best_practices.md"
 
         self.assertTrue(agents_md.is_file(), "AGENTS.md must exist at repository root")
         self.assertTrue(workspace_agents_md.is_file(), ".agents/AGENTS.md must exist")
         self.assertTrue(gov_rule_md.is_file(), ".agents/rules/project-governance.md must exist")
         self.assertTrue(git_rule_md.is_file(), ".agents/rules/git-workflow.md must exist")
         self.assertTrue(gh_rule_md.is_file(), ".agents/rules/github-workflow.md must exist")
-        self.assertTrue(exec_rule_md.is_file(), "03_execution_rules.md must exist at root")
-        self.assertTrue(bp_rule_md.is_file(), "04_best_practices.md must exist at root")
+        self.assertTrue(exec_rule_md.is_file(), ".agent/rules/03_execution_rules.md must exist")
+        self.assertTrue(bp_rule_md.is_file(), ".agent/rules/04_best_practices.md must exist")
 
         agents_content = agents_md.read_text(encoding="utf-8")
         gov_content = gov_rule_md.read_text(encoding="utf-8")

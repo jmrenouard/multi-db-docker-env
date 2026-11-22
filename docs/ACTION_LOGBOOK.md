@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-133 -- Remove Duplicate Root Rule Files and Align Governance Test Paths (`#464`)
+- **Timestamp / Issue / Branch**: `2026-11-22T22:22Z` | Issue `#464` | `docs/issue-464-fix-doc-links-rules-dedup`
+- **Request**: Fix documentation audit duplicate-rule finding: remove root `03_execution_rules.md` and `04_best_practices.md` duplicating `.agent/rules/`, and update `tests/test_project_governance_rules.py` to check `.agent/rules/`.
+- **Changes**: Removed root `03_execution_rules.md` and `04_best_practices.md`; updated `tests/test_project_governance_rules.py` lines 21-30 to point `exec_rule_md` and `bp_rule_md` to `.agent/rules/`; updated historical `ACT-001` references to avoid dead root links; logged `RCA-115`.
+- **Result**: Verified Windows + WSL `-W error::ResourceWarning` `unittest` (73 tests, 6 skipped), `go test -count=1 ./...` (11 packages), `tests/test_config.sh`, `./mdb lint`, and diff `< 14,800` B.
+
 ### ACT-132 -- Release `v2.6.2`: PG Audit Hardening, Deduplication & Test Parity (`#462`)
 - **Timestamp / Issue / Branch**: `2026-11-22T02:54Z` | Issue `#462` | `chore/issue-462-release-v2.6.2`
 - **Request**: Bump project version to `v2.6.2` across `VERSION`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, and `Changelog` (`<= 600` lines FIFO), update governance registers, and push tag `v2.6.2` once merged.
@@ -1040,5 +1046,5 @@
 - **Status**: `COMPLETED`
 - **Issue / Branch**: `main` (commit `b7c664e`)
 - **Request**: Reintegrate development and governance rules from the CIS Benchmarks Tools project (`AGENTS.md`, `.agents/AGENTS.md`, `.agents/rules/`, `03_execution_rules.md`, `04_best_practices.md`, `docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`, and `tests/test_project_governance_rules.py`).
-- **Changes**: Created root [`AGENTS.md`](../AGENTS.md), workspace [`.agents/AGENTS.md`](../.agents/AGENTS.md), rule files in [`.agents/rules/`](../.agents/rules/), root [`03_execution_rules.md`](../03_execution_rules.md) and [`04_best_practices.md`](../04_best_practices.md), [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md), and automated test suite [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py).
+- **Changes**: Created root [`AGENTS.md`](../AGENTS.md), workspace [`.agents/AGENTS.md`](../.agents/AGENTS.md), rule files in [`.agents/rules/`](../.agents/rules/), root `03_execution_rules.md` and `04_best_practices.md` (later consolidated into [`.agent/rules/`](../.agent/rules/03_execution_rules.md)), [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md), and automated test suite [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py).
 - **Result**: 3/3 governance unit tests passed, PR diff strictly within `< 15,000` characters.
