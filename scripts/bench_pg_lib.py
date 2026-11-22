@@ -141,6 +141,41 @@ def ref_sub(h, pt, u, pw, sub, cp="false", pq_fn=None):
     (pq_fn or pq)(h, pt, u, pw, f"ALTER SUBSCRIPTION {sub} REFRESH PUBLICATION WITH (copy_data={cp});")
 
 
+def wait_wal_replay(h, pt, u, pw, to_s=30, pq_fn=None):
+    """Poll pg_stat_replication until replay_lsn reaches primary current WAL LSN."""
+    run_pq = pq_fn or pq
+    lsn = run_pq(h, pt, u, pw, "SELECT pg_current_wal_lsn();").strip()
+    q = f"SELECT count(*) FROM pg_stat_replication WHERE replay_lsn IS NULL OR replay_lsn < pg_lsn('{lsn}');"
+    for _ in range(to_s):
+        if run_pq(h, pt, u, pw, q) == "0":
+            return
+        time.sleep(1)
+    raise RuntimeError(f"Timeout waiting for WAL replay >= {lsn} on {h}")
+
+
+def wait_sub_ready(h, pt, u, pw, sub, n_tables=4, to_s=30, pq_fn=None):
+    """Wait until all matching sysbench tables in a subscription reach srsubstate='r'."""
+    run_pq = pq_fn or pq
+    q = (
+        "SELECT count(*) FROM pg_subscription_rel r JOIN pg_subscription s ON r.srsubid=s.oid "
+        f"JOIN pg_class c ON c.oid=r.srrelid WHERE s.subname='{sub}' AND c.relname LIKE 'sbtest%' AND r.srsubstate='r';"
+    )
+    for _ in range(to_s):
+        if run_pq(h, pt, u, pw, q) == str(n_tables):
+            return
+        time.sleep(1)
+    raise RuntimeError(f"Timeout waiting for subscription {sub} ready on {h}")
+
+
+def drop_sb_sub(hs, pt, u, pw, sub, birep=False, pq_fn=None):
+    """Drop sysbench tables on peer and refresh logical/bi-dir subscriptions."""
+    run_pq = pq_fn or pq
+    run_pq(hs[1], pt, u, pw, "DROP TABLE IF EXISTS sbtest1,sbtest2,sbtest3,sbtest4 CASCADE;")
+    ref_sub(hs[1], pt, u, pw, sub, pq_fn=run_pq)
+    if birep:
+        ref_sub(hs[0], pt, u, pw, "sub_from_node2", pq_fn=run_pq)
+
+
 def reset_ds(t, hs, pt, u, pw):
     """Reset pgbench balances and history between suites."""
     rst = f"UPDATE {B}accounts SET abalance=0 WHERE abalance<>0;UPDATE {B}branches SET bbalance=0;UPDATE {B}tellers SET tbalance=0;TRUNCATE {B}history"
