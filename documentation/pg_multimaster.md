@@ -1,6 +1,6 @@
 # PostgreSQL Replication, Multi-Master & Distributed SQL Topologies
 
-Use all 13 PostgreSQL Compose stacks in `multi-db-docker-env` (`v2.6.2`). Stacks cover `pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `yugabyte`, and `cockroach`. Run `./mdb` CLI commands (31 active stacks), check `Makefile` targets, and compare V1/V2/PG18/YT benchmark metrics and `T11`–`T18` results.
+Use all 13 PostgreSQL Compose stacks in `multi-db-docker-env` (`v2.6.2`). Stacks cover `pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `yugabyte`, and `cockroach`. Run `./mdb` CLI commands (31 active environments), check `Makefile` targets, and compare V1/V2/PG18/YT benchmark metrics and `T11`–`T18` results.
 
 *Companion deep-dive study, Log10 charts, and interactive HTML benchmark explorer: [jmrenouard/ClusterPostgreSQL-Series](https://github.com/jmrenouard/ClusterPostgreSQL-Series).*
 
@@ -27,7 +27,7 @@ Use all 13 PostgreSQL Compose stacks in `multi-db-docker-env` (`v2.6.2`). Stacks
 ## Quick Start (`./mdb` Unified CLI & `Makefile` Wrappers)
 
 ```bash
-# Unified ./mdb CLI (v2.5.0, 31 active environments incl. all 13 PG Compose stacks)
+# Unified ./mdb CLI (v2.6.2, 31 active environments incl. all 13 PG Compose stacks)
 ./mdb catalog --category cluster --engine postgres
 ./mdb up yt-cluster && ./mdb setup yt-cluster && ./mdb test yt-cluster --suite && ./mdb down yt-cluster
 ./mdb up pg17-baseline && ./mdb test pg17-baseline && ./mdb down pg17-baseline
