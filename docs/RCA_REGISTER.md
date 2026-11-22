@@ -941,6 +941,13 @@
 - **Applied Change / Fix**: Split PostgreSQL multi-master bullets cleanly without semicolons, rewrote EOL prose to `<= 20`-word sentences, replaced `via`, and preserved the existing French EOL H2 anchor.
 - **Result & Non-Regression Test**: Verified 0 STE errors/warnings (`ste_check.py --mode procedural --lang fr --no-vocab`), 0 `via`/forbidden words, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-129 -- `INDEX.md` and `INDEX_fr.md` 60-Word HTML Logo Block STE Failure
+- **Date / Linked Action**: `2026-11-22` (`ACT-148` / Issue `#494`)
+- **Observed Symptom**: Both `documentation/INDEX.md` and `documentation/INDEX_fr.md` failed `ste_check.py --mode mixed` on a 60-word HTML `<p>` logo block, `INDEX.md` emitted `-ing` warnings (`Testing`, `splitting`), and `INDEX_fr.md` lacked a top note for English-only deep guides.
+- **Root Cause Analysis**: Raw `<p align="center">` icon strips predate Markdown pipe-table badges; combining full Diataxis quadrant reordering across both index files in one PR exceeded 26 KB (`> 15,000` B cap), so table conversion runs first followed by per-language Diataxis grouping PRs.
+- **Applied Change / Fix**: Converted logo blocks to Markdown pipe tables in both index pages, fixed `INDEX.md` `-ing` lines/anchors, and added a concise language note in `INDEX_fr.md`.
+- **Result & Non-Regression Test**: Verified 0 STE errors/warnings (`ste_check.py --mode mixed --no-vocab`), all TOC anchors and relative paths resolving, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
