@@ -8,7 +8,7 @@ x-citus-node: &citus-node
   mem_limit: ${CITUS_MEM_LIMIT:-2048m}
   environment:
     POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: ${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}
+    POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
     POSTGRES_DB: postgres
     PGUSER: postgres
   command:

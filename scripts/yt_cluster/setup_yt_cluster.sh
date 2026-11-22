@@ -5,7 +5,7 @@ set -euo pipefail
 [ -f .env ] && { set -a; . ./.env; set +a; }
 PG_USER="${PG_USER:-postgres}"
 PG_DB="${PG_DB:-labdb}"
-PG_PASS="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}"
+PG_PASS="${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}"
 NODES=(yt1 yt2 yt3)
 TIMEOUT_SEC="${YT_WAIT_TIMEOUT:-90}"
 

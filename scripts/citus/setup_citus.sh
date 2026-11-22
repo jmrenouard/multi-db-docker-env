@@ -8,7 +8,7 @@ if [ -f .env ]; then
     set +a
 fi
 
-PG_PASS="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}"
+PG_PASS="${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}"
 DB_NAME="${CITUS_DB:-labdb}"
 NODES=("citus_coord" "citus_worker1" "citus_worker2")
 
