@@ -983,6 +983,13 @@
 - **Applied Change / Fix**: Broke YT Cluster sync/async/limits and `bench_pg_optimized` items into `<= 20`-word sub-bullets without semicolons or possessives while keeping all metrics and SQLSTATEs verbatim.
 - **Result & Non-Regression Test**: Verified full-file `0 errors` under `ste_check.py --mode procedural --lang en --no-vocab`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-135 -- `documentation/pg_multimaster_fr.md` Part 1 (Overview & Empirical Limits) STE Violations
+- **Date / Linked Action**: `2026-11-23` (`ACT-154` / Issue `#506`)
+- **Observed Symptom**: `documentation/pg_multimaster_fr.md` overview (L3/L30 `v2.5.0`), V1 takeaways, and Empirical Limits contained 10+ French STE errors (semicolons and `> 20`-word sentences).
+- **Root Cause Analysis**: French mirror retained semicolon-chained empirical lists; splitting into Part 1 (`Overview/Limits`), Part 2 (`V2/PG18`), and Part 3 (`YT/v2.6.0`) keeps every PR `< 14,800` B.
+- **Applied Change / Fix**: Rewrote L3, L30, L52, takeaways, and empirical SQLSTATE bullets into active `<= 20`-word French sentences without semicolons while keeping every metric and SQLSTATE verbatim.
+- **Result & Non-Regression Test**: Verified 0 STE errors up to V2 Matrix (`ste_check.py --mode procedural --lang fr --no-vocab`), Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

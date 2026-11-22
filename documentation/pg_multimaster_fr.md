@@ -1,6 +1,6 @@
 # Topologies PostgreSQL Réplication, Multi-Maître et SQL Distribué
 
-Ce guide présente les 13 piles PostgreSQL Compose (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `yugabyte`, `cockroach`) disponibles dans `multi-db-docker-env` (`v2.5.0`), avec leurs commandes CLI unifiées `./mdb` (31 environnements actifs dans `mdb catalog`), wrappers `Makefile`, résultats de benchmarks V1/V2/PG18/YT, matrice étendue `T11`–`T18` et modes de défaillance observés.
+Utilisez les 13 piles PostgreSQL Compose dans `multi-db-docker-env` (`v2.6.2`). Piles couvertes : `pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `yugabyte` et `cockroach`. Exécutez `./mdb` (31 environnements actifs), vérifiez les cibles `Makefile` et comparez les benchmarks V1/V2/PG18/YT et la matrice `T11`–`T18`.
 
 *Étude comparative complète, graphiques Log10 et explorateur HTML interactif : [jmrenouard/ClusterPostgreSQL-Series](https://github.com/jmrenouard/ClusterPostgreSQL-Series).*
 
@@ -27,7 +27,7 @@ Ce guide présente les 13 piles PostgreSQL Compose (`pg17-baseline`, `pg-streami
 ## Démarrage rapide (CLI `./mdb` & Wrappers `Makefile`)
 
 ```bash
-# CLI unifié ./mdb (v2.5.0, 31 environnements actifs dont les 13 piles PG Compose)
+# CLI unifié ./mdb (v2.6.2, 31 environnements actifs dont les 13 piles PG Compose)
 ./mdb catalog --category cluster --engine postgres
 ./mdb up yt-cluster && ./mdb setup yt-cluster && ./mdb test yt-cluster --suite && ./mdb down yt-cluster
 ./mdb up pg17-baseline && ./mdb test pg17-baseline && ./mdb down pg17-baseline
@@ -49,7 +49,7 @@ make clean-pg18
 
 ## Synthèse des benchmarks empiriques (`PG_SCALE=2`)
 
-Tous les benchmarks ont été exécutés séquentiellement sur le réseau bridge Docker (`multi-db-pgbench-sysbench:latest`, `200 000` lignes `pgbench_accounts`, clé primaire surrogate explicite `hid` sur `pgbench_history`) :
+Exécutez les benchmarks séquentiellement sur le réseau bridge Docker (`multi-db-pgbench-sysbench:latest`, `200 000` lignes `pgbench_accounts`, clé primaire `hid` sur `pgbench_history`) :
 - **Suite A** : `pgbench` mono-nœud RW (`8` clients, `20 s`)
 - **Suite B1** : `pgbench` multi-nœuds sur plages disjointes (`2x4` clients, `20 s`)
 - **Suite B2** : `pgbench` multi-nœuds avec chevauchement (`2x4` clients, `20 s`)
@@ -74,23 +74,33 @@ Tous les benchmarks ont été exécutés séquentiellement sur le réseau bridge
 
 ### Enseignements majeurs
 
-1. **Écritures disjointes vs chevauchement** : Les grappes asynchrones (`pg-birep`, `pgedge`, `bucardo`) convergent avec `0` dérive sur des clés disjointes (`B1`), mais perdent des mises à jour ou divergent dès que les écritures se chevauchent (`B2`, `D`). L'activation de `spock.delta_apply` (`log_old_value=true`) sur `pgedge` conserve `1 837,64 TPS` avec une **dérive strictement nulle (`0`)**.
-2. **Impact du RTT WAN** : L'ajout d'un délai unidirectionnel de `25 ms` (`tc netem`) fait chuter les architectures `PC/EC` (`pg17-sync-streaming` `-86,1 %`, `citus` `-93,0 %`, `yugabyte` `-96,7 %`, `cockroach` `-76,1 %`), tandis que les moteurs `PA/EL` valident localement autour de `~10 ms`.
+1. **Écritures disjointes (`B1`)** : Les grappes asynchrones (`pg-birep`, `pgedge`, `bucardo`) convergent avec `0` dérive sur des clés disjointes.
+2. **Chevauchement (`B2`, `D`)** : Les grappes asynchrones perdent des mises à jour sur conflits chauds. Activez `spock.delta_apply` (`log_old_value=true`) sur `pgedge` pour `1 837,64 TPS` et `0` dérive.
+3. **Impact du RTT WAN** : Un délai de `25 ms` (`tc netem`) ralentit `PC/EC` (`pg17-sync-streaming` `-86,1 %`, `citus` `-93,0 %`, `yugabyte` `-96,7 %`, `cockroach` `-76,1 %`). Les moteurs `PA/EL` valident autour de `~10 ms`.
 
 ## Limites empiriques et codes `SQLSTATE` observés
 
-- **Tables sans clé primaire (`pgbench_history`)** : `pg-birep` lève `SQLSTATE 55000` sur `UPDATE`/`DELETE` ; `pgedge` classe la table dans `default_insert_only` (les `UPDATE` locaux ne répliquent pas) ; `bucardo` rejette `validate_sync` (`must specify a primary key`) ; `citus` bloque `ADD PRIMARY KEY` / `SERIAL` post-distribution (`0A000`) ; `cockroach` injecte une colonne cachée `rowid`.
-- **Collisions `SERIAL` non coordonnées** : `pg-birep` bloque l'apply worker (`23505`, `apply_error_count=1`), alors que `pgedge` (`spock.resolutions=1`) et `bucardo` (`Conflicts=1`) écrasent silencieusement la ligne du nœud 1. Utiliser des séquences décalées, `snowflake` ou `unique_rowid()`.
-- **Conflits `UNIQUE(email)` secondaires** : `pg-birep` et `bucardo` stoppent la réplication (`23505`, état `Bad` sur Bucardo) ; `pgedge` (`transdiscard`) journalise `23505` dans `spock.exception_log` et laisse les nœuds diverger ; `citus` interdit `UNIQUE` sans la clé de distribution (`0A000`) ; `yugabyte` et `cockroach` appliquent `23505` globalement.
+- **Tables sans clé primaire (`pgbench_history`)** :
+  - `pg-birep` lève `SQLSTATE 55000` sur `UPDATE`/`DELETE`.
+  - `pgedge` classe la table dans `default_insert_only` et ignore les `UPDATE` locaux.
+  - `bucardo` rejette `validate_sync` (`must specify a primary key`).
+  - `citus` bloque `ADD PRIMARY KEY` et `SERIAL` post-distribution (`0A000`).
+  - `cockroach` injecte une colonne cachée `rowid`.
+- **Collisions `SERIAL` non coordonnées** : `pg-birep` bloque le worker (`23505`, `apply_error_count=1`). `pgedge` (`spock.resolutions=1`) et `bucardo` (`Conflicts=1`) écrasent le nœud 1. Utilisez des séquences décalées, `snowflake` ou `unique_rowid()`.
+- **Conflits `UNIQUE(email)` secondaires** :
+  - `pg-birep` et `bucardo` stoppent la réplication (`23505`, état `Bad` sur Bucardo).
+  - `pgedge` (`transdiscard`) journalise `23505` dans `spock.exception_log` et diverge.
+  - `citus` interdit `UNIQUE` sans la clé de distribution (`0A000`).
+  - `yugabyte` et `cockroach` appliquent `23505` globalement.
 - **Fonctionnalités PostgreSQL & extensions** :
-  - `pg_advisory_lock` et `LISTEN`/`NOTIFY` restent strictement locaux au nœud sur `pg-birep`, `pgedge` et `bucardo`.
-  - `yugabyte` : `pg_trgm`, `uuid-ossp`, `vector` et `TEMP TABLE` fonctionnent ; `LISTEN`/`NOTIFY` retourne `0A000` (désactivé).
-  - `cockroach` : `CREATE TEMP TABLE` lève `XCEXF` sans `experimental_enable_temp_tables='on'` ; `LISTEN` retourne `42601` ; `40001` (`WriteTooOldError`) impose une boucle de retry client (`685` erreurs ignorées sous `sysbench`).
-  - `citus` : l'extension `vector` est absente (`0A000`) dans l'image standard `14.2.0-pg17`.
+  - `pg_advisory_lock` et `LISTEN`/`NOTIFY` restent locaux au nœud sur `pg-birep`, `pgedge` et `bucardo`.
+  - `yugabyte` : `pg_trgm`, `uuid-ossp`, `vector` et `TEMP TABLE` fonctionnent. `LISTEN`/`NOTIFY` retourne `0A000` (désactivé).
+  - `cockroach` : `CREATE TEMP TABLE` lève `XCEXF` sans `experimental_enable_temp_tables='on'`. `LISTEN` retourne `42601`. Rejouez `40001` (`WriteTooOldError`) côté client (`685` erreurs ignorées sous `sysbench`).
+  - `citus` : l'extension `vector` reste absente (`0A000`) dans l'image `14.2.0-pg17`.
 - **Quorum et particularités d'images** :
-  - `yugabyte` et `cockroach` (`RF=3`) tolèrent la perte de `1/3` nœud (`RPO=0`) et gèlent totalement à `2/3` pertes (`cockroach` `57014`, `yugabyte` timeout) jusqu'au retour du quorum.
-  - L'image minimale Rocky UBI `pgedge` a exigé le forçage de `output_plugin_libraries=pgoutput,spock_output` (`42501`), `listen_addresses=*` et `host replication` `scram-sha-256`.
-  - `bucardo` a nécessité une image `Dockerfile.pg` dédiée avec `postgresql-plperl-17`, `libdbi-perl` et `libdbd-pg-perl` sur les nœuds PostgreSQL pour la fonction `db_getconn` (`PL/PerlU`).
+  - `yugabyte` et `cockroach` (`RF=3`) tolèrent `1/3` panne (`RPO=0`). Ils gèlent à `2/3` pertes (`cockroach` `57014`, `yugabyte` timeout) jusqu'au retour du quorum.
+  - L'image Rocky UBI `pgedge` exige `output_plugin_libraries=pgoutput,spock_output` (`42501`), `listen_addresses=*` et `host replication` `scram-sha-256`.
+  - `bucardo` utilise une image `Dockerfile.pg` avec `postgresql-plperl-17`, `libdbi-perl` et `libdbd-pg-perl` pour `db_getconn` (`PL/PerlU`).
 
 ## Matrice étendue V2 (`T11`–`T18`) & Benchmarks V2 (`bench-pg-v2`)
 
