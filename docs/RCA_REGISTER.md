@@ -801,6 +801,13 @@
 - **Applied Change / Fix**: `streamCommand` var, `select`/`!ready`/`ResolveContainer`, MySQL-first, dynamic args, `shortcut:`, tests.
 - **Result & Non-Regression Test**: `go test`, `go vet`, `mdb lint`, `unittest`, `release_notes.py` OK.
 
+### RCA-109 -- Duplicated PG 17/18 Logical Replication Setup Scripts Across Directories
+- **Date / Linked Action**: `2026-11-22` (`ACT-127` / Issue `#451`)
+- **Observed Symptom**: `scripts/pg18_logical/setup_pg18_logical.sh` duplicated `scripts/pg_logical/setup_pg_logical.sh` verbatim apart from container, publication/subscription, and `substream` output names, and omitted backslash/space escaping in subscription `conninfo`.
+- **Root Cause Analysis**: Separate PG 17 and PG 18 scripts reimplemented `run_sql`, polling loops, and `pg_subscription` creation independently.
+- **Applied Change / Fix**: Extracted `scripts/pg_common/setup_logical.sh` backed by `lib.sh` (`wait_pg_nodes`, `esc_conn_val`) and converted both entry points into thin wrappers. Bidirectional birep parameterization follows in the next PR (`< 14,800` B).
+- **Result & Non-Regression Test**: Verified `bash -n`, mock-docker smoke test, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
