@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-157 -- Add Automated Documentation Hygiene Gate and CI Step (`#512`)
+- **Timestamp / Issue / Branch**: `2026-11-23T00:28Z` | Issue `#512` | `ci/issue-512-docs-hygiene-gate`
+- **Request**: Implement stdlib `tests/test_docs_hygiene.py` (links, GFM anchors, `file:///`, `Makefile` targets, root duplicate rules, `CAUTION`/`ATTENTION` warnings, and STE structural rules) and add `python3 -W error::ResourceWarning -m unittest discover -s tests -v` to `.github/workflows/ci.yml`.
+- **Changes**: Created `tests/test_docs_hygiene.py` covering 6 deterministic doc gates across tracked `.md` and 21 cleaned docs, and added Python unittest CI step in `.github/workflows/ci.yml`; logged `RCA-138`.
+- **Result**: Verified Windows + WSL `unittest` (including all 6 `TestDocsHygiene` checks passing non-skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-156 -- Align `pg_multimaster_fr.md` Part 3 (YT Cluster and `v2.6.0`) with ASD-STE100 (`#510`)
 - **Timestamp / Issue / Branch**: `2026-11-23T00:22Z` | Issue `#510` | `docs/issue-510-pg-multimaster-fr-part3`
 - **Request**: Bring `YT Cluster 1.21.3` and `Piles durcies` (`v2.6.0`) in `documentation/pg_multimaster_fr.md` to `0` STE errors and `0` `via`/weak modals.
