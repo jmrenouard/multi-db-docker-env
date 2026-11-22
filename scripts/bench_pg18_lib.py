@@ -3,11 +3,16 @@ from __future__ import annotations
 
 import io
 import re
+import shlex
 import subprocess as sp
 import time
 from pathlib import Path
 
-from bench_pg_lib import B, COLS, bc, de, mk_scripts, pb_run, pq, reset_ds, row, sh, upsert_csv, wcnt, wlog
+from bench_pg_lib import (
+    B, COLS, assert_zero_containers, bc, conv_chk, de, drop_sb_sub, mk_scripts,
+    pb_run, pq, ref_sub, reset_ds, row, run_wan_netem, sh, tc_netem, upsert_csv,
+    wait_sub_ready, wait_wal_replay, wcnt, wlog,
+)
 
 SINGLE_PRIMARY = {"pg18-standalone", "pg18-async-streaming", "pg18-sync-streaming", "pg18-logical"}
 MULTI_WRITER = {"pg18-birep"}
@@ -16,10 +21,7 @@ PG18_PFX = ("pg18_", "haproxy_pg18_", "bench_client")
 
 def assert_zero_pg18_containers() -> None:
     """Verify no PG 18 PoC or benchmark containers remain."""
-    out = sh(["docker", "ps", "-a", "--format", "{{.Names}}"]).stdout
-    left = [n.strip() for n in out.splitlines() if n.strip().startswith(PG18_PFX)]
-    if left:
-        raise RuntimeError(f"Residual PG 18 PoC containers: {left}")
+    assert_zero_containers(PG18_PFX, label="Residual PG 18 PoC containers", sh_fn=sh)
 
 
 def mk_scripts_pg18() -> None:
@@ -30,7 +32,7 @@ def mk_scripts_pg18() -> None:
 
 
 def _ref(h: str, pt: int, u: str, pw: str, sub: str, cp: str = "false") -> None:
-    pq(h, pt, u, pw, f"ALTER SUBSCRIPTION {sub} REFRESH PUBLICATION WITH (copy_data={cp});")
+    ref_sub(h, pt, u, pw, sub, cp, pq_fn=pq)
 
 
 def init_ds_pg18(t: str, hs: list[str], pt: int, u: str, pw: str, sc: int, na: int) -> None:
@@ -69,12 +71,9 @@ def init_ds_pg18(t: str, hs: list[str], pt: int, u: str, pw: str, sc: int, na: i
 def reset_ds_pg18(t: str, hs: list[str], pt: int, u: str, pw: str) -> None:
     """Reset pgbench tables and wait for replica catch-up."""
     reset_ds(t, hs, pt, u, pw)
-    if len(hs) > 1:
+    if t != "pg18-birep" and len(hs) > 1:
         time.sleep(1)
         wcnt(hs[1], pt, u, pw, f"{B}history", 0)
-        if t == "pg18-birep":
-            pq(hs[1], pt, u, pw, f"UPDATE {B}accounts SET abalance=0 WHERE abalance<>0;UPDATE {B}branches SET bbalance=0 WHERE bbalance<>0;UPDATE {B}tellers SET tbalance=0 WHERE tbalance<>0;")
-            time.sleep(1)
 
 
 def pb_run_pg18(t: str, su: str, m: int, c: int, j: int, d: int, a1: str, a2: str, hs: list[str], pt: int, u: str, pw: str, logf=None):
@@ -85,52 +84,27 @@ def pb_run_pg18(t: str, su: str, m: int, c: int, j: int, d: int, a1: str, a2: st
 
 def conv_chk_pg18(t: str, ok: int, hs: list[str], pt: int, u: str, pw: str):
     """Wait for PG 18 replica catch-up and return convergence status, drift, and crisp notes."""
-    if len(hs) > 1:
-        for _ in range(35):
-            hcs = [int(pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;") or -1) for h in hs]
-            if len(set(hcs)) == 1 and hcs[0] >= ok:
-                break
-            time.sleep(1)
-    exp = int(pq(hs[0], pt, u, pw, f"SELECT COALESCE(SUM(delta),0) FROM {B}history;"))
-    accs, hcs = [], []
-    for h in hs:
-        accs.append(int(pq(h, pt, u, pw, f"SELECT COALESCE(SUM(abalance),0) FROM {B}accounts;")))
-        hcs.append(int(pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;")))
-    dr = accs[0] - exp
-    if len(set(accs)) > 1:
-        st = "EXPECTED_LIMITATION_DIVERGED"
-    elif dr:
-        st = "EXPECTED_LIMITATION_LOST_UPDATE"
-    elif t in SINGLE_PRIMARY:
-        st = "PASS_SINGLE_PRIMARY"
-    else:
-        st = "PASS_CONVERGED"
-    acc_s = "/".join(str(x) for x in accs)
-    h_s = "/".join(str(x) for x in hcs)
-    return st, dr, f"d={exp} acc={acc_s} h={h_s}"
+    return conv_chk(t, ok, hs, pt, u, pw, single_primary=SINGLE_PRIMARY, wait_s=35, short_notes=True, pq_fn=pq, sh_fn=sh)
 
 
 def _drop_sb_sub(t: str, hs: list[str], pt: int, u: str, pw: str) -> None:
     sub = "sub_pg18_logical" if t == "pg18-logical" else "sub_from_node1"
-    pq(hs[1], pt, u, pw, "DROP TABLE IF EXISTS sbtest1,sbtest2,sbtest3,sbtest4 CASCADE;")
-    _ref(hs[1], pt, u, pw, sub)
-    if t == "pg18-birep":
-        _ref(hs[0], pt, u, pw, "sub_from_node2")
+    drop_sb_sub(hs, pt, u, pw, sub, t == "pg18-birep", pq_fn=pq)
 
 
-def _sb_cmd(lua: str, cm: str, tail: str) -> int:
-    return bc(["bash", "-c", f"sysbench {lua} {cm} {tail}"], "", False).returncode
+def _sb_cmd(lua: str, cm: str, tail: str, pw: str = "") -> int:
+    return bc(["bash", "-c", f"sysbench {lua} {cm} {tail}"], pw, False).returncode
 
 
 def run_sysbench_pg18(t: str, hs: list[str], pt: int, u: str, pw: str, sc: int, suites: list[tuple], logf=None) -> dict:
     """Prepare sysbench once and run requested OLTP suites."""
-    h1, pwa = hs[0], (f"--pgsql-password={pw} " if pw else "")
-    cm = f"--db-driver=pgsql --pgsql-host={h1} --pgsql-port={pt} --pgsql-user={u} {pwa}--pgsql-db=labdb --tables=4 --table-size=10000"
-    _sb_cmd("oltp_read_write", cm, "cleanup >/dev/null 2>&1||true")
+    h1, pwa = hs[0], ('--pgsql-password="$PGPASSWORD" ' if pw else "")
+    cm = f"--db-driver=pgsql --pgsql-host={shlex.quote(str(h1))} --pgsql-port={pt} --pgsql-user={shlex.quote(str(u))} {pwa}--pgsql-db=labdb --tables=4 --table-size=10000"
+    _sb_cmd("oltp_read_write", cm, "cleanup >/dev/null 2>&1||true", pw)
     if t in ("pg18-logical", "pg18-birep"):
         _drop_sb_sub(t, hs, pt, u, pw)
     res = {}
-    if _sb_cmd("oltp_read_write", cm, "prepare >/tmp/sb_p.out 2>&1"):
+    if _sb_cmd("oltp_read_write", cm, "prepare >/tmp/sb_p.out 2>&1", pw):
         err = "prep:" + bc(["head", "-n", "2", "/tmp/sb_p.out"], "", False).stdout.replace("\n", " ").strip()[:60]
         return {su: row(t, su, sc, th, dur, 0, 0, 0, 0, 0, 0, 0, 0, "EXPECTED_LIMITATION_UNSUPPORTED", 0, err) for su, _, th, dur, _ in suites}
     if t in ("pg18-logical", "pg18-birep"):
@@ -141,11 +115,7 @@ def run_sysbench_pg18(t: str, hs: list[str], pt: int, u: str, pw: str, sc: int, 
             input=dump, text=True, check=True, stdout=sp.DEVNULL,
         )
         _ref(hs[1], pt, u, pw, sub, "true")
-        q = f"SELECT count(*) FROM pg_subscription_rel r JOIN pg_subscription s ON r.srsubid=s.oid JOIN pg_class c ON c.oid=r.srrelid WHERE s.subname='{sub}' AND c.relname LIKE 'sbtest%' AND r.srsubstate='r';"
-        for _ in range(30):
-            if pq(hs[1], pt, u, pw, q) == "4":
-                break
-            time.sleep(1)
+        wait_sub_ready(hs[1], pt, u, pw, sub, pq_fn=pq)
         if t == "pg18-birep":
             _ref(hs[0], pt, u, pw, "sub_from_node2")
     elif len(hs) > 1:
@@ -153,9 +123,9 @@ def run_sysbench_pg18(t: str, hs: list[str], pt: int, u: str, pw: str, sc: int, 
     pats = (r"transactions:\s+(\d+)\s+\(([0-9.]+)", r"queries:\s+\d+\s+\(([0-9.]+)", r"ignored errors:\s+(\d+)", r"avg:\s+([0-9.]+)", r"95th percentile:\s+([0-9.]+)")
     for su, lua, th, dur, wl in suites:
         note = f"{lua} 4x10k"
-        if _sb_cmd(lua, cm, f"--threads={th} --time={dur} run >/tmp/sb_r.out 2>&1"):
+        if _sb_cmd(lua, cm, f"--threads={th} --time={dur} run >/tmp/sb_r.out 2>&1", pw):
             note = f"{lua} ps=off"
-            if _sb_cmd(lua, cm, f"--threads={th} --time={dur} --db-ps-mode=disable run >/tmp/sb_r.out 2>&1"):
+            if _sb_cmd(lua, cm, f"--threads={th} --time={dur} --db-ps-mode=disable run >/tmp/sb_r.out 2>&1", pw):
                 err = "run:" + bc(["tail", "-n", "2", "/tmp/sb_r.out"], "", False).stdout.replace("\n", " ").strip()[:60]
                 res[su] = row(t, su, sc, th, dur, 0, 0, 0, 0, 0, 0, 0, 0, "EXPECTED_LIMITATION_UNSUPPORTED", 0, err)
                 continue
@@ -169,9 +139,9 @@ def run_sysbench_pg18(t: str, hs: list[str], pt: int, u: str, pw: str, sc: int, 
             float(am.group(1)) if am else 0, 0, float(pm.group(1)) if pm else 0,
             int(tx.group(1)) if tx else 0, int(em.group(1)) if em else 0, 0, "PASS", 0, note,
         )
-    _sb_cmd("oltp_read_write", cm, "cleanup >/dev/null 2>&1||true")
+    _sb_cmd("oltp_read_write", cm, "cleanup >/dev/null 2>&1||true", pw)
     if t in ("pg18-logical", "pg18-birep"):
-        time.sleep(2)
+        wait_wal_replay(hs[0], pt, u, pw, pq_fn=pq)
         _drop_sb_sub(t, hs, pt, u, pw)
     return res
 
@@ -211,22 +181,12 @@ def run_append_only_pg18(t: str, hs: list[str], pt: int, u: str, pw: str, sc: in
 
 
 def _tc(pc: str, img: str, args: list[str], chk: bool = True) -> None:
-    sh(["docker", "run", "--rm", "--network", f"container:{pc}", "--cap-add", "NET_ADMIN", img, "tc", "qdisc", *args], chk)
+    tc_netem(pc, img, args, chk, sh_fn=sh)
 
 
 def run_wan_netem_pg18(t: str, delay_ms: int, dur: int, hs: list[str], pt: int, u: str, pw: str, sc: int, netem: list[str], img: str, logf=None) -> dict:
     """Inject tc netem delay on peers, run pgbench RW, and clean qdisc."""
-    reset_ds_pg18(t, hs, pt, u, pw)
-    for pc in netem:
-        _tc(pc, img, ["replace", "dev", "eth0", "root", "netem", "delay", f"{delay_ms}ms"])
-    time.sleep(1)
-    try:
-        tps, avg, sdv, p95, ok, fl, rt = pb_run_pg18(t, f"F_wan_netem_{delay_ms}ms", 1, 8, 4, dur, f"-D scale={sc}", "", hs, pt, u, pw, logf)
-    finally:
-        for pc in netem:
-            _tc(pc, img, ["del", "dev", "eth0", "root"], False)
-        time.sleep(1)
-    return row(t, f"F_wan_netem_{delay_ms}ms", sc, 8, dur, tps, "N/A", avg, sdv, p95, ok, fl, rt, f"PASS_NETEM_{delay_ms}MS", 0, f"netem {delay_ms}ms")
+    return run_wan_netem(t, delay_ms, dur, hs, pt, u, pw, sc, netem, img, pb_run_pg18, reset_ds_pg18, logf=logf, note=f"netem {delay_ms}ms", tc_fn=_tc)
 
 
 def upsert_pg18_csv(path: Path, topo: str, new_rows: list[dict], topo_order: list[str], suite_order: list[str]) -> None:

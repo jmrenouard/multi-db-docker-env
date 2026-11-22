@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-118 -- Harden PG 18 `sysbench` Quoting/Drain & Consolidate Shared Helpers (`#437`)
+- **Timestamp / Issue / Branch**: `2026-11-22T01:40Z` | Issue `#437` | `fix/issue-437-pg18-lib-drain-dedup`
+- **Request**: Consolidate `assert_zero_pg18_containers`, `_ref`, `conv_chk_pg18`, `_drop_sb_sub`, `_tc`, and `run_wan_netem_pg18` in `bench_pg18_lib.py`, rely on `reset_ds` for `pg18-birep` pre-drain/reset, quote PG18 `sysbench` passwords via `PGPASSWORD`, and enforce `wait_sub_ready` + `wait_wal_replay`.
+- **Changes**: Updated `scripts/bench_pg18_lib.py`; logged `RCA-100`.
+- **Result**: Verified Windows + WSL Python `unittest` (`-W error::ResourceWarning`), `go test -count=1 ./...`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-117 -- Consolidate `run_wan_netem`, Quote V2 `sysbench` & Enforce WAL Drain (`#434`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:36Z` | Issue `#434` | `fix/issue-434-v2-pg18-drain-dedup`
 - **Request**: Consolidate `run_wan_netem`, `drop_sb_sub`, `ref_sub`, and `assert_zero_containers`; pass V2 sysbench `pw` via `PGPASSWORD` + `shlex.quote` and enforce WAL replay drain + `srsubstate='r'` timeout.

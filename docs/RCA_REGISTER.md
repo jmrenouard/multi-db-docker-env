@@ -738,6 +738,13 @@
 - **Applied Change / Fix**: Added `run_wan_netem` in `bench_pg_lib.py`; delegated `bench_pg_opt_workloads.py` and `bench_pg_v2_lib.py` wrappers while passing `pw` via `PGPASSWORD` and enforcing `wait_wal_replay`/`wait_sub_ready`.
 - **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest` (`-W error::ResourceWarning`), `go test -count=1 ./...`, and `tests/test_config.sh`.
 
+### RCA-100 -- Duplicated PG 18 Helpers, Fixed `sleep 2` Teardown & Unquoted `sysbench` Credentials
+- **Date / Linked Action**: `2026-11-22` (`ACT-118` / Issue `#437`)
+- **Observed Symptom**: `bench_pg18_lib.py` duplicated `assert_zero_containers`, `_ref`, `conv_chk`, `_drop_sb_sub`, `_tc`, `run_wan_netem`, and `pg18-birep` peer reset, passed `pw` unquoted in `sysbench` commands, slept 2s before dropping `sbtest1..4`, and ignored `srsubstate='r'` timeouts.
+- **Root Cause Analysis**: `bench_pg18_lib.py` copied V2 patterns instead of delegating to `bench_pg_lib.py` and using `PGPASSWORD` + `pg_stat_replication` / subscription checks.
+- **Applied Change / Fix**: Rewired `bench_pg18_lib.py` wrappers to `bench_pg_lib.py`, removed redundant `pg18-birep` reset SQL, passed `pw` via `PGPASSWORD` + `shlex.quote`, and enforced `wait_sub_ready` and `wait_wal_replay`.
+- **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest` (`-W error::ResourceWarning`), `go test -count=1 ./...`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
