@@ -997,6 +997,13 @@
 - **Applied Change / Fix**: Split V2 and PG 18.6 bullets into short active French sub-bullets `<= 20` words without semicolons while keeping all metrics and SQLSTATEs intact.
 - **Result & Non-Regression Test**: Verified 0 STE errors up to `## Pile actif-actif YT Cluster`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-137 -- `documentation/pg_multimaster_fr.md` Part 3 (YT Cluster and `v2.6.0`) Full-File STE Cleanliness
+- **Date / Linked Action**: `2026-11-23` (`ACT-156` / Issue `#510`)
+- **Observed Symptom**: French `YT Cluster` and `v2.6.0` sections held the remaining 13 STE errors (semicolons, `> 20` words, `via` on L141).
+- **Root Cause Analysis**: Remaining French benchmark/tuning lists predated STE splits and retained `via`.
+- **Applied Change / Fix**: Split into `<= 20`-word French sentences without semicolons, replaced `via` (`avec`), and kept all metrics verbatim.
+- **Result & Non-Regression Test**: Verified full-file `0 errors, 0 warnings`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
