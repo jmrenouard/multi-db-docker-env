@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-154 -- Align `pg_multimaster_fr.md` Part 1 (Overview & Empirical Limits) with ASD-STE100 (`#506`)
+- **Timestamp / Issue / Branch**: `2026-11-23T00:14Z` | Issue `#506` | `docs/issue-506-pg-multimaster-fr-part1`
+- **Request**: Refactor `documentation/pg_multimaster_fr.md` overview, V1 takeaways, and Empirical Limits into `<= 20`-word French STE sentences without semicolons and update `v2.5.0` -> `v2.6.2` (V2/PG18 and YT/`v2.6.0` follow in Part 2/3 PRs).
+- **Changes**: Updated L3/L30 (`v2.6.2`), shortened L52, and split takeaways and empirical SQLSTATE bullets into <= 20-word sentences without semicolons in `documentation/pg_multimaster_fr.md`; logged `RCA-135`.
+- **Result**: Verified 0 STE errors up to `## Matrice` (`ste_check.py --mode procedural --lang fr --no-vocab`), Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-153 -- Align `pg_multimaster.md` Part 3 (YT Cluster and `v2.6.0`) with ASD-STE100 (`#504`)
 - **Timestamp / Issue / Branch**: `2026-11-23T00:10Z` | Issue `#504` | `docs/issue-504-pg-multimaster-en-part3`
 - **Request**: Refactor `YT Cluster 1.21.3` and `Durable Production-Tuned Stacks` (`v2.6.0`) in `documentation/pg_multimaster.md` so the full file achieves `0` STE procedural errors (`ste_check.py --mode procedural --lang en --no-vocab`).
