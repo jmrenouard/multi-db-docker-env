@@ -118,10 +118,11 @@ qn "$N1" "TRUNCATE TABLE ddl_probe;" >/dev/null; bcmd kick sync_ddl 5 >/dev/null
 qn "$N1" "SELECT pg_advisory_lock(4242); SELECT pg_sleep(4);" >/dev/null 2>&1 & lp=$!; sleep 1
 g2="$(qn "$N2" "SELECT pg_try_advisory_lock(4242);")"; wait "$lp" || true
 [ "$g2" = "t" ] && lim "pg_advisory_lock is node-local (n2 acquired 4242: $g2)" || bad "Advisory lock unexpected"
-docker exec -e PGPASSWORD="$P" "$N2" bash -c "psql -U '$U' -d '$D' -c 'LISTEN ch_buc; SELECT pg_sleep(3);'" >/tmp/lbuc.out 2>&1 & lnp=$!; sleep 1
+TMP_LOG=$(mktemp)
+trap 'rm -f "$TMP_LOG"' EXIT
+docker exec -e PGPASSWORD="$P" "$N2" bash -c "psql -U '$U' -d '$D' -c 'LISTEN ch_buc; SELECT pg_sleep(3);'" >"$TMP_LOG" 2>&1 & lnp=$!; sleep 1
 qn "$N1" "NOTIFY ch_buc, 'cross';" >/dev/null; wait "$lnp" || true
-! grep -q "cross" /tmp/lbuc.out && lim "LISTEN/NOTIFY is node-local (0 cross-node events)" || bad "Unexpected NOTIFY"
-rm -f /tmp/lbuc.out
+! grep -q "cross" "$TMP_LOG" && lim "LISTEN/NOTIFY is node-local (0 cross-node events)" || bad "Unexpected NOTIFY"
 te="$(qraw "$N1" "CREATE TEMP TABLE tmp_probe (x INT); INSERT INTO tmp_probe VALUES (1);")"
 [ "$(qn "$N2" "SELECT count(*) FROM information_schema.tables WHERE table_name='tmp_probe';")" = "0" ] && ! echo "$te" | grep -q "ERROR:" \
     && ok "TEMP TABLE is session-local" || bad "TEMP TABLE unexpected"

@@ -144,13 +144,14 @@ g2="$(qn "$SUB" "SELECT pg_try_advisory_lock(4242);")"
 wait "$lp" || true
 [ "$g2" = "t" ] && lim "pg_advisory_lock is node-local (subscriber acquired 4242: $g2)" || bad "Advisory lock unexpected"
 
-docker exec -e PGPASSWORD="$P" "$SUB" bash -c "psql -U '$U' -d '$D' -c 'LISTEN ch_log; SELECT pg_sleep(3);'" >/tmp/ll.out 2>&1 &
+TMP_LOG=$(mktemp)
+trap 'rm -f "$TMP_LOG"' EXIT
+docker exec -e PGPASSWORD="$P" "$SUB" bash -c "psql -U '$U' -d '$D' -c 'LISTEN ch_log; SELECT pg_sleep(3);'" >"$TMP_LOG" 2>&1 &
 lnp=$!
 sleep 1
 qn "$PUB" "NOTIFY ch_log, 'cross';" >/dev/null
 wait "$lnp" || true
-! grep -q "cross" /tmp/ll.out && lim "LISTEN/NOTIFY is node-local (0 cross-node events)" || bad "Unexpected NOTIFY"
-rm -f /tmp/ll.out
+! grep -q "cross" "$TMP_LOG" && lim "LISTEN/NOTIFY is node-local (0 cross-node events)" || bad "Unexpected NOTIFY"
 
 te="$(qraw "$PUB" "CREATE TEMP TABLE tmp_log (x INT); INSERT INTO tmp_log VALUES (1);")"
 [ "$(qn "$SUB" "SELECT count(*) FROM information_schema.tables WHERE table_name='tmp_log';")" = "0" ] && ! echo "$te" | grep -q "ERROR:" \

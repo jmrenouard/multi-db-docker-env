@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-124 -- Replace Fixed `/tmp/*.out` Test Logs with `mktemp` & `EXIT` Traps (`#447`)
+- **Timestamp / Issue / Branch**: `2026-11-22T02:09Z` | Issue `#447` | `fix/issue-447-mktemp-pg-test-logs`
+- **Request**: Replace fixed host `/tmp/*.out` paths with `mktemp` + `EXIT` trap cleanup across `tests/test_{pg_birep,bucardo,pg_logical,pg18_logical,pgedge,pg_streaming,pg18_streaming}.sh` (`#191.20` part 2).
+- **Changes**: Replaced `/tmp/{lb,lbuc,ll,ll18,ls,pg_sync_stall,pg18_sync_stall}.out` with `mktemp` + `trap 'rm -f ...' EXIT` across all 7 test scripts; logged `RCA-106`.
+- **Result**: Verified `bash -n`, `test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, and diff `< 14,800` B.
+
 ### ACT-123 -- Recover `sub_from_node2` in `test_pg18_birep.sh`, Sync `v25.4` Labels & Citus/YT Auth Order (`#445`)
 - **Timestamp / Issue / Branch**: `2026-11-22T02:04Z` | Issue `#445` | `fix/issue-445-birep-sub-mktemp-labels`
 - **Request**: Recover and verify `sub_from_node2` worker `= 1` after `9102` and `9201` in `test_pg18_birep.sh` (`#191.10`), use `mktemp` + `trap` in `test_pg18_birep.sh`, update stale `v24.3.0` labels to `v25.4` in `test_cockroach.sh` and `test_pg_extended_matrix.sh` (`#191.20`), and align `DB_ROOT_PASSWORD`-first order in `test_citus.sh` and `test_yt_cluster.sh` (`#191.17`).
