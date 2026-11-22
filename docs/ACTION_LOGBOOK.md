@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-116 -- Add Catalog `SetupArgs`/`SetupEnv`/`DefaultDB` SSOT Fields & Wire `ResolveContainer` in `interactive` (`#415`)
+- **Timestamp / Issue / Branch**: `2026-11-22T01:33Z` | Issue `#415` | `refactor/issue-415-catalog-ssot-dead-code`
+- **Request**: Consolidate `DefaultDB`, `SetupArgs`, and `SetupEnv` into `pkg/catalog` as SSOT and replace inline `client.PS` resolution in `pkg/interactive/steps.go` with `client.ResolveContainer` (Slice 4A of 3-PR split `#415` -> `#432` -> `#433` to stay `< 15,000` diff bytes).
+- **Changes**: Updated `pkg/catalog/catalog.go` (`DefaultDB`, `SetupArgs`, `SetupEnv` fields, `cloneEnv` defensive copies, `mongo8` `SetupArgs`/`SetupEnv`, `DefaultDB: "labdb"` on the 10 PG clusters defaulting `POSTGRES_DB=${PG_DB:-labdb}`), `pkg/catalog/catalog_test.go`, `pkg/interactive/steps.go` (`VerifyEnvironment` via `client.ResolveContainer`), and `RCA-098`.
+- **Result**: `go test -count=1 ./...` (`11/11` packages PASS), `go vet ./...` (PASS), `go run ./cmd/mdb lint` (`70` scripts + `21` Compose files PASS), `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped in `test_lab.py`), and PR diff `< 15,000` bytes.
+
 ### ACT-115 -- Drain WAL Replay, Reset Opt Bi-Dir Peers & Quote Sysbench Passwords (`#428`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:28Z` | Issue `#428` | `fix/issue-428-opt-workloads-drain-reset`
 - **Request**: Poll `pg_stat_replication` before `_drop_sb_sub` and fail on `srsubstate='r'` timeout, drain/reset `pg-birep`/`pg18-birep` in `reset_ds_opt`, and quote `sysbench` passwords via `PGPASSWORD`.
