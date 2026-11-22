@@ -969,6 +969,13 @@
 - **Applied Change / Fix**: Broke L3, L52, takeaways, and empirical SQLSTATE bullets into short sub-bullets `<= 20` words without semicolons or possessives while preserving every SQLSTATE, port, and TPS metric verbatim.
 - **Result & Non-Regression Test**: Verified 0 STE errors across the edited sections, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-133 -- `documentation/pg_multimaster.md` Part 2 (V2 Matrix and PG 18.6) Semicolon & Passive Violations
+- **Date / Linked Action**: `2026-11-23` (`ACT-152` / Issue `#502`)
+- **Observed Symptom**: V2 `T11`-`T18`, `bench-pg-v2`, and PG 18.6 bullets in `documentation/pg_multimaster.md` contained 10+ STE errors (semicolons, `> 20`-word clauses, passive voice).
+- **Root Cause Analysis**: Test matrix summaries chained per-engine behavior inside single bullets (`YT Cluster` and `v2.6.0` sections remain isolated for Part 3 to keep each PR `< 14,800` B).
+- **Applied Change / Fix**: Split V2 and PG 18.6 clauses into active short sub-bullets `<= 20` words without semicolons while keeping every metric and SQLSTATE exact.
+- **Result & Non-Regression Test**: Verified 0 STE errors up to `## YT Cluster`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
