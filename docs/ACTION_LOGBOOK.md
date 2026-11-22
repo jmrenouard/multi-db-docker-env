@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-153 -- Align `pg_multimaster.md` Part 3 (YT Cluster and `v2.6.0`) with ASD-STE100 (`#504`)
+- **Timestamp / Issue / Branch**: `2026-11-23T00:10Z` | Issue `#504` | `docs/issue-504-pg-multimaster-en-part3`
+- **Request**: Refactor `YT Cluster 1.21.3` and `Durable Production-Tuned Stacks` (`v2.6.0`) in `documentation/pg_multimaster.md` so the full file achieves `0` STE procedural errors (`ste_check.py --mode procedural --lang en --no-vocab`).
+- **Changes**: Split YT Cluster, RAM caps, HAProxy, and engine optimization bullets into `<= 20`-word STE sentences without semicolons or possessives while retaining every port, parameter, and metric verbatim; logged `RCA-134`.
+- **Result**: Verified full-file `ste_check.py --mode procedural --lang en --no-vocab documentation/pg_multimaster.md` (`0 errors`), 0 forbidden words, Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-152 -- Align `pg_multimaster.md` Part 2 (V2 Matrix and PG 18.6) with ASD-STE100 (`#502`)
 - **Timestamp / Issue / Branch**: `2026-11-23T00:06Z` | Issue `#502` | `docs/issue-502-pg-multimaster-en-part2`
 - **Request**: Refactor `V2 Extended Matrix (T11-T18)` + `bench-pg-v2` and `PostgreSQL 18.6 Native Stacks` sections of `documentation/pg_multimaster.md` into `<= 20`-word active STE sentences without semicolons (`YT Cluster` + `v2.6.0` follow in Part 3).
