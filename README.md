@@ -1,14 +1,8 @@
 ![multi-db-docker-env](logo.png)
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="60" height="60">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="60" height="60">
-  <img src="https://static.cdnlogo.com/logos/p/6/percona.svg" alt="Percona" width="60" height="60">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="60" height="60">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mongodb/mongodb-original.svg" alt="MongoDB" width="60" height="60">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefikproxy/traefikproxy-original.svg" alt="Traefik" width="60" height="60">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" width="60" height="60">
-</p>
+| MariaDB | MySQL | Percona | PostgreSQL | MongoDB | Traefik | Docker |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="60" height="60"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="60" height="60"> | <img src="https://static.cdnlogo.com/logos/p/6/percona.svg" alt="Percona" width="60" height="60"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="60" height="60"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mongodb/mongodb-original.svg" alt="MongoDB" width="60" height="60"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefikproxy/traefikproxy-original.svg" alt="Traefik" width="60" height="60"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" width="60" height="60"> |
 
 [!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
 
@@ -17,7 +11,7 @@
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
 
 
-A key feature is the **Traefik reverse proxy**, which ensures all database instances are accessible through stable ports on your host machine (`localhost:3306` for MySQL/MariaDB and `localhost:5432` for PostgreSQL), regardless of which specific database version you choose to run.
+The **Traefik reverse proxy** routes traffic to the active database container. Connect through stable host ports: `localhost:3306` (MySQL and MariaDB) or `localhost:5432` (PostgreSQL).
 
 > [!IMPORTANT]
 > **English-Only Policy**: All technical comments within code, configuration files, and documentation in this project MUST be in English ONLY.
@@ -27,8 +21,8 @@ A key feature is the **Traefik reverse proxy**, which ensures all database insta
 | Tier | Tier Name | Last Verified | Status |
 | :--- | :--- | :--- | :--- |
 | **T2** | **Standalone Matrix** | 2026-11-21 | ✅ 11/11 Active Profiles Verified Live E2E |
-| **T3** | **Cluster, HA & Multi-Master (`v2.6.1`)** | 2026-11-21 | ✅ 20/20 Active Clusters Verified Live E2E (31/31 Total, Self-Contained Patroni) |
-| **IMG** | **E2E Docker Image Inventory** | 2026-11-21 | ✅ 31/31 Images (`7` Custom + `24` Upstream) via `./mdb images check` |
+| **T3** | **Cluster, HA & Multi-Master (`v2.6.2`)** | 2026-11-21 | ✅ 20/20 Active Clusters Verified Live E2E (31/31 Total, Self-Contained Patroni) |
+| **IMG** | **E2E Docker Image Inventory** | 2026-11-21 | ✅ 31/31 Images (`7` Custom + `24` Upstream) with `./mdb images check` |
 
 ## 📋 Prerequisites
 
@@ -37,7 +31,7 @@ Run `./mdb doctor` (`mdb.cmd doctor` on Windows) to verify workstation prerequis
 * [Docker](https://docs.docker.com/get-docker/) & [Docker Compose v2](https://docs.docker.com/compose/install/) (Docker Desktop on Windows/macOS)
 * `./mdb` (`mdb.cmd` on Windows): runs `bin/mdb` if prebuilt, else falls back automatically to [Go](https://go.dev/) (`>= 1.22`)
 * **macOS**: Docker Desktop + Homebrew tools (`brew install go bash openssl git python`)
-* **Windows**: Run `mdb.cmd` natively in PowerShell/CMD; use **WSL2** or **Git Bash** (or `choco install make`) for `make` wrappers and bash tests
+* **Windows**: Run `mdb.cmd` natively in PowerShell or CMD. Use **WSL2**, **Git Bash**, or `choco install make` for `make` wrappers and bash tests.
 * Full cross-platform dependency list: [`PREREQUISITES.txt`](PREREQUISITES.txt).
 
 ## ⚙️ Initial Setup
@@ -78,7 +72,7 @@ Run `./mdb doctor` (`mdb.cmd doctor` on Windows) to verify workstation prerequis
 
 ### Data Management
 
-These commands allow you to inject sample databases into a running service or run a comprehensive test suite across all services.
+Use these commands to inject sample databases into an active service or to run tests across all services.
 
 | Command                            | Icon | Description                                                                                                                              | Example Usage                                    |
 | :--------------------------------- | :--- | :--------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
@@ -91,7 +85,7 @@ These commands allow you to inject sample databases into a running service or ru
 
 ### Starting a Database Instance
 
-To start a specific database instance, use the `make <database_version>` command. The Makefile will automatically stop any currently running database instance before launching the new one, ensuring only one database (plus Traefik) runs at a time.
+Run `make <database_version>` to start a database instance. The Makefile stops any active database instance before it starts the new one.
 
 ### <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="25" height="25"> MySQL
 
@@ -144,7 +138,7 @@ These ranges are consistent across `docker-compose` configurations and internal 
 
 ### 🔐 Credentials
 
-Default credentials are centralized in the `.env` file via `DB_ROOT_PASSWORD`.
+Default credentials live in the `.env` file as `DB_ROOT_PASSWORD`.
 
 * **Default User**: `root`
 * **Default Database**: `employees` (after injection)
@@ -193,7 +187,7 @@ Advanced MySQL architecture with Group Replication and transparent routing.
 | `make innodb-down`   | 🛑   | Stops InnoDB Cluster                               |
 
 > [!NOTE]
-> InnoDB Cluster uses ports 6446 (RW) / 6447 (RO) via HAProxy. Stats: 8407. Direct access: 4411-4413.
+> InnoDB Cluster uses HAProxy ports 6446 (RW) and 6447 (RO). Stats use port 8407. Direct access uses ports 4411-4413.
 
 **MongoDB ReplicaSet**
 
@@ -226,7 +220,7 @@ All 13 PostgreSQL Compose topologies (`pg17-baseline`, `pg-streaming`, `pg-logic
 
 ## 🏛️ Architecture
 
-The system uses a **Traefik reverse proxy** as a smart router. It is the only service exposed on your host machine's port `3306` and automatically forwards traffic to the currently active database instance.
+Traefik acts as a reverse proxy on host ports `3306` and `5432`. It forwards traffic to the active database instance.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefik/traefik-original.svg" alt="Traefik" width="100">
@@ -360,7 +354,7 @@ graph TD
     ./mdb down
     ```
 
-## 🚀 Go `mdb` CLI Build & Testing (`v2.5.0`)
+## 🚀 Go `mdb` CLI Build & Testing (`v2.6.2`)
 
 A native CLI (`./mdb`, `mdb.cmd`, `cmd/mdb`, `bin/mdb`) written in pure Go (zero external dependencies). See [General Commands](#general-commands) above for the full subcommand matrix.
 
@@ -371,11 +365,11 @@ make test-go     # Run Go test suite across all 11 packages
 
 ## 🚀 Release Pipeline (GitHub Actions)
 
-Automated releases run via [`.github/workflows/release.yml`](.github/workflows/release.yml) on `v*.*.*` tag pushes or manual `workflow_dispatch` (dry-run by default; set `publish=true` to publish):
+Automated releases run from [`.github/workflows/release.yml`](.github/workflows/release.yml) on `v*.*.*` tag pushes or manual `workflow_dispatch`. Dry-run mode runs by default, and `publish=true` publishes the release.
 
-1. **Validate**: Checks `VERSION` / `Changelog` / tag consistency via [`scripts/release_notes.py`](scripts/release_notes.py), runs Python `unittest`, `go test -race ./...`, and `tests/test_config.sh`.
+1. **Validate**: Checks `VERSION`, `Changelog`, and tags with [`scripts/release_notes.py`](scripts/release_notes.py), then runs Python `unittest`, `go test -race ./...`, and `tests/test_config.sh`.
 2. **Build & Package**: Cross-compiles `cmd/mdb` for 6 targets (`linux`/`darwin`/`windows` × `amd64`/`arm64`) with `-ldflags` version injection, packages lab `.tar.gz`/`.zip` bundles, and generates `SHA256SUMS.txt`.
-3. **Publish**: Extracts release notes from `Changelog`, publishes the GitHub Release with binaries and checksums, and pushes multi-arch Docker Hub images when `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN` secrets are configured.
+3. **Publish**: Extracts `Changelog` notes and publishes the GitHub Release with binaries and checksums. Pushes multi-arch Docker Hub images when secrets exist.
 
 ## 📜 Project Governance & Living Registers
 
@@ -389,7 +383,7 @@ Maintenance follows strict governance rules in [`AGENTS.md`](AGENTS.md):
 
 ### `io_uring` EPERM Warning Fallback
 
-When starting MySQL or MariaDB containers on Linux hosts with restricted kernel security profiles (e.g. `kernel.io_uring_disabled=2` on Ubuntu/Debian), container startup logs may output:
+When MySQL or MariaDB containers start on Linux hosts with `kernel.io_uring_disabled=2`, container logs can show:
 
 ```text
 io_uring_queue_init() failed with EPERM — kernel has io_uring_disabled=2.
@@ -397,7 +391,7 @@ io_uring_queue_init() failed with EPERM — kernel has io_uring_disabled=2.
 
 - **Impact**: No functional issues or failures occur. Database engines automatically and transparently fall back to `libaio` for asynchronous I/O operations.
 - **Action Required**: None required for standard local development or testing.
-- **Maximum Performance Tuning (Optional)**: If you require maximum I/O performance via `io_uring`, enable it on your Linux host system:
+- **Maximum Performance Tuning (Optional)**: If you require `io_uring` I/O performance, enable it on your Linux host:
 
   ```bash
   sudo sysctl -w kernel.io_uring_disabled=0

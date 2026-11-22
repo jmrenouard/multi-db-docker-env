@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-138 -- Align `README.md` with ASD-STE100 (0 Errors) (`#474`)
+- **Timestamp / Issue / Branch**: `2026-11-22T22:50Z` | Issue `#474` | `docs/issue-474-ste-readme-and-version-sync`
+- **Request**: Resolve STE procedural violations (`<= 20` words, 0 semicolons, active voice, 0 `may`/`ensure`/`via`) and version tags in `README.md`.
+- **Changes**: Converted logo block to table, shortened sentences, removed semicolons/non-STE terms, synced `v2.6.2` on T3/CLI headings (`PG 13-stack` tag + `ROADMAP.md` split to next PR); logged `RCA-119`.
+- **Result**: Verified `ste_check.py --mode procedural --lang en --no-vocab README.md` (0 errors), Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-137 -- Remove Unreferenced 6,190-Line `documentation/sourcery_ai_audit.md` (`#472`)
 - **Timestamp / Issue / Branch**: `2026-11-22T22:44Z` | Issue `#472` | `docs/issue-472-remove-sourcery-audit-log`
 - **Request**: Fix documentation audit finding #8 by deleting the unreferenced 6,190-line (-374 KB) `documentation/sourcery_ai_audit.md` bot log and documenting the single-file deletion exception to the 15K PR diff limit.

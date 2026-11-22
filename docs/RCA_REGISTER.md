@@ -871,6 +871,13 @@
 - **Applied Change / Fix**: Moved H2 icons below headings in `tests.md`/`tests_fr.md`, removed `U+FE0F` and `sourcery_ai_audit.md` row in `INDEX.md`, and aligned all 9 anchors with exact GFM slugs.
 - **Result & Non-Regression Test**: Verified 0 broken paths/anchors across tracked `.md` files, Windows + WSL `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and `./mdb lint`.
 
+### RCA-119 -- `README.md` Procedural STE Errors and Version Drift (`v2.5.0`/`v2.6.1`)
+- **Date / Linked Action**: `2026-11-22` (`ACT-138` / Issue `#474`)
+- **Observed Symptom**: `README.md` failed `ste_check.py --mode procedural` (9 errors: 60-word HTML logo block, >20-word sentences, semicolons, `may`/`ensure`/`via`) with stale `v2.5.0`/`v2.6.1` tags.
+- **Root Cause Analysis**: Prose additions predated STE checks and `v2.6.2`; `README_fr.md` and `ROADMAP.md` split to next PRs (`< 14,800` B cap).
+- **Applied Change / Fix**: Moved logos into table, shortened sentences (`<= 20` words), removed semicolons and non-STE terms, and synced `v2.6.2`.
+- **Result & Non-Regression Test**: Verified 0 STE errors, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
