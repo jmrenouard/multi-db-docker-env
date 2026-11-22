@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-110 -- Fail on Crashed `pgbench`, Drain/Reset `pg-birep` & Quote `run_sb` (`#424`)
+- **Timestamp / Issue / Branch**: `2026-11-22T01:08Z` | Issue `#424` | `fix/issue-424-pb-exit-checks-birep-reset-drain`
+- **Request**: Capture `pgbench` exit codes and abort strings instead of `||true`, lower `C_multinode_ro` logging with `--sampling-rate=0.05` and clean `/tmp/pb_*`, drain/reset `pg-birep` in `reset_ds`, and quote `run_sb` password via `PGPASSWORD`.
+- **Changes**: Updated `scripts/bench_pg_lib.py` (`pb_run`, `reset_ds`, `run_sb`); logged `RCA-092`.
+- **Result**: Verified Windows + WSL Python `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-109 -- Deduplicate `YT_RETRY_PY`/CSV Helpers, Close YT Handle & Quote YT `sysbench` Password (`#422`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:02Z` | Issue `#422` | `fix/issue-422-yt-opt-retry-csv-dedup`
 - **Request**: Deduplicate `YT_RETRY_PY`, `wcnt_opt`, and CSV writers across `bench_yt_runner.sh` and `bench_pg_opt_common.py`, quote YT `sysbench` password via `PGPASSWORD`, close YT resume handle, and write YT CSV atomically.

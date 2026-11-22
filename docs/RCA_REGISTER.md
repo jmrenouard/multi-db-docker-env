@@ -682,6 +682,13 @@
 - **Applied Change / Fix**: Imported `YT_RETRY_PY`, `write_csv_atomic`, `upsert_csv`, and `wcnt` from `bench_pg_lib.py`, passed `--pgsql-password="$PGPASSWORD"` via `bc(..., PW, ...)` in `bench_yt_runner.sh`, and wrapped `ex_path.open()` in `with`.
 - **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest`, `go test -count=1 ./...`, `bash -n`, and `tests/test_config.sh`.
 
+### RCA-092 -- Swallowed `pgbench` Exit Codes, Unsampled `C_multinode_ro` Logs & `pg-birep` `reset_ds` Drift Leak
+- **Date / Linked Action**: `2026-11-22` (`ACT-110` / Issue `#424`)
+- **Observed Symptom**: `pb_run`/`pb_run_opt` masked `pgbench` crashes with `||true` and logged `PASS_CONVERGED` at `0.0` TPS; `C_multinode_ro` wrote ~1M lines without sampling; `reset_ds` skipped `history` drain and `hs[1]` reset on `pg-birep`; `run_sb` left `pw` unquoted.
+- **Root Cause Analysis**: Stream exit codes were discarded (`||true`/`wait||true`), `C_multinode_ro` omitted `--sampling-rate`, and `reset_ds` reset only `hs[0]`.
+- **Applied Change / Fix**: Hardened `pb_run` in `bench_pg_lib.py` (stream exit capture, abort/`tps==0` `RuntimeError`, `--sampling-rate=0.05` on `C_multinode_ro`, `/tmp/pb_*` `finally` cleanup), added `history` pre-drain + `hs[1:]` balance reset in `reset_ds`, and quoted `run_sb` password via `PGPASSWORD`.
+- **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest`, `go test -count=1 ./...`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
