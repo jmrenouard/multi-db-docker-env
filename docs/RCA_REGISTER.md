@@ -962,6 +962,13 @@
 - **Applied Change / Fix**: Organized all French and English entries under the 4 Diataxis headings (`U+FE0F`-free) with synced GFM TOC anchors and `[en anglais]` tags on English-only deep guides.
 - **Result & Non-Regression Test**: Verified 0 STE errors/warnings (`ste_check.py --mode mixed --lang fr --no-vocab`), 0 broken links/anchors, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-132 -- `documentation/pg_multimaster.md` Part 1 (Overview & Empirical Limits) STE Violations
+- **Date / Linked Action**: `2026-11-22` (`ACT-151` / Issue `#500`)
+- **Observed Symptom**: `documentation/pg_multimaster.md` overview, V1 takeaways, and Empirical SQLSTATE Limits contained 10+ STE errors (37-word intro, semicolons, `> 20`-word bullets, `'s`, `v2.5.0` stale version).
+- **Root Cause Analysis**: Dense empirical findings used semicolon-chained clauses; refactoring the entire 21 KB file in one PR exceeds 15,000 B, requiring atomic section PRs (`Overview/Limits`, `V2/PG18`, `YT/v2.6.0`).
+- **Applied Change / Fix**: Broke L3, L52, takeaways, and empirical SQLSTATE bullets into short sub-bullets `<= 20` words without semicolons or possessives while preserving every SQLSTATE, port, and TPS metric verbatim.
+- **Result & Non-Regression Test**: Verified 0 STE errors across the edited sections, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
