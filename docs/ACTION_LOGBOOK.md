@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-109 -- Deduplicate `YT_RETRY_PY`/CSV Helpers, Close YT Handle & Quote YT `sysbench` Password (`#422`)
+- **Timestamp / Issue / Branch**: `2026-11-22T01:02Z` | Issue `#422` | `fix/issue-422-yt-opt-retry-csv-dedup`
+- **Request**: Deduplicate `YT_RETRY_PY`, `wcnt_opt`, and CSV writers across `bench_yt_runner.sh` and `bench_pg_opt_common.py`, quote YT `sysbench` password via `PGPASSWORD`, close YT resume handle, and write YT CSV atomically.
+- **Changes**: Updated `scripts/bench_yt_runner.sh` and `scripts/bench_pg_opt_common.py` to reuse `YT_RETRY_PY`, `write_csv_atomic`, `upsert_csv`, and `wcnt` from `scripts/bench_pg_lib.py`; logged `RCA-091`.
+- **Result**: Verified Windows + WSL Python `unittest`, `go test -count=1 ./...`, `bash -n`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-108 -- Missing V2 CSV Header, Atomic Closed CSV I/O, `wcnt` Timeout & `YT_RETRY_PY` Hardening (`#420`)
 - **Timestamp / Issue / Branch**: `2026-11-22T00:58Z` | Issue `#420` | `fix/issue-420-csv-atomic-wcnt-yt-retry`
 - **Request**: Fix missing CSV `FileNotFoundError` in `append_summary_preserving`, close/atomize CSV I/O in V2/PG18 libs, raise `RuntimeError` on `wcnt` timeout, and add shared `YT_RETRY_PY` (kwargs connect + guarded `rollback()`/reconnect) and `write_csv_atomic`/`upsert_csv` to `scripts/bench_pg_lib.py`.
