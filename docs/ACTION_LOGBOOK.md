@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-128 -- Parameterize Shared PG 17/18 Bidirectional Setup (`#454`)
+- **Timestamp / Issue / Branch**: `2026-11-22T02:25Z` | Issue `#454` | `refactor/issue-454-parameterize-pg-birep`
+- **Request**: Deduplicate PG 17 and PG 18 bidirectional logical replication setup scripts via shared `scripts/pg_common/setup_birep.sh` while preserving CLI paths (`#191.20` part 3c).
+- **Changes**: Added `scripts/pg_common/setup_birep.sh` backed by `lib.sh` (`wait_pg_nodes`, `esc_conn_val`) and converted `scripts/pg_birep/setup_birep.sh` + `scripts/pg18_birep/setup_pg18_birep.sh` into thin wrappers; logged `RCA-110`.
+- **Result**: Verified `bash -n`, mock-docker smoke test, `test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, and diff `< 14,800` B.
+
 ### ACT-127 -- Parameterize Shared PG 17/18 Logical Replication Setup (`#451`)
 - **Timestamp / Issue / Branch**: `2026-11-22T02:22Z` | Issue `#451` | `refactor/issue-451-parameterize-pg-logical`
 - **Request**: Deduplicate PG 17 and PG 18 uni-directional logical replication setup scripts via shared `scripts/pg_common/setup_logical.sh` while preserving CLI paths (`#191.20` part 3b).
