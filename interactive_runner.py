@@ -2,6 +2,7 @@
 
 Unified CLI entry point: './mdb interactive' (or 'mdb.cmd interactive' on Windows).
 """
+# shortcut: Deprecated legacy Python wrapper kept for external CI/course scripts; remove in v3.0 per IDEA-012.
 
 import subprocess
 import os

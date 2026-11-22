@@ -379,13 +379,29 @@ func TestClientMyCnfAndDoctor(t *testing.T) {
 		{"cockroachdb", "cockroach", "crdb_node1", "/cockroach/cockroach sql"},
 		{"yugabytedb", "yugabyte", "yb_node1", "ysqlsh"},
 	} {
-		env, cmd := buildClientCommand(tc.eng, tc.id, tc.ctr, "rootpass")
+		env, cmd := buildClientCommand(tc.eng, tc.id, tc.ctr, "", "rootpass")
 		if got := strings.Join(append(env, cmd...), " "); !strings.Contains(got, tc.want) {
 			t.Fatalf("%s/%s: got %q, want %q", tc.eng, tc.id, got, tc.want)
 		}
 	}
+	for _, c := range [][4]string{
+		{"postgres", "pg-birep", "labdb", "psql -U postgres -d labdb"},
+		{"postgres", "postgres17", "", "psql -U postgres"},
+		{"cockroachdb", "crdb_node2", "", "--host=crdb_node2:26257"},
+		{"yugabytedb", "yb_node2", "", "-h yb-node2"},
+	} {
+		_, m := buildClientCommand(c[0], c[1], c[1], c[2], "")
+		if s := strings.Join(m, " "); !strings.Contains(s, c[3]) || (c[2] == "" && c[0] == "postgres" && s != c[3]) {
+			t.Fatal(s)
+		}
+	}
 	if eng, id := inferEngineAndID(cat, docker.ContainerStatus{Service: "pg_node1", Name: "pg_node1", File: "docker-compose-pgpool.yml"}); eng != "postgres" || id != "pgpool" {
 		t.Fatalf("infer pgpool: got %s/%s", eng, id)
+	}
+	for _, c := range [][2]string{{"mysql_node1", "mysql"}, {"node1", "postgres"}} {
+		if e, _ := inferEngineAndID(cat, docker.ContainerStatus{Service: c[0], Name: c[0]}); e != c[1] {
+			t.Fatal(c[0], e)
+		}
 	}
 
 	// doctor healthy & missing docker
@@ -472,6 +488,36 @@ func TestAdminCommands(t *testing.T) {
 	}}
 	if err := runAlpineCleanup(ctx, docker.NewClientWithRunner(winMock), `C:\repo`, []string{"datadir_01"}); err != nil || len(mountCalls) != 2 || !strings.Contains(mountCalls[1], "type=bind,source=/mnt/c/repo,target=/workspace") {
 		t.Fatalf("alpine cleanup fallback: err=%v calls=%v", err, mountCalls)
+	}
+
+	oM, oP, oS := injectMaxAttempts, injectPollInterval, streamCommand
+	defer func() { injectMaxAttempts, injectPollInterval, streamCommand = oM, oP, oS }()
+	var ex error
+	var s string
+	mock.Custom = func(_ context.Context, _ string, a ...string) ([]byte, []byte, int, error) {
+		if a[0] == "exec" && ex != nil {
+			return nil, nil, 1, ex
+		}
+		return []byte("mariadb_01_x\nmariadb_01\n"), nil, 0, nil
+	}
+	streamCommand = func(_ context.Context, _ []string, _ io.Reader, _, _ io.Writer, n string, a ...string) error {
+		s += n + " " + strings.Join(a, " ") + "\n"
+		return nil
+	}
+	run := func(c context.Context) error { return runInjectCmd(c, client, cat, []string{"employees", "repli"}) }
+	injectMaxAttempts, injectPollInterval, ex = 2, time.Millisecond, errors.New("down")
+	if err := run(ctx); err == nil || !strings.Contains(err.Error(), "after 2 attempts") {
+		t.Fatal(err)
+	}
+	cc, cancel := context.WithCancel(ctx)
+	cancel()
+	injectPollInterval = time.Second
+	if err := run(cc); !errors.Is(err, context.Canceled) {
+		t.Fatal(err)
+	}
+	ex = nil
+	if err := run(ctx); err != nil || !strings.Contains(s, "mariadb_01:/var/tmp/") || !strings.Contains(s, " mariadb_01 ") {
+		t.Fatal(err, s)
 	}
 }
 

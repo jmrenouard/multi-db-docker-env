@@ -17,19 +17,29 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-func buildClientCommand(engine, envID, container, pass string) ([]string, []string) {
+func buildClientCommand(engine, envID, container, defaultDB, pass string) ([]string, []string) {
 	id, eng, ctr := strings.ToLower(envID), strings.ToLower(engine), strings.ToLower(container)
 	switch {
 	case id == "cockroach" || eng == "cockroachdb":
-		return nil, []string{"/cockroach/cockroach", "sql", "--insecure", "--host=crdb_node1:26257"}
+		if container == "" {
+			container = "crdb_node1"
+		}
+		return nil, []string{"/cockroach/cockroach", "sql", "--insecure", "--host=" + container + ":26257"}
 	case id == "yugabyte" || eng == "yugabytedb":
-		return nil, []string{"/home/yugabyte/bin/ysqlsh", "-h", "yb-node1", "-p", "5433", "-U", "yugabyte", "-d", "labdb"}
+		if container = strings.ReplaceAll(container, "_", "-"); container == "" {
+			container = "yb-node1"
+		}
+		return nil, []string{"/home/yugabyte/bin/ysqlsh", "-h", container, "-p", "5433", "-U", "yugabyte", "-d", "labdb"}
 	case id == "mongo" || id == "mongo8" || eng == "mongodb":
 		return nil, []string{"mongosh", "--tls", "--tlsAllowInvalidCertificates", "--tlsCertificateKeyFile", "/etc/ssl/mongo/mongodb.pem"}
 	case ctr == "pgpool" || (id == "pgpool" && !strings.HasPrefix(ctr, "pg_node")):
 		return []string{"PGPASSWORD=" + pass}, []string{"psql", "-h", "127.0.0.1", "-p", "9999", "-U", "postgres"}
 	case eng == "postgres" || strings.HasPrefix(id, "pg") || strings.HasPrefix(id, "postgres") || id == "patroni" || id == "bucardo" || id == "citus" || id == "yt-cluster":
-		return []string{"PGPASSWORD=" + pass}, []string{"psql", "-U", "postgres"}
+		a := []string{"psql", "-U", "postgres"}
+		if defaultDB != "" {
+			a = append(a, "-d", defaultDB)
+		}
+		return []string{"PGPASSWORD=" + pass}, a
 	default:
 		return []string{"MYSQL_PWD=" + pass}, []string{"sh", "-c", "if command -v mariadb >/dev/null 2>&1; then exec mariadb -uroot; else exec mysql -uroot; fi"}
 	}
@@ -54,9 +64,16 @@ func inferEngineAndID(cat *catalog.Catalog, st docker.ContainerStatus) (string, 
 		return "cockroachdb", "cockroach"
 	case strings.Contains(s, "yb") || strings.Contains(s, "yugabyte"):
 		return "yugabytedb", "yugabyte"
+	case strings.Contains(s, "mysql_node") || strings.Contains(s, "innodb"):
+		return "mysql", "innodb"
+	case strings.Contains(s, "mysql"):
+		return "mysql", st.Service
+	case strings.Contains(s, "mariadb") || strings.Contains(s, "galera") || strings.Contains(s, "percona"):
+		return "mariadb", st.Service
 	case strings.Contains(s, "pgpool"):
 		return "postgres", "pgpool"
-	case strings.Contains(s, "pg") || strings.Contains(s, "postgres") || strings.Contains(s, "citus") || strings.Contains(s, "bucardo") || strings.Contains(s, "node") || strings.Contains(s, "yt"):
+	case strings.Contains(s, "pg") || strings.Contains(s, "postgres") || strings.Contains(s, "citus") || strings.Contains(s, "bucardo") || strings.Contains(s, "yt") ||
+		strings.Contains(s, "patroni") || st.Name == "node1" || st.Name == "node2" || st.Name == "node3":
 		return "postgres", "postgres"
 	default:
 		return "mariadb", st.Service
@@ -107,7 +124,8 @@ func runClientCmd(ctx context.Context, client *docker.Client, cat *catalog.Catal
 		ctr = primary.Name
 		engine, envID = inferEngineAndID(cat, primary)
 	}
-	envVars, cmdArgs := buildClientCommand(engine, envID, ctr, pass)
+	env, _ := cat.Lookup(envID)
+	envVars, cmdArgs := buildClientCommand(engine, envID, ctr, env.DefaultDB, pass)
 	dArgs := []string{"exec", "-i"}
 	if fi, err := os.Stdin.Stat(); err == nil && (fi.Mode()&os.ModeCharDevice) != 0 {
 		dArgs = []string{"exec", "-it"}
