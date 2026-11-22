@@ -19,8 +19,8 @@ Welcome to the Multi-DB Docker Environment documentation. This index provides a 
 - [Multi-DB Docker Environment Documentation Index 📚](#multi-db-docker-environment-documentation-index-)
   - [📋 Table of Contents](#-table-of-contents)
   - [🚀 Core Documentation](#-core-documentation)
-  - [🏛️ Governance \& Orchestration](#️-governance--orchestration)
-  - [🛠️ Management \& Automation](#️-management--automation)
+  - [🏛️ Governance \& Orchestration](#-governance--orchestration)
+  - [🛠️ Management \& Automation](#-management--automation)
   - [🔄 Replication \& Galera](#-replication--galera)
   - [🐘 PostgreSQL \& HA Architectures](#-postgresql--ha-architectures)
   - [🐬 Standalone Matrix](#-standalone-matrix)
@@ -89,7 +89,7 @@ Welcome to the Multi-DB Docker Environment documentation. This index provides a 
 
 | Document | Description |
 | --- | --- |
-| **[Standalone Engines](tests.md#-00-standalone-matrix-t2-tier)** | Overview of supported standalone engines (MySQL, MariaDB, Percona, PostgreSQL). |
+| **[Standalone Engines](tests.md#00-standalone-matrix-t2-tier)** | Overview of supported standalone engines (MySQL, MariaDB, Percona, PostgreSQL). |
 
 ## 🧪 Testing & Performance
 
@@ -97,7 +97,6 @@ Welcome to the Multi-DB Docker Environment documentation. This index provides a 
 | --- | --- |
 | **[Test Cases](tests.md)** | Automated functional test descriptions, expected results, and reporting details. |
 | **[Supported Products](supported_products.md)** | Comprehensive matrix of all supported DB engines, versions, ports, and HA modes. |
-| **[Sourcery AI Audit](sourcery_ai_audit.md)** | Complete audit report of 99 code review feedback items from Sourcery AI across 36 PRs. |
 
 ---
 

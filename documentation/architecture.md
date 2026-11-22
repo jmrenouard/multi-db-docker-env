@@ -125,4 +125,4 @@ All active standalone database instances (`mysql84`, `mysql97`, `mariadb1011`, `
 - **Ports**: `3306` (MySQL/MariaDB/Percona) and `5432` (PostgreSQL) exposed via Traefik v3.
 - **PostgreSQL Data Persistence**: Named volumes (`postgres_18_data` mounted at `/var/lib/postgresql`, and `postgres_17_data`, `postgres_16_data`, `postgres_15_data` at `/var/lib/postgresql/data`).
 - **Access**: Standard `psql` client (`PGPASSWORD=$DB_ROOT_PASSWORD psql -h 127.0.0.1 -p 5432 -U postgres`).
-- **EOL Decommissioning**: End-of-Life images (`mysql:5.7`, `mysql:8.0`, `mysql:9.6`, `mariadb:10.6`, `percona/percona-server:8.0`, `traefik:v2.11`, `haproxy:2.9-alpine`) have been removed; see [supported_products.md](supported_products.md#decommissioned-versions-end-of-life).
+- **EOL Decommissioning**: End-of-Life images (`mysql:5.7`, `mysql:8.0`, `mysql:9.6`, `mariadb:10.6`, `percona/percona-server:8.0`, `traefik:v2.11`, `haproxy:2.9-alpine`) have been removed; see [supported_products.md](supported_products.md#-decommissioned-versions-end-of-life).

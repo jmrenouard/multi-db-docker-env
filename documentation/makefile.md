@@ -86,7 +86,7 @@
 | `make postgres15` | Starts PostgreSQL 15 |
 
 > [!NOTE]
-> **Decommissioned EOL Targets**: Legacy targets (`mysql57`, `mysql80`, `mysql96`, `mariadb106`, `percona80`) print their official End-of-Life date and recommended replacement, then exit with status `1`. See [supported_products.md](supported_products.md#decommissioned-versions-end-of-life).
+> **Decommissioned EOL Targets**: Legacy targets (`mysql57`, `mysql80`, `mysql96`, `mariadb106`, `percona80`) print their official End-of-Life date and recommended replacement, then exit with status `1`. See [supported_products.md](supported_products.md#-decommissioned-versions-end-of-life).
 
 ## 🌐 Galera Cluster Commands
 

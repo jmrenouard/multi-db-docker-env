@@ -864,6 +864,13 @@
 - **Applied Change / Fix**: Removed obsolete files, updated `tests/README.md` to active multi-DB suites, and pointed `ACT-001` to `../.agents/AGENTS.md`.
 - **Result & Non-Regression Test**: Verified 0 broken paths in edited files, Windows + WSL `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and `./mdb lint`.
 
+### RCA-118 -- 9 Broken GitHub GFM Heading Anchors (`<img>` in H2, `U+FE0F`, Emoji Slug Prefix)
+- **Date / Linked Action**: `2026-11-22` (`ACT-136` / Issue `#470`)
+- **Observed Symptom**: Nine `#anchor` links (`README*.md`, `architecture.md`, `makefile*.md`, `INDEX*.md`) did not resolve on GitHub because `tests*.md` embedded raw `<img>` tags inside H2 headings, `INDEX.md` retained `U+FE0F` selectors in anchors, and EOL section links omitted the leading `-` produced after the stop emoji.
+- **Root Cause Analysis**: GFM strips emojis/variation selectors while converting adjacent spaces to `-`, and raw HTML tags in headings distort slug generation.
+- **Applied Change / Fix**: Moved H2 icons below headings in `tests.md`/`tests_fr.md`, removed `U+FE0F` and `sourcery_ai_audit.md` row in `INDEX.md`, and aligned all 9 anchors with exact GFM slugs.
+- **Result & Non-Regression Test**: Verified 0 broken paths/anchors across tracked `.md` files, Windows + WSL `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

@@ -126,7 +126,7 @@ Pour démarrer une version spécifique, utilisez `make <version_db>`. Le Makefil
 | `make postgres15`  | 🐘   | Démarre PostgreSQL 15   |
 
 > [!NOTE]
-> **Décommissionnement Fin de Vie (EOL)** : MySQL 5.7, MySQL 8.0, MySQL 9.6, MariaDB 10.6, Percona Server 8.0, Traefik v2.11 et HAProxy 2.9 ont atteint leur fin de vie officielle communautaire et ont été décommissionnés. Consultez la [Matrice des Produits Supportés & Versions Décommissionnées](documentation/supported_products_fr.md#versions-décommissionnées-fin-de-vie--eol) pour les dates EOL exactes et les remplacements recommandés.
+> **Décommissionnement Fin de Vie (EOL)** : MySQL 5.7, MySQL 8.0, MySQL 9.6, MariaDB 10.6, Percona Server 8.0, Traefik v2.11 et HAProxy 2.9 ont atteint leur fin de vie officielle communautaire et ont été décommissionnés. Consultez la [Matrice des Produits Supportés & Versions Décommissionnées](documentation/supported_products_fr.md#-versions-décommissionnées-fin-de-vie--eol) pour les dates EOL exactes et les remplacements recommandés.
 
 ## 🏗️ Environnement Technique
 

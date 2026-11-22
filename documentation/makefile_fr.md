@@ -48,7 +48,7 @@
 | `make postgres15` | Démarre PostgreSQL 15 |
 
 > [!NOTE]
-> **Cibles EOL Décommissionnées** : Les anciennes cibles (`mysql57`, `mysql80`, `mysql96`, `mariadb106`, `percona80`) affichent la date officielle de fin de vie et la cible de remplacement recommandée, puis retournent `exit 1`. Voir [supported_products_fr.md](supported_products_fr.md#versions-décommissionnées-fin-de-vie--eol).
+> **Cibles EOL Décommissionnées** : Les anciennes cibles (`mysql57`, `mysql80`, `mysql96`, `mariadb106`, `percona80`) affichent la date officielle de fin de vie et la cible de remplacement recommandée, puis retournent `exit 1`. Voir [supported_products_fr.md](supported_products_fr.md#-versions-décommissionnées-fin-de-vie--eol).
 
 ## 🌐 Commandes Cluster Galera
 
