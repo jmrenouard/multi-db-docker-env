@@ -8,6 +8,8 @@ P="${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}"
 N1="pg18_birep_node1"; N2="pg18_birep_node2"; HAP="haproxy_pg18_birep"
 mkdir -p reports; REP="reports/test_pg18_birep_$(date +%Y%m%d_%H%M%S).md"
 PASS=0; FAIL=0; LIMIT=0
+TMP_LOG=$(mktemp)
+trap 'rm -f "$TMP_LOG"' EXIT
 log() { echo "$1"; echo "$1" >> "$REP"; }
 ok() { PASS=$((PASS+1)); log "[PASS] $1"; }
 bad() { FAIL=$((FAIL+1)); log "[FAIL] $1"; }
@@ -116,8 +118,10 @@ qn "$N2" "ALTER SUBSCRIPTION sub_from_node1 ENABLE;" >/dev/null
 post="$pre"; for _ in $(seq 1 10); do post="$(cs "$N2" sub_from_node1 confl_insert_exists)"; [ "$post" -gt "$pre" ] && break; sleep 1; done
 [ "$post" -gt "$pre" ] && lim "UNIQUE(email) conflict stalled apply (confl_insert_exists $pre->$post, 23505)" || bad "UNIQUE missed"
 qn "$N2" "DELETE FROM accounts WHERE id=9102;" >/dev/null; weq "$N2" "SELECT id FROM accounts WHERE email='dup@lab';" "9101" 15 || true
+qn "$N1" "ALTER SUBSCRIPTION sub_from_node2 ENABLE;" >/dev/null; sleep 2; skerr "$N1" "sub_from_node2"
+weq "$N1" "SELECT count(*) FROM pg_stat_subscription WHERE subname='sub_from_node2' AND pid IS NOT NULL;" "1" 15 || bad "sub_from_node2 stalled after 9102"
 
-psub "$N2" "sub_from_node1"
+psub "$N1" "sub_from_node2"; psub "$N2" "sub_from_node1"
 qn "$N2" "INSERT INTO accounts (id,owner,email,balance) VALUES (9201,'m1','m1@lab',10),(9202,'m2','m2@lab',20);" >/dev/null
 qn "$N1" "INSERT INTO accounts (id,owner,email,balance) VALUES (9201,'m_both','m2@lab',30);" >/dev/null
 qn "$N2" "ALTER SUBSCRIPTION sub_from_node1 ENABLE;" >/dev/null
@@ -126,6 +130,7 @@ muc=0; for _ in $(seq 1 10); do muc="$(cs "$N2" sub_from_node1 confl_multiple_un
 qn "$N2" "DELETE FROM accounts WHERE id IN (9201,9202);" >/dev/null
 weq "$N2" "SELECT owner FROM accounts WHERE id=9201;" "m_both" 15 || true
 qn "$N1" "ALTER SUBSCRIPTION sub_from_node2 ENABLE;" >/dev/null; sleep 2; skerr "$N1" "sub_from_node2"
+weq "$N1" "SELECT count(*) FROM pg_stat_subscription WHERE subname='sub_from_node2' AND pid IS NOT NULL;" "1" 15 && ok "sub_from_node2 worker recovered" || bad "sub_from_node2 stalled after 9201"
 
 # 8. DDL, T18 sequence probe, local features, and outage catch-up
 for n in "$N1" "$N2"; do qn "$n" "CREATE TABLE IF NOT EXISTS ddl_probe (id INT PRIMARY KEY, v TEXT);" >/dev/null; done
@@ -140,9 +145,9 @@ echo "$(qraw "$N1" "CREATE PUBLICATION p_seq FOR ALL SEQUENCES;")" | grep -q "42
     && lim "PG 18.6 FOR ALL SEQUENCES rejected (42601)" || bad "Expected 42601"
 qn "$N1" "SELECT pg_advisory_lock(4242); SELECT pg_sleep(4);" >/dev/null 2>&1 & lp=$!; sleep 1
 [ "$(qn "$N2" "SELECT pg_try_advisory_lock(4242);")" = "t" ] && lim "pg_advisory_lock node-local" || bad "Advisory lock"; wait "$lp" || true
-docker exec -e PGPASSWORD="$P" "$N2" bash -c "psql -U '$U' -d '$D' -c 'LISTEN ch_b18; SELECT pg_sleep(3);'" >/tmp/lb18.out 2>&1 & lnp=$!; sleep 1
+docker exec -e PGPASSWORD="$P" "$N2" bash -c "psql -U '$U' -d '$D' -c 'LISTEN ch_b18; SELECT pg_sleep(3);'" >"$TMP_LOG" 2>&1 & lnp=$!; sleep 1
 qn "$N1" "NOTIFY ch_b18, 'cross';" >/dev/null; wait "$lnp" || true
-! grep -q "cross" /tmp/lb18.out && lim "LISTEN/NOTIFY node-local" || bad "Unexpected NOTIFY"; rm -f /tmp/lb18.out
+! grep -q "cross" "$TMP_LOG" && lim "LISTEN/NOTIFY node-local" || bad "Unexpected NOTIFY"
 te="$(qraw "$N1" "CREATE TEMP TABLE tmp_b18 (x INT); INSERT INTO tmp_b18 VALUES (1);")"
 [ "$(qn "$N2" "SELECT count(*) FROM information_schema.tables WHERE table_name='tmp_b18';")" = "0" ] && ! echo "$te" | grep -q "ERROR:" && ok "TEMP TABLE session-local" || bad "TEMP TABLE"
 

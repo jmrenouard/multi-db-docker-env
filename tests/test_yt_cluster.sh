@@ -2,7 +2,7 @@
 # YT Cluster 1.21.3 live L1-L8, T11-T18, and T_REVERT suite.
 set -euo pipefail
 [ -f .env ] && { set -a; . ./.env; set +a; }
-export YT_USER="${PG_USER:-postgres}" YT_DB="${PG_DB:-labdb}" YT_PASS="${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}" YT_WITH_REVERT="${YT_WITH_REVERT:-0}" YT_CSV_OUT="${YT_CSV_OUT:-}" PYTHONDONTWRITEBYTECODE=1
+export YT_USER="${PG_USER:-postgres}" YT_DB="${PG_DB:-labdb}" YT_PASS="${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}" YT_WITH_REVERT="${YT_WITH_REVERT:-0}" YT_CSV_OUT="${YT_CSV_OUT:-}" PYTHONDONTWRITEBYTECODE=1
 for a in "$@"; do case "$a" in --with-revert) YT_WITH_REVERT=1 ;; --csv=*) YT_CSV_OUT="${a#--csv=}" ;; esac; done
 exec python3 - <<'PY'
 import csv,os,re,subprocess as sp,sys,threading as th,time

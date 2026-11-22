@@ -70,7 +70,7 @@ SPECS = [
     ("yugabyte", "YugabyteDB 2026.1.3 DocDB Raft (RF=3)", "raft_yb",
      "docker-compose-yugabyte.yml", [], ["bash", "scripts/yugabyte/setup_yugabyte.sh"],
      [nd("yb_node1", "yb-node1", 5433, "yugabyte", ""), nd("yb_node2", "yb-node2", 5433, "yugabyte", ""), nd("yb_node3", "yb-node3", 5433, "yugabyte", "")], "yb_node2"),
-    ("cockroach", "CockroachDB v24.3.0 Pebble Raft (RF=3)", "raft_crdb",
+    ("cockroach", "CockroachDB v25.4 Pebble Raft (RF=3)", "raft_crdb",
      "docker-compose-cockroach.yml", [], ["bash", "scripts/cockroach/setup_cockroach.sh"],
      [nd("crdb_node1", "crdb_node1", 26257, "root", ""), nd("crdb_node2", "crdb_node2", 26257, "root", ""), nd("crdb_node3", "crdb_node3", 26257, "root", "")], "crdb_node2"),
 ]
