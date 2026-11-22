@@ -920,6 +920,13 @@
 - **Applied Change / Fix**: Split oversized items into active short sentences, removed semicolons/`via`/`Performs`/`e.g.`, updated `restore_physical.sh` caution phrasing, and added Section 6 cross-links in `architecture.md`.
 - **Result & Non-Regression Test**: Verified `ste_check.py` (0 errors on both files), 0 forbidden words, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-126 -- `tests.md` STE Violations and Missing Test Reports / Architecture Sections in `tests_fr.md`
+- **Date / Linked Action**: `2026-11-22` (`ACT-145` / Issue `#488`)
+- **Observed Symptom**: `documentation/tests.md` contained passive voice (`is correctly signed by`), `via`/`Ensure/Ensures`/`e.g.`, and contractions/possessives, while `documentation/tests_fr.md` omitted the `Rapports de Tests` and `Informations d'Architecture` sections and used `via` and `etc.`.
+- **Root Cause Analysis**: Test documentation predated automated bilingual parity and STE structural enforcement.
+- **Applied Change / Fix**: Rewrote flagged bullets to active STE style in `tests.md`, added both missing top sections in `tests_fr.md` matching `tests.md`, and eliminated `via` and `etc.` while keeping existing `#00-*` anchors unchanged.
+- **Result & Non-Regression Test**: Verified 0 STE errors across both EN and FR files (`ste_check.py --mode procedural --no-vocab`), Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

@@ -25,44 +25,44 @@ For more details on the cluster topology, refer to the **[Architecture Documenta
 | :---: | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="25" height="25"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="25" height="25"> | <img src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/percona.svg" alt="Percona" width="25" height="25"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="25" height="25"> |
 
-Verified on **2026-01-29**, this suite ensures that all standalone database engines are fully functional.
+Verified on **2026-01-29**, this suite validates all standalone database engines.
 
 ### Test Cases
 
-1. **Service Lifecycle**: Starts each DB service (MySQL, MariaDB, Percona, PostgreSQL) and verifies process health.
+1. **Service Lifecycle**: Starts each DB service (MySQL, MariaDB, Percona, PostgreSQL) and checks process health.
 2. **Data Integrity**: Injects `employees` and `sakila` sample databases.
-3. **Authentication Audit**: Verifies that the `DB_ROOT_PASSWORD` is correctly applied across all versions.
-4. **Connectivity**: Ensures Traefik correctly routes to the active instance on port `3306` (MySQL/MariaDB) or `5432` (PostgreSQL).
+3. **Authentication Audit**: Checks that `DB_ROOT_PASSWORD` applies across all versions.
+4. **Connectivity**: Checks Traefik routing to the active instance on port `3306` (MySQL/MariaDB) or `5432` (PostgreSQL).
 
 ## ⚙️ 0. Configuration & Security (`make test-config`)
 
-This suite validates the environment's integrity before starting any containers.
+This suite checks environment integrity before you start any containers.
 
 ### Test Cases
 
-1. **Environment Consistency**: Ensures `.env` exists and contains critical secrets (e.g., `DB_ROOT_PASSWORD`).
-2. **Directory Structure**: Verifies the presence of key directories: `scripts/`, `conf/`, `tests/`, `documentation/`.
-3. **Docker Compose Validation**: Runs `docker compose config` on all orchestration files to prevent syntax regressions.
-4. **Configuration Inventory**: Ensures all `.cnf`, `.cfg`, and `.sql` files are present in the `conf/` directory.
-5. **Script Permissions**: Audits `scripts/` and `tests/` directories for correct execution bits.
+1. **Environment Consistency**: Checks that `.env` exists and defines required passwords (for example, `DB_ROOT_PASSWORD`).
+2. **Directory Structure**: Checks key directories (`scripts/`, `conf/`, `tests/`, `documentation/`).
+3. **Docker Compose Validation**: Runs `docker compose config` on all Compose files to prevent syntax errors.
+4. **Configuration Inventory**: Checks all `.cnf`, `.cfg`, and `.sql` files in `conf/`.
+5. **Script Permissions**: Audits `scripts/` and `tests/` for execution permissions.
 6. **SSL Security Audit**:
-   - Validates that the SSL certificate chain is correctly signed by the local CA.
+   - Checks that the local CA signs the SSL certificate chain.
    - Checks certificate expiry dates.
-   - **Key Consistency**: Cryptographically verifies that the `server-key.pem` matches the `server-cert.pem`.
-7. **Profile Integrity**: Ensures `profile_galera` and `profile_repli` are correctly generated with functional aliases.
+   - **Key Consistency**: Checks that `server-key.pem` matches `server-cert.pem`.
+7. **Profile Integrity**: Checks that `profile_galera` and `profile_repli` define valid shell aliases.
 
 ## 🌐 1. Galera Test Suite (`test_galera.sh`)
 
 ### Test Cases
 
-1. **Connectivity & Status**: Verifies all 3 nodes are UP, `wsrep_ready=ON`, and cluster size is 3.
+1. **Connectivity & Status**: Checks that all 3 nodes are UP, `wsrep_ready=ON`, and cluster size equals 3.
 2. **Synchronous Replication**:
    - Write on Node 1 -> Read on Node 2 and Node 3.
    - Write on Node 3 -> Read on Node 1.
-3. **Auto-increment Consistency**: Ensures each node uses a different offset to avoid ID collisions.
-4. **Certification Conflict (Optimistic Locking)**: Simulates simultaneous updates on the same row across different nodes to trigger a deadlock/certification failure.
-5. **DDL Replication**: Runs `ALTER TABLE` on one node and verifies schema changes on others.
-6. **Unique Key Constraint**: Verifies that duplicate entry errors are correctly propagated and handled.
+3. **Auto-increment Consistency**: Checks that each node uses a unique offset to avoid ID collisions.
+4. **Certification Conflict (Optimistic Locking)**: Simulates concurrent updates on the same row across different nodes to trigger a certification failure.
+5. **DDL Replication**: Runs `ALTER TABLE` on one node and checks schema changes on other nodes.
+6. **Unique Key Constraint**: Checks that duplicate entry errors propagate across nodes.
 7. **Configuration Verification**: Validates that **Performance Schema** and **Slow Query Log** are active.
 8. **Galera Provider Audit**: Compares current `wsrep_provider_options` against best practices.
 9. **SSL Expiry**: Checks if certificates expire in less than 30 days.
@@ -100,9 +100,9 @@ This suite validates the environment's integrity before starting any containers.
 
 ## 🏎️ 3. Performance Tests (Sysbench)
 
-Executed via `test_perf_galera.sh` or `test_perf_repli.sh`.
+Run `test_perf_galera.sh` or `test_perf_repli.sh`.
 
-- **Output**: Generates a high-quality HTML report (e.g., `test_perf_galera.html`).
+- **Output**: Generates an interactive HTML report (for example, `test_perf_galera.html`).
 - **Metrics**: TPS (Transactions Per Second), Latency (95th percentile), and Error rates.
 
 ---
@@ -111,14 +111,14 @@ Executed via `test_perf_galera.sh` or `test_perf_repli.sh`.
 
 ### Test Cases
 
-1. **Backend Health**: Verifies the state (UP/DOWN) of each MariaDB node via HAProxy's Stats API.
-2. **Latency Benchmark**: Compares the average query latency through the Load Balancer vs direct node connection.
-3. **Persistence Detection**: Identifies if HAProxy is configured with Round-Robin or Sticky sessions.
+1. **Backend Health**: Checks the UP/DOWN state of each MariaDB node with the HAProxy Stats API.
+2. **Latency Benchmark**: Compares average query latency between the Load Balancer and direct node access.
+3. **Persistence Detection**: Checks whether HAProxy uses Round-Robin or Sticky sessions.
 4. **Failover Simulation**:
-   - Real-world shutdown of a MariaDB container (`docker stop`).
-   - Verifies SQL query continuity during the outage.
-   - Automatic node restart.
+   - Stops one MariaDB container (`docker stop`).
+   - Checks SQL query continuity during the outage.
+   - Restarts the stopped node automatically.
 
 ### Premium Reports
 
-Like other tests, this suite generates an elegant HTML report showing performance overhead and failover statistics.
+This suite also generates an HTML report with latency overhead and failover metrics.

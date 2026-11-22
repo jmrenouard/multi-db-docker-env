@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-145 -- Align `tests.md` and `tests_fr.md` with ASD-STE100 and Section Parity (`#488`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:30Z` | Issue `#488` | `docs/issue-488-ste-tests-parity`
+- **Request**: Bring `documentation/tests.md` and `documentation/tests_fr.md` to 0 STE procedural errors and 0 forbidden words (`via`, `ensure`, `e.g.`, `etc.`), and add missing `Rapports de Tests` and `Informations d'Architecture` sections in `tests_fr.md`.
+- **Changes**: Removed passive voice (`is correctly signed by`), `via`/`Ensure/Ensures`/`e.g.` and possessives in `tests.md`; added `Rapports de Tests` and `Informations d'Architecture` sections matching `tests.md` and replaced `via`/`etc.`/`S'assure` in `tests_fr.md`; logged `RCA-126`.
+- **Result**: Verified `ste_check.py --mode procedural --no-vocab` (0 errors on both EN and FR files), 0 forbidden words, intact `#00-*` anchors, Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-144 -- Align `scripts.md` and `architecture.md` with ASD-STE100 and Cluster Cross-Links (`#486`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:24Z` | Issue `#486` | `docs/issue-486-ste-scripts-architecture`
 - **Request**: Bring `documentation/scripts.md` (procedural mode) and `documentation/architecture.md` (mixed mode) to 0 STE errors and 0 forbidden words (`via`, `ensure`, `perform`, `e.g.`), linking shared TLS and PostgreSQL HA guides.
