@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-147 -- Align `supported_products_fr.md` with ASD-STE100 (`#492`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:40Z` | Issue `#492` | `docs/issue-492-ste-supported-products-fr`
+- **Request**: Bring `documentation/supported_products_fr.md` to 0 STE procedural errors and 0 `via`/forbidden words while preserving the French EOL H2 anchor and verified EOL data.
+- **Changes**: Split semicolon-heavy PostgreSQL multi-master bullet into <= 20-word bullets, rewrote EOL intro paragraph to <= 20-word active sentences, and replaced `via` with `(Traefik)` / `avec` in `documentation/supported_products_fr.md`; logged `RCA-128`.
+- **Result**: Verified `ste_check.py --mode procedural --lang fr --no-vocab documentation/supported_products_fr.md` (0 errors, 0 warnings), 0 `via`/forbidden words, intact EOL anchor, Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-146 -- Align `supported_products.md` with ASD-STE100 (`#490`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:36Z` | Issue `#490` | `docs/issue-490-ste-supported-products`
 - **Request**: Bring `documentation/supported_products.md` to 0 STE procedural errors and 0 `via`/forbidden words while preserving existing EOL H2 anchors and verified engine versions (`supported_products_fr.md` split to next atomic PR).

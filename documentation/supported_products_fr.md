@@ -6,8 +6,8 @@ Référence complète de tous les moteurs de bases de données et composants d'i
 
 | Version | Image Docker | Port Standalone | TLS | Fenêtre de support / EOL | Statut |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 9.7 LTS | `mysql:9.7` | `3306` (via Traefik) | ❌ | 2031-04-30 (Ext. 2034-04-30) | ✅ Vérifié |
-| 8.4 LTS | `mysql:8.4` | `3306` (via Traefik) | ❌ | 2029-04-30 (Ext. 2032-04-30) | ✅ Vérifié |
+| 9.7 LTS | `mysql:9.7` | `3306` (Traefik) | ❌ | 2031-04-30 (Ext. 2034-04-30) | ✅ Vérifié |
+| 8.4 LTS | `mysql:8.4` | `3306` (Traefik) | ❌ | 2029-04-30 (Ext. 2032-04-30) | ✅ Vérifié |
 
 **Mode HA** : InnoDB Cluster (3 nœuds MySQL 8.4 LTS Group Replication + HAProxy)
 
@@ -15,10 +15,10 @@ Référence complète de tous les moteurs de bases de données et composants d'i
 
 | Version | Image Docker | Port Standalone | TLS | EOL Communautaire | Statut |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 12.3 LTS | `mariadb:12.3` | `3306` (via Traefik) | ✅ (cluster) | 2029-06-12 | ✅ Vérifié |
-| 11.8 LTS | `mariadb:11.8` | `3306` (via Traefik) | ✅ (cluster) | 2028-06-04 | ✅ Vérifié |
-| 11.4 LTS | `mariadb:11.4` | `3306` (via Traefik) | ✅ (cluster) | 2029-05-29 | ✅ Vérifié |
-| 10.11 LTS | `mariadb:10.11` | `3306` (via Traefik) | ✅ (cluster) | 2028-02-16 | ✅ Vérifié |
+| 12.3 LTS | `mariadb:12.3` | `3306` (Traefik) | ✅ (cluster) | 2029-06-12 | ✅ Vérifié |
+| 11.8 LTS | `mariadb:11.8` | `3306` (Traefik) | ✅ (cluster) | 2028-06-04 | ✅ Vérifié |
+| 11.4 LTS | `mariadb:11.4` | `3306` (Traefik) | ✅ (cluster) | 2029-05-29 | ✅ Vérifié |
+| 10.11 LTS | `mariadb:10.11` | `3306` (Traefik) | ✅ (cluster) | 2028-02-16 | ✅ Vérifié |
 
 **Modes HA** :
 - Cluster Galera (3 nœuds, réplication synchrone, ports 3511-3513)
@@ -28,21 +28,23 @@ Référence complète de tous les moteurs de bases de données et composants d'i
 
 | Version | Image Docker | Port Standalone | TLS | EOL Communautaire | Statut |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 8.4 LTS | `percona/percona-server:8.4` | `3306` (via Traefik) | ❌ | 2029-04-30 | ✅ Vérifié |
+| 8.4 LTS | `percona/percona-server:8.4` | `3306` (Traefik) | ❌ | 2029-04-30 | ✅ Vérifié |
 
 ## 🐘 PostgreSQL
 
 | Version | Image Docker | Port Standalone | TLS | EOL Communautaire | Statut |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 18 | `postgres:18` | `5432` (via Traefik) | ❌ | 2030-11-14 | ✅ Vérifié |
-| 17 | `postgres:17` | `5432` (via Traefik) | ❌ | 2029-11-08 | ✅ Vérifié |
-| 16 | `postgres:16` | `5432` (via Traefik) | ❌ | 2028-11-09 | ✅ Vérifié |
-| 15 | `postgres:15` | `5432` (via Traefik) | ❌ | 2027-11-11 | ✅ Vérifié |
+| 18 | `postgres:18` | `5432` (Traefik) | ❌ | 2030-11-14 | ✅ Vérifié |
+| 17 | `postgres:17` | `5432` (Traefik) | ❌ | 2029-11-08 | ✅ Vérifié |
+| 16 | `postgres:16` | `5432` (Traefik) | ❌ | 2028-11-09 | ✅ Vérifié |
+| 15 | `postgres:15` | `5432` (Traefik) | ❌ | 2027-11-11 | ✅ Vérifié |
 
 **Modes HA, Réplication & Multi-Maître (31/31 Environnements Actifs Vérifiés E2E)** :
-- Cluster Patroni (3 PG 17 + 3 etcd 3.5.17 + HAProxy LTS, ports 5000/5001/7000 HTTPS, mTLS) : Dockerfiles autonomes non-root (`scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}`), construits automatiquement par `./mdb up patroni` ou `./mdb images build patroni` — aucune image pré-construite externe requise (voir [patroni_cluster.md](patroni_cluster.md)).
+- Cluster Patroni (3 PG 17 + 3 etcd 3.5.17 + HAProxy LTS, ports 5000/5001/7000 HTTPS, mTLS) : Dockerfiles autonomes non-root (`scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}`), construits automatiquement par `./mdb up patroni` ou `./mdb images build patroni` — aucune image externe requise (voir [patroni_cluster.md](patroni_cluster.md)).
 - Cluster PgPool-II (3 PG 17 + PgPool 4.4.3 + HAProxy, ports 5100/5101/8406)
-- Réplication, Multi-Maître & SQL Distribué (13 piles PG Compose, `v2.1.0`–`v2.5.0`) : `pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster` ([`dbinvent/yt:1.21.3`](https://hub.docker.com/r/dbinvent/yt), PG 18.7 ; MIT [`DBinvent/yt-cluster-lite`](https://github.com/DBinvent/yt-cluster-lite) mono-BDD vs PolyForm Noncommercial 1.0.0 / Commercial `ytserv`/`ytctl` ; [Présentation](https://dbinvent.com/30p) · [`agent.md`](https://dbinvent.com/agent.md) · [Jepsen `1.20.1`](https://dbinvent.com/cluster/articles/jepsen) `cursor-stability`, `51` -> `49/49`), `pgedge` (Spock 5), `bucardo`, `citus` (14.2), `cockroach` (`latest-v25.4`), `yugabyte` (`2026.1.3`) — voir [pg_multimaster_fr.md](pg_multimaster_fr.md). Utilisez `./mdb catalog` (`31` actifs + `5` EOL) ou `./mdb up <env>`.
+- Réplication, Multi-Maître & SQL Distribué (13 piles PG Compose, `v2.1.0`–`v2.5.0`) : `pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster` ([`dbinvent/yt:1.21.3`](https://hub.docker.com/r/dbinvent/yt), PG 18.7), `pgedge` (Spock 5), `bucardo`, `citus` (14.2), `cockroach` (`latest-v25.4`), `yugabyte` (`2026.1.3`).
+- Licences & Benchmarks `yt-cluster` : MIT [`DBinvent/yt-cluster-lite`](https://github.com/DBinvent/yt-cluster-lite) mono-BDD vs PolyForm Noncommercial 1.0.0 / Commercial (`ytserv`/`ytctl`). Voir [Présentation](https://dbinvent.com/30p), [`agent.md`](https://dbinvent.com/agent.md), [Jepsen `1.20.1`](https://dbinvent.com/cluster/articles/jepsen) (`cursor-stability`, `51` -> `49/49`) et [pg_multimaster_fr.md](pg_multimaster_fr.md).
+- Accès CLI Unifié : Utilisez `./mdb catalog` (`31` actifs + `5` EOL) ou `./mdb up <env>`.
 
 ## 🍃 MongoDB
 
@@ -63,11 +65,11 @@ Référence complète de tous les moteurs de bases de données et composants d'i
 | HAProxy | `haproxy:lts` / `haproxy:lts-alpine` | Répartiteur de charge TCP pour les clusters HA | Par cluster (voir docs) |
 | ETCD | `quay.io/coreos/etcd:v3.5.17` (`scripts/patroni/Dockerfile.etcd`) | Consensus distribué pour Patroni (`patroni-rhel8-etcd:latest`) | `2379`, `2380` |
 
-> **Inventaire des Images E2E (`./mdb images`)** : Les **31** images Docker E2E requises (`7` images personnalisées autonomes : `mariadb_ssh:004`, `multi-db-bucardo-{pg17,daemon}:latest`, `patroni-rhel8-{etcd,postgresql,haproxy}:latest`, `multi-db-pgbench-sysbench:latest` ; plus `24` images upstream épinglées couvrant standalone, clusters et helpers de test) sont gérées via `./mdb images list|build|pull|check` (`make build-images`, `make pull-images`, `make check-images`).
+> **Inventaire des Images E2E (`./mdb images`)** : Gérez les **31** images Docker E2E requises (`7` builds personnalisés : `mariadb_ssh:004`, `multi-db-bucardo-{pg17,daemon}:latest`, `patroni-rhel8-{etcd,postgresql,haproxy}:latest`, `multi-db-pgbench-sysbench:latest`, plus `24` images upstream épinglées) avec `./mdb images list|build|pull|check` (`make build-images`, `make pull-images`, `make check-images`).
 
 ## 🛑 Versions Décommissionnées (Fin de Vie / EOL)
 
-Les versions suivantes ont atteint leur fin de vie officielle communautaire (End-of-Life) et ont été retirées des stacks Compose actifs et des menus CLI. `./mdb catalog --eol` les liste, et `./mdb up <eol>` ou les anciennes cibles `Makefile` retournent `exit 1` avec la date EOL officielle et le remplacement recommandé.
+Ces versions ont atteint leur fin de vie officielle (EOL) et quittent les stacks Compose actifs. Exécutez `./mdb catalog --eol` pour les lister. `./mdb up <eol>` et les anciennes cibles `Makefile` retournent `exit 1` avec la date EOL et le remplacement.
 
 | Produit | Version Décommissionnée | Date EOL Officielle | Note de Décommissionnement | Remplacement Recommandé |
 | :--- | :--- | :--- | :--- | :--- |
