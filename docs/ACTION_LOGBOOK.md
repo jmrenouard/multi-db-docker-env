@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-141 -- Complete 13-Section French Parity and `ATTENTION` Block in `makefile_fr.md` (`#480`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:09Z` | Issue `#480` | `docs/issue-480-makefile-fr-parity-attention`
+- **Request**: Add ASD-STE100 Rule 7.1-7.3 `ATTENTION :` safety block covering `clean-data`/`clean-galera`/`clean-repli` and bring `documentation/makefile_fr.md` to 13-section parity with `documentation/makefile.md` (`0` STE errors).
+- **Changes**: Added `ATTENTION :` block and missing Data Injection, Troubleshooting & Logs, Patroni, PgPool-II, InnoDB Cluster, MongoDB ReplicaSet, MySQLTuner, and PG 13-stack sections/targets to `documentation/makefile_fr.md`; logged `RCA-122`.
+- **Result**: Verified `ste_check.py --mode procedural --lang fr --no-vocab documentation/makefile_fr.md` (0 errors, 0 warnings), Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-140 -- Align `README_fr.md` with STE (0 Errors) and `v2.6.2` (`#478`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:03Z` | Issue `#478` | `docs/issue-478-ste-readme-fr-sync`
 - **Request**: Resolve STE procedural violations (`<= 20` words, 0 semicolons, 0 `via`/weak modals) and stale `v2.5.0`/`v2.6.1` tags in `README_fr.md`.
