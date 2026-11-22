@@ -948,6 +948,13 @@
 - **Applied Change / Fix**: Converted logo blocks to Markdown pipe tables in both index pages, fixed `INDEX.md` `-ing` lines/anchors, and added a concise language note in `INDEX_fr.md`.
 - **Result & Non-Regression Test**: Verified 0 STE errors/warnings (`ste_check.py --mode mixed --no-vocab`), all TOC anchors and relative paths resolving, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-130 -- `documentation/INDEX.md` Thematic Sections Replaced with Diataxis Quadrants
+- **Date / Linked Action**: `2026-11-22` (`ACT-149` / Issue `#496`)
+- **Observed Symptom**: `documentation/INDEX.md` mixed tutorials, runbooks, references, and explanations across thematic H2s (`Management`, `Replication`, `Testing`), hiding learning vs operational vs lookup paths.
+- **Root Cause Analysis**: Index evolved incrementally per engine stack without Diataxis four-quadrant separation (`INDEX_fr.md` follows in the next atomic PR).
+- **Applied Change / Fix**: Grouped all documents under `Tutorials & Quickstart`, `How-To Guides`, `Reference`, and `Explanation` with `U+FE0F`-free GFM TOC anchors.
+- **Result & Non-Regression Test**: Verified 0 STE errors/warnings, 0 broken links/anchors, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
