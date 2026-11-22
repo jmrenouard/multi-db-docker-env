@@ -815,6 +815,13 @@
 - **Applied Change / Fix**: Extracted `scripts/pg_common/setup_birep.sh` backed by `lib.sh` (`wait_pg_nodes`, `esc_conn_val`) and converted both entry points into thin wrappers, completing `#191.20`.
 - **Result & Non-Regression Test**: Verified `bash -n`, mock-docker smoke test, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
 
+### RCA-111 -- Missing HAProxy Docker Resolvers, L7 Checks & Distributed PG Healthchecks
+- **Date / Linked Action**: `2026-11-22` (`ACT-129` / Issue `#456`)
+- **Observed Symptom**: `pg_birep`, `pg18_birep`, and `pgedge` HAProxy configs lacked `resolvers docker` / `init-addr` (failing offline `-c` resolution and risking stale container IPs) and used raw TCP checks alongside `yugabyte`; `yb_node3`, `crdb_node1..3`, and all 5 HAProxy services lacked `healthcheck`s, `haproxy_yugabyte` waited only on `yb_node1`, and `haproxy_pgedge` omitted stats port `15459:8404`.
+- **Root Cause Analysis**: Initial Compose/HAProxy templates omitted Docker DNS resolver stanzas, Layer-7 protocol probes, and uniform health/port definitions across stacks.
+- **Applied Change / Fix**: Added `resolvers docker`, `init-addr last,libc,none resolvers docker`, and `option pgsql-check` across all PG/Yugabyte HAProxy configs; added `yb_node3` + `crdb_node1..3` (`/health?ready=1`) + all 5 HAProxy `:8404/stats` healthchecks, `yb_node1..3` `service_healthy` dependencies on `haproxy_yugabyte`, and `127.0.0.1:15459:8404` on `haproxy_pgedge`.
+- **Result & Non-Regression Test**: Verified all 5 `haproxy -c -f` checks, `docker compose config -q`, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

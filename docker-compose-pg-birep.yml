@@ -99,6 +99,11 @@ services:
         condition: service_healthy
       pg_birep_node2:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8404/stats >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks:
       - pg_birep_net
 
