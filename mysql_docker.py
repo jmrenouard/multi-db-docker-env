@@ -2,6 +2,7 @@
 
 Prefer './mdb' (or 'mdb.cmd' on Windows) as the single unified CLI entry point.
 """
+# shortcut: Deprecated legacy Python wrapper kept for external CI/course scripts; remove in v3.0 per IDEA-012.
 
 import argparse
 import secrets

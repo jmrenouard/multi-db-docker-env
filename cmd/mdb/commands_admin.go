@@ -15,6 +15,8 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
 )
 
+var injectMaxAttempts, injectPollInterval = 30, 2 * time.Second
+
 func runInjectCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalog, args []string) error {
 	if len(args) < 1 {
 		return errors.New("usage: mdb inject <employees|sakila> [service]")
@@ -47,19 +49,29 @@ func runInjectCmd(ctx context.Context, client *docker.Client, cat *catalog.Catal
 	}
 	ctr, _, _ := resolveEnvContainer(ctx, client, cat, target)
 	if strings.EqualFold(target, "repli") {
-		if names, err := client.PS(ctx, "name=mariadb_01"); err == nil && len(names) > 0 {
-			ctr = names[0]
-		}
+		ctr = client.ResolveContainer(ctx, "mariadb_01")
 	}
 	if running, err := client.IsRunning(ctx, ctr); err != nil || !running {
 		return fmt.Errorf("container %s is not running", ctr)
 	}
 	pass := loadPasswordWarn(os.Stderr)
-	for i := 0; i < 30; i++ {
-		if _, err := client.Exec(ctx, ctr, []string{"MYSQL_PWD=" + pass}, "sh", "-c", "mariadb -uroot -e 'SELECT 1' >/dev/null 2>&1 || mysql -uroot -e 'SELECT 1' >/dev/null 2>&1"); err == nil {
+	ready := false
+	var lastErr error
+	for i := 0; i < injectMaxAttempts; i++ {
+		if _, lastErr = client.Exec(ctx, ctr, []string{"MYSQL_PWD=" + pass}, "sh", "-c", "mariadb -uroot -e 'SELECT 1' >/dev/null 2>&1 || mysql -uroot -e 'SELECT 1' >/dev/null 2>&1"); lastErr == nil {
+			ready = true
 			break
 		}
-		time.Sleep(2 * time.Second)
+		if i+1 < injectMaxAttempts {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(injectPollInterval):
+			}
+		}
+	}
+	if !ready {
+		return fmt.Errorf("container %s not ready for SQL injection after %d attempts: %w", ctr, injectMaxAttempts, lastErr)
 	}
 	if _, err := os.Stat(filepath.Join("test_db", "employees", "employees.sql")); err != nil {
 		if err := streamCommand(ctx, nil, nil, os.Stdout, os.Stderr, "git", "submodule", "update", "--init", "--recursive", "test_db"); err != nil {
@@ -141,6 +153,7 @@ func runAuditCmd(ctx context.Context, args []string) error {
 	return nil
 }
 
+// shortcut: Assumes /mnt/<drive> WSL automount; use wslpath -u for custom wsl.conf automount.root.
 func wslMountPath(p string) string {
 	if len(p) >= 2 && p[1] == ':' {
 		return "/mnt/" + strings.ToLower(p[:1]) + strings.ReplaceAll(p[2:], `\`, "/")
