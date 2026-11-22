@@ -36,10 +36,7 @@ func planSetup(cat *catalog.Catalog, target string) (string, []string, []string,
 	if env.SetupScript == "" {
 		return "", nil, nil, false, nil
 	}
-	if strings.EqualFold(env.ID, "mongo8") {
-		return env.SetupScript, []string{"mongo8_n1", "mongo8_n2", "mongo8_n3"}, []string{"MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3"}, true, nil
-	}
-	return env.SetupScript, nil, nil, true, nil
+	return env.SetupScript, env.SetupArgs, env.SetupEnv, true, nil
 }
 
 func withDefaultPasswordEnv(base []string) []string {
@@ -201,12 +198,8 @@ func runTestCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalog
 		if _, err := os.Stat(script); err != nil {
 			return fmt.Errorf("suite %s not found: %w", script, err)
 		}
-		var sEnv, sArgs []string
-		if strings.EqualFold(name, "mongo8") {
-			sEnv = []string{"MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3"}
-			sArgs = []string{"mongo8_n1", "mongo8_n2", "mongo8_n3"}
-		}
-		return execFn(ctx, withDefaultPasswordEnv(sEnv), nil, stdout, stderr, "bash", append([]string{script}, sArgs...)...)
+		env, _ := cat.Lookup(name)
+		return execFn(ctx, withDefaultPasswordEnv(env.SetupEnv), nil, stdout, stderr, "bash", append([]string{script}, env.SetupArgs...)...)
 	}
 	return nil
 }

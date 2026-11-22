@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-121 -- Deduplicate `mdb` Container and Setup Lookups via Catalog (`#433`)
+- **Timestamp / Issue / Branch**: `2026-11-22T00:54Z` | Issue `#433` | `refactor/issue-433-mdb-catalog-ssot-dedup`
+- **Request**: Read `defaultContainer` and `mongo8` setup/test metadata from `pkg/catalog`, delegate `resolveEnvContainer` to `client.ResolveContainer`, and delete `pickContainerName`/`resolveContainer` (Slice 4C of `#415` -> `#432` -> `#433`).
+- **Changes**: Updated `cmd/mdb/main.go`, `cmd/mdb/commands_ops.go`, `cmd/mdb/commands_lint.go`, `cmd/mdb/main_test.go`, and `RCA-103`.
+- **Result**: `go test -count=1 ./...` (`11/11`), `go vet ./...`, `go run ./cmd/mdb lint` (`70 shell scripts + 21 Compose files`), `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped) pass; PR diff `< 15,000` chars.
+
 ### ACT-120 -- Bound Standby `pg_basebackup` Retries, Escape `conninfo` & Fix `DB_ROOT_PASSWORD` Order (`#440`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:49Z` | Issue `#440` | `fix/issue-440-standby-retries-creds-precedence`
 - **Request**: Escape `primary_conninfo` credentials, move `rm -rf` inside bounded 30-attempt `pg_basebackup` loops, and standardize `${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}` order.
