@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-130 -- Expand Static Guard for HAProxy L7/Resolvers & Compose Health Parity (`#458`)
+- **Timestamp / Issue / Branch**: `2026-11-22T02:43Z` | Issue `#458` | `test/issue-458-static-haproxy-compose-parity`
+- **Request**: Extend `tests/test_repo_static.py` to cover all 5 `scripts/*/haproxy.cfg` L7/resolver rules, Compose HAProxy/`:8404` healthchecks, `yb_node3` & `crdb_node1..3` readiness healthchecks, `15459:8404` on `haproxy_pgedge`, and Citus/YT `DB_ROOT_PASSWORD`-first order (`#191.16` part 1).
+- **Changes**: Expanded `test_pg_compose_durable_tunings_and_haproxy_ram_caps` in `tests/test_repo_static.py`; logged `RCA-112`.
+- **Result**: Verified Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-129 -- Add HAProxy Docker Resolvers, L7 Checks & Compose Healthchecks (`#456`)
 - **Timestamp / Issue / Branch**: `2026-11-22T02:38Z` | Issue `#456` | `fix/issue-456-haproxy-resolvers-compose-health`
 - **Request**: Add `resolvers docker` + `init-addr last,libc,none resolvers docker` + `option pgsql-check` across `pg_birep`, `pg18_birep`, `pgedge`, and `yugabyte` `haproxy.cfg` (`#191.12`); add `yb_node3`, `crdb_node1..3`, and all 5 HAProxy `healthcheck`s plus `127.0.0.1:15459:8404` on `haproxy_pgedge` (`#191.18`).
