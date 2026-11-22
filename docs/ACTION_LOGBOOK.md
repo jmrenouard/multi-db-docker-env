@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-144 -- Align `scripts.md` and `architecture.md` with ASD-STE100 and Cluster Cross-Links (`#486`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:24Z` | Issue `#486` | `docs/issue-486-ste-scripts-architecture`
+- **Request**: Bring `documentation/scripts.md` (procedural mode) and `documentation/architecture.md` (mixed mode) to 0 STE errors and 0 forbidden words (`via`, `ensure`, `perform`, `e.g.`), linking shared TLS and PostgreSQL HA guides.
+- **Changes**: Removed semicolons, `e.g.`, `via`, `Performs`, and passive constructions (`are automatically used by`, `have been`), added imperative caution text for `restore_physical.sh` in `scripts.md`, and added Section 6 cross-linking `tls_setup.md`, `patroni_cluster.md`, `pgpool_cluster.md`, and `pg_multimaster.md` in `architecture.md`; logged `RCA-125`.
+- **Result**: Verified `ste_check.py` (0 errors on both files), 0 forbidden words, Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-143 -- Align Replication and TLS Guides with ASD-STE100 (`#484`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:21Z` | Issue `#484` | `docs/issue-484-ste-repli-tls-scripts`
 - **Request**: Bring `replication_setup.md`, `replication_ssl.md`, and `tls_setup.md` to 0 STE procedural errors and 0 forbidden words (`via`, `ensure`, `perform`), linking shared design context to `architecture.md` and `tls_setup.md`.

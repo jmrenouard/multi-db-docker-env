@@ -913,6 +913,13 @@
 - **Applied Change / Fix**: Rewrote passive sentences and `> 20`-word text into short active imperatives, replaced `via`/`ensure`/`e.g.`, and added cross-links to `architecture.md` and `tls_setup.md`.
 - **Result & Non-Regression Test**: Verified 0 STE errors across all 3 guides (`ste_check.py --mode procedural --lang en --no-vocab`), 0 forbidden words, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-125 -- `scripts.md` and `architecture.md` STE Word-Count, Semicolon, and Passive Violations
+- **Date / Linked Action**: `2026-11-22` (`ACT-144` / Issue `#486`)
+- **Observed Symptom**: `documentation/scripts.md` (procedural) and `documentation/architecture.md` (mixed) reported 3 STE errors each (>20/25-word sentences, semicolons, `are automatically used by`, `have been`) plus `via`, `Performs`, and `e.g.`.
+- **Root Cause Analysis**: Script reference bullets and standalone routing paragraphs accumulated long parentheticals before STE linting and Diataxis hub linking.
+- **Applied Change / Fix**: Split oversized items into active short sentences, removed semicolons/`via`/`Performs`/`e.g.`, updated `restore_physical.sh` caution phrasing, and added Section 6 cross-links in `architecture.md`.
+- **Result & Non-Regression Test**: Verified `ste_check.py` (0 errors on both files), 0 forbidden words, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

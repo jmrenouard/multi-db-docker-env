@@ -97,7 +97,7 @@ Configured with an aggressive sampling to minimize overhead while capturing outl
 
 - **Threshold**: 2.0 seconds (`long_query_time`).
 - **Sampling**: 1 out of every 5 queries (`log_slow_rate_limit`).
-- **Storage**: Logs are stored in `/var/lib/mysql/*.slow` and accessible via `make logs-slow-*`.
+- **Storage**: Logs stay in `/var/lib/mysql/*.slow`. Read them with `make logs-slow-*`.
 
 ## 📁 4. Project Structure
 
@@ -120,9 +120,13 @@ The project follows a modular organization:
 
 ## 🐘 5. Standalone Routing & PostgreSQL
 
-All active standalone database instances (`mysql84`, `mysql97`, `mariadb1011`, `mariadb114`, `mariadb118`, `mariadb123`, `percona84`, `postgres15`–`postgres18`) are proxied through **Traefik v3** (`traefik:v3`), while HA clusters use **HAProxy LTS** (`haproxy:lts` / `haproxy:lts-alpine`), **MySQL 8.4 LTS** (InnoDB Cluster), and **CockroachDB v25.4**.
+**Traefik v3** (`traefik:v3`) proxies active standalone instances (`mysql84`, `mysql97`, `mariadb1011`, `mariadb114`, `mariadb118`, `mariadb123`, `percona84`, `postgres15`–`postgres18`). HA clusters run **HAProxy LTS** (`haproxy:lts` / `haproxy:lts-alpine`), **MySQL 8.4 LTS**, and **CockroachDB v25.4**.
 
-- **Ports**: `3306` (MySQL/MariaDB/Percona) and `5432` (PostgreSQL) exposed via Traefik v3.
+- **Ports**: Traefik v3 exposes `3306` (MySQL/MariaDB/Percona) and `5432` (PostgreSQL).
 - **PostgreSQL Data Persistence**: Named volumes (`postgres_18_data` mounted at `/var/lib/postgresql`, and `postgres_17_data`, `postgres_16_data`, `postgres_15_data` at `/var/lib/postgresql/data`).
 - **Access**: Standard `psql` client (`PGPASSWORD=$DB_ROOT_PASSWORD psql -h 127.0.0.1 -p 5432 -U postgres`).
-- **EOL Decommissioning**: End-of-Life images (`mysql:5.7`, `mysql:8.0`, `mysql:9.6`, `mariadb:10.6`, `percona/percona-server:8.0`, `traefik:v2.11`, `haproxy:2.9-alpine`) have been removed; see [supported_products.md](supported_products.md#-decommissioned-versions-end-of-life).
+- **EOL Decommissioning**: We removed End-of-Life images (`mysql:5.7`, `mysql:8.0`, `mysql:9.6`, `mariadb:10.6`, `percona/percona-server:8.0`, `traefik:v2.11`, `haproxy:2.9-alpine`) from active Compose stacks. See [supported_products.md](supported_products.md#-decommissioned-versions-end-of-life).
+
+## 🔐 6. Unified TLS & PostgreSQL HA Overview
+
+All database clusters isolate traffic in dedicated Docker bridge subnets and protect connections with local X.509 PKI. See [tls_setup.md](tls_setup.md) for certificate setup. See [patroni_cluster.md](patroni_cluster.md), [pgpool_cluster.md](pgpool_cluster.md), and [pg_multimaster.md](pg_multimaster.md) for PostgreSQL HA and distributed SQL topologies.
