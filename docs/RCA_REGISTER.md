@@ -990,6 +990,13 @@
 - **Applied Change / Fix**: Rewrote L3, L30, L52, takeaways, and empirical SQLSTATE bullets into active `<= 20`-word French sentences without semicolons while keeping every metric and SQLSTATE verbatim.
 - **Result & Non-Regression Test**: Verified 0 STE errors up to V2 Matrix (`ste_check.py --mode procedural --lang fr --no-vocab`), Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-136 -- `documentation/pg_multimaster_fr.md` Part 2 (V2 Matrix and PG 18.6) French STE Violations
+- **Date / Linked Action**: `2026-11-23` (`ACT-155` / Issue `#508`)
+- **Observed Symptom**: French `Matrice etendue V2 (T11-T18)`, `bench-pg-v2`, and PG 18.6 bullets in `documentation/pg_multimaster_fr.md` contained 10+ STE errors (semicolons and `> 20`-word sentences).
+- **Root Cause Analysis**: Mirror sections chained clauses with semicolons (`YT Cluster` and `v2.6.0` follow in Part 3 to keep diff `< 14,800` B).
+- **Applied Change / Fix**: Split V2 and PG 18.6 bullets into short active French sub-bullets `<= 20` words without semicolons while keeping all metrics and SQLSTATEs intact.
+- **Result & Non-Regression Test**: Verified 0 STE errors up to `## Pile actif-actif YT Cluster`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

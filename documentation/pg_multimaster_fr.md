@@ -104,16 +104,23 @@ Exécutez les benchmarks séquentiellement sur le réseau bridge Docker (`multi-
 
 ## Matrice étendue V2 (`T11`–`T18`) & Benchmarks V2 (`bench-pg-v2`)
 
-La commande `make test-pg-extended` exécute 8 sondes empiriques avancées sur les 10 topologies :
-- **`T11` Ingestion 10 000 lignes** : `pgedge` (`67 406 lignes/s`), `pg-birep` (`65 881 lignes/s`), `pg17-logical` (`52 816 lignes/s`), `cockroach` (`22 079 lignes/s`) ; rattrapage pair `105–417 ms`.
-- **`T12` Course UPDATE vs DELETE (Tombstone)** : `pg17-logical` diverge (`pub=upd_n1`, `sub=DELETED`, `UPDATE` ignoré sur ligne absente) ; les moteurs multi-maître asynchrones laissent `DELETE` gagner silencieusement ; le streaming physique rejette l'écriture standby (`25006`) ; le consensus Raft sérialise.
-- **`T13` Course FK inter-nœuds** : `bucardo` échoue `0/10` (`23503x10`) sous sa latence de polling (`p50=548.74 ms`) ; le standby physique rejette (`25006x10`) ; logique/mesh/Raft réussissent `10/10`.
-- **`T14` Fidélité MD5 (`BYTEA 64 Kio` / JSONB / UTF-8)** : l'image Rocky UBI `pgedge` utilise `SQL_ASCII` par défaut (`chr()` lève `SQLSTATE 54000`, encodage échappé converge `3/3`) ; tous les autres moteurs convergent à l'identique (`md5=00493e3a`).
-- **`T15` Latence brute de visibilité (`n=30`)** : `pgedge` `p50=1.16 ms` (`p95=1.63`), `pg-birep` `1.47/2.28 ms`, `pg17-logical` `1.68/2.14 ms`, `pg17-sync-streaming` `1.88/2.74 ms`, `yugabyte` `2.01/2.83 ms`, `cockroach` `4.09/4.98 ms`, `bucardo` `548.74/1275.25 ms`.
-- **`T16` Crash `SIGKILL` (RPO) & `T17` Transaction longue** : `RPO=0` sur 9/10 moteurs ; `SIGKILL` sur `citus_worker2` lève `08006` jusqu'au redémarrage ; `SIGKILL` sur le nœud métadonnées `bucardo` laisse l'écriture hors panne non répliquée (`post_restart=20/21`) ; zéro lecture sale en `T17` (`cockroach` `serializable_intent_wait=2.1s`).
-- **`T18` Synchronisation des séquences après 50 insertions** : le streaming physique préserve la séquence après `pg_promote()` (`last_value=66|true`, zéro `23505`) ; les séquences globales Raft passent ; `pg17-logical`, `pg-birep`, `pgedge` et `bucardo` laissent la séquence distante à `1|false` -> **`SQLSTATE 23505`** sans `setval()`, séquences décalées ou `snowflake.nextval()`.
+Exécutez `make test-pg-extended` pour lancer 8 sondes empiriques sur les 10 topologies :
+- **`T11` Ingestion 10 000 lignes** : `pgedge` (`67 406 lignes/s`), `pg-birep` (`65 881 lignes/s`), `pg17-logical` (`52 816 lignes/s`), `cockroach` (`22 079 lignes/s`). Rattrapage pair : `105–417 ms`.
+- **`T12` Course UPDATE vs DELETE (Tombstone)** :
+  - `pg17-logical` diverge (`pub=upd_n1`, `sub=DELETED`, `UPDATE` ignoré sur ligne absente).
+  - Les moteurs multi-maître asynchrones laissent `DELETE` gagner silencieusement.
+  - Le streaming physique rejette l'écriture standby (`25006`), tandis que Raft sérialise.
+- **`T13` Course FK inter-nœuds** : `bucardo` échoue `0/10` (`23503x10`) sous sa latence de polling (`p50=548.74 ms`). Le standby physique rejette (`25006x10`), tandis que logique/mesh/Raft réussissent `10/10`.
+- **`T14` Fidélité MD5 (`BYTEA 64 Kio` / JSONB / UTF-8)** : L'image Rocky UBI `pgedge` utilise `SQL_ASCII` par défaut (`chr()` lève `54000`). L'encodage échappé converge `3/3` et tous les autres moteurs convergent (`md5=00493e3a`).
+- **`T15` Latence brute de visibilité (`n=30`)** : `pgedge` `p50=1.16 ms` (`p95=1.63`), `pg-birep` `1.47/2.28 ms`, `pg17-logical` `1.68/2.14 ms`, `pg17-sync-streaming` `1.88/2.74 ms`. Suite : `yugabyte` `2.01/2.83 ms`, `cockroach` `4.09/4.98 ms`, `bucardo` `548.74/1275.25 ms`.
+- **`T16` Crash `SIGKILL` (RPO) & `T17` Transaction longue** :
+  - `RPO=0` sur 9/10 moteurs. `SIGKILL` sur `citus_worker2` lève `08006` jusqu'au redémarrage.
+  - `SIGKILL` sur le nœud `bucardo` perd 1 écriture hors panne (`post_restart=20/21`). `T17` garde zéro lecture sale (`cockroach` `serializable_intent_wait=2.1s`).
+- **`T18` Séquences après 50 insertions** :
+  - Le streaming physique préserve la séquence après `pg_promote()` (`last_value=66|true`, zéro `23505`). Les séquences globales Raft passent.
+  - `pg17-logical`, `pg-birep`, `pgedge` et `bucardo` laissent la séquence distante à `1|false` (`23505`). Utilisez `setval()`, des séquences décalées ou `snowflake.nextval()`.
 
-La commande `make bench-pg-v2` complète la campagne avec les charges sysbench étendues (`E2` lecture seule, `E3` écriture seule, `E4` point-select culminant à `148 022 TPS` sur `pg17-async-streaming`), `H_append_only_insert` (`3 108 TPS` standalone, `2 987 TPS` YugabyteDB 2 nœuds, `2 207 TPS` pgEdge 2 nœuds), la montée en concurrence (`G_conc_c1..c32`) et le balayage WAN (`10 / 25 / 50 ms`, réduisant `pg17-sync-streaming` `121.75 -> 57.00 -> 25.79 TPS` et `yugabyte` `15.38 -> 5.78 -> 3.06 TPS`). Consulter [ClusterPostgreSQL-Series](https://github.com/jmrenouard/ClusterPostgreSQL-Series) pour les CSV complets, les graphiques Log10 et le tableau de bord interactif.
+Exécutez `make bench-pg-v2` pour `E2` lecture seule, `E3` écriture seule et `E4` point-select (`148 022 TPS` sur `pg17-async-streaming`). La suite teste `H_append_only_insert` (`3 108 TPS` standalone, `2 987 TPS` YugabyteDB, `2 207 TPS` pgEdge), `G_conc_c1..c32` et le WAN (`10 / 25 / 50 ms`, `pg17-sync-streaming` `121.75 -> 57.00 -> 25.79 TPS`, `yugabyte` `15.38 -> 5.78 -> 3.06 TPS`). Consultez [ClusterPostgreSQL-Series](https://github.com/jmrenouard/ClusterPostgreSQL-Series) pour les CSV complets, les graphiques Log10 et le tableau de bord.
 
 ## Topologies natives PostgreSQL 18.6 & synthèse des benchmarks (`v2.3.0`)
 
@@ -127,10 +134,10 @@ La commande `make bench-pg-v2` complète la campagne avec les charges sysbench �
 | `pg18-logical` | `314.26` | `45 862.68` | `1 027.84` | `1 517.26` | `1 582.39` | `131 542.35` | `3 518.49` | `844.10` | `69 827` |
 | `pg18-birep` (`uuidv7`) | `514.28` | `42 190.66` | `1 055.55` | `2 053.07` | `1 492.99` | `146 907.74` | `2 066.70` | `747.42` | `70 470` |
 
-- **Arborescence Docker `PGDATA`** : `postgres:18` déplace `PGDATA` vers `/var/lib/postgresql/18/docker` (`VOLUME /var/lib/postgresql`) ; les trois piles Compose PG 18 montent `/var/lib/postgresql` et utilisent `${PGDATA:-/var/lib/postgresql/18/docker}`.
-- **AIO `io_method` & Checksums** : défauts `io_method=worker` (`io_workers=3`) et `data_checksums=on`. `io_method=io_uring` échoue avec `Operation not permitted` sous le profil seccomp Docker par défaut ; `worker` réduit le scan séquentiel à froid de `-18,5 %` (`829,4 ms` vs `1018,3 ms` en `sync`).
-- **`uuidv7()` natif & 7 compteurs `confl_*`** : `id UUID PRIMARY KEY DEFAULT uuidv7()` réalise `50/50` écritures concurrentes bi-nœuds sans collision (`0` `23505`, `0` inversion B-tree) et `2 066,70 TPS` sur `H_append_only_insert` (`3,30x` vs `pg-birep` PG 17). Les 7 compteurs `pg_stat_subscription_stats` — dont `confl_multiple_unique_conflicts` — sont vérifiés dans `tests/test_pg18_birep.sh`.
-- **Séquences logiques reportées à PG 19** : `CREATE SUBSCRIPTION` active `substream=p` par défaut et `publish_generated_columns=stored` fonctionne (`pubgencols=s`), mais `FOR ALL SEQUENCES` et `REFRESH SEQUENCES` lèvent toujours `SQLSTATE 42601` en PG 18.6 (séquences abonnées à `1|false` -> `23505` après bascule).
+- **Arborescence Docker `PGDATA`** : `postgres:18` déplace `PGDATA` vers `/var/lib/postgresql/18/docker` (`VOLUME /var/lib/postgresql`). Les trois piles PG 18 montent `/var/lib/postgresql` et ciblent `${PGDATA:-/var/lib/postgresql/18/docker}`.
+- **AIO `io_method` & Checksums** : Les défauts activent `io_method=worker` (`io_workers=3`) et `data_checksums=on`. `io_method=io_uring` échoue (`Operation not permitted`) sous le profil seccomp Docker. Le mode `worker` réduit le scan séquentiel à froid de `-18,5 %` (`829,4 ms` vs `1018,3 ms`).
+- **`uuidv7()` natif & 7 compteurs `confl_*`** : `id UUID PRIMARY KEY DEFAULT uuidv7()` réussit `50/50` écritures bi-nœuds (`0` `23505`, `0` inversion) et `2 066,70 TPS` sur `H_append_only_insert` (`3,30x` vs `pg-birep`). `tests/test_pg18_birep.sh` vérifie les 7 compteurs `pg_stat_subscription_stats` dont `confl_multiple_unique_conflicts`.
+- **Séquences logiques reportées à PG 19** : `CREATE SUBSCRIPTION` active `substream=p` et `publish_generated_columns=stored` fonctionne (`pubgencols=s`). `FOR ALL SEQUENCES` et `REFRESH SEQUENCES` lèvent `SQLSTATE 42601` en PG 18.6 (séquences abonnées à `1|false`).
 
 ## Pile actif-actif YT Cluster 1.21.3 (PostgreSQL 18.7, `v2.4.1`–`v2.5.0`)
 

@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-155 -- Align `pg_multimaster_fr.md` Part 2 (V2 Matrix and PG 18.6) with ASD-STE100 (`#508`)
+- **Timestamp / Issue / Branch**: `2026-11-23T00:18Z` | Issue `#508` | `docs/issue-508-pg-multimaster-fr-part2`
+- **Request**: Refactor `Matrice etendue V2` + `bench-pg-v2` and `Topologies natives PostgreSQL 18.6` in `documentation/pg_multimaster_fr.md` into `<= 20`-word French STE sentences without semicolons (`YT Cluster` + `v2.6.0` follow in Part 3).
+- **Changes**: Split semicolon-chained V2 `T11`-`T18`, `bench-pg-v2`, and PG 18.6 bullets into short active French sentences while preserving every metric and SQLSTATE verbatim; logged `RCA-136`.
+- **Result**: Verified 0 STE errors up to `## Pile actif-actif YT Cluster` (`ste_check.py --mode procedural --lang fr --no-vocab`), Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-154 -- Align `pg_multimaster_fr.md` Part 1 (Overview & Empirical Limits) with ASD-STE100 (`#506`)
 - **Timestamp / Issue / Branch**: `2026-11-23T00:14Z` | Issue `#506` | `docs/issue-506-pg-multimaster-fr-part1`
 - **Request**: Refactor `documentation/pg_multimaster_fr.md` overview, V1 takeaways, and Empirical Limits into `<= 20`-word French STE sentences without semicolons and update `v2.5.0` -> `v2.6.2` (V2/PG18 and YT/`v2.6.0` follow in Part 2/3 PRs).
