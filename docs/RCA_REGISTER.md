@@ -696,6 +696,13 @@
 - **Applied Change / Fix**: Added `assert_zero_containers`, `tc_netem`, `ref_sub`, generalized `conv_chk`, and `pg18-birep` pre-drain/reset to `bench_pg_lib.py` with `sh_fn`/`pq_fn`/`bc_fn` hooks, and rewired `bench_pg_opt_common.py` to delegate directly.
 - **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest`, `go test -count=1 ./...`, and `tests/test_config.sh`.
 
+### RCA-094 -- Fake `--env` Compose Flag & Missing `wsl` `WSLENV`
+- **Date / Action**: `2026-11-21` (`ACT-112` / `#412`)
+- **Symptom**: `ComposeUpProfiles` used `--env` stripped by `extractComposeEnv`; `mergeEnv` missed `wsl`/`wsl.exe`; `*Client` lacked `ResolveContainer`.
+- **5 Whys**: (1) `runCompose` used `Run` vs `RunWithEnv`. (2) Tests checked `--env` in `Calls`. (3) `mergeEnv` missed `wsl`.
+- **Fix**: `runCompose` (`compose.go`); drop `extractComposeEnv`, `wsl`/`wsl.exe`, `ResolveContainer` (`client.go`); tests.
+- **Test**: `docker_test.go`, `topology_test.go`, `go test ./...` (11/11), `mdb lint` pass.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

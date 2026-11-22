@@ -120,10 +120,16 @@ func TestGaleraAndRepli_BuildAndReadiness(t *testing.T) {
 		return strings.Join(lines, "\n")
 	}
 	joined := joinCalls()
-	for _, want := range []string{"docker build -t mariadb_ssh:004 .", "MARIADB_GALERA_BOOTSTRAP=1", "up -d galera_01", "up -d galera_02", "up -d galera_03", "up -d --no-deps haproxy_galera"} {
+	if strings.Contains(joined, "--env") || strings.Contains(joined, "MARIADB_GALERA_BOOTSTRAP=1") {
+		t.Fatal(joined)
+	}
+	for _, want := range []string{"docker build -t mariadb_ssh:004 .", "up -d galera_01", "up -d galera_02", "up -d galera_03", "up -d --no-deps haproxy_galera"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("missing %q in calls:\n%s", want, joined)
 		}
+	}
+	if len(mock.EnvCalls) == 0 || !strings.Contains(strings.Join(mock.EnvCalls[0], ","), "MARIADB_GALERA_BOOTSTRAP=1") {
+		t.Fatal(mock.EnvCalls)
 	}
 
 	imagePresent = true
@@ -189,7 +195,12 @@ func TestBaseTopology_AutoCertsMongo8PgPoolAndTimeout(t *testing.T) {
 	if !filesExist("ssl/certs/mongo8/ca.pem", "ssl/certs/mongo8/mongodb.pem") {
 		t.Fatal("missing mongo8 certs")
 	}
-	if len(mock.EnvCalls) == 0 || !strings.Contains(strings.Join(mock.EnvCalls[0], ","), "MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3") || !strings.Contains(strings.Join(mock.EnvCalls[0], ","), "DB_ROOT_PASSWORD=rootpass") {
+	var mongoOK bool
+	for _, e := range mock.EnvCalls {
+		j := strings.Join(e, ",")
+		mongoOK = mongoOK || (strings.Contains(j, "MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3") && strings.Contains(j, "DB_ROOT_PASSWORD=rootpass"))
+	}
+	if !mongoOK {
 		t.Fatal(mock.EnvCalls)
 	}
 	if !strings.Contains(strings.Join(mock.Calls[len(mock.Calls)-2], " "), "setup_rs.sh mongo8_n1 mongo8_n2 mongo8_n3") {
