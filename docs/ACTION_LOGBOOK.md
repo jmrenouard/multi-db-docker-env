@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-115 -- Drain WAL Replay, Reset Opt Bi-Dir Peers & Quote Sysbench Passwords (`#428`)
+- **Timestamp / Issue / Branch**: `2026-11-22T01:28Z` | Issue `#428` | `fix/issue-428-opt-workloads-drain-reset`
+- **Request**: Poll `pg_stat_replication` before `_drop_sb_sub` and fail on `srsubstate='r'` timeout, drain/reset `pg-birep`/`pg18-birep` in `reset_ds_opt`, and quote `sysbench` passwords via `PGPASSWORD`.
+- **Changes**: Added `wait_wal_replay`, `wait_sub_ready`, and `drop_sb_sub` to `scripts/bench_pg_lib.py` and updated `scripts/bench_pg_opt_workloads.py`; logged `RCA-097`.
+- **Result**: Verified Windows + WSL Python `unittest` (`-W error::ResourceWarning`), `go test -count=1 ./...`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-114 -- Parameterize Patroni HAProxy Stats Auth & Harden `generate_certs.sh` (`#414`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:24Z` | Issue `#414` | `fix/issue-414-patroni-haproxy-certs`
 - **Request**: Replace hardcoded `admin:adminpass` in Patroni HAProxy stats configuration and tests with `HAPROXY_STATS_AUTH`, document it in `.env.example`, and harden variable quoting and `755` directory permissions in `scripts/patroni/generate_certs.sh` with static regression checks.

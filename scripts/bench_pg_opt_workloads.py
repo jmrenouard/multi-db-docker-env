@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 import re
+import shlex
 import subprocess as sp
 import time
 
-from bench_pg_lib import B, bc, bctl, de, pq, row, sh, wlog
+from bench_pg_lib import (
+    B, bc, bctl, de, drop_sb_sub, pq, row, sh, tc_netem,
+    wait_sub_ready, wait_wal_replay, wlog,
+)
 from bench_pg_opt_common import LOGICAL_SUB, MULTI_WRITER, SINGLE_PRIMARY, pb_run_opt, ref_sub, wcnt_opt
 
 YT_SYNC_CFG = "CgPIAQE="
@@ -14,7 +18,7 @@ YT_ASYNC_CFG = "CgcSAhACyAEB"
 
 def _tc(pc: str, img: str, args: list[str], chk: bool = True) -> None:
     """Run tc qdisc inside a container network namespace."""
-    sh(["docker", "run", "--rm", "--network", f"container:{pc}", "--cap-add", "NET_ADMIN", img, "tc", "qdisc", *args], chk)
+    tc_netem(pc, img, args, chk, sh_fn=sh)
 
 
 def yt_setup_opt(hs: list[str], pt: int, u: str, pw: str, pat: str, yt_am: bool = False) -> None:
@@ -42,7 +46,7 @@ def reset_ds_opt(t: str, hs: list[str], pt: int, u: str, pw: str) -> None:
             pq(h, pt, u, pw, f"BEGIN;SET LOCAL session_replication_role=replica;{rst};COMMIT;")
         time.sleep(0.5)
         return
-    if t == "pgedge" and len(hs) > 1:
+    if t in ("pg-birep", "pg18-birep", "pgedge") and len(hs) > 1:
         for _ in range(30):
             cnts = [int(pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;") or -1) for h in hs]
             if len(set(cnts)) == 1:
@@ -53,19 +57,21 @@ def reset_ds_opt(t: str, hs: list[str], pt: int, u: str, pw: str) -> None:
         time.sleep(1)
         for n in hs[1:]:
             wcnt_opt(n, pt, u, pw, f"{B}history", 0, to_s=120)
+        if t in ("pg-birep", "pg18-birep"):
+            bal_rst = f"UPDATE {B}accounts SET abalance=0 WHERE abalance<>0;UPDATE {B}branches SET bbalance=0;UPDATE {B}tellers SET tbalance=0;"
+            for n in hs[1:]:
+                pq(n, pt, u, pw, bal_rst)
+            time.sleep(1)
 
 
 def _drop_sb_sub(t: str, hs: list[str], pt: int, u: str, pw: str) -> None:
     """Drop sysbench tables cleanly and refresh logical/bi-dir subscriptions."""
-    pq(hs[1], pt, u, pw, "DROP TABLE IF EXISTS sbtest1,sbtest2,sbtest3,sbtest4 CASCADE;")
-    ref_sub(hs[1], pt, u, pw, LOGICAL_SUB[t])
-    if t in ("pg-birep", "pg18-birep"):
-        ref_sub(hs[0], pt, u, pw, "sub_from_node2")
+    drop_sb_sub(hs, pt, u, pw, LOGICAL_SUB[t], t in ("pg-birep", "pg18-birep"), pq_fn=pq)
 
 
 def _sb_cleanup(t: str, hs: list[str], pt: int, u: str, pw: str, cm: str) -> None:
     """Clean up sysbench tables and cluster replication metadata."""
-    bc(["bash", "-c", f"sysbench oltp_read_write {cm} cleanup >/dev/null 2>&1||true"])
+    bc(["bash", "-c", f"sysbench oltp_read_write {cm} cleanup >/dev/null 2>&1||true"], pw)
     if t == "citus":
         for i in range(1, 5):
             pq(hs[0], pt, u, pw, f"DROP TABLE IF EXISTS sbtest{i} CASCADE;")
@@ -75,6 +81,7 @@ def _sb_cleanup(t: str, hs: list[str], pt: int, u: str, pw: str, cm: str) -> Non
         pq(hs[0], pt, u, pw, "DELETE FROM public.yt_config WHERE module='A' AND name LIKE 'public.sbtest%';")
         time.sleep(1.5)
     elif t in LOGICAL_SUB:
+        wait_wal_replay(hs[0], pt, u, pw, pq_fn=pq)
         _drop_sb_sub(t, hs, pt, u, pw)
 
 
@@ -82,7 +89,7 @@ def _sb_prepare(t: str, hs: list[str], pt: int, u: str, pw: str, cm: str, sb_sz:
     """Prepare sysbench 4xN schema and distribute or replicate across cluster nodes."""
     h1 = hs[0]
     _sb_cleanup(t, hs, pt, u, pw, cm)
-    if bc(["bash", "-c", f"sysbench oltp_read_write {cm} prepare >/tmp/sb_p.out 2>&1"], "", False).returncode:
+    if bc(["bash", "-c", f"sysbench oltp_read_write {cm} prepare >/tmp/sb_p.out 2>&1"], pw, False).returncode:
         return 1
     if t == "citus":
         for i in range(1, 5):
@@ -96,11 +103,7 @@ def _sb_prepare(t: str, hs: list[str], pt: int, u: str, pw: str, cm: str, sb_sz:
         dump = de(h1, ["pg_dump", "-U", u, "-d", "labdb", "-s", "-t", "sbtest*"], pw).stdout
         sp.run(["docker", "exec", "-i", "-e", f"PGPASSWORD={pw}", hs[1], "psql", "-U", u, "-d", "labdb", "-v", "ON_ERROR_STOP=1"], input=dump, text=True, check=True, stdout=sp.DEVNULL)
         ref_sub(hs[1], pt, u, pw, LOGICAL_SUB[t], "true")
-        q = f"SELECT count(*) FROM pg_subscription_rel r JOIN pg_subscription s ON r.srsubid=s.oid JOIN pg_class c ON c.oid=r.srrelid WHERE s.subname='{LOGICAL_SUB[t]}' AND c.relname LIKE 'sbtest%' AND r.srsubstate='r';"
-        for _ in range(30):
-            if pq(hs[1], pt, u, pw, q) == "4":
-                break
-            time.sleep(1)
+        wait_sub_ready(hs[1], pt, u, pw, LOGICAL_SUB[t], pq_fn=pq)
         if t in ("pg-birep", "pg18-birep"):
             ref_sub(hs[0], pt, u, pw, "sub_from_node2")
     elif len(hs) > 1 and not t.startswith(("yugabyte", "cockroach", "bucardo")):
@@ -113,8 +116,8 @@ def run_sysbench_opt(
     t: str, hs: list[str], pt: int, u: str, pw: str, sc: int, suites: list[tuple], sb_sz: int = 25000, yt_am: bool = False, logf=None
 ) -> dict[str, dict]:
     """Prepare sysbench 4xN tables and run suites with Lua 40001/55409 retry hook."""
-    pwa = f"--pgsql-password={pw} " if pw else ""
-    cm = f"--db-driver=pgsql --pgsql-host={hs[0]} --pgsql-port={pt} --pgsql-user={u} {pwa}--pgsql-db=labdb --tables=4 --table-size={sb_sz}"
+    pwa = '--pgsql-password="$PGPASSWORD" ' if pw else ""
+    cm = f"--db-driver=pgsql --pgsql-host={shlex.quote(str(hs[0]))} --pgsql-port={pt} --pgsql-user={shlex.quote(str(u))} {pwa}--pgsql-db=labdb --tables=4 --table-size={sb_sz}"
     is_yt = t.startswith("yt-cluster")
     if _sb_prepare(t, hs, pt, u, pw, cm, sb_sz, yt_am):
         err = "prep:" + bc(["head", "-n", "2", "/tmp/sb_p.out"], "", False).stdout.replace("\n", " ").strip()[:60]
@@ -126,13 +129,13 @@ def run_sysbench_opt(
         if is_yt and yt_am and su == "E3_sysbench_oltp_wo" and "E_sysbench_oltp_rw" in res:
             _sb_prepare(t, hs, pt, u, pw, cm, sb_sz, yt_am)
         note = f"{lua} 4x{sb_sz // 1000}k"
-        rc = bc(["bash", "-c", f"SB_LUA={lua} sysbench /tmp/sb_wrap.lua {cm} --threads={th} --time={dur} run >/tmp/sb_r.out 2>&1"], "", False).returncode
+        rc = bc(["bash", "-c", f"SB_LUA={lua} sysbench /tmp/sb_wrap.lua {cm} --threads={th} --time={dur} run >/tmp/sb_r.out 2>&1"], pw, False).returncode
         if rc and is_yt:
             time.sleep(2)
-            rc = bc(["bash", "-c", f"SB_LUA={lua} sysbench /tmp/sb_wrap.lua {cm} --threads={th} --time={dur} run >/tmp/sb_r.out 2>&1"], "", False).returncode
+            rc = bc(["bash", "-c", f"SB_LUA={lua} sysbench /tmp/sb_wrap.lua {cm} --threads={th} --time={dur} run >/tmp/sb_r.out 2>&1"], pw, False).returncode
         if rc:
             note = f"{lua} ps=off"
-            if bc(["bash", "-c", f"SB_LUA={lua} sysbench /tmp/sb_wrap.lua {cm} --threads={th} --time={dur} --db-ps-mode=disable run >/tmp/sb_r.out 2>&1"], "", False).returncode:
+            if bc(["bash", "-c", f"SB_LUA={lua} sysbench /tmp/sb_wrap.lua {cm} --threads={th} --time={dur} --db-ps-mode=disable run >/tmp/sb_r.out 2>&1"], pw, False).returncode:
                 err = "run:" + bc(["tail", "-n", "2", "/tmp/sb_r.out"], "", False).stdout.replace("\n", " ").strip()[:60]
                 res[su] = row(t, su, sc, th, dur, 0, 0, 0, 0, 0, 0, 0, 0, "EXPECTED_LIMITATION_UNSUPPORTED", 0, err)
                 continue
@@ -143,7 +146,6 @@ def run_sysbench_opt(
         ign = int(em.group(1)) if em else 0
         res[su] = row(t, su, sc, th, dur, float(tx.group(2)) if tx else 0, float(qm.group(1)) if qm else 0, float(am.group(1)) if am else 0, 0, float(pm.group(1)) if pm else 0, int(tx.group(1)) if tx else 0, 0, ign, "PASS", 0, note)
 
-    time.sleep(2 if t in LOGICAL_SUB else 0)
     _sb_cleanup(t, hs, pt, u, pw, cm)
     return res
 

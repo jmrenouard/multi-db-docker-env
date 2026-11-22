@@ -717,6 +717,13 @@
 - **Applied Change / Fix**: Parameterized HAProxy stats auth via `"$HAPROXY_STATS_AUTH"` in `conf/haproxy-patroni.cfg`, `docker-compose-patroni.yml` (`${HAPROXY_STATS_AUTH:-admin:adminpass}`), `tests/test_patroni.sh`, and `.env.example`; quoted all variable expansions and aligned `chmod 755 "$CERT_DIR"` in `scripts/patroni/generate_certs.sh`; added static assertions in `tests/test_repo_static.py`.
 - **Result & Non-Regression Test**: Verified live `haproxy -c -V` and Basic Auth enforcement (`200`/`401`) inside `patroni-rhel8-haproxy:latest`, live `generate_certs.sh` execution with spaces in `CERT_DIR`, `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped), `go test -count=1 ./...` (`11/11`), and `go run ./cmd/mdb lint` (`70` scripts, `21` compose files).
 
+### RCA-097 -- Premature `sbtest1..4` Drop, Silent `srsubstate='r'` Timeout & Opt Bi-Dir Drift Leak
+- **Date / Linked Action**: `2026-11-22` (`ACT-115` / Issue `#428`)
+- **Observed Symptom**: `_sb_cleanup` slept a fixed 2s before dropping `sbtest1..4`; `_sb_prepare` exited the `srsubstate='r'` loop silently on timeout; `reset_ds_opt` skipped `history` drain and peer resets on `pg-birep`/`pg18-birep`; `sysbench` interpolated `pw` unquoted.
+- **Root Cause Analysis**: Logical cleanup relied on wall-clock sleeps instead of `pg_stat_replication` `replay_lsn`, subscription prep omitted a timeout exception, and `reset_ds_opt` handled `pgedge` only.
+- **Applied Change / Fix**: Added `wait_wal_replay`, `wait_sub_ready`, and `drop_sb_sub` in `bench_pg_lib.py`; updated `bench_pg_opt_workloads.py` to pass `pw` via `PGPASSWORD` with `shlex.quote`, pre-drain/reset `pg-birep`/`pg18-birep` peers, and enforce WAL/subscription readiness.
+- **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest` (`-W error::ResourceWarning`), `go test -count=1 ./...`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
