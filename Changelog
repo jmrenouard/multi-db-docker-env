@@ -1,3 +1,11 @@
+2.6.2 2026-11-22
+- fix: source .env and honor BENCH_OUT_DIR across all PG benchmark and extended test runners, atomize V2/PG18/YT CSV I/O without ResourceWarnings, raise on wcnt/wait_sub_ready/wait_wal_replay timeouts, and fix Windows temp cleanup (Closes #418, #420, #422).
+- fix: detect pgbench startup aborts and dual-stream exit codes cleanly, sample C_multinode_ro latency logs at 5%, drain and reset pg-birep/pg18-birep balances across both nodes, and quote sysbench/YT credentials (Closes #424, #428, #434, #437).
+- fix: bound standby pg_basebackup retries, escape conninfo/SQL credentials, enforce Bucardo/PgPool/CRDB/YB quorum and permission guards, stop mutating file modes in test_config.sh, recover sub_from_node2 across dual conflicts in test_pg18_birep.sh, and use mktemp cleanup in test suites (Closes #440, #443, #445, #447).
+- fix: add Docker DNS resolvers, init-addr, and L7 pgsql-check/httpchk probes across HAProxy configs, add yb_node3/crdb_node1..3/HAProxy healthchecks, and expose 127.0.0.1:15459:8404 on haproxy_pgedge (Closes #456).
+- refactor: consolidate Go catalog SSOT lookups, Compose RunWithEnv, ResolveContainer, Patroni stats auth, Python pgbench/WAN/container helpers in scripts/bench_pg_lib.py, and shared PG 17/18 streaming/logical/birep setup scripts in scripts/pg_common/ (Closes #412, #414, #415, #426, #432, #433, #449, #451, #454).
+- test: expand tests/test_repo_static.py and tests/test_pg_libs.py for HAProxy/Compose health parity, all 6 runner .env/BENCH_OUT_DIR checks, pb_run aborts, bidirectional resets, YT_RETRY_PY socket drops, and ResourceWarning hygiene (Closes #413, #458, #460).
+
 2.6.1 2026-11-21
 - feat: add self-contained non-root Patroni Dockerfiles (scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}), secret-free conf/patroni.yml, Compose build/service_healthy wiring, and HAProxy mTLS REST checks (Closes #396, #401).
 - feat: add mdb images CLI (list/build/pull/check), reproducible scripts/Dockerfile.bench, pkg/docker image helpers, Patroni auto-build, and Makefile build-images/pull-images/check-images wrappers covering all 31 E2E images (Closes #397, #399).
@@ -572,27 +580,3 @@
  - fix: resolve unbound variable 'EXTRA_ARGS' in start_mariadb.sh affecting Galera joins.
  - refactor: translate all test scripts (replication, galera, haproxy) to English.
  - chore: translate Dockerfile and supervisor configuration to English.
-
-1.0.14 2026-01-28
-
-1.0.13 2026-01-16
-
-1.0.11 2026-01-16
- - feat: adapt interactive_runner.py with interactive installation type selection (Standalone, Galera, Replication).
- - feat: add HTML report generation to test_config.sh under reports/ directory.
- - feat: add collective start, verify, and inject targets to Makefile for better runner integration.
- - update: enhance interactive runner HTML report to display installation type.
-
-1.0.10 2026-01-16
- - feat: add new configuration and security test suites (test_config.sh, test_env.sh, test_security_ssl.sh, test_profiles.sh).
- - feat: integrate test-config target into Makefile for environment validation.
- - refactor: reorganize project structure (move scripts to scripts/, configs to conf/, and tests to tests/).
- - update: fix Makefile and Dockerfile to reflect new directory structure.
- - update: adjust documentation and test scripts for relative path changes.
-
-1.0.9 2026-01-16
- - chore: migrate HISTORY.md into Changelog and remove HISTORY.md.
-
-1.0.8 2026-01-16
- - feat: add test_lb_galera.sh for lightweight load balancing distribution tests.
- - doc: sync documentation with recent Makefile and script changes.

@@ -836,6 +836,13 @@
 - **Applied Change / Fix**: Added deterministic unit tests for all 6 runners, `pb_run`/`pb_run_opt`, `wcnt`/`wait_sub_ready`/`wait_wal_replay`, `reset_ds`/`reset_ds_opt`, missing-file V2 upsert, in-process `YT_RETRY_PY` socket drops, `run_append_only_opt`, and `bench_pg18_lib`, completing `#191.16`.
 - **Result & Non-Regression Test**: Verified Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, and `tests/test_config.sh`.
 
+### RCA-114 -- `v2.6.2` Changelog FIFO Window & Release Version Synchronization
+- **Date / Linked Action**: `2026-11-22` (`ACT-132` / Issue `#462`)
+- **Observed Symptom**: Prepending the `2.6.2` block to the 598-line `Changelog` would exceed the 600-line FIFO limit mandated by `05_memory_protocol.md`.
+- **Root Cause Analysis**: Adding cumulative entries since `1.0.8` brought `Changelog` to 598 lines.
+- **Applied Change / Fix**: Bumped `VERSION`, `cmd/mdb/main.go`, and `cmd/mdb/main_test.go` to `2.6.2`, prepended the prioritized `2.6.2 2026-11-22` block, and trimmed `1.0.8`-`1.0.14` tail entries cleanly so `Changelog` remains `<= 600` lines.
+- **Result & Non-Regression Test**: Verified `python3 scripts/release_notes.py --tag v2.6.2 --check`, `go test -count=1 ./...`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
