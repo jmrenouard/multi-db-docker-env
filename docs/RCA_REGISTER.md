@@ -745,6 +745,13 @@
 - **Applied Change / Fix**: Rewired `bench_pg18_lib.py` wrappers to `bench_pg_lib.py`, removed redundant `pg18-birep` reset SQL, passed `pw` via `PGPASSWORD` + `shlex.quote`, and enforced `wait_sub_ready` and `wait_wal_replay`.
 - **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest` (`-W error::ResourceWarning`), `go test -count=1 ./...`, and `tests/test_config.sh`.
 
+### RCA-101 -- Duplicate Setup Maps, Inline Node Resolution & Dead `SysbenchRunner` (`#432`)
+- **Date / Linked Action**: `2026-11-22` (`ACT-119` / Issue `#432`)
+- **Observed Symptom**: `pkg/topology` duplicated 17 setup entries, `mongo8` args/env, and `resolveNodeContainer`, while `pkg/bench/sysbench.go` kept unused `CommandExecutor`/`SysbenchConfig`/`SysbenchRunner`.
+- **Root Cause Analysis**: Topology predated `catalog` SSOT fields and `ResolveContainer`, and `SysbenchRunner` remained after benchmarks moved to Python/shell runners.
+- **Applied Change / Fix**: Wired `BaseTopology.Up` to `catalog.DefaultCatalog().Lookup`, replaced `resolveNodeContainer` in `topology.go`/`galera.go` with `client.ResolveContainer`, and deleted dead `SysbenchRunner`/`mockExecutor` code in `pkg/bench/sysbench*.go`.
+- **Result & Non-Regression Test**: Verified zero callers via `git grep`, `go test -count=1 ./...` (`11/11`), `go vet ./...`, `go run ./cmd/mdb lint` (`70` shell scripts + `21` Compose files), and `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped).
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

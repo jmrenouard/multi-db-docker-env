@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-119 -- Consume Catalog Setup SSOT in Topology & Remove Dead `SysbenchRunner` (`#432`)
+- **Timestamp / Issue / Branch**: `2026-11-22T00:44Z` | Issue `#432` | `refactor/issue-432-topology-catalog-bench-cleanup`
+- **Request**: Read setup SSOT from `catalog.DefaultCatalog()`, use `client.ResolveContainer` in `pkg/topology`, and delete dead `SysbenchRunner`/`CommandExecutor` code in `pkg/bench` (Slice 4B of `#415` -> `#432` -> `#433`).
+- **Changes**: Updated `pkg/topology/topology.go`, `pkg/topology/galera.go`, `pkg/bench/sysbench.go`, `pkg/bench/sysbench_test.go`, and `RCA-101`.
+- **Result**: `go test -count=1 ./...` (`11/11`), `go vet ./...`, `go run ./cmd/mdb lint` (`70` shell scripts + `21` Compose files), `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped) pass; PR diff `< 14,500` chars.
+
 ### ACT-118 -- Harden PG 18 `sysbench` Quoting/Drain & Consolidate Shared Helpers (`#437`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:40Z` | Issue `#437` | `fix/issue-437-pg18-lib-drain-dedup`
 - **Request**: Consolidate `assert_zero_pg18_containers`, `_ref`, `conv_chk_pg18`, `_drop_sb_sub`, `_tc`, and `run_wan_netem_pg18` in `bench_pg18_lib.py`, rely on `reset_ds` for `pg18-birep` pre-drain/reset, quote PG18 `sysbench` passwords via `PGPASSWORD`, and enforce `wait_sub_ready` + `wait_wal_replay`.

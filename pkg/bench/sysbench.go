@@ -1,13 +1,11 @@
 package bench
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type LatencyMetrics struct {
@@ -40,78 +38,6 @@ type SysbenchResult struct {
 func (r *SysbenchResult) ToJSON() (string, error) {
 	b, err := json.MarshalIndent(r, "", "  ")
 	return string(b), err
-}
-
-type CommandExecutor interface {
-	Exec(ctx context.Context, container string, env []string, cmd ...string) (string, error)
-}
-
-type SysbenchConfig struct {
-	Workload  string
-	Container string
-	Host      string
-	Port      int
-	User      string
-	Password  string
-	Database  string
-	Threads   int
-	Duration  time.Duration
-	Executor  CommandExecutor
-}
-
-type SysbenchRunner struct{ cfg SysbenchConfig }
-
-func NewSysbenchRunner(cfg SysbenchConfig) *SysbenchRunner {
-	if cfg.Workload == "" { cfg.Workload = "oltp_read_write" }
-	if cfg.Threads <= 0 { cfg.Threads = 4 }
-	if cfg.Duration <= 0 { cfg.Duration = 10 * time.Second }
-	if cfg.Database == "" { cfg.Database = "sbtest" }
-	if cfg.User == "" { cfg.User = "root" }
-	return &SysbenchRunner{cfg: cfg}
-}
-
-func (r *SysbenchRunner) Run(ctx context.Context) (*SysbenchResult, error) {
-	if r.cfg.Executor == nil || r.cfg.Container == "" {
-		return nil, fmt.Errorf("sysbench executor and container required")
-	}
-	timeSec := strconv.Itoa(int(r.cfg.Duration.Seconds()))
-	threads := strconv.Itoa(r.cfg.Threads)
-	args := []string{
-		"sysbench",
-		r.cfg.Workload,
-		"--threads=" + threads,
-		"--time=" + timeSec,
-		"--db-driver=mysql",
-	}
-	if r.cfg.User != "" {
-		args = append(args, "--mysql-user="+r.cfg.User)
-	}
-	if r.cfg.Host != "" {
-		args = append(args, "--mysql-host="+r.cfg.Host)
-	}
-	if r.cfg.Port > 0 {
-		args = append(args, "--mysql-port="+strconv.Itoa(r.cfg.Port))
-	}
-	if r.cfg.Database != "" {
-		args = append(args, "--mysql-db="+r.cfg.Database)
-	}
-	args = append(args, "run")
-	var env []string
-	if r.cfg.Password != "" {
-		env = []string{"MYSQL_PWD=" + r.cfg.Password}
-	}
-	out, err := r.cfg.Executor.Exec(ctx, r.cfg.Container, env, args...)
-	if err != nil {
-		return nil, fmt.Errorf("sysbench execution failed: %w", err)
-	}
-	res, parseErr := ParseSysbenchOutput(out)
-	if parseErr != nil {
-		return nil, fmt.Errorf("failed to parse sysbench output: %w", parseErr)
-	}
-	if res.Workload == "" {
-		res.Workload = r.cfg.Workload
-	}
-	return res, nil
 }
 
 var (

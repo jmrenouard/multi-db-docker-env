@@ -1,25 +1,9 @@
 package bench
 
 import (
-	"context"
-	"fmt"
 	"strings"
 	"testing"
-	"time"
 )
-
-type mockExecutor struct {
-	out     string
-	err     error
-	lastEnv []string
-	lastCmd []string
-}
-
-func (m *mockExecutor) Exec(ctx context.Context, container string, env []string, cmd ...string) (string, error) {
-	m.lastEnv = env
-	m.lastCmd = cmd
-	return m.out, m.err
-}
 
 const sampleSysbenchOutput = `SQL statistics:
     queries performed:
@@ -70,80 +54,5 @@ func TestParseSysbenchOutput_Errors(t *testing.T) {
 		if _, err := ParseSysbenchOutput(raw); err == nil {
 			t.Fatalf("expected error for %q, got nil", raw)
 		}
-	}
-}
-
-func TestSysbenchRunner_Run(t *testing.T) {
-	mock := &mockExecutor{out: sampleSysbenchOutput}
-	runner := NewSysbenchRunner(SysbenchConfig{
-		Workload:  "oltp_read_write",
-		Container: "node1",
-		User:      "root",
-		Password:  "secret",
-		Host:      "127.0.0.1",
-		Port:      3306,
-		Database:  "sbtest",
-		Threads:   4,
-		Duration:  5 * time.Second,
-		Executor:  mock,
-	})
-	res, err := runner.Run(context.Background())
-	if err != nil || res.Workload != "oltp_read_write" || res.TPS != 99.85 {
-		t.Fatalf("Run failed: %v, res: %+v", err, res)
-	}
-
-	cmdStr := strings.Join(mock.lastCmd, " ")
-	for _, expected := range []string{
-		"--db-driver=mysql",
-		"--mysql-user=root",
-		"--mysql-host=127.0.0.1",
-		"--mysql-port=3306",
-		"--mysql-db=sbtest",
-	} {
-		if !strings.Contains(cmdStr, expected) {
-			t.Errorf("expected cmd to contain %q, got: %s", expected, cmdStr)
-		}
-	}
-	if strings.Contains(cmdStr, "--mysql-password") {
-		t.Errorf("password must not be passed via CLI args, got: %s", cmdStr)
-	}
-
-	// Verify MYSQL_PWD is in env
-	if len(mock.lastEnv) == 0 || mock.lastEnv[0] != "MYSQL_PWD=secret" {
-		t.Errorf("expected MYSQL_PWD=secret in env, got: %v", mock.lastEnv)
-	}
-
-	// Verify empty password produces no MYSQL_PWD in env
-	mockNoPwd := &mockExecutor{out: sampleSysbenchOutput}
-	runnerNoPwd := NewSysbenchRunner(SysbenchConfig{
-		Container: "node1",
-		Executor:  mockNoPwd,
-	})
-	if _, err := runnerNoPwd.Run(context.Background()); err != nil {
-		t.Fatalf("Run failed for runnerNoPwd: %v", err)
-	}
-	if len(mockNoPwd.lastEnv) != 0 {
-		t.Errorf("expected empty env when password is not set, got: %v", mockNoPwd.lastEnv)
-	}
-
-	runnerNil := NewSysbenchRunner(SysbenchConfig{Container: "node1"})
-	if _, err := runnerNil.Run(context.Background()); err == nil {
-		t.Fatal("expected error with nil executor")
-	}
-
-	runnerErr := NewSysbenchRunner(SysbenchConfig{
-		Container: "node1",
-		Executor:  &mockExecutor{err: fmt.Errorf("container died")},
-	})
-	if _, err := runnerErr.Run(context.Background()); err == nil {
-		t.Fatal("expected error on exec failure")
-	}
-
-	runnerErrWithOut := NewSysbenchRunner(SysbenchConfig{
-		Container: "node1",
-		Executor:  &mockExecutor{out: sampleSysbenchOutput, err: fmt.Errorf("exit status 1")},
-	})
-	if _, err := runnerErrWithOut.Run(context.Background()); err == nil {
-		t.Fatal("expected error on exec failure even when output is non-empty")
 	}
 }
