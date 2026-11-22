@@ -1,32 +1,32 @@
 # Utility Scripts Documentation 📜
 
-This document describes the various shell scripts available in the root directory for managing the MariaDB environment.
+Reference and usage guide for repository shell, Go CLI, and Python helper scripts. See [architecture.md](architecture.md) for component layout.
 
 ## 💾 Backup & Restore
 
 ### Logical Backup (`mariadb-dump`)
 
-- **[backup_logical.sh](../scripts/backup_logical.sh)**: Performs a compressed SQL dump.
+- **[backup_logical.sh](../scripts/backup_logical.sh)**: Runs a compressed SQL dump.
   - Usage: `./backup_logical.sh <galera|repli> [database_name]`
-  - Features: Uses `pigz` for fast compression, includes routines, triggers, and events.
+  - Features: Runs `pigz` for fast compression and includes routines, triggers, and events.
 - **[restore_logical.sh](../scripts/restore_logical.sh)**: Restores a logical backup.
   - Usage: `./restore_logical.sh <galera|repli> <filename.sql.gz>`
 
 ### Physical Backup (MariaBackup)
 
-- **[backup_physical.sh](../scripts/backup_physical.sh)**: Performs a hot physical backup using MariaBackup.
+- **[backup_physical.sh](../scripts/backup_physical.sh)**: Creates a hot physical backup with MariaBackup.
   - Usage: `./backup_physical.sh <galera|repli>`
   - Features: Creates a consistent snapshot without locking the database.
 - **[restore_physical.sh](../scripts/restore_physical.sh)**: Restores a physical backup.
   - Usage: `./restore_physical.sh <galera|repli> <filename.tar.gz>`
   - Works for both Galera and Replication clusters.
-  - **CAUTION**: This script stops MariaDB, replaces the entire data directory, and restarts it.
+  - **CAUTION**: Back up required databases before you run `restore_physical.sh`. This script stops MariaDB and replaces the full data directory.
 
 ## 🔐 Security & SSL
 
 - **[gen_ssl.sh](../scripts/gen_ssl.sh)**: Generates a complete SSL certificate chain (CA, Server, and Client).
   - Outputs are stored in the `ssl/` directory.
-  - Certificates are automatically used by containers via volume mounts.
+  - Containers mount certificates as read-only volumes.
 - **[gen_pki.sh](../scripts/gen_pki.sh)**: Unified PKI & SAN X.509 certificate generator for all database topologies.
   - **Usage**: `bash ./scripts/gen_pki.sh [--dir PATH] [--cn NAME] [--san SAN_LIST] [--mode MODE] [--combine FILE] [--chown UID:GID] [--force]`
   - **Options**: `--dir` (output dir), `--cn` (Common Name), `--san` (SAN list), `--mode` (`mariadb|single|standard`), `--combine` (bundled PEM), `--chown` (`uid:gid`), `--force`. Enforces `0600` keys and `0644` certs.
@@ -34,19 +34,19 @@ This document describes the various shell scripts available in the root director
 
 ## ⚙️ Configuration & Setup
 
-- **[setup_repli.sh](../scripts/setup_repli.sh)**: Automates the Master/Slave replication setup.
-  - Performs initial data sync from Master to Slaves.
-  - Sets up GTID-based replication.
+- **[setup_repli.sh](../scripts/setup_repli.sh)**: Automates Master/Slave replication setup.
+  - Runs initial data sync from Master to Slaves.
+  - Configures GTID-based replication.
 - **[gen_profiles.sh](../scripts/gen_profiles.sh)**: Generates `profile_galera` and `profile_repli`.
-  - Provides shell aliases (e.g., `mariadb-m1`, `mariadb-g1`) for quick access to containers.
-- **[start_mariadb.sh](../scripts/start_mariadb.sh)**: Custom entrypoint script for the MariaDB Docker containers.
-  - Handles database initialization (`mariadb-install-db`).
+  - Provides shell aliases (for example, `mariadb-m1` and `mariadb-g1`) for container access.
+- **[start_mariadb.sh](../scripts/start_mariadb.sh)**: Custom entrypoint script for MariaDB Docker containers.
+  - Runs database initialization (`mariadb-install-db`).
   - Executes scripts in `/docker-entrypoint-initdb.d/`.
-  - Manages Galera bootstrapping via `MARIADB_GALERA_BOOTSTRAP` environment variable.
+  - Controls Galera bootstrap with the `MARIADB_GALERA_BOOTSTRAP` variable.
 
 ## 🧪 Testing
 
-- **[interactive_runner.py](../interactive_runner.py)**: Legacy Python interactive test runner (prefer `./mdb interactive`; preserves `-i`, `-a`, `-l en|fr`, skips MySQL-only `inject` on PostgreSQL, uses `make info` for verification, localized retry prompt).
+- **[interactive_runner.py](../interactive_runner.py)**: Legacy Python interactive test runner (prefer `./mdb interactive`). Preserves `-i`, `-a`, `-l en|fr`, skips MySQL-only `inject` on PostgreSQL, runs `make info`, and uses a localized retry prompt.
   - **Usage**: `./mdb interactive [-i|--interactive] [-a|--auto] [-l en|fr]` (legacy fallback: `python3 interactive_runner.py`)
 - **[test_galera.sh](../tests/test_galera.sh)**: Full suite for Galera (sync, DDL, conflicts, Audit, SSL).
 - **[test_repli.sh](../tests/test_repli.sh)**: Verification for Master/Slave replication.
@@ -57,7 +57,7 @@ This document describes the various shell scripts available in the root director
 - **[test_lb_galera.sh](../tests/test_lb_galera.sh)**: Lightweight load balancing distribution test.
   - Features: Connection distribution analysis, SSL verification, and sleek HTML report.
   - Usage: `./test_lb_galera.sh`
-- **[test_perf_galera.sh](../tests/test_perf_galera.sh)** / **[test_perf_repli.sh](../tests/test_perf_repli.sh)**: Performance benchmarks using Sysbench.
+- **[test_perf_galera.sh](../tests/test_perf_galera.sh)** / **[test_perf_repli.sh](../tests/test_perf_repli.sh)**: Sysbench performance benchmarks.
 - **[aggregate_reports.sh](../scripts/aggregate_reports.sh)**: Consolidates test reports into an executive HTML summary (`make test-all-report`).
   - Outputs: `reports/test_all_aggregated_<timestamp>.html` and `reports/latest_aggregated_report.html`.
 
@@ -80,4 +80,4 @@ Single unified entry point (`./mdb` on Linux/macOS, `mdb.cmd` on Windows, pure-G
 
 ## 📦 Release Automation
 
-- **[release_notes.py](../scripts/release_notes.py)**: Stdlib-only release validator and `Changelog` note extractor used by [`.github/workflows/release.yml`](../.github/workflows/release.yml) to verify `VERSION`/`Changelog`/tag alignment and generate GitHub Release notes.
+- **[release_notes.py](../scripts/release_notes.py)**: Stdlib release validator and `Changelog` note extractor. Workflow [`.github/workflows/release.yml`](../.github/workflows/release.yml) calls it to check `VERSION`, `Changelog`, and tag alignment.
