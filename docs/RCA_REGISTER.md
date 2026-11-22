@@ -906,6 +906,13 @@
 - **Applied Change / Fix**: Rewrote flagged sentences to active imperative STE phrasing (`<= 20` words), removed semicolons and passive constructions, eliminated `via`/`ensure`/`perform`, and cross-linked shared topology design to `architecture.md`.
 - **Result & Non-Regression Test**: Verified 0 STE errors across all 3 guides (`ste_check.py --mode procedural --lang en --no-vocab`), 0 forbidden words, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-124 -- Replication and TLS Guides Containing STE Passive Voice and Forbidden Modals
+- **Date / Linked Action**: `2026-11-22` (`ACT-143` / Issue `#484`)
+- **Observed Symptom**: Three operational guides (`replication_setup.md`, `replication_ssl.md`, `tls_setup.md`) failed `ste_check.py --mode procedural` (4 errors: >20-word sentence, `can be encrypted/enabled`, `are performed`, `is encrypted by`) and contained `via`, `ensure`, and `e.g.`.
+- **Root Cause Analysis**: MariaDB replication and TLS guides evolved without automated procedural STE checks (`scripts.md` split to the next atomic PR to keep diff `< 14,800` B).
+- **Applied Change / Fix**: Rewrote passive sentences and `> 20`-word text into short active imperatives, replaced `via`/`ensure`/`e.g.`, and added cross-links to `architecture.md` and `tls_setup.md`.
+- **Result & Non-Regression Test**: Verified 0 STE errors across all 3 guides (`ste_check.py --mode procedural --lang en --no-vocab`), 0 forbidden words, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

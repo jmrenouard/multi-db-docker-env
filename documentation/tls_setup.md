@@ -1,14 +1,14 @@
 # 🔐 Unified TLS/SSL Architecture & Setup Guide
 
-This document outlines the unified TLS/SSL infrastructure implemented across all database cluster technologies supported in the `multi-db-docker-env` laboratory.
+Configure unified X.509 TLS encryption across all database cluster topologies. See [architecture.md](architecture.md) for overall network design.
 
 ---
 
 ## 🏗️ Architecture Overview
 
-All cluster configurations support end-to-end encrypted transport (client-to-cluster and node-to-node) using X.509 certificates generated locally via OpenSSL.
+All cluster topologies encrypt client-to-cluster and node-to-node transport with local OpenSSL X.509 certificates.
 
-> **Note**: Certificate directories listed below are relative to the repository root directory (`./ssl/`). At container startup, these host paths are mounted into each container filesystem (e.g., `/etc/ssl/mongo/` or `/etc/ssl/pgpool/`).
+> **Note**: Certificate directories listed below are relative to the repository root directory (`./ssl/`). At container startup, containers mount these host paths (for example, `/etc/ssl/mongo/` or `/etc/ssl/pgpool/`).
 
 | Technology Cluster | Certificate Directory | CA File | Server Cert / Key | Key Config Flags |
 | :--- | :--- | :--- | :--- | :--- |
@@ -25,13 +25,13 @@ All cluster configurations support end-to-end encrypted transport (client-to-clu
 Unified and per-product Makefile entrypoints simplify certificate generation and validation:
 
 ### 1. Generate All TLS Certificates
-To generate X.509 certificates for all database engines at once:
+Run `make gen-ssl-all` to generate X.509 certificates for all database engines:
 ```bash
 make gen-ssl-all
 ```
 
 ### 2. Verify All TLS Certificates
-To verify the expiration and CA chain validity across all clusters:
+Run `make check-ssl-all` to verify expiration and CA chains across all clusters:
 ```bash
 make check-ssl-all
 ```

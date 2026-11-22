@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-143 -- Align Replication and TLS Guides with ASD-STE100 (`#484`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:21Z` | Issue `#484` | `docs/issue-484-ste-repli-tls-scripts`
+- **Request**: Bring `replication_setup.md`, `replication_ssl.md`, and `tls_setup.md` to 0 STE procedural errors and 0 forbidden words (`via`, `ensure`, `perform`), linking shared design context to `architecture.md` and `tls_setup.md`.
+- **Changes**: Rewrote >20-word sentences, removed `e.g.` and passive voice (`are performed`, `can be encrypted`, `is encrypted by`, `can be enabled`), removed `via`/`ensure`, and cross-linked `architecture.md`/`tls_setup.md` across all 3 files; logged `RCA-124`.
+- **Result**: Verified `ste_check.py --mode procedural --lang en --no-vocab` (0 errors on all 3 files), 0 forbidden words, Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-142 -- Align Patroni, PgPool-II, and Galera Runbooks with ASD-STE100 (`#482`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:15Z` | Issue `#482` | `docs/issue-482-ste-cluster-runbooks`
 - **Request**: Bring `patroni_cluster.md`, `pgpool_cluster.md`, and `galera_bootstrap.md` to 0 STE procedural errors and 0 forbidden words (`via`, `ensure`, `perform`), linking shared topology details to `architecture.md`.

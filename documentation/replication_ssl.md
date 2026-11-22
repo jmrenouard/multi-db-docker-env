@@ -1,6 +1,6 @@
 # Replication & SSL Configuration 🔐
 
-This document provides details on how SSL is integrated into the MariaDB clusters and how to verify its operation.
+Configure TLS encryption for MariaDB clusters and verify active ciphers. See [tls_setup.md](tls_setup.md) and [architecture.md](architecture.md).
 
 ## 🔑 Certificate Generation
 
@@ -32,21 +32,21 @@ ssl-key=/etc/mysql/ssl/server-key.pem
 
 ## 🔄 SSL in Replication
 
-When setting up replication via `setup_repli.sh`, the process ensures that the data sync and the subsequent replication stream can be encrypted.
+Run `setup_repli.sh` to encrypt data synchronization and the replication stream.
 
 ### Verification of SSL Status
 
-You can verify if a connection is encrypted by checking the `Ssl_cipher` status variable:
+Check the `Ssl_cipher` status variable to verify an encrypted connection:
 
 ```sql
 SHOW STATUS LIKE 'Ssl_cipher';
 ```
 
-In the test suites (`test_repli.sh` and `test_galera.sh`), the script automatically reports the SSL cipher used by each node.
+The test suites (`test_repli.sh` and `test_galera.sh`) report the active SSL cipher for each node.
 
 ### Forcing SSL
 
-To force SSL for all network connections (except local), the `require_secure_transport` variable can be enabled in `ssl.cnf`.
+Set `require_secure_transport=ON` in `ssl.cnf` to enforce SSL on all remote network connections.
 
 ## 🛡️ Diagram: SSL Architecture
 
