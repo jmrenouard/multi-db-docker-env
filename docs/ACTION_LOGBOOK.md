@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-132 -- Release `v2.6.2`: PG Audit Hardening, Deduplication & Test Parity (`#462`)
+- **Timestamp / Issue / Branch**: `2026-11-22T02:54Z` | Issue `#462` | `chore/issue-462-release-v2.6.2`
+- **Request**: Bump project version to `v2.6.2` across `VERSION`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, and `Changelog` (`<= 600` lines FIFO), update governance registers, and push tag `v2.6.2` once merged.
+- **Changes**: Updated `VERSION`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, and `Changelog` (FIFO trimmed oldest `1.0.8`-`1.0.14` entries to keep `<= 600` lines); logged `RCA-114`.
+- **Result**: Verified `release_notes.py --tag v2.6.2 --check`, Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, `mdb lint`, and diff `< 14,800` B.
+
 ### ACT-131 -- Expand Unit Tests for All Runners, `pb_run`, `reset_ds`, `YT_RETRY_PY` & PG18 (`#460`)
 - **Timestamp / Issue / Branch**: `2026-11-22T02:47Z` | Issue `#460` | `test/issue-460-pg-libs-runner-coverage`
 - **Request**: Expand `tests/test_pg_libs.py` across `.env`/`BENCH_OUT_DIR` handling on all 6 runners, `pb_run`/`pb_run_opt` crash/sampling-rate detection, `wcnt`/`wait_sub_ready`/`wait_wal_replay` timeouts, bidirectional `reset_ds`/`reset_ds_opt`, missing-file V2 CSV upsert, `YT_RETRY_PY` socket-drop recovery, and PG 18 sysbench/netem wrappers (`#191.16` part 2).
