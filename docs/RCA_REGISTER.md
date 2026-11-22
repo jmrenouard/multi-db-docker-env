@@ -927,6 +927,13 @@
 - **Applied Change / Fix**: Rewrote flagged bullets to active STE style in `tests.md`, added both missing top sections in `tests_fr.md` matching `tests.md`, and eliminated `via` and `etc.` while keeping existing `#00-*` anchors unchanged.
 - **Result & Non-Regression Test**: Verified 0 STE errors across both EN and FR files (`ste_check.py --mode procedural --no-vocab`), Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-127 -- `supported_products.md` Semicolon and Word-Count STE Violations
+- **Date / Linked Action**: `2026-11-22` (`ACT-146` / Issue `#490`)
+- **Observed Symptom**: `documentation/supported_products.md` failed `ste_check.py --mode procedural` (4 errors: semicolons inside PostgreSQL bullets and `> 20`-word EOL decommissioning sentences) and used `via` in 12 places.
+- **Root Cause Analysis**: Expanded `yt-cluster` license/Jepsen citations and EOL banners grew inline beyond 20 words and retained pre-STE `via` tags (`supported_products_fr.md` split to next atomic PR to keep diff `< 14,800` B).
+- **Applied Change / Fix**: Split multi-clause bullets cleanly without semicolons, shortened EOL prose (`have reached` removed), replaced `via`, and preserved existing EOL H2 anchor.
+- **Result & Non-Regression Test**: Verified 0 STE errors (`ste_check.py --mode procedural --lang en --no-vocab`), 0 `via`/forbidden words, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
