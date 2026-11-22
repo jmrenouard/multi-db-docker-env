@@ -1,6 +1,6 @@
 # Patroni PostgreSQL HA Cluster
 
-This project includes a **self-contained**, high-availability PostgreSQL 17 cluster orchestrated with Patroni 4.x, etcd 3.5.17, and HAProxy LTS using pinned, non-root in-repo Dockerfiles (`scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}`) and a secret-free `conf/patroni.yml`. No external pre-built images are required; legacy `patroni-rhel8-*:latest` image tags are retained for Compose compatibility, completing **31/31** live E2E topology coverage.
+Deploy a **self-contained**, high-availability PostgreSQL 17 cluster with Patroni 4.x, etcd 3.5.17, and HAProxy LTS. In-repo non-root Dockerfiles (`scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}`) and secret-free `conf/patroni.yml` require zero external images. Legacy `patroni-rhel8-*:latest` tags remain compatible with Compose for **31/31** E2E coverage. See [architecture.md](architecture.md) for proxy design details.
 
 ## Architecture
 
@@ -31,7 +31,7 @@ graph TD
 
 - **ETCD Cluster**: 3 nodes (`etcd1`, `etcd2`, `etcd3`) for distributed configuration and consensus.
 - **PostgreSQL Nodes**: 3 nodes (`node1`, `node2`, `node3`) managed by Patroni.
-- **HAProxy**: Load balancer providing a single entry point for read-write and read-only traffic.
+- **HAProxy**: Single entry point load balancer for read-write and read-only traffic.
 
 ## Self-Contained Docker Images
 
@@ -53,7 +53,7 @@ graph TD
 ```bash
 ./mdb up patroni                 # Auto-builds images, generates mTLS certs, starts 7 containers (or: make patroni-up)
 ./mdb status patroni             # Check all 7 containers (etcd1..3, node1..3, haproxy-patroni)
-./mdb client patroni             # Connect via psql to Primary RW (port 5000)
+./mdb client patroni             # Connect with psql to Primary RW (port 5000)
 ```
 
 > Legacy wrappers `make patroni-gen-certs`, `make patroni-up`, and `make patroni-status` remain supported.
@@ -62,8 +62,8 @@ graph TD
 
 | Role | Port | Description |
 | :--- | :--- | :--- |
-| Read-Write | `5000` | Traffic routed to the current Leader/Primary node via HAProxy. |
-| Read-Only | `5001` | Traffic balanced across all healthy Replicas via HAProxy. |
+| Read-Write | `5000` | Traffic routed to the current Leader/Primary node through HAProxy. |
+| Read-Only | `5001` | Traffic balanced across all healthy Replicas through HAProxy. |
 | Stats (HTTPS) | `7000` | HAProxy HTTPS stats dashboard (`admin:adminpass`, self-signed TLS). |
 | Patroni REST API | `8008` | Internal mTLS health check, config, and DCS election endpoint (`verify required`). |
 | etcd | `2379` | Distributed consensus store mTLS client endpoint (`etcd1`). |
@@ -81,7 +81,7 @@ docker exec node1 curl -fsS --cacert /etc/patroni/certs/ca.crt --cert /etc/patro
 
 ## Automated Testing
 
-`./mdb test patroni` runs the native Go verifier (`3/3` active: 1 Leader/Primary + 2 streaming replicas), while `./mdb test patroni --suite` runs **11 test groups** (`14` assertions in `tests/test_patroni.sh`). Automatic leader failover (`1/1`) is validated via `bash ./tests/test_failover.sh patroni`.
+Run `./mdb test patroni` for the native Go verifier (`3/3` active: 1 Leader/Primary and 2 replicas). Run `./mdb test patroni --suite` for **11 test groups** (`14` assertions in `tests/test_patroni.sh`). Run `bash ./tests/test_failover.sh patroni` to validate automatic leader failover (`1/1`).
 
 ```bash
 ./mdb test patroni               # Go health verifier (HEALTHY 3/3)
@@ -92,7 +92,7 @@ bash ./tests/test_failover.sh patroni # Live leader failover & timeline rejoin
 ### 11 Test Groups (`tests/test_patroni.sh`)
 
 1. **Cluster Status**: Patroni Leader/Primary election and `>= 2` healthy replicas (`patronictl list`).
-2. **HAProxy Connectivity**: RW (`5000`) and RO (`5001`) routing via Docker DNS `resolvers docker` and mTLS checks.
+2. **HAProxy Connectivity**: RW (`5000`) and RO (`5001`) routing with Docker DNS `resolvers docker` and mTLS checks.
 3. **Write Replication**: Primary write propagation to standbys.
 4. **Write Isolation**: RO port (`5001`) rejects writes (`pg_is_in_recovery()`).
 5. **DDL Replication**: Schema creation replicated across nodes.

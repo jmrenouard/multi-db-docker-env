@@ -1,20 +1,20 @@
 # Galera Cluster Bootstrap 🚀
 
-Bootstrapping a Galera cluster is a specific process required to initialize a NEW cluster.
+Initialize a new MariaDB Galera Cluster cleanly with `bootstrap-galera`. See [architecture.md](architecture.md) for overall cluster architecture.
 
 ## 🛠️ The Bootstrap Process
 
-Unlike a regular start (`make up-galera`), bootstrapping ensures that the first node initializes a new cluster UUID and state instead of trying to join an existing one.
+A regular start (`make up-galera`) tries to join an active cluster. Bootstrapping initializes a new cluster UUID and primary state on node 1.
 
 ### 1. Sequential Bootstrap with Makefile
 
-The simplest way is to use the dedicated command:
+Run the dedicated command:
 
 ```bash
 make bootstrap-galera
 ```
 
-This command performs the following steps:
+This command runs these steps:
 
 1. **Node 1 Start**: Starts `galera_01` with the environment variable `MARIADB_GALERA_BOOTSTRAP=1`.
 2. **Wait for Sync**: Polls Node 1 until `wsrep_local_state_comment` is `Synced`.
@@ -66,4 +66,4 @@ sequenceDiagram
 
 ## ⚠️ Recovery from Full Shutdown
 
-If the entire cluster is stopped, you must identify the node with the highest `seqno` in `grastate.dat` and bootstrap from that node. In this development environment, `make bootstrap-galera` always assumes a fresh start or that Node 1 is the intended primary.
+If the entire cluster stops, find the node with the highest `seqno` in `grastate.dat` and bootstrap that node. In this lab environment, `make bootstrap-galera` always assumes a fresh start from Node 1.
