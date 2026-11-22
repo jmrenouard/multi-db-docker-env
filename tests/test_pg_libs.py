@@ -1,12 +1,15 @@
 """Deterministic unit tests for PG benchmark and extended test libraries."""
 import csv
+import gc
 import io
 import os
+import re
 import shutil
 import subprocess as sp
 import sys
 import tempfile
 import unittest
+import warnings
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,6 +17,7 @@ SCRIPTS_DIR = str(Path(__file__).resolve().parent.parent / "scripts")
 if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
 
+import bench_pg18_lib as b18
 import bench_pg_lib as b1
 import bench_pg_opt_common as boc
 import bench_pg_opt_workloads as bow
@@ -329,6 +333,86 @@ class TestBenchPgOptimizedLib(unittest.TestCase):
             env["PG_LAB_PASSWORD"] = "stale_shell_override"
             res = sp.run(["bash", "../scripts/env_probe.sh"], cwd=root / "sub", env=env, capture_output=True, text=True, check=True)
             self.assertEqual(res.stdout, "dotenv_secret_check|dotenv_secret_check|dotenv_secret_check")
+
+
+class TestBenchPg18Lib(unittest.TestCase):
+    def test_assert_zero_pg18_containers(self):
+        with patch.object(b18, "sh", return_value=sp.CompletedProcess([], 0, "other_app\npg17_standalone\n", "")):
+            b18.assert_zero_pg18_containers()
+        for bad in ("pg18_stream_primary\n", "haproxy_pg18_proxy\n", "bench_client\n"):
+            with patch.object(b18, "sh", return_value=sp.CompletedProcess([], 0, bad, "")):
+                with self.assertRaises(RuntimeError) as ctx:
+                    b18.assert_zero_pg18_containers()
+                self.assertIn(bad.strip(), str(ctx.exception))
+
+    def test_pb_run_pg18_routing(self):
+        with patch.object(b18, "pb_run", return_value=(1.0, 2.0, 0.5, 3.0, 10, 0, 0)) as m_pb:
+            for topo in ("pg18-async-streaming", "pg18-sync-streaming", "pg18-logical"):
+                b18.pb_run_pg18(topo, "B1_disjoint_rw", 2, 4, 2, 5, "a1", "a2", ["n1", "n2"], 5432, "u", "p")
+                self.assertEqual(m_pb.call_args.args[8], ["n1", "n1"])
+                b18.pb_run_pg18(topo, "C_multinode_ro", 2, 4, 2, 5, "a1", "a2", ["n1", "n2"], 5432, "u", "p")
+                self.assertEqual(m_pb.call_args.args[8], ["n1", "n2"])
+            b18.pb_run_pg18("pg18-birep", "B1_disjoint_rw", 2, 4, 2, 5, "a1", "a2", ["n1", "n2"], 5432, "u", "p")
+            self.assertEqual(m_pb.call_args.args[8], ["n1", "n2"])
+            b18.pb_run_pg18("pg18-birep", "C_multinode_ro", 2, 4, 2, 5, "a1", "a2", ["n1", "n2"], 5432, "u", "p")
+            self.assertEqual(m_pb.call_args.args[8], ["n1", "n2"])
+
+    def test_upsert_pg18_csv_ordering_and_idempotency(self):
+        topos = ["pg18-standalone", "pg18-birep"]
+        suites = ["S1", "S2"]
+        r_sa = b1.row("pg18-standalone", "S1", 2, 8, 20, 100, "N/A", 1, 0, 2, 10, 0, 0, "PASS_SINGLE_PRIMARY", 0, "sa")
+        r_b2 = b1.row("pg18-birep", "S2", 2, 8, 20, 200, "N/A", 1, 0, 2, 20, 0, 0, "PASS_CONVERGED", 0, "b2")
+        r_b1 = b1.row("pg18-birep", "S1", 2, 8, 20, 250, "N/A", 1, 0, 2, 25, 0, 0, "PASS_CONVERGED", 0, "b1")
+        r_b1_new = b1.row("pg18-birep", "S1", 2, 8, 20, 300, "N/A", 1, 0, 2, 30, 0, 0, "PASS_CONVERGED", 0, "b1_updated")
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            p = Path(tmp) / "benchmark_pg18.csv"
+            b18.upsert_pg18_csv(p, "pg18-birep", [r_b2, r_b1], topos, suites)
+            b18.upsert_pg18_csv(p, "pg18-standalone", [r_sa], topos, suites)
+            b18.upsert_pg18_csv(p, "pg18-birep", [r_b1_new, r_b2], topos, suites)
+            with p.open(encoding="utf-8", newline="") as fh:
+                rows = list(csv.DictReader(fh))
+            self.assertEqual(
+                [(r["topology"], r["suite"], r["notes"]) for r in rows],
+                [
+                    ("pg18-standalone", "S1", "sa"),
+                    ("pg18-birep", "S1", "b1_updated"),
+                    ("pg18-birep", "S2", "b2"),
+                ],
+            )
+
+
+class TestBenchResourceHygiene(unittest.TestCase):
+    def test_upsert_csv_emits_no_resource_warnings(self):
+        topos = ["topoA", "topoB"]
+        suites = ["S1", "S2"]
+        r1 = b1.row("topoA", "S1", 2, 8, 20, 100, "N/A", 1, 0, 2, 10, 0, 0, "PASS", 0, "r1")
+        r2 = b1.row("topoA", "S2", 2, 8, 20, 150, "N/A", 1, 0, 2, 15, 0, 0, "PASS", 0, "r2")
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            p_v2 = Path(tmp) / "v2.csv"
+            p_18 = Path(tmp) / "pg18.csv"
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always", ResourceWarning)
+                b2.upsert_modular_csv(p_v2, "topoA", [r1], topos, suites)
+                b2.upsert_modular_csv(p_v2, "topoA", [r1, r2], topos, suites)
+                b18.upsert_pg18_csv(p_18, "topoA", [r1], topos, suites)
+                b18.upsert_pg18_csv(p_18, "topoA", [r1, r2], topos, suites)
+                gc.collect()
+        res_warnings = [f"{w.filename}:{w.lineno}: {w.message}" for w in caught if issubclass(w.category, ResourceWarning)]
+        self.assertEqual(res_warnings, [])
+
+    def test_scripts_open_calls_use_context_managers(self):
+        scripts_dir = Path(__file__).resolve().parent.parent / "scripts"
+        targets = sorted(scripts_dir.glob("*.py")) + sorted(scripts_dir.glob("*.sh"))
+        self.assertGreater(len(targets), 0)
+        offenders = []
+        for path in targets:
+            for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                stripped = line.lstrip()
+                if stripped.startswith("#") or ".open(" not in line:
+                    continue
+                if not re.match(r"^with\b", stripped):
+                    offenders.append(f"{path.name}:{lineno}: {stripped}")
+        self.assertEqual(offenders, [], "Ungoverned .open() calls found:\n" + "\n".join(offenders))
 
 
 if __name__ == "__main__":

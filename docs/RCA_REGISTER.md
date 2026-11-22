@@ -703,6 +703,13 @@
 - **Fix**: `runCompose` (`compose.go`); drop `extractComposeEnv`, `wsl`/`wsl.exe`, `ResolveContainer` (`client.go`); tests.
 - **Test**: `docker_test.go`, `topology_test.go`, `go test ./...` (11/11), `mdb lint` pass.
 
+### RCA-095 -- Unclosed `bench_pg_v2_runner.sh` Log Handle & Missing `bench_pg18_lib` / `ResourceWarning` Coverage
+- **Date / Linked Action**: `2026-11-22` (`ACT-113` / Issue `#413`)
+- **Observed Symptom**: `scripts/bench_pg_v2_runner.sh` opened `(LOGD / f"{t}.log").open(...)` manually outside a `with` context manager (risking leaked descriptors if `run_topo` failed before or inside `finally` cleanup), `scripts/bench_pg18_lib.py` lacked dedicated unit tests in `tests/test_pg_libs.py`, and no static guard enforced `.open(` context-manager usage across `scripts/*.py` and `scripts/*.sh`.
+- **Root Cause Analysis**: Conditional logging in `run_topo` used `... if is_new else None` with manual `logf.close()` instead of `contextlib.nullcontext()`, while unclosed `.open(` handles escaped CI without `-W error::ResourceWarning` and static `.open(` checks.
+- **Applied Change / Fix**: Imported `nullcontext` in `scripts/bench_pg_v2_runner.sh` and wrapped `run_topo(topo, logf)` in a `with` block in the topology loop; added `TestBenchPg18Lib` (`assert_zero_pg18_containers`, `pb_run_pg18`, `upsert_pg18_csv`) and `TestBenchResourceHygiene` (`ResourceWarning` check on `upsert_modular_csv`/`upsert_pg18_csv` + static `.open(` `with`-guard scan) in `tests/test_pg_libs.py`.
+- **Result & Non-Regression Test**: Verified `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped in `test_lab.py`), `go test -count=1 ./...` (`11/11`), and `go run ./cmd/mdb lint` (`70` scripts, `21` compose files).
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
