@@ -934,6 +934,13 @@
 - **Applied Change / Fix**: Split multi-clause bullets cleanly without semicolons, shortened EOL prose (`have reached` removed), replaced `via`, and preserved existing EOL H2 anchor.
 - **Result & Non-Regression Test**: Verified 0 STE errors (`ste_check.py --mode procedural --lang en --no-vocab`), 0 `via`/forbidden words, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-128 -- `supported_products_fr.md` Semicolon and Word-Count STE Violations
+- **Date / Linked Action**: `2026-11-22` (`ACT-147` / Issue `#492`)
+- **Observed Symptom**: `documentation/supported_products_fr.md` failed `ste_check.py --mode procedural --lang fr` (4 errors: semicolons inside PostgreSQL bullets and `> 20`-word EOL decommissioning sentences) and used `via` in 12 places.
+- **Root Cause Analysis**: French supported product matrix mirrored the pre-STE multi-clause `yt-cluster` list item and `via` table tags.
+- **Applied Change / Fix**: Split PostgreSQL multi-master bullets cleanly without semicolons, rewrote EOL prose to `<= 20`-word sentences, replaced `via`, and preserved the existing French EOL H2 anchor.
+- **Result & Non-Regression Test**: Verified 0 STE errors/warnings (`ste_check.py --mode procedural --lang fr --no-vocab`), 0 `via`/forbidden words, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
