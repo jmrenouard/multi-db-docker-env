@@ -1011,6 +1011,13 @@
 - **Applied Change / Fix**: Added stdlib `tests/test_docs_hygiene.py` and integrated `python3 -W error::ResourceWarning -m unittest discover -s tests -v` in `.github/workflows/ci.yml`.
 - **Result & Non-Regression Test**: Verified all `TestDocsHygiene` tests passing non-skipped on Windows and WSL alongside `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-139 -- `v2.6.3` Release Synchronization Following Complete Documentation Audit Remediation
+- **Date / Linked Action**: `2026-11-23` (`ACT-158` / Issue `#514`)
+- **Observed Symptom**: Repository metadata (`VERSION`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, `README*.md`, `ROADMAP.md`, `Changelog`) remained at `v2.6.2` after completing all documentation audit fixes (#464-#513).
+- **Root Cause Analysis**: Release bump and Changelog FIFO update run atomically as the concluding release PR once all audit remediation PRs land on `main`.
+- **Applied Change / Fix**: Bumped version references to `2.6.3`, added priority-ordered `2.6.3 2026-11-22` notes to `Changelog` (`<= 600` lines), and added Phase 17 summary to `docs/ACTION_LOGBOOK.md`.
+- **Result & Non-Regression Test**: Verified `release_notes.py --tag v2.6.3 --check`, `go run ./cmd/mdb --version`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

@@ -1,3 +1,9 @@
+2.6.3 2026-11-22
+- fix: remove duplicate root rule files, replace 15 file:/// links, drop nonexistent script/file references, fix 9 GFM anchors, remove stale audit/plan logs, and resolve version drift across README/ROADMAP/workflows (Closes #464, #466, #468, #470, #472).
+- doc: bring 21 bilingual documentation files to 0 ASD-STE100 structural errors, add Rule 7.1-7.3 CAUTION/ATTENTION safety blocks for clean-data/clean-galera/clean-repli, restore 13/8-section FR parity in makefile_fr.md and tests_fr.md, and organize INDEX.md/INDEX_fr.md into the 4 Diataxis quadrants (Closes #474, #476, #478, #480, #482, #484, #486, #488, #490, #492, #494, #496, #498, #500, #502, #504, #506, #508, #510).
+- ci: add Python unittest discovery step (`python3 -W error::ResourceWarning -m unittest discover -s tests -v`) to `.github/workflows/ci.yml` (Closes #512).
+- test: add stdlib `tests/test_docs_hygiene.py` enforcing links, anchors, Makefile targets, safety blocks, and STE rules across cleaned docs, and synchronize `v2.6.3` release metadata (Closes #512, #514).
+
 2.6.2 2026-11-22
 - fix: source .env and honor BENCH_OUT_DIR across all PG benchmark and extended test runners, atomize V2/PG18/YT CSV I/O without ResourceWarnings, raise on wcnt/wait_sub_ready/wait_wal_replay timeouts, and fix Windows temp cleanup (Closes #418, #420, #422).
 - fix: detect pgbench startup aborts and dual-stream exit codes cleanly, sample C_multinode_ro latency logs at 5%, drain and reset pg-birep/pg18-birep balances across both nodes, and quote sysbench/YT credentials (Closes #424, #428, #434, #437).

@@ -30,6 +30,7 @@
 | **Phase 14** | Unified `./mdb` CLI, 12 Usability Audit Fixes & `v2.5.0` Release | `pkg/catalog`, unified `./mdb`/`mdb.cmd`, bilingual wizard, 13 PG stack wrappers, `make lint`/`test`, EN/FR docs, `v2.5.0` sync | ✅ Complete | `python -m unittest discover -s tests -v`, `go test ./...`, CI `test-and-validate` |
 | **Phase 15** | Durable Production-Tuned PG Compose Stacks & Unified 18-Topology Benchmark Harness (`v2.6.0`) | Tuned 13 PG Compose stacks (`fsync`/`RPO=0` preserved), YB/CRDB HAProxy LBs, `bench_pg_optimized_*` (`PG_SCALE=20`, `--resume`), unit/static tests, EN/FR docs, `v2.6.0` tag | ✅ Complete | `make bench-pg-optimized`, `bash ./tests/test_config.sh`, `python -m unittest`, `go test ./...` |
 | **Phase 16** | Self-Contained Patroni Images, `mdb images` CLI & 31/31 Live E2E Parity (`v2.6.1`) | 3 non-root Patroni Dockerfiles + `Dockerfile.bench`, `mdb images` CLI (`31/31` images), Patroni 4.x/mTLS live E2E, EN/FR docs & governance | ✅ Complete | `./mdb images check`, `./mdb test patroni --suite`, `go test ./...`, `python -m unittest` |
+| **Phase 17** | Documentation Audit Remediation, ASD-STE100 Parity, Diataxis Indexing & Hygiene Gate (`v2.6.3`) | Fix links/anchors/rules, remove dead audit logs, achieve 0 STE errors across 21 EN/FR docs, Diataxis `INDEX*`, add `test_docs_hygiene.py` & CI step, release `v2.6.3` | Complete | `python -W error::ResourceWarning -m unittest discover -s tests -v`, `release_notes.py --tag v2.6.3 --check` |
 
 ---
 
@@ -82,6 +83,12 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-158 -- Prepare Release `v2.6.3` Documentation Audit, STE Parity, and CI Gate (`#514`)
+- **Timestamp / Issue / Branch**: `2026-11-23T00:34Z` | Issue `#514` | `chore/issue-514-release-v2-6-3`
+- **Request**: Synchronize `v2.6.3` release metadata across `VERSION`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, `README.md`, `README_fr.md`, `ROADMAP.md`, prepend `2.6.3 2026-11-22` to `Changelog` (`<= 600` lines FIFO), and finalize Phase 17 registers.
+- **Changes**: Bumped `2.6.2` -> `2.6.3` in `VERSION`, Go CLI/tests, EN/FR READMEs, and `ROADMAP.md`; prepended ordered `2.6.3 2026-11-22` notes to `Changelog`; recorded Phase 17 milestone and `RCA-139`.
+- **Result**: Verified `python3 scripts/release_notes.py --tag v2.6.3 --check`, `go run ./cmd/mdb --version`, Windows + WSL `unittest` (79 OK, 6 live-DB skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
 
 ### ACT-157 -- Add Automated Documentation Hygiene Gate and CI Step (`#512`)
 - **Timestamp / Issue / Branch**: `2026-11-23T00:28Z` | Issue `#512` | `ci/issue-512-docs-hygiene-gate`
