@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-149 -- Organize `documentation/INDEX.md` into Four Diataxis Quadrants (`#496`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:49Z` | Issue `#496` | `docs/issue-496-diataxis-index-en`
+- **Request**: Reorganize `documentation/INDEX.md` into Tutorials/Quickstart, How-To Guides, Reference, and Explanation while maintaining STE 0 errors and valid TOC anchors.
+- **Changes**: Grouped all links under the 4 Diataxis H2 sections (`U+FE0F`-free) with synced TOC anchors in `documentation/INDEX.md`; logged `RCA-130`.
+- **Result**: Verified `ste_check.py --mode mixed --lang en --no-vocab` (0 errors, 0 warnings), 100% valid TOC anchors/links, Windows + WSL `unittest`, `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-148 -- Replace `INDEX.md` and `INDEX_fr.md` HTML Logo Blocks and Fix STE (`#494`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:45Z` | Issue `#494` | `docs/issue-494-diataxis-index`
 - **Request**: Resolve 60-word HTML logo block STE errors in `documentation/INDEX.md` and `documentation/INDEX_fr.md`, clear remaining `-ing` warnings in `INDEX.md`, and note English-only deep guide availability in `INDEX_fr.md` (Diataxis 4-quadrant reorganization split cleanly into the next two sub-15K PRs).
