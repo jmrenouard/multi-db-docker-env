@@ -176,6 +176,27 @@ def drop_sb_sub(hs, pt, u, pw, sub, birep=False, pq_fn=None):
         ref_sub(hs[0], pt, u, pw, "sub_from_node2", pq_fn=run_pq)
 
 
+def run_wan_netem(t, delay_ms, dur, hs, pt, u, pw, sc, netem, img, pb_fn, reset_fn, logf=None, warm_s=0, chk_hs=None, note=None, tc_fn=None):
+    """Inject tc netem delay on peers, optionally warm up, run pgbench RW, and clean qdisc."""
+    vhs = chk_hs or hs
+    tc_op = tc_fn or tc_netem
+    suite = f"F_wan_netem_{delay_ms}ms"
+    reset_fn(t, vhs, pt, u, pw)
+    for pc in netem:
+        tc_op(pc, img, ["replace", "dev", "eth0", "root", "netem", "delay", f"{delay_ms}ms"])
+    time.sleep(1)
+    try:
+        if warm_s > 0:
+            pb_fn(t, suite, 1, 8, 4, warm_s, f"-D scale={sc}", "", hs, pt, u, pw, None)
+            reset_fn(t, vhs, pt, u, pw)
+        tps, avg, sdv, p95, ok, fl, rt = pb_fn(t, suite, 1, 8, 4, dur, f"-D scale={sc}", "", hs, pt, u, pw, logf)
+    finally:
+        for pc in netem:
+            tc_op(pc, img, ["del", "dev", "eth0", "root"], False)
+        time.sleep(1)
+    return row(t, suite, sc, 8, dur, tps, "N/A", avg, sdv, p95, ok, fl, rt, f"PASS_NETEM_{delay_ms}MS", 0, note or f"tc netem {delay_ms}ms ({','.join(netem)})")
+
+
 def reset_ds(t, hs, pt, u, pw):
     """Reset pgbench balances and history between suites."""
     rst = f"UPDATE {B}accounts SET abalance=0 WHERE abalance<>0;UPDATE {B}branches SET bbalance=0;UPDATE {B}tellers SET tbalance=0;TRUNCATE {B}history"
