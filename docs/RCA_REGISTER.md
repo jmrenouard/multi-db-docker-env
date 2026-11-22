@@ -857,6 +857,13 @@
 - **Applied Change / Fix**: Converted `doc-sync.md` links to relative `../../` paths matching live EN/FR docs and aligned `.agent/` rules, workflows, and `AGENTS.md` with `./mdb`, `make clean-reports`, `./mdb doctor`, existing scripts, and active DBMS versions.
 - **Result & Non-Regression Test**: Verified zero `file://` links, resolved `doc-sync.md` targets, Windows + WSL `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and `./mdb lint`.
 
+### RCA-117 -- Stale Audit/Plan Files, Dead `tests/README.md` Link, and Directory-Only `ACT-001` Link
+- **Date / Linked Action**: `2026-11-22` (`ACT-135` / Issue `#468`)
+- **Observed Symptom**: Obsolete `audit_report.md` and `INTEGRAL_TEST_PLAN.md` remained tracked with MariaDB-11.8/EOL tables; `tests/README.md` linked nonexistent `./test_perf_threads.sh`; `ACT-001` linked directory `../.agents/rules/` instead of `.agents/AGENTS.md`.
+- **Root Cause Analysis**: Early audit/plan artifacts were superseded by `tests.md` and `docs/RCA_REGISTER.md` without cleanup; 9 GFM `#anchor` fixes split to follow-up PR (`< 14,800` B cap).
+- **Applied Change / Fix**: Removed obsolete files, updated `tests/README.md` to active multi-DB suites, and pointed `ACT-001` to `../.agents/AGENTS.md`.
+- **Result & Non-Regression Test**: Verified 0 broken paths in edited files, Windows + WSL `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
