@@ -1,6 +1,6 @@
 # PostgreSQL Replication, Multi-Master & Distributed SQL Topologies
 
-This guide documents all 13 PostgreSQL Compose stacks (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `yugabyte`, `cockroach`) available in `multi-db-docker-env` (`v2.5.0`), along with their unified `./mdb` CLI commands (31 active environments in `mdb catalog`), `Makefile` compatibility targets, V1/V2/PG18/YT empirical benchmark results, extended `T11`–`T18` test matrix, and verified failure modes.
+Use all 13 PostgreSQL Compose stacks in `multi-db-docker-env` (`v2.6.2`). Stacks cover `pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `yugabyte`, and `cockroach`. Run `./mdb` CLI commands (31 active environments), check `Makefile` targets, and compare V1/V2/PG18/YT benchmark metrics and `T11`–`T18` results.
 
 *Companion deep-dive study, Log10 charts, and interactive HTML benchmark explorer: [jmrenouard/ClusterPostgreSQL-Series](https://github.com/jmrenouard/ClusterPostgreSQL-Series).*
 
@@ -27,7 +27,7 @@ This guide documents all 13 PostgreSQL Compose stacks (`pg17-baseline`, `pg-stre
 ## Quick Start (`./mdb` Unified CLI & `Makefile` Wrappers)
 
 ```bash
-# Unified ./mdb CLI (v2.5.0, 31 active environments incl. all 13 PG Compose stacks)
+# Unified ./mdb CLI (v2.6.2, 31 active environments incl. all 13 PG Compose stacks)
 ./mdb catalog --category cluster --engine postgres
 ./mdb up yt-cluster && ./mdb setup yt-cluster && ./mdb test yt-cluster --suite && ./mdb down yt-cluster
 ./mdb up pg17-baseline && ./mdb test pg17-baseline && ./mdb down pg17-baseline
@@ -49,7 +49,7 @@ make clean-pg18
 
 ## Empirical Benchmark Summary (`PG_SCALE=2`)
 
-All benchmarks executed sequentially inside the Docker bridge network (`multi-db-pgbench-sysbench:latest`, `200,000` `pgbench_accounts` rows, explicit surrogate PK `hid` on `pgbench_history`) across:
+Run all benchmarks sequentially inside the Docker bridge network (`multi-db-pgbench-sysbench:latest`, `200,000` `pgbench_accounts` rows, surrogate PK `hid` on `pgbench_history`):
 - **Suite A**: Single-node `pgbench` RW (`8` clients, `20 s`)
 - **Suite B1**: Multi-node disjoint RW (`2x4` clients, `20 s`)
 - **Suite B2**: Multi-node overlapping RW (`2x4` clients, `20 s`)
@@ -74,23 +74,33 @@ All benchmarks executed sequentially inside the Docker bridge network (`multi-db
 
 ### Key Takeaways
 
-1. **Disjoint vs Overlapping Writes**: Asynchronous multi-master stacks (`pg-birep`, `pgedge`, `bucardo`) converged cleanly with `0` drift on disjoint keys (`B1`), but silently lost updates or diverged on overlapping hot updates (`B2`, `D`). Enabling `spock.delta_apply` (`log_old_value=true`) on `pgedge` maintained `1,837.64 TPS` with **`0` balance drift**.
-2. **WAN RTT Tax**: Adding `25 ms` one-way delay (`tc netem`) collapsed `PC/EC` engines (`pg17-sync-streaming` `-86.1%`, `citus` `-93.0%`, `yugabyte` `-96.7%`, `cockroach` `-76.1%`) while `PA/EL` async engines committed locally near `~10 ms`.
+1. **Disjoint Writes (`B1`)**: Asynchronous multi-master stacks (`pg-birep`, `pgedge`, `bucardo`) converged cleanly with `0` drift on disjoint keys.
+2. **Overlap Writes (`B2`, `D`)**: Async stacks lost updates or diverged on hot updates. Enable `spock.delta_apply` (`log_old_value=true`) on `pgedge` for `1,837.64 TPS` with **`0` drift**.
+3. **WAN RTT Tax**: Adding `25 ms` delay (`tc netem`) hit `PC/EC` engines (`pg17-sync-streaming` `-86.1%`, `citus` `-93.0%`, `yugabyte` `-96.7%`, `cockroach` `-76.1%`). `PA/EL` async engines committed near `~10 ms`.
 
 ## Verified Empirical Limits & Observed `SQLSTATE`s
 
-- **Keyless Tables (`pgbench_history`)**: `pg-birep` raised `SQLSTATE 55000` on `UPDATE`/`DELETE`; `pgedge` placed keyless tables in `default_insert_only` (local `UPDATE` silently omitted from replication); `bucardo` rejected `validate_sync` (`must specify a primary key`); `citus` blocked post-distribution `ADD PRIMARY KEY` / `SERIAL` with `0A000`; `cockroach` auto-injected hidden `rowid`.
-- **Uncoordinated `SERIAL` PKs**: `pg-birep` halted subscription apply (`23505`, `apply_error_count=1`), whereas `pgedge` (`spock.resolutions=1`) and `bucardo` (`Conflicts=1`) silently overwrote node 1's insert. Always use stepped sequences, `snowflake`, or `unique_rowid()`.
-- **Secondary `UNIQUE(email)` Collisions**: `pg-birep` and `bucardo` halted (`23505`, Bucardo `sync_mm` state `Bad`); `pgedge` (`transdiscard`) logged `23505` to `spock.exception_log` and left nodes diverged; `citus` blocked non-distribution-key `UNIQUE` indexes (`0A000`); `yugabyte` and `cockroach` enforced global `23505`.
+- **Keyless Tables (`pgbench_history`)**:
+  - `pg-birep` raised `SQLSTATE 55000` on `UPDATE`/`DELETE`.
+  - `pgedge` marked keyless tables `default_insert_only` and skipped local `UPDATE` replication.
+  - `bucardo` rejected `validate_sync` (`must specify a primary key`).
+  - `citus` blocked post-distribution `ADD PRIMARY KEY` and `SERIAL` (`0A000`).
+  - `cockroach` injected a hidden `rowid` column.
+- **Uncoordinated `SERIAL` PKs**: `pg-birep` halted apply (`23505`, `apply_error_count=1`). `pgedge` (`spock.resolutions=1`) and `bucardo` (`Conflicts=1`) overwrote node 1 rows. Use stepped sequences, `snowflake`, or `unique_rowid()`.
+- **Secondary `UNIQUE(email)` Collisions**:
+  - `pg-birep` and `bucardo` halted (`23505`, Bucardo `sync_mm` state `Bad`).
+  - `pgedge` (`transdiscard`) logged `23505` to `spock.exception_log` and diverged.
+  - `citus` blocked non-distribution `UNIQUE` indexes (`0A000`).
+  - `yugabyte` and `cockroach` enforced global `23505`.
 - **PostgreSQL Features & Extensions**:
-  - `pg_advisory_lock` and `LISTEN`/`NOTIFY` are strictly node-local on `pg-birep`, `pgedge`, and `bucardo`.
-  - `yugabyte`: `pg_trgm`, `uuid-ossp`, `vector`, and `TEMP TABLE` work; `LISTEN`/`NOTIFY` returns `0A000` (disabled).
-  - `cockroach`: `CREATE TEMP TABLE` returns `XCEXF` unless `experimental_enable_temp_tables='on'`; `LISTEN` returns `42601`; `40001` (`WriteTooOldError`) requires client retry loops (shown by `685` ignored errors in `sysbench`).
+  - `pg_advisory_lock` and `LISTEN`/`NOTIFY` remain node-local on `pg-birep`, `pgedge`, and `bucardo`.
+  - `yugabyte`: `pg_trgm`, `uuid-ossp`, `vector`, and `TEMP TABLE` work. `LISTEN`/`NOTIFY` returns `0A000` (disabled).
+  - `cockroach`: `CREATE TEMP TABLE` returns `XCEXF` without `experimental_enable_temp_tables='on'`. `LISTEN` returns `42601`. Retry `40001` (`WriteTooOldError`) in clients (`685` ignored errors in `sysbench`).
   - `citus`: `vector` extension absent (`0A000`) in standard `14.2.0-pg17` image.
 - **Quorum & Container Quirks**:
-  - `yugabyte` & `cockroach` (`RF=3`) survived `1/3` node loss (`RPO=0`) and halted completely on `2/3` node loss (`cockroach` `57014`, `yugabyte` timeout) until quorum returned.
-  - `pgedge` Rocky UBI minimal image required overriding `output_plugin_libraries=pgoutput,spock_output` (`42501` fix), `listen_addresses=*`, and `host replication` `scram-sha-256`.
-  - `bucardo` required a custom `Dockerfile.pg` installing `postgresql-plperl-17`, `libdbi-perl`, and `libdbd-pg-perl` on the PostgreSQL nodes for `db_getconn` (`PL/PerlU`).
+  - `yugabyte` & `cockroach` (`RF=3`) survived `1/3` node loss (`RPO=0`). Both halted on `2/3` loss (`cockroach` `57014`, `yugabyte` timeout) until quorum returned.
+  - `pgedge` Rocky UBI minimal image needed `output_plugin_libraries=pgoutput,spock_output` (`42501` fix), `listen_addresses=*`, and `host replication` `scram-sha-256`.
+  - `bucardo` needed a custom `Dockerfile.pg` with `postgresql-plperl-17`, `libdbi-perl`, and `libdbd-pg-perl` for `db_getconn` (`PL/PerlU`).
 
 ## V2 Extended Matrix (`T11`–`T18`) & V2 Benchmarks (`bench-pg-v2`)
 

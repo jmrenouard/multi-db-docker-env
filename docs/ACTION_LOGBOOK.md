@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-151 -- Align `pg_multimaster.md` Part 1 (Overview & Empirical Limits) with ASD-STE100 (`#500`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:58Z` | Issue `#500` | `docs/issue-500-pg-multimaster-en-part1`
+- **Request**: Refactor `documentation/pg_multimaster.md` overview, V1 takeaways, and Empirical Limits into <= 20-word STE sentences with 0 semicolons and update `v2.5.0` -> `v2.6.2` (V2 matrix, PG18, YT, and `v2.6.0` sections follow in the next atomic PRs to stay `< 14,800` B).
+- **Changes**: Split L3, L52, Key Takeaways, and Empirical SQLSTATE Limit bullets into short STE sentences without semicolons or possessives in `documentation/pg_multimaster.md`; logged `RCA-132`.
+- **Result**: Verified 0 STE errors across lines 1-106 (`ste_check.py --mode procedural --lang en --no-vocab`), Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-150 -- Organize `documentation/INDEX_fr.md` into Four Diataxis Quadrants (`#498`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:53Z` | Issue `#498` | `docs/issue-498-diataxis-index-fr`
 - **Request**: Reorganize `documentation/INDEX_fr.md` into the 4 Diataxis quadrants and mark English-only deep guides with `[en anglais]` while preserving STE 0 errors and valid TOC anchors.
