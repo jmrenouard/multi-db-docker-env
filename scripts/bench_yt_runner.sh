@@ -17,50 +17,13 @@ from pathlib import Path
 R,OUT,LOG=Path(os.environ["BENCH_ROOT"]),Path(os.environ["BENCH_OUT_CSV"]),Path(os.environ["BENCH_LOG_FILE"])
 OUT.parent.mkdir(parents=True,exist_ok=True); LOG.parent.mkdir(parents=True,exist_ok=True)
 sys.path.insert(0,str(R/"scripts"))
-from bench_pg_lib import B,COLS,bc,de,mk_scripts,pb_run,pq,row,sh
+from bench_pg_lib import B,COLS,YT_RETRY_PY as RETRY_PY,bc,de,mk_scripts,pb_run,pq,row,sh,write_csv_atomic
 
 SC,PW,IMG=int(os.environ["PG_SCALE"]),os.environ["PG_PASS"],os.environ["BENCH_IMAGE"]
 NA,HF,NS,U,PT,J=100000*SC,50000*SC,["yt1","yt2","yt3"],"postgres",5432,"/".join
 CF,CC_ASYNC=str(R/"docker-compose-yt-cluster.yml"),"CgQSAhAC"
 q=lambda n,s:pq(n,PT,U,PW,s)
 pb=lambda t,su,m,c,j,d,a1,a2="":pb_run(t,su,m,c,j,d,a1,a2,NS[:2],PT,U,PW,io.StringIO())
-
-RETRY_PY="""import math,random,sys,threading,time,psycopg
-md,dur,sc,na,pw,hs=sys.argv[1],int(sys.argv[2]),int(sys.argv[3]),int(sys.argv[4]),sys.argv[5],sys.argv[6].split(",")
-te=time.monotonic()+dur;lts=[];ct=[0,0,0,0];lk=threading.Lock()
-def w(h):
- c=psycopg.connect(f"host={h} port=5432 dbname=labdb user=postgres password={pw}",autocommit=False);cur=c.cursor();ll=[];lc=[0,0,0,0]
- while time.monotonic()<te:
-  t0=time.monotonic();aid=random.randint(1,50 if md=="hot" else na);dl=random.randint(1,100) if md=="hot" else random.randint(-5000,5000)
-  bid=1 if md=="hot" else random.randint(1,sc);tid=1 if md=="hot" else random.randint(1,10*sc)
-  for _ in range(100):
-   if time.monotonic()>=te:break
-   try:
-    cur.execute("UPDATE pgbench_accounts SET abalance=abalance+%s WHERE aid=%s",(dl,aid))
-    if md!="hot":
-     cur.execute("SELECT abalance FROM pgbench_accounts WHERE aid=%s",(aid,))
-     cur.execute("UPDATE pgbench_tellers SET tbalance=tbalance+%s WHERE tid=%s",(dl,tid))
-     cur.execute("UPDATE pgbench_branches SET bbalance=bbalance+%s WHERE bid=%s",(dl,bid))
-    cur.execute("INSERT INTO pgbench_history(tid,bid,aid,delta,mtime) VALUES(%s,%s,%s,%s,CURRENT_TIMESTAMP)",(tid,bid,aid,dl))
-    c.commit();lc[0]+=1;ll.append((time.monotonic()-t0)*1000);break
-   except psycopg.Error as e:
-    c.rollback();st=getattr(e,"sqlstate","") or ""
-    if st in("40001","40P01"):lc[2]+=1
-    elif st=="55409":lc[3]+=1
-    else:lc[1]+=1;break
-  else:lc[1]+=1
- c.close()
- with lk:
-  lts.extend(ll)
-  for i in range(4):ct[i]+=lc[i]
-ts=[threading.Thread(target=w,args=(h,)) for h in hs for _ in range(4)];t0=time.monotonic()
-for t in ts:t.start()
-for t in ts:t.join()
-el=max(time.monotonic()-t0,1e-4)
-if lts:lts.sort();n=len(lts);a=sum(lts)/n;sd=math.sqrt(sum((x-a)**2 for x in lts)/n);p95=lts[min(n-1,int(0.95*n))]
-else:a=sd=p95=0.0
-print(f"{ct[0]/el:.2f}|{a:.3f}|{sd:.3f}|{p95:.3f}|{ct[0]}|{ct[1]}|{ct[2]+ct[3]}|{ct[2]}|{ct[3]}")
-"""
 
 def assert_zero():
   left=[n.strip() for n in sh(["docker","ps","-a","--format","{{.Names}}"]).stdout.splitlines() if n.strip() in("yt1","yt2","yt3","bench_client")]
@@ -110,11 +73,12 @@ def r_ret(topo,su,md,dur,tag):
   return row(topo,su,SC,8,dur,float(p[0]),"N/A",float(p[1]),float(p[2]),float(p[3]),int(p[4]),int(p[5]),int(p[6]),cst,cdr,cn)
 
 def r_sb(topo,tag,am=False,want=None):
-  cm=f"--db-driver=pgsql --pgsql-host=yt1 --pgsql-port={PT} --pgsql-user={U} --pgsql-password={PW} --pgsql-db=labdb --tables=4 --table-size=10000"
+  pwa='--pgsql-password="$PGPASSWORD" ' if PW else ""
+  cm=f"--db-driver=pgsql --pgsql-host=yt1 --pgsql-port={PT} --pgsql-user={U} {pwa}--pgsql-db=labdb --tables=4 --table-size=10000"
   def prep_sb():
     for n in NS: q(n,"DROP TABLE IF EXISTS sbtest1,sbtest2,sbtest3,sbtest4 CASCADE;")
     q(ldr(),"DELETE FROM public.yt_config WHERE module='A' AND name LIKE 'public.sbtest%';"); time.sleep(1.5)
-    bc(["bash","-c",f"sysbench oltp_read_write {cm} prepare >/tmp/sb_p.out 2>&1"],"",True)
+    bc(["bash","-c",f"sysbench oltp_read_write {cm} prepare >/tmp/sb_p.out 2>&1"],PW,True)
     dump=de("yt1",["pg_dump","-U",U,"-d","labdb","-t","sbtest*"],PW).stdout
     for n in("yt2","yt3"): sp.run(["docker","exec","-i","-e",f"PGPASSWORD={PW}",n,"psql","-U",U,"-d","labdb","-v","ON_ERROR_STOP=1"],input=dump,text=True,check=True,stdout=sp.DEVNULL)
     yts("public.sbtest%")
@@ -126,11 +90,11 @@ def r_sb(topo,tag,am=False,want=None):
     if want is not None and su not in want: continue
     if su=="E3_sysbench_oltp_wo" and am and (want is None or "E_sysbench_oltp_rw" in want): prep_sb()
     time.sleep(2); note=f"{tag} {lua} 4x10k"; cmd=["bash","-c",f"sysbench {lua} {cm} --threads={th} --time={dur} run >/tmp/sb_r.out 2>&1"]
-    if bc(cmd,"",False).returncode:
+    if bc(cmd,PW,False).returncode:
       time.sleep(2)
-      if bc(cmd,"",False).returncode:
+      if bc(cmd,PW,False).returncode:
         note=f"{tag} {lua} ps=off"
-        if bc(["bash","-c",f"sysbench {lua} {cm} --threads={th} --time={dur} --db-ps-mode=disable run >/tmp/sb_r.out 2>&1"],"",False).returncode:
+        if bc(["bash","-c",f"sysbench {lua} {cm} --threads={th} --time={dur} --db-ps-mode=disable run >/tmp/sb_r.out 2>&1"],PW,False).returncode:
           res[su]=row(topo,su,SC,th,dur,0,0,0,0,0,0,0,0,"EXPECTED_LIMITATION_UNSUPPORTED",0,f"{tag} err"); continue
     s=bc(["cat","/tmp/sb_r.out"]).stdout; tx,qm,em,avm,pm=[re.search(x,s) for x in pats]
     res[su]=row(topo,su,SC,th,dur,float(tx.group(2)) if tx else 0,float(qm.group(1)) if qm else 0,float(avm.group(1)) if avm else 0,0,float(pm.group(1)) if pm else 0,int(tx.group(1)) if tx else 0,int(em.group(1)) if em else 0,0,"PASS",0,note)
@@ -197,7 +161,10 @@ def run_topo(topo,tag,am,want):
 
 miss_only=os.environ.get("YT_ASYNC_MISSING_ONLY")=="1"
 ex_path=Path(os.environ.get("YT_EXISTING_CSV",str(OUT)))
-kept={(r["topology"].strip(),r["suite"].strip()):r for r in (csv.DictReader(ex_path.open(encoding="utf-8",newline="")) if miss_only and ex_path.is_file() else [])}
+kept={}
+if miss_only and ex_path.is_file():
+  with ex_path.open(encoding="utf-8",newline="") as fh:
+    kept={(r["topology"].strip(),r["suite"].strip()):r for r in csv.DictReader(fh)}
 rows=list(kept.values()); assert_zero()
 with LOG.open("w",encoding="utf-8",newline="\n") as lf:
   try:
@@ -221,7 +188,6 @@ with LOG.open("w",encoding="utf-8",newline="\n") as lf:
 
 tord={"yt-cluster":0,"yt-cluster-async":1}; sidx={s:i for i,s in enumerate(SORD)}
 rows.sort(key=lambda r:(tord.get(r["topology"],9),sidx.get(r["suite"],99)))
-with OUT.open("w",encoding="utf-8",newline="\n") as fh:
-  w=csv.DictWriter(fh,fieldnames=COLS,lineterminator="\n"); w.writeheader(); w.writerows(rows)
+write_csv_atomic(OUT,rows)
 print(f"Wrote {len(rows)} rows to {OUT}",flush=True)
 PY

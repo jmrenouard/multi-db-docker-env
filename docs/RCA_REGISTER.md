@@ -675,6 +675,13 @@
 - **Applied Change / Fix**: Fixed `append_summary_preserving` (missing-file `COLS` header + atomic write), consolidated `write_csv_atomic`, `upsert_csv`, and hardened `YT_RETRY_PY` in `scripts/bench_pg_lib.py`, raised `RuntimeError` in `wcnt`, and delegated `upsert_modular_csv`/`upsert_pg18_csv` to `upsert_csv`.
 - **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest` (`0` ResourceWarnings), `go test -count=1 ./...`, and `tests/test_config.sh`.
 
+### RCA-091 -- Duplicated `YT_RETRY_PY`, Unquoted YT `sysbench` Password & Unclosed YT Resume CSV
+- **Date / Linked Action**: `2026-11-22` (`ACT-109` / Issue `#422`)
+- **Observed Symptom**: `bench_yt_runner.sh` and `bench_pg_opt_common.py` duplicated `YT_RETRY_PY`, `wcnt_opt`, and atomic CSV code; `bench_yt_runner.sh` interpolated `PW` directly in `bash -c` `sysbench` strings and left `ex_path.open()` unclosed.
+- **Root Cause Analysis**: YT/Opt runners copied inline `YT_RETRY_PY` and CSV logic instead of importing from `bench_pg_lib.py`.
+- **Applied Change / Fix**: Imported `YT_RETRY_PY`, `write_csv_atomic`, `upsert_csv`, and `wcnt` from `bench_pg_lib.py`, passed `--pgsql-password="$PGPASSWORD"` via `bc(..., PW, ...)` in `bench_yt_runner.sh`, and wrapped `ex_path.open()` in `with`.
+- **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest`, `go test -count=1 ./...`, `bash -n`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

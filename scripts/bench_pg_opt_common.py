@@ -7,7 +7,7 @@ import subprocess as sp
 import time
 from pathlib import Path
 
-from bench_pg_lib import B, COLS, bc, mk_scripts, pq, row, sh, wlog
+from bench_pg_lib import B, COLS, YT_RETRY_PY, bc, mk_scripts, pq, row, sh, upsert_csv, wcnt, wlog
 
 TOPO_ORDER = [
     "pg17-standalone", "pg17-async-streaming", "pg17-sync-streaming", "pg17-logical",
@@ -57,42 +57,6 @@ SB_RETRY_LUA = (
     "  return false\n"
     "end\n"
 )
-YT_RETRY_PY = """import math,random,sys,threading,time,psycopg
-md,dur,sc,na,pw,hs=sys.argv[1],int(sys.argv[2]),int(sys.argv[3]),int(sys.argv[4]),sys.argv[5],sys.argv[6].split(",")
-te=time.monotonic()+dur;lts=[];ct=[0,0,0,0];lk=threading.Lock()
-def w(h):
- c=psycopg.connect(f"host={h} port=5432 dbname=labdb user=postgres password={pw}",autocommit=False);cur=c.cursor();ll=[];lc=[0,0,0,0]
- while time.monotonic()<te:
-  t0=time.monotonic();aid=random.randint(1,50 if md=="hot" else na);dl=random.randint(1,100) if md=="hot" else random.randint(-5000,5000)
-  bid=1 if md=="hot" else random.randint(1,sc);tid=1 if md=="hot" else random.randint(1,10*sc)
-  for _ in range(100):
-   if time.monotonic()>=te:break
-   try:
-    cur.execute("UPDATE pgbench_accounts SET abalance=abalance+%s WHERE aid=%s",(dl,aid))
-    if md!="hot":
-     cur.execute("SELECT abalance FROM pgbench_accounts WHERE aid=%s",(aid,))
-     cur.execute("UPDATE pgbench_tellers SET tbalance=tbalance+%s WHERE tid=%s",(dl,tid))
-     cur.execute("UPDATE pgbench_branches SET bbalance=bbalance+%s WHERE bid=%s",(dl,bid))
-    cur.execute("INSERT INTO pgbench_history(tid,bid,aid,delta,mtime) VALUES(%s,%s,%s,%s,CURRENT_TIMESTAMP)",(tid,bid,aid,dl))
-    c.commit();lc[0]+=1;ll.append((time.monotonic()-t0)*1000);break
-   except psycopg.Error as e:
-    c.rollback();st=getattr(e,"sqlstate","") or ""
-    if st in("40001","40P01"):lc[2]+=1
-    elif st=="55409":lc[3]+=1
-    else:lc[1]+=1;break
-  else:lc[1]+=1
- c.close()
- with lk:
-  lts.extend(ll)
-  for i in range(4):ct[i]+=lc[i]
-ts=[threading.Thread(target=w,args=(h,)) for h in hs for _ in range(4)];t0=time.monotonic()
-for t in ts:t.start()
-for t in ts:t.join()
-el=max(time.monotonic()-t0,1e-4)
-if lts:lts.sort();n=len(lts);a=sum(lts)/n;sd=math.sqrt(sum((x-a)**2 for x in lts)/n);p95=lts[min(n-1,int(0.95*n))]
-else:a=sd=p95=0.0
-print(f"{ct[0]/el:.2f}|{a:.3f}|{sd:.3f}|{p95:.3f}|{ct[0]}|{ct[1]}|{ct[2]+ct[3]}|{ct[2]}|{ct[3]}")
-"""
 
 
 def expected_suites(topo: str) -> list[str]:
@@ -111,15 +75,8 @@ def assert_zero_opt_containers() -> None:
 
 
 def wcnt_opt(h: str, pt: int, u: str, pw: str, tbl: str, exp: int, to_s: int = 180) -> None:
-    """Wait until table count reaches expected value or raise TimeoutError."""
-    for _ in range(to_s):
-        try:
-            if pq(h, pt, u, pw, f"SELECT count(*) FROM {tbl};") == str(exp):
-                return
-        except Exception:
-            pass
-        time.sleep(1)
-    raise RuntimeError(f"Timeout waiting for {tbl} count={exp} on {h}")
+    """Wait until table count reaches expected value or raise RuntimeError."""
+    wcnt(h, pt, u, pw, tbl, exp, to_s=to_s)
 
 
 def mk_scripts_opt() -> None:
@@ -208,17 +165,4 @@ def completed_topologies(path: Path) -> set[str]:
 
 def upsert_opt_csv(path: Path, topo: str, new_rows: list[dict]) -> None:
     """Atomically upsert one topology's benchmark rows in canonical CSV order."""
-    cur: list[dict] = []
-    if path.is_file():
-        with path.open(encoding="utf-8", newline="") as fh:
-            cur = list(csv.DictReader(fh))
-    merged = [r for r in cur if r["topology"] != topo] + new_rows
-    ti, si = {k: i for i, k in enumerate(TOPO_ORDER)}, {k: i for i, k in enumerate(SUITE_ORDER)}
-    merged.sort(key=lambda r: (ti.get(r["topology"], 999), si.get(r["suite"], 999)))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".csv.tmp")
-    with tmp.open("w", encoding="utf-8", newline="\n") as fh:
-        w = csv.DictWriter(fh, fieldnames=COLS, lineterminator="\n")
-        w.writeheader()
-        w.writerows(merged)
-    tmp.replace(path)
+    upsert_csv(path, topo, new_rows, TOPO_ORDER, SUITE_ORDER)
