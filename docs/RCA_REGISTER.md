@@ -766,6 +766,13 @@
 - **Applied Change / Fix**: Delegated `defaultContainer` to `activeCatalog().Lookup` (fallback `mariadb-11.4`), deleted `pickContainerName`/`resolveContainer`, wired `resolveEnvContainer` to `client.ResolveContainer`, read `SetupArgs`/`SetupEnv` from `pkg/catalog` in `planSetup`/`runTestCmd`, and added unit checks in `cmd/mdb/main_test.go`.
 - **Result & Non-Regression Test**: Verified zero callers via `git grep`, `go test -count=1 ./...` (`11/11`), `go vet ./...`, `go run ./cmd/mdb lint` (`70 shell scripts + 21 Compose files`), and `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped).
 
+### RCA-104 -- Unchecked YB/CRDB Quorum Timeouts, Exposed `.bucardorc` & Mutating `test_config.sh`
+- **Date / Linked Action**: `2026-11-22` (`ACT-122` / Issue `#443`)
+- **Observed Symptom**: `setup_cockroach.sh`/`setup_yugabyte.sh` continued after cluster timeout; `setup_bucardo.sh` left `/root/.bucardorc` mode `644` and expanded `$PG_PASS` unquoted; `setup_replication.sh` left SQL/shell creds unescaped; `test_pgpool.sh` hardcoded network + unbounded `curl`; `test_config.sh` called `chmod +x` during lint.
+- **Root Cause Analysis**: Quorum loops lacked post-loop `exit 1` checks, setup scripts interpolated raw secrets, and `test_pgpool.sh`/`test_config.sh` used static names and side-effecting permission fixes.
+- **Applied Change / Fix**: Added `INIT_OK`/`LIVE=3`/`TS_CNT=3` `exit 1` guards, `mktemp` + `v25.4`, `<<'EOF'` + `chmod 600` + `-e PGPASSWORD`, SQL/env escaping, `docker inspect` network + `--max-time 5`, and non-mutating `test_config.sh` check.
+- **Result & Non-Regression Test**: Verified `bash -n`, `tests/test_config.sh`, Windows + WSL Python `unittest`, and `go test -count=1 ./...`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

@@ -12,7 +12,8 @@ fi
 
 DB_USER="postgres"
 DB_PASS="${DB_ROOT_PASSWORD:-rootpass}"
-NETWORK="multi-db-docker-env_backend_pgpool"
+NETWORK=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}' pgpool 2>/dev/null | head -n1 || true)
+NETWORK="${NETWORK:-multi-db-docker-env_backend_pgpool}"
 
 # Create reports directory
 REPORT_DIR="./reports"
@@ -406,7 +407,7 @@ echo ""
 echo "14. ⚖️ HAProxy Stats Dashboard..."
 write_report "## 14. HAProxy Stats"
 
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8406/stats" 2>/dev/null || echo "000")
+HTTP_CODE=$(curl -s --max-time 5 -o /dev/null -w "%{http_code}" "http://localhost:8406/stats" 2>/dev/null || echo "000")
 if [ "$HTTP_CODE" = "200" ]; then
     echo "✅ HAProxy Stats dashboard available at http://localhost:8406/stats"
     write_report "- ✅ HAProxy dashboard: UP"

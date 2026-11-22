@@ -83,11 +83,17 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-122 -- Harden Setup Creds, Fail on YB/CRDB Quorum Timeout & Fix `test_pgpool`/`test_config` (`#443`)
+- **Timestamp / Issue / Branch**: `2026-11-22T01:58Z` | Issue `#443` | `fix/issue-443-setup-quorum-pgpool-tests`
+- **Request**: Harden Bucardo/PgPool credential passing and `/root/.bucardorc` mode `600`, fail on CockroachDB/YugabyteDB quorum timeouts, use `mktemp` + `v25.4` in `setup_cockroach.sh`, inspect PgPool network dynamically + `curl --max-time 5`, and avoid `+x` mutations in `tests/test_config.sh`.
+- **Changes**: Updated `scripts/bucardo/setup_bucardo.sh`, `scripts/pgpool/setup_replication.sh`, `scripts/cockroach/setup_cockroach.sh`, `scripts/yugabyte/setup_yugabyte.sh`, `tests/test_pgpool.sh`, and `tests/test_config.sh`; logged `RCA-104`.
+- **Result**: Verified `bash -n`, `test_config.sh`, Windows + WSL Python `unittest`, `go test -count=1 ./...`, and diff `< 14,800` B.
+
 ### ACT-121 -- Deduplicate `mdb` Container and Setup Lookups via Catalog (`#433`)
 - **Timestamp / Issue / Branch**: `2026-11-22T00:54Z` | Issue `#433` | `refactor/issue-433-mdb-catalog-ssot-dedup`
 - **Request**: Read `defaultContainer` and `mongo8` setup/test metadata from `pkg/catalog`, delegate `resolveEnvContainer` to `client.ResolveContainer`, and delete `pickContainerName`/`resolveContainer` (Slice 4C of `#415` -> `#432` -> `#433`).
 - **Changes**: Updated `cmd/mdb/main.go`, `cmd/mdb/commands_ops.go`, `cmd/mdb/commands_lint.go`, `cmd/mdb/main_test.go`, and `RCA-103`.
-- **Result**: `go test -count=1 ./...` (`11/11`), `go vet ./...`, `go run ./cmd/mdb lint` (`70 shell scripts + 21 Compose files`), `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped) pass; PR diff `< 15,000` chars.
+- **Result**: `go test -count=1 ./...` (`11/11`), `go vet ./...`, `go run ./cmd/mdb lint` (`70` shell scripts + `21` Compose files), `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped) pass; PR diff `< 15,000` chars.
 
 ### ACT-120 -- Bound Standby `pg_basebackup` Retries, Escape `conninfo` & Fix `DB_ROOT_PASSWORD` Order (`#440`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:49Z` | Issue `#440` | `fix/issue-440-standby-retries-creds-precedence`

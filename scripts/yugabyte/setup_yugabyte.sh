@@ -20,11 +20,13 @@ for pair in "${NODES[@]}"; do
 done
 
 echo "[INFO] Waiting for 3 TServers in RF=3 quorum..."
+TS_CNT=0
 for _ in $(seq 1 60); do
     TS_CNT=$(docker exec yb_node1 /home/yugabyte/bin/ysqlsh -h yb-node1 -p 5433 -U yugabyte -tAc "SELECT count(*) FROM yb_servers();" 2>/dev/null || echo "0")
     [ "${TS_CNT:-0}" = "3" ] && break
     sleep 2
 done
+[ "${TS_CNT:-0}" = "3" ] || { echo "[FAIL] Timeout waiting for 3 YugabyteDB TServers (got ${TS_CNT:-0})"; exit 1; }
 
 docker exec yb_node1 /home/yugabyte/bin/yugabyted configure data_placement --fault_tolerance=zone --base_dir=/home/yugabyte/var >/dev/null 2>&1 || true
 

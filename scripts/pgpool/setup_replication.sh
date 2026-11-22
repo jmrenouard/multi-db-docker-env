@@ -41,11 +41,13 @@ echo "2. ⏳ Waiting for Primary to accept connections and init to complete (30s
 sleep 10
 
 # Verify replication user exists
-if docker exec "$PRIMARY_HOST" psql -U postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='$REPLI_USER'" | grep -q 1; then
+ESC_USER="${REPLI_USER//\'/\'\'}"
+ESC_PASS="${REPLI_PASS//\'/\'\'}"
+if docker exec "$PRIMARY_HOST" psql -U postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${ESC_USER}'" | grep -q 1; then
     echo "✅ Replication user '$REPLI_USER' exists."
 else
     echo ">> Creating replication user '$REPLI_USER'..."
-    docker exec "$PRIMARY_HOST" psql -U postgres -c "CREATE ROLE $REPLI_USER WITH REPLICATION LOGIN PASSWORD '$REPLI_PASS';"
+    docker exec "$PRIMARY_HOST" psql -U postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE \"${REPLI_USER//\"/\"\"}\" WITH REPLICATION LOGIN PASSWORD '${ESC_PASS}';"
 fi
 
 # Ensure pg_hba.conf allows replication
@@ -81,8 +83,10 @@ for standby in "${STANDBYS[@]}"; do
 
     # Stop standby gracefully so PGDATA is never wiped beneath a live postgres process
     docker stop "$standby" >/dev/null
-    docker run --rm --volumes-from "$standby" --network "$NET" -e PGPASSWORD="$REPLI_PASS" postgres:17 \
-        bash -c "find /var/lib/postgresql/data -mindepth 1 -delete && chown postgres:postgres /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data && exec gosu postgres pg_basebackup -h '$PRIMARY_HOST' -p '$PRIMARY_PORT' -U '$REPLI_USER' -D /var/lib/postgresql/data -Fp -Xs -P -R -S '$SLOT_NAME'"
+    docker run --rm --volumes-from "$standby" --network "$NET" \
+        -e PGPASSWORD="$REPLI_PASS" -e P_HOST="$PRIMARY_HOST" -e P_PORT="$PRIMARY_PORT" \
+        -e R_USER="$REPLI_USER" -e R_SLOT="$SLOT_NAME" postgres:17 \
+        bash -c 'find /var/lib/postgresql/data -mindepth 1 -delete && chown postgres:postgres /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data && exec gosu postgres pg_basebackup -h "$P_HOST" -p "$P_PORT" -U "$R_USER" -D /var/lib/postgresql/data -Fp -Xs -P -R -S "$R_SLOT"'
     docker start "$standby" >/dev/null
     echo "✅ Base backup completed and $standby started."
 done
