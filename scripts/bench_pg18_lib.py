@@ -1,14 +1,13 @@
 """Helper routines for the PostgreSQL 18 empirical benchmark suite."""
 from __future__ import annotations
 
-import csv
 import io
 import re
 import subprocess as sp
 import time
 from pathlib import Path
 
-from bench_pg_lib import B, COLS, bc, de, mk_scripts, pb_run, pq, reset_ds, row, sh, wcnt, wlog
+from bench_pg_lib import B, COLS, bc, de, mk_scripts, pb_run, pq, reset_ds, row, sh, upsert_csv, wcnt, wlog
 
 SINGLE_PRIMARY = {"pg18-standalone", "pg18-async-streaming", "pg18-sync-streaming", "pg18-logical"}
 MULTI_WRITER = {"pg18-birep"}
@@ -232,11 +231,4 @@ def run_wan_netem_pg18(t: str, delay_ms: int, dur: int, hs: list[str], pt: int, 
 
 def upsert_pg18_csv(path: Path, topo: str, new_rows: list[dict], topo_order: list[str], suite_order: list[str]) -> None:
     """Upsert rows for one PG 18 topology preserving canonical ordering."""
-    cur = list(csv.DictReader(path.open(encoding="utf-8", newline=""))) if path.is_file() else []
-    merged = [r for r in cur if r["topology"] != topo] + new_rows
-    ti, si = {k: i for i, k in enumerate(topo_order)}, {k: i for i, k in enumerate(suite_order)}
-    merged.sort(key=lambda r: (ti.get(r["topology"], 999), si.get(r["suite"], 999)))
-    with path.open("w", encoding="utf-8", newline="\n") as fh:
-        w = csv.DictWriter(fh, fieldnames=COLS, lineterminator="\n")
-        w.writeheader()
-        w.writerows(merged)
+    upsert_csv(path, topo, new_rows, topo_order, suite_order)

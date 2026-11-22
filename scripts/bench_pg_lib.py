@@ -1,6 +1,7 @@
 """Helper routines for the PostgreSQL multi-master benchmark harness."""
 from __future__ import annotations
 
+import csv
 import os
 import re
 import subprocess as sp
@@ -30,14 +31,15 @@ def bc(a, pw="", chk=True): return de("bench_client", a, pw, chk)
 def pq(h, p, u, pw, q): return bc(["psql", "-h", h, "-p", str(p), "-U", u, "-d", "labdb", "-v", "ON_ERROR_STOP=1", "-tAc", q], pw).stdout.strip()
 
 
-def wcnt(h, p, u, pw, tbl, exp):
-    for _ in range(45):
+def wcnt(h, p, u, pw, tbl, exp, to_s=45):
+    for _ in range(to_s):
         try:
             if pq(h, p, u, pw, f"SELECT count(*) FROM {tbl};") == str(exp):
                 return
         except Exception:
             pass
         time.sleep(1)
+    raise RuntimeError(f"Timeout waiting for {tbl} count={exp} on {h}")
 
 
 def bctl(act):
@@ -224,3 +226,82 @@ def run_sb(t, h1, pt, u, pw, sc, logf):
     bc(["bash", "-c", f"{base} cleanup >/dev/null 2>&1||true"])
     tx, q, e, a, p = [re.search(x, s) for x in (r"transactions:\s+(\d+)\s+\(([0-9.]+)", r"queries:\s+\d+\s+\(([0-9.]+)", r"ignored errors:\s+(\d+)", r"avg:\s+([0-9.]+)", r"95th percentile:\s+([0-9.]+)")]
     return row(t, "E_sysbench_oltp_rw", sc, 8, 20, float(tx.group(2)) if tx else 0, float(q.group(1)) if q else 0, float(a.group(1)) if a else 0, 0, float(p.group(1)) if p else 0, int(tx.group(1)) if tx else 0, int(e.group(1)) if e else 0, 0, "PASS", 0, note)
+
+
+YT_RETRY_PY = """import math,random,sys,threading,time,psycopg
+md,dur,sc,na,pw,hs=sys.argv[1],int(sys.argv[2]),int(sys.argv[3]),int(sys.argv[4]),sys.argv[5],sys.argv[6].split(",")
+te=time.monotonic()+dur;lts=[];ct=[0,0,0,0];lk=threading.Lock()
+def op(h):
+ c=psycopg.connect(host=h,port=5432,dbname="labdb",user="postgres",password=pw,autocommit=False);return c,c.cursor()
+def w(h):
+ ll=[];lc=[0,0,0,0];c=cur=None
+ try:
+  c,cur=op(h)
+ except psycopg.Error:
+  lc[1]+=1;c=None
+ while c is not None and time.monotonic()<te:
+  t0=time.monotonic();aid=random.randint(1,50 if md=="hot" else na);dl=random.randint(1,100) if md=="hot" else random.randint(-5000,5000)
+  bid=1 if md=="hot" else random.randint(1,sc);tid=1 if md=="hot" else random.randint(1,10*sc)
+  for _ in range(100):
+   if time.monotonic()>=te:break
+   try:
+    cur.execute("UPDATE pgbench_accounts SET abalance=abalance+%s WHERE aid=%s",(dl,aid))
+    if md!="hot":
+     cur.execute("SELECT abalance FROM pgbench_accounts WHERE aid=%s",(aid,))
+     cur.execute("UPDATE pgbench_tellers SET tbalance=tbalance+%s WHERE tid=%s",(dl,tid))
+     cur.execute("UPDATE pgbench_branches SET bbalance=bbalance+%s WHERE bid=%s",(dl,bid))
+    cur.execute("INSERT INTO pgbench_history(tid,bid,aid,delta,mtime) VALUES(%s,%s,%s,%s,CURRENT_TIMESTAMP)",(tid,bid,aid,dl))
+    c.commit();lc[0]+=1;ll.append((time.monotonic()-t0)*1000);break
+   except psycopg.Error as e:
+    st=getattr(e,"sqlstate","") or "";rb_err=False
+    try:
+     if not getattr(c,"closed",False):c.rollback()
+    except psycopg.Error:
+     rb_err=True
+    if rb_err or getattr(c,"closed",False) or getattr(c,"broken",False):
+     try:c.close()
+     except psycopg.Error:pass
+     try:c,cur=op(h)
+     except psycopg.Error:lc[1]+=1;c=None;break
+     lc[1]+=1;break
+    if st in("40001","40P01"):lc[2]+=1
+    elif st=="55409":lc[3]+=1
+    else:lc[1]+=1;break
+  else:lc[1]+=1
+ if c is not None:
+  try:c.close()
+  except psycopg.Error:pass
+ with lk:
+  lts.extend(ll)
+  for i in range(4):ct[i]+=lc[i]
+ts=[threading.Thread(target=w,args=(h,)) for h in hs for _ in range(4)];t0=time.monotonic()
+for t in ts:t.start()
+for t in ts:t.join()
+el=max(time.monotonic()-t0,1e-4)
+if lts:lts.sort();n=len(lts);a=sum(lts)/n;sd=math.sqrt(sum((x-a)**2 for x in lts)/n);p95=lts[min(n-1,int(0.95*n))]
+else:a=sd=p95=0.0
+print(f"{ct[0]/el:.2f}|{a:.3f}|{sd:.3f}|{p95:.3f}|{ct[0]}|{ct[1]}|{ct[2]+ct[3]}|{ct[2]}|{ct[3]}")
+"""
+
+
+def write_csv_atomic(path: Path, rows: list[dict]) -> None:
+    """Atomically write benchmark rows with the standard COLS header."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".csv.tmp")
+    with tmp.open("w", encoding="utf-8", newline="\n") as fh:
+        w = csv.DictWriter(fh, fieldnames=COLS, lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
+    tmp.replace(path)
+
+
+def upsert_csv(path: Path, topo: str, new_rows: list[dict], topo_order: list[str], suite_order: list[str]) -> None:
+    """Atomically upsert one topology's benchmark rows in canonical CSV order."""
+    cur: list[dict] = []
+    if path.is_file():
+        with path.open(encoding="utf-8", newline="") as fh:
+            cur = list(csv.DictReader(fh))
+    merged = [r for r in cur if r["topology"] != topo] + new_rows
+    ti, si = {k: i for i, k in enumerate(topo_order)}, {k: i for i, k in enumerate(suite_order)}
+    merged.sort(key=lambda r: (ti.get(r["topology"], 999), si.get(r["suite"], 999)))
+    write_csv_atomic(path, merged)

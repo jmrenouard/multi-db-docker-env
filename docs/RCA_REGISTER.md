@@ -668,6 +668,13 @@
 - **Applied Change / Fix**: Added `cd` + `.env` sourcing + `DB_ROOT_PASSWORD` precedence across all 5 runners and `test_pg_extended_matrix.sh`, removed `--env-file .env.example` and closed/atomized CSV I/O in `bench_pg_multimaster.sh`, wired `BENCH_OUT_DIR` in V1/optimized runners, and passed `ignore_cleanup_errors=True` in `tests/test_pg_libs.py`.
 - **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest` (`0` errors), `go test -count=1 ./...`, `bash -n`, and `tests/test_config.sh`.
 
+### RCA-090 -- Missing V2 Summary CSV `FileNotFoundError`, Unclosed CSV Handles, Silent `wcnt` Timeout & `YT_RETRY_PY` Disconnect Crash
+- **Date / Linked Action**: `2026-11-22` (`ACT-108` / Issue `#420`)
+- **Observed Symptom**: `append_summary_preserving` crashed with `FileNotFoundError` when `benchmark_summary.csv` did not exist; `upsert_modular_csv`/`upsert_pg18_csv` leaked file handles (`ResourceWarning`) and wrote non-atomically; `wcnt` returned `None` on 45s timeout; `YT_RETRY_PY` crashed worker threads on `c.rollback()` after disconnect and interpolated password in DSN strings.
+- **Root Cause Analysis**: V2/PG18 CSV code lacked existence guards, `with` blocks, and `.csv.tmp` rename; `wcnt` omitted a final `RuntimeError`; `YT_RETRY_PY` lacked connection-drop `rollback()`/reconnect handling and kwarg connection arguments.
+- **Applied Change / Fix**: Fixed `append_summary_preserving` (missing-file `COLS` header + atomic write), consolidated `write_csv_atomic`, `upsert_csv`, and hardened `YT_RETRY_PY` in `scripts/bench_pg_lib.py`, raised `RuntimeError` in `wcnt`, and delegated `upsert_modular_csv`/`upsert_pg18_csv` to `upsert_csv`.
+- **Result & Non-Regression Test**: Verified Windows + WSL Python `unittest` (`0` ResourceWarnings), `go test -count=1 ./...`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
