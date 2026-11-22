@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-114 -- Parameterize Patroni HAProxy Stats Auth & Harden `generate_certs.sh` (`#414`)
+- **Timestamp / Issue / Branch**: `2026-11-22T01:24Z` | Issue `#414` | `fix/issue-414-patroni-haproxy-certs`
+- **Request**: Replace hardcoded `admin:adminpass` in Patroni HAProxy stats configuration and tests with `HAPROXY_STATS_AUTH`, document it in `.env.example`, and harden variable quoting and `755` directory permissions in `scripts/patroni/generate_certs.sh` with static regression checks.
+- **Changes**: Updated `conf/haproxy-patroni.cfg` (`stats auth "$HAPROXY_STATS_AUTH"`), `docker-compose-patroni.yml` (`HAPROXY_STATS_AUTH=${HAPROXY_STATS_AUTH:-admin:adminpass}`), `tests/test_patroni.sh` (`-u "${HAPROXY_STATS_AUTH:-admin:adminpass}"`), and `.env.example` (`# HAPROXY_STATS_AUTH=admin:adminpass`); quoted all `$CERT_DIR`, `$name`, `$cn`, and `$1` references and aligned `chmod 755 "$CERT_DIR"` (`600` on `*.key`/`haproxy.pem`) in `scripts/patroni/generate_certs.sh`; extended `test_patroni_self_contained_dockerfiles_and_mtls` in `tests/test_repo_static.py`; logged `RCA-096`.
+- **Result**: Verified live `haproxy -c -V` and live HTTPS Basic Auth (`200` valid / `401` invalid) in `patroni-rhel8-haproxy:latest` (HAProxy 3.4.8), live `generate_certs.sh` with spaces in `CERT_DIR` (`755`/`600`/`644`), `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped in `test_lab.py`), `go test -count=1 ./...` (`11/11` packages), `go run ./cmd/mdb lint` (`70` scripts, `21` compose files), and PR diff `< 15,000` chars.
+
 ### ACT-113 -- Close V2 Runner Log Handle via `with` & Add PG 18 / `ResourceWarning` Tests (`#413`)
 - **Timestamp / Issue / Branch**: `2026-11-22T00:21Z` | Issue `#413` | `fix/issue-413-python-file-leaks`
 - **Request**: Replace remaining unclosed `.open(...)` handles in benchmark runners with context managers and add unit, `ResourceWarning`, and static `.open(` regression tests in `tests/test_pg_libs.py`.
