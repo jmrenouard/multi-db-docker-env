@@ -808,6 +808,13 @@
 - **Applied Change / Fix**: Extracted `scripts/pg_common/setup_logical.sh` backed by `lib.sh` (`wait_pg_nodes`, `esc_conn_val`) and converted both entry points into thin wrappers. Bidirectional birep parameterization follows in the next PR (`< 14,800` B).
 - **Result & Non-Regression Test**: Verified `bash -n`, mock-docker smoke test, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
 
+### RCA-110 -- Duplicated PG 17/18 Bidirectional Replication Setup Scripts Across Directories
+- **Date / Linked Action**: `2026-11-22` (`ACT-128` / Issue `#454`)
+- **Observed Symptom**: `scripts/pg18_birep/setup_pg18_birep.sh` duplicated `scripts/pg_birep/setup_birep.sh` verbatim apart from node and publication names, and omitted full libpq backslash/space escaping for `PG_PASS`.
+- **Root Cause Analysis**: Parallel PG 17 and PG 18 bidirectional setups copied the entire sequence/table/subscription script instead of parameterizing a shared runner.
+- **Applied Change / Fix**: Extracted `scripts/pg_common/setup_birep.sh` backed by `lib.sh` (`wait_pg_nodes`, `esc_conn_val`) and converted both entry points into thin wrappers, completing `#191.20`.
+- **Result & Non-Regression Test**: Verified `bash -n`, mock-docker smoke test, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
