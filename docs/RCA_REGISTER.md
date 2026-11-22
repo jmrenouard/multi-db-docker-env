@@ -955,6 +955,13 @@
 - **Applied Change / Fix**: Grouped all documents under `Tutorials & Quickstart`, `How-To Guides`, `Reference`, and `Explanation` with `U+FE0F`-free GFM TOC anchors.
 - **Result & Non-Regression Test**: Verified 0 STE errors/warnings, 0 broken links/anchors, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-131 -- `documentation/INDEX_fr.md` Diataxis Quadrant Grouping and English-Only Guide Markers
+- **Date / Linked Action**: `2026-11-22` (`ACT-150` / Issue `#498`)
+- **Observed Symptom**: `documentation/INDEX_fr.md` mixed documentation genres by component section and lacked explicit `[en anglais]` indicators on English-only operational/governance entries.
+- **Root Cause Analysis**: French index predated Diataxis four-quadrant navigation and explicit per-link language tagging (`INDEX.md` completed in `#496`).
+- **Applied Change / Fix**: Organized all French and English entries under the 4 Diataxis headings (`U+FE0F`-free) with synced GFM TOC anchors and `[en anglais]` tags on English-only deep guides.
+- **Result & Non-Regression Test**: Verified 0 STE errors/warnings (`ste_check.py --mode mixed --lang fr --no-vocab`), 0 broken links/anchors, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
