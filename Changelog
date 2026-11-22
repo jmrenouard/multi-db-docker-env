@@ -4,6 +4,7 @@
 - fix: support Patroni 3.x/4.x streaming/Primary states in pkg/dbclient/postgres.go and align tests/test_patroni.sh and tests/test_failover.sh for live 31/31 E2E parity (Closes #402).
 - fix: exclude bucardo from hs[1:] sbtest4 wait in _sb_prepare since trigger-based Bucardo replicates sync_pgbench only and run_sysbench_opt targets hs[0] (scripts/bench_pg_opt_workloads.py) (Closes #394).
 - fix: source .env from BENCH_ROOT before setting PG_PASS/DB_ROOT_PASSWORD in scripts/bench_pg_optimized_runner.sh so docker compose and setup_*.sh share identical credentials (Closes #394).
+- fix: harden mdb inject poll, mysql_node1 inference, client args & shortcut notes (Closes #416).
 - doc: document mdb images CLI, self-contained Patroni Dockerfiles, 31/31 E2E coverage, and governance registers across EN/FR READMEs, guides, and docs/ (Closes #406, #408, #410).
 - test: add regression assertions in tests/test_pg_libs.py for bucardo _sb_prepare wait skip and .env sourcing, and sync v2.6.1 release metadata (VERSION, cmd/mdb, governance registers).
 

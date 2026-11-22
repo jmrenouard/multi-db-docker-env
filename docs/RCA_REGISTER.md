@@ -794,6 +794,13 @@
 - **Applied Change / Fix**: Extracted `scripts/pg_common/lib.sh` and `scripts/pg_common/setup_streaming.sh`, replacing both setup scripts with thin wrappers so all `Makefile`/`mdb`/benchmark callers stay compatible. Logical and birep parameterization split to a follow-up PR (`< 14,800` B).
 - **Result & Non-Regression Test**: Verified `bash -n`, mock-docker smoke test, `tests/test_config.sh`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `go test -count=1 ./...`.
 
+### RCA-108 -- `mdb inject` Poll, `mysql_node1` & Client Targets
+- **Date / Linked Action**: `2026-11-22` (`ACT-126` / `#416`)
+- **Observed Symptom**: `runInjectCmd` skipped timeout/cancel/`ResolveContainer`; `mysql_node1` hit PG; static CRDB/YB/`DefaultDB`.
+- **Root Cause Analysis**: Poll lacked `ctx.Done()`/`!ready`; `"node"` before MySQL; static hosts/DB; `streamCommand` `func`.
+- **Applied Change / Fix**: `streamCommand` var, `select`/`!ready`/`ResolveContainer`, MySQL-first, dynamic args, `shortcut:`, tests.
+- **Result & Non-Regression Test**: `go test`, `go vet`, `mdb lint`, `unittest`, `release_notes.py` OK.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

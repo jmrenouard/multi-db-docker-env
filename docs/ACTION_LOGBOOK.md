@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-126 -- Harden `mdb inject`, Client Inference & Markers (`#416`)
+- **Timestamp / Issue / Branch**: `2026-11-22T02:18Z` | `#416` | `fix/issue-416-mdb-ops-reliability`
+- **Request**: Mock `streamCommand`, bound `runInjectCmd`, fix `mysql_node1`, wire hosts/`DefaultDB`, `shortcut:` & tests.
+- **Changes**: `cmd/mdb/*.go`, `{interactive_runner,mysql_docker}.py`, `Changelog`, `RCA-108`.
+- **Result**: `go test` 11/11, `go vet`, `mdb lint`, `unittest` 61/67, `release_notes.py` OK.
+
 ### ACT-125 -- Extract Shared PG Setup Helpers & Parameterize PG 17/18 Streaming (`#449`)
 - **Timestamp / Issue / Branch**: `2026-11-22T02:13Z` | Issue `#449` | `refactor/issue-449-parameterize-pg-setup`
 - **Request**: Deduplicate PG 17 and PG 18 physical streaming setup scripts via shared parameterized helpers while preserving existing script entry paths (`#191.20` part 3a).
