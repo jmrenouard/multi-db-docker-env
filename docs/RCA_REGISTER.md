@@ -752,6 +752,13 @@
 - **Applied Change / Fix**: Wired `BaseTopology.Up` to `catalog.DefaultCatalog().Lookup`, replaced `resolveNodeContainer` in `topology.go`/`galera.go` with `client.ResolveContainer`, and deleted dead `SysbenchRunner`/`mockExecutor` code in `pkg/bench/sysbench*.go`.
 - **Result & Non-Regression Test**: Verified zero callers via `git grep`, `go test -count=1 ./...` (`11/11`), `go vet ./...`, `go run ./cmd/mdb lint` (`70` shell scripts + `21` Compose files), and `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped).
 
+### RCA-102 -- Unbounded `pg_basebackup` Partial-Dir Loops, Unescaped `conninfo` & Reversed Password Order
+- **Date / Linked Action**: `2026-11-22` (`ACT-120` / Issue `#440`)
+- **Observed Symptom**: Streaming standbys wiped `PGDATA` once outside `until pg_basebackup`, risking infinite failure after partial clones; `primary_conninfo` left special password chars unescaped; Citus/YT prioritized `PG_LAB_PASSWORD` before `DB_ROOT_PASSWORD`.
+- **Root Cause Analysis**: Standby entrypoints lacked per-attempt wipe, retry caps, and two-level libpq/GUC escaping; Citus/YT compose and scripts inverted repo fallback precedence.
+- **Applied Change / Fix**: Moved `rm -rf` inside bounded 30-attempt `pg_basebackup` loops and escaped `primary_conninfo` via `esc_lp`/`esc_guc`; aligned `DB_ROOT_PASSWORD`-first order in `citus`/`yt-cluster`.
+- **Result & Non-Regression Test**: Verified `docker compose config -q`, `bash -n`, Win/WSL `unittest`, `go test -count=1 ./...`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

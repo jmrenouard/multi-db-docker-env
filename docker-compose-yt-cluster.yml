@@ -9,7 +9,7 @@ x-yt-common: &yt-common
     - NET_ADMIN
   environment:
     POSTGRES_USER: ${PG_USER:-postgres}
-    POSTGRES_PASSWORD: ${PG_LAB_PASSWORD:-${DB_ROOT_PASSWORD:-pg_poc_ephemeral}}
+    POSTGRES_PASSWORD: ${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}
     POSTGRES_DB: ${PG_DB:-labdb}
     YT_PEERS: "yt1 yt2 yt3"
     YT_CLUSTER: "11111111-2222-4333-8444-555555555555"

@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-120 -- Bound Standby `pg_basebackup` Retries, Escape `conninfo` & Fix `DB_ROOT_PASSWORD` Order (`#440`)
+- **Timestamp / Issue / Branch**: `2026-11-22T01:49Z` | Issue `#440` | `fix/issue-440-standby-retries-creds-precedence`
+- **Request**: Escape `primary_conninfo` credentials, move `rm -rf` inside bounded 30-attempt `pg_basebackup` loops, and standardize `${DB_ROOT_PASSWORD:-${PG_LAB_PASSWORD:-pg_poc_ephemeral}}` order.
+- **Changes**: Updated `docker-compose-{pg17-baseline,pg-streaming,pg18-streaming,citus,yt-cluster}.yml`, `scripts/citus/setup_citus.sh`, and `scripts/yt_cluster/setup_yt_cluster.sh`; logged `RCA-102`.
+- **Result**: Verified `docker compose config -q`, `bash -n`, live `esc_lp`/`esc_guc` conninfo auth, Win/WSL `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-119 -- Consume Catalog Setup SSOT in Topology & Remove Dead `SysbenchRunner` (`#432`)
 - **Timestamp / Issue / Branch**: `2026-11-22T00:44Z` | Issue `#432` | `refactor/issue-432-topology-catalog-bench-cleanup`
 - **Request**: Read setup SSOT from `catalog.DefaultCatalog()`, use `client.ResolveContainer` in `pkg/topology`, and delete dead `SysbenchRunner`/`CommandExecutor` code in `pkg/bench` (Slice 4B of `#415` -> `#432` -> `#433`).

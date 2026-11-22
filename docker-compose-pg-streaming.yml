@@ -65,12 +65,27 @@ services:
       - -c
       - |
         if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
-          rm -rf /var/lib/postgresql/data/*
-          until pg_isready -h pg_stream_primary -p 5432 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"; do sleep 1; done
+          t=0
+          until pg_isready -h pg_stream_primary -p 5432 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"; do
+            t=$$((t+1)); [ "$$t" -ge 30 ] && { echo "Primary timeout" >&2; exit 1; }
+            sleep 1
+          done
+          t=0
           until PGPASSWORD="$$POSTGRES_PASSWORD" psql -h pg_stream_primary -p 5432 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -tAc \
-            "SELECT pg_create_physical_replication_slot('slot_stream_standby') WHERE NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name='slot_stream_standby');" >/dev/null 2>&1; do sleep 1; done
-          until PGPASSWORD="$$POSTGRES_PASSWORD" pg_basebackup -h pg_stream_primary -p 5432 -U "$$POSTGRES_USER" -D /var/lib/postgresql/data -Fp -Xs -P -R -S slot_stream_standby; do sleep 1; done
-          printf "primary_conninfo = 'host=pg_stream_primary port=5432 user=%s password=%s application_name=pg_stream_standby'\n" "$$POSTGRES_USER" "$$POSTGRES_PASSWORD" >> /var/lib/postgresql/data/postgresql.auto.conf
+            "SELECT pg_create_physical_replication_slot('slot_stream_standby') WHERE NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name='slot_stream_standby');" >/dev/null 2>&1; do
+            t=$$((t+1)); [ "$$t" -ge 30 ] && { echo "Slot timeout" >&2; exit 1; }
+            sleep 1
+          done
+          t=0
+          until rm -rf /var/lib/postgresql/data/* && PGPASSWORD="$$POSTGRES_PASSWORD" pg_basebackup -h pg_stream_primary -p 5432 -U "$$POSTGRES_USER" -D /var/lib/postgresql/data -Fp -Xs -P -R -S slot_stream_standby; do
+            t=$$((t+1)); [ "$$t" -ge 30 ] && { echo "pg_basebackup timeout" >&2; exit 1; }
+            sleep 1
+          done
+          esc_lp() { local s="$${1//\\/\\\\}"; s="$${s//\'/\\\'}"; printf '%s' "$${s// /\\ }"; }
+          esc_guc() { local s="$${1//\\/\\\\}"; printf '%s' "$${s//\'/\'\'}"; }
+          u_e="$$(esc_guc "$$(esc_lp "$$POSTGRES_USER")")"
+          p_e="$$(esc_guc "$$(esc_lp "$$POSTGRES_PASSWORD")")"
+          printf "primary_conninfo = 'host=pg_stream_primary port=5432 user=%s password=%s application_name=pg_stream_standby'\n" "$$u_e" "$$p_e" >> /var/lib/postgresql/data/postgresql.auto.conf
           printf "primary_slot_name = 'slot_stream_standby'\n" >> /var/lib/postgresql/data/postgresql.auto.conf
           chown -R postgres:postgres /var/lib/postgresql/data
           chmod 700 /var/lib/postgresql/data
