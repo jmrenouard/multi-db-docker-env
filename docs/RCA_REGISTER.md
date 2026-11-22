@@ -899,6 +899,13 @@
 - **Applied Change / Fix**: Expanded `documentation/makefile_fr.md` to all 13 sections, added Rule 7.1-7.3 `ATTENTION :` block, and kept sentences `<= 20` words without `via` or French weak modals.
 - **Result & Non-Regression Test**: Verified 0 STE errors/warnings (`ste_check.py`), valid `Makefile` target names, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-123 -- Patroni, PgPool-II, and Galera Runbooks Containing STE Violations and Non-STE Terms
+- **Date / Linked Action**: `2026-11-22` (`ACT-142` / Issue `#482`)
+- **Observed Symptom**: Three HA cluster guides (`patroni_cluster.md`, `pgpool_cluster.md`, `galera_bootstrap.md`) contained sentences exceeding 20 words, a semicolon, passive voice (`are required`), and non-STE words (`via`, `ensure`, `perform`).
+- **Root Cause Analysis**: Cluster topology runbooks predated automated STE procedural checks (`replication_setup.md`, `replication_ssl.md`, and `tls_setup.md` split to the next atomic PR to keep diff `< 14,800` B).
+- **Applied Change / Fix**: Rewrote flagged sentences to active imperative STE phrasing (`<= 20` words), removed semicolons and passive constructions, eliminated `via`/`ensure`/`perform`, and cross-linked shared topology design to `architecture.md`.
+- **Result & Non-Regression Test**: Verified 0 STE errors across all 3 guides (`ste_check.py --mode procedural --lang en --no-vocab`), 0 forbidden words, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-142 -- Align Patroni, PgPool-II, and Galera Runbooks with ASD-STE100 (`#482`)
+- **Timestamp / Issue / Branch**: `2026-11-22T23:15Z` | Issue `#482` | `docs/issue-482-ste-cluster-runbooks`
+- **Request**: Bring `patroni_cluster.md`, `pgpool_cluster.md`, and `galera_bootstrap.md` to 0 STE procedural errors and 0 forbidden words (`via`, `ensure`, `perform`), linking shared topology details to `architecture.md`.
+- **Changes**: Shortened >20-word sentences, removed semicolons and passive voice (`are required`), replaced `via`/`ensure`/`perform` with active STE phrasing, and added cross-links to `architecture.md` across all 3 files; logged `RCA-123`.
+- **Result**: Verified `ste_check.py --mode procedural --lang en --no-vocab` (0 errors on all 3 files), 0 forbidden words, Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-141 -- Complete 13-Section French Parity and `ATTENTION` Block in `makefile_fr.md` (`#480`)
 - **Timestamp / Issue / Branch**: `2026-11-22T23:09Z` | Issue `#480` | `docs/issue-480-makefile-fr-parity-attention`
 - **Request**: Add ASD-STE100 Rule 7.1-7.3 `ATTENTION :` safety block covering `clean-data`/`clean-galera`/`clean-repli` and bring `documentation/makefile_fr.md` to 13-section parity with `documentation/makefile.md` (`0` STE errors).

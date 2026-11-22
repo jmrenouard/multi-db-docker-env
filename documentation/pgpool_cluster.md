@@ -1,6 +1,6 @@
 # PgPool-II PostgreSQL Cluster
 
-High-availability PostgreSQL 17 cluster using PgPool-II for connection pooling and load balancing, with HAProxy for external access.
+Deploy a high-availability PostgreSQL 17 cluster with PgPool-II connection pooling and HAProxy external routing. See [architecture.md](architecture.md) for shared topology architecture.
 
 ## Architecture
 
@@ -57,8 +57,8 @@ make pgpool-logs
 | Role | Port | Description |
 | :--- | :--- | :--- |
 | PgPool-II Direct | `9999` | Direct PgPool-II access (connection pooling + LB). |
-| HAProxy Read-Write | `5100` | Write traffic routed via PgPool-II to primary. |
-| HAProxy Read-Only | `5101` | Read traffic load-balanced via PgPool-II. |
+| HAProxy Read-Write | `5100` | Write traffic routed through PgPool-II to primary. |
+| HAProxy Read-Only | `5101` | Read traffic load-balanced through PgPool-II. |
 | HAProxy Stats | `8406` | HAProxy statistics dashboard. |
 | PostgreSQL Primary | `5611` | Direct access to primary node. |
 | PostgreSQL Standby 1 | `5612` | Direct access to standby node 2. |
@@ -67,13 +67,13 @@ make pgpool-logs
 ### Example Connection
 
 ```bash
-# Via PgPool-II (recommended)
+# Through PgPool-II (recommended)
 psql -h 127.0.0.1 -p 9999 -U postgres
 
-# Via HAProxy Read-Write
+# Through HAProxy Read-Write
 psql -h 127.0.0.1 -p 5100 -U postgres
 
-# Via HAProxy Read-Only
+# Through HAProxy Read-Only
 psql -h 127.0.0.1 -p 5101 -U postgres
 ```
 
@@ -91,7 +91,7 @@ psql -h 127.0.0.1 -p 5101 -U postgres
 
 ## Advanced PgPool-II Monitoring
 
-PgPool-II provides several administrative commands to manage and monitor the cluster directly via SQL interface.
+PgPool-II provides administrative commands to manage and monitor the cluster directly in SQL.
 
 ### View Pool Nodes Status
 
@@ -135,12 +135,12 @@ The test suite validates **24 checks across 18 test groups**:
 | 10 | Replication Slots | 2 active replication slots |
 | 11 | Concurrent Writes | 30 rows + replication verification |
 | 12 | PgPool-II Version | PgPool-II process info |
-| 13 | CRUD Ops Test | Perform schema operations |
+| 13 | CRUD Ops Test | Run schema operations |
 | 14 | HAProxy Stats | Stats dashboard availability |
 | 15 | Connection Pools | Inspect PgPool-II Connection Pooling |
 | 16 | Client Processes | View PgPool-II client processes active states |
 | 17 | TLS/SSL Status Check | TLS/SSL active on Primary (pg_node1) |
-| 18 | Performance Micro-Benchmark | 20/20 queries routed via PgPool |
+| 18 | Performance Micro-Benchmark | 20/20 queries routed through PgPool |
 
 Reports are generated in `./reports/` (Markdown + HTML).
 
