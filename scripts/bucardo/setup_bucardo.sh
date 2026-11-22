@@ -38,25 +38,24 @@ if [ "$(qn bucardo_node1 "SELECT count(*) FROM pg_roles WHERE rolname='bucardo';
     qn bucardo_node1 "CREATE ROLE bucardo WITH SUPERUSER LOGIN PASSWORD '${ESC_PASS}';" postgres >/dev/null
 fi
 
-docker exec -i bucardo_daemon bash -s <<EOF
+docker exec -i -e PG_PASS="$PG_PASS" bucardo_daemon bash -s <<'EOF'
 set -euo pipefail
-cat > /root/.pgpass <<PGP
-bucardo_node1:5432:*:postgres:${PG_PASS}
-bucardo_node1:5432:*:bucardo:${PG_PASS}
-bucardo_node2:5432:*:postgres:${PG_PASS}
-PGP
+printf '%s\n' \
+  "bucardo_node1:5432:*:postgres:${PG_PASS}" \
+  "bucardo_node1:5432:*:bucardo:${PG_PASS}" \
+  "bucardo_node2:5432:*:postgres:${PG_PASS}" > /root/.pgpass
 chmod 600 /root/.pgpass
-cat > /root/.bucardorc <<BRC
-dbhost=bucardo_node1
-dbport=5432
-dbname=bucardo
-dbuser=bucardo
-dbpass=${PG_PASS}
-BRC
+printf '%s\n' \
+  "dbhost=bucardo_node1" \
+  "dbport=5432" \
+  "dbname=bucardo" \
+  "dbuser=bucardo" \
+  "dbpass=${PG_PASS}" > /root/.bucardorc
+chmod 600 /root/.bucardorc
 EOF
 
 if [ "$(qn bucardo_node1 "SELECT count(*) FROM pg_database WHERE datname='bucardo';" postgres)" = "0" ]; then
-    docker exec bucardo_daemon bash -lc "PGPASSWORD='$PG_PASS' bucardo install --batch --dbhost=bucardo_node1 --dbport=5432 --dbuser='$PG_USER' --dbname=postgres --piddir=/var/run/bucardo"
+    docker exec -e PGPASSWORD="$PG_PASS" bucardo_daemon bucardo install --batch --dbhost=bucardo_node1 --dbport=5432 --dbuser="$PG_USER" --dbname=postgres --piddir=/var/run/bucardo
     echo "[OK] Bucardo metadata database installed on bucardo_node1"
 fi
 

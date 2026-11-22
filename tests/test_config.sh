@@ -95,10 +95,9 @@ for s in "${SCRIPTS_TO_CHECK[@]}"; do
         echo "✅ Script exists and is executable: $s"
         add_result "Script Permissions" "$s" "PASS" "Exists and executable"
     elif [ -f "$s" ]; then
-        echo "⚠️  Script exists but is NOT executable: $s. Fixing..."
-        chmod +x "$s"
-        echo "✅ Fixed permissions for $s"
-        add_result "Script Permissions" "$s" "PASS" "Fixed non-executable bit"
+        echo "[FAIL] Script exists but is NOT executable (run chmod +x $s): $s"
+        add_result "Script Permissions" "$s" "FAIL" "Exists but is not executable"
+        RET=1
     else
         echo "❌ Missing script: $s"
         add_result "Script Permissions" "$s" "FAIL" "Script is missing"
