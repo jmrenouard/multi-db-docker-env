@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv
 import os
 import re
+import shlex
 import subprocess as sp
 import time
 from pathlib import Path
@@ -132,10 +133,21 @@ def reset_ds(t, hs, pt, u, pw):
             pq(h, pt, u, pw, sql)
         bctl("start")
         return
+    if t in ("pg-birep", "pgedge") and len(hs) > 1:
+        for _ in range(30):
+            cnts = [int(pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;") or -1) for h in hs]
+            if len(set(cnts)) == 1:
+                break
+            time.sleep(1)
     pq(hs[0], pt, u, pw, rst + ";")
     if t in ("pg-birep", "pgedge") and len(hs) > 1:
         time.sleep(2)
         wcnt(hs[1], pt, u, pw, f"{B}history", 0)
+        if t == "pg-birep":
+            bal_rst = f"UPDATE {B}accounts SET abalance=0 WHERE abalance<>0;UPDATE {B}branches SET bbalance=0;UPDATE {B}tellers SET tbalance=0;"
+            for n in hs[1:]:
+                pq(n, pt, u, pw, bal_rst)
+            time.sleep(1)
 
 
 def wlog(logf, txt):
@@ -152,45 +164,66 @@ def wlog(logf, txt):
             logf.write(ln + "\n")
 
 
-def pb_run(t, su, m, c, j, d, a1, a2, hs, pt, u, pw, logf):
-    """Run pgbench single or dual streams inside bench_client and compute metrics."""
-    bc(["bash", "-c", "rm -f /tmp/pb_*.out /tmp/pbl_*"])
-    base = f"pgbench -U {u} -d labdb -n -c {c} -j {j} -T {d} -r --max-tries=100 --failures-detailed"
-    if m == 1:
-        bc(["bash", "-c", f"{base} -h '{hs[0]}' -p {pt} -l --log-prefix=/tmp/pbl_s {a1} >/tmp/pb_1.out 2>&1||true"], pw)
-        wlog(logf, bc(["cat", "/tmp/pb_1.out"], chk=False).stdout)
-    else:
-        h2 = hs[0] if (len(hs) < 2 or (t == "pg17-sync-streaming" and su != "C_multinode_ro")) else hs[1]
-        bc(["bash", "-c", f"{base} -h '{hs[0]}' -p {pt} -l --log-prefix=/tmp/pbl_1 {a1} >/tmp/pb_1.out 2>&1 & {base} -h '{h2}' -p {pt} -l --log-prefix=/tmp/pbl_2 {a2} >/tmp/pb_2.out 2>&1 & wait||true"], pw)
-        wlog(logf, bc(["cat", "/tmp/pb_1.out", "/tmp/pb_2.out"], chk=False).stdout)
-    py = (
-        'import glob,math,re\nt=ok=fl=rt=0.0;av=[];lt=[]\n'
-        'for f in sorted(glob.glob("/tmp/pb_*.out")):\n'
-        ' s=open(f,errors="ignore").read()\n'
-        ' if m:=re.search(r"tps = ([0-9.]+)",s):t+=float(m.group(1))\n'
-        ' if m:=re.search(r"actually processed:\\s*(\\d+)",s):ok+=int(m.group(1))\n'
-        ' if m:=re.search(r"failed transactions:\\s*(\\d+)",s):fl+=int(m.group(1))\n'
-        ' if m:=re.search(r"total number of retries:\\s*(\\d+)",s):rt+=int(m.group(1))\n'
-        ' if m:=re.search(r"latency average = ([0-9.]+) ms",s):av.append(float(m.group(1)))\n'
-        'for lf in sorted(glob.glob("/tmp/pbl_*")):\n'
-        ' for ln in open(lf):\n'
-        '  z=ln.split()\n'
-        '  if len(z)>=3 and z[2].isdigit():lt.append(int(z[2])/1000.0)\n'
-        'if lt:lt.sort();n=len(lt);a=sum(lt)/n;sd=math.sqrt(sum((x-a)**2 for x in lt)/n);p95=lt[min(n-1,int(0.95*n))]\n'
-        'else:a=sum(av)/len(av) if av else 0;sd=p95=0\n'
-        'print(f"{t:.2f}|{a:.3f}|{sd:.3f}|{p95:.3f}|{int(ok)}|{int(fl)}|{int(rt)}")'
-    )
-    p = bc(["python3", "-c", py]).stdout.strip().split("|")
-    return float(p[0]), float(p[1]), float(p[2]), float(p[3]), int(p[4]), int(p[5]), int(p[6])
+def pb_run(t, su, m, c, j, d, a1, a2, hs, pt, u, pw, logf=None, prepared=False, max_tries=100, single_primary=None, sample_rate=None, bc_fn=None):
+    """Run pgbench single or dual streams inside bench_client and verify exit status."""
+    run_bc = bc_fn or bc
+    run_bc(["bash", "-c", "rm -f /tmp/pb_*.out /tmp/pbl_*"])
+    pm = "-M prepared " if prepared else ""
+    sr = 0.05 if (sample_rate is None and su == "C_multinode_ro") else sample_rate
+    sf = f" --sampling-rate={sr}" if sr else ""
+    base = f"pgbench -U {shlex.quote(str(u))} -d labdb -n {pm}-c {c} -j {j} -T {d} -r --max-tries={max_tries} --failures-detailed"
+    try:
+        if m == 1:
+            res = run_bc(["bash", "-c", f"{base} -h {shlex.quote(hs[0])} -p {pt} -l --log-prefix=/tmp/pbl_s{sf} {a1} >/tmp/pb_1.out 2>&1"], pw, False)
+            out_txt = run_bc(["cat", "/tmp/pb_1.out"], chk=False).stdout
+        else:
+            sp_set = single_primary if single_primary is not None else {"pg17-sync-streaming"}
+            h2 = hs[0] if (len(hs) < 2 or (t in sp_set and su != "C_multinode_ro")) else hs[1]
+            cmd = (
+                f"{base} -h {shlex.quote(hs[0])} -p {pt} -l --log-prefix=/tmp/pbl_1{sf} {a1} >/tmp/pb_1.out 2>&1 & p1=$!; "
+                f"{base} -h {shlex.quote(h2)} -p {pt} -l --log-prefix=/tmp/pbl_2{sf} {a2} >/tmp/pb_2.out 2>&1 & p2=$!; "
+                'r1=0; wait "$p1" || r1=$?; r2=0; wait "$p2" || r2=$?; exit $((r1 != 0 ? r1 : r2))'
+            )
+            res = run_bc(["bash", "-c", cmd], pw, False)
+            out_txt = run_bc(["cat", "/tmp/pb_1.out", "/tmp/pb_2.out"], chk=False).stdout
+        if logf is not None:
+            wlog(logf, out_txt)
+        if res.returncode != 0 or "Run was aborted" in out_txt:
+            raise RuntimeError(f"pgbench failed for {t}/{su} (rc={res.returncode}): {out_txt.strip()[:240]}")
+        py = (
+            'import glob,math,re\nt=ok=fl=rt=0.0;av=[];lt=[]\n'
+            'for f in sorted(glob.glob("/tmp/pb_*.out")):\n'
+            ' with open(f,errors="ignore") as fh: s=fh.read()\n'
+            ' if m:=re.search(r"tps = ([0-9.]+)",s):t+=float(m.group(1))\n'
+            ' if m:=re.search(r"actually processed:\\s*(\\d+)",s):ok+=int(m.group(1))\n'
+            ' if m:=re.search(r"failed transactions:\\s*(\\d+)",s):fl+=int(m.group(1))\n'
+            ' if m:=re.search(r"total number of retries:\\s*(\\d+)",s):rt+=int(m.group(1))\n'
+            ' if m:=re.search(r"latency average = ([0-9.]+) ms",s):av.append(float(m.group(1)))\n'
+            'for lf in sorted(glob.glob("/tmp/pbl_*")):\n'
+            ' with open(lf) as fh:\n'
+            '  for ln in fh:\n'
+            '   z=ln.split()\n'
+            '   if len(z)>=3 and z[2].isdigit():lt.append(int(z[2])/1000.0)\n'
+            'if lt:lt.sort();n=len(lt);a=sum(lt)/n;sd=math.sqrt(sum((x-a)**2 for x in lt)/n);p95=lt[min(n-1,int(0.95*n))]\n'
+            'else:a=sum(av)/len(av) if av else 0;sd=p95=0\n'
+            'print(f"{t:.2f}|{a:.3f}|{sd:.3f}|{p95:.3f}|{int(ok)}|{int(fl)}|{int(rt)}")'
+        )
+        p = run_bc(["python3", "-c", py]).stdout.strip().split("|")
+        tps, avg, sdv, p95, ok, fl, rt = float(p[0]), float(p[1]), float(p[2]), float(p[3]), int(p[4]), int(p[5]), int(p[6])
+        if tps == 0 and ok == 0:
+            raise RuntimeError(f"pgbench produced zero transactions for {t}/{su}: {out_txt.strip()[:240]}")
+        return tps, avg, sdv, p95, ok, fl, rt
+    finally:
+        run_bc(["bash", "-c", "rm -f /tmp/pb_*.out /tmp/pbl_*"], chk=False)
 
 
 def conv_chk(t, ok, hs, pt, u, pw):
     """Verify cross-node convergence and detect lost-update balance drift."""
     if t == "pg17-sync-streaming":
         time.sleep(1)
+    if t == "bucardo":
+        sh(["docker", "exec", "bucardo_daemon", "bucardo", "kick", "sync_pgbench", "5"], False)
     if t in ("pg-birep", "pgedge", "bucardo"):
-        if t == "bucardo":
-            sh(["docker", "exec", "bucardo_daemon", "bucardo", "kick", "sync_pgbench", "5"], False)
         for _ in range(25):
             hcs = [int(pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;") or -1) for h in hs]
             if len(set(hcs)) == 1 and hcs[0] >= ok:
@@ -209,21 +242,22 @@ def conv_chk(t, ok, hs, pt, u, pw):
 
 def run_sb(t, h1, pt, u, pw, sc, logf):
     """Execute sysbench oltp_read_write inside bench_client."""
-    base = f"sysbench oltp_read_write --db-driver=pgsql --pgsql-host={h1} --pgsql-port={pt} --pgsql-user={u} " + (f"--pgsql-password={pw} " if pw else "") + "--pgsql-db=labdb --tables=4 --table-size=10000"
-    bc(["bash", "-c", f"{base} cleanup >/dev/null 2>&1||true"])
-    if bc(["bash", "-c", f"{base} prepare >/tmp/sb_p.out 2>&1"], chk=False).returncode:
+    pwa = '--pgsql-password="$PGPASSWORD" ' if pw else ""
+    base = f"sysbench oltp_read_write --db-driver=pgsql --pgsql-host={shlex.quote(str(h1))} --pgsql-port={pt} --pgsql-user={shlex.quote(str(u))} {pwa}--pgsql-db=labdb --tables=4 --table-size=10000"
+    bc(["bash", "-c", f"{base} cleanup >/dev/null 2>&1||true"], pw)
+    if bc(["bash", "-c", f"{base} prepare >/tmp/sb_p.out 2>&1"], pw, chk=False).returncode:
         return row(t, "E_sysbench_oltp_rw", sc, 8, 20, 0, 0, 0, 0, 0, 0, 0, 0, "EXPECTED_LIMITATION_UNSUPPORTED", 0, "prepare: " + bc(["head", "-n", "4", "/tmp/sb_p.out"], chk=False).stdout.replace("\n", " ").strip())
     if t == "citus":
         for i in range(1, 5):
             pq(h1, pt, u, pw, f"SELECT create_distributed_table('sbtest{i}','id');")
     note = "oltp_read_write tables=4 size=10000"
-    if bc(["bash", "-c", f"{base} --threads=8 --time=20 run >/tmp/sb_r.out 2>&1"], chk=False).returncode:
+    if bc(["bash", "-c", f"{base} --threads=8 --time=20 run >/tmp/sb_r.out 2>&1"], pw, chk=False).returncode:
         note = "auto ps failed; retried --db-ps-mode=disable"
-        if bc(["bash", "-c", f"{base} --threads=8 --time=20 --db-ps-mode=disable run >/tmp/sb_r.out 2>&1"], chk=False).returncode:
+        if bc(["bash", "-c", f"{base} --threads=8 --time=20 --db-ps-mode=disable run >/tmp/sb_r.out 2>&1"], pw, chk=False).returncode:
             return row(t, "E_sysbench_oltp_rw", sc, 8, 20, 0, 0, 0, 0, 0, 0, 0, 0, "EXPECTED_LIMITATION_UNSUPPORTED", 0, "run: " + bc(["tail", "-n", "4", "/tmp/sb_r.out"], chk=False).stdout.replace("\n", " ").strip())
     s = bc(["cat", "/tmp/sb_r.out"]).stdout
     wlog(logf, s)
-    bc(["bash", "-c", f"{base} cleanup >/dev/null 2>&1||true"])
+    bc(["bash", "-c", f"{base} cleanup >/dev/null 2>&1||true"], pw)
     tx, q, e, a, p = [re.search(x, s) for x in (r"transactions:\s+(\d+)\s+\(([0-9.]+)", r"queries:\s+\d+\s+\(([0-9.]+)", r"ignored errors:\s+(\d+)", r"avg:\s+([0-9.]+)", r"95th percentile:\s+([0-9.]+)")]
     return row(t, "E_sysbench_oltp_rw", sc, 8, 20, float(tx.group(2)) if tx else 0, float(q.group(1)) if q else 0, float(a.group(1)) if a else 0, 0, float(p.group(1)) if p else 0, int(tx.group(1)) if tx else 0, int(e.group(1)) if e else 0, 0, "PASS", 0, note)
 
