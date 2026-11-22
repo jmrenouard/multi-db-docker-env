@@ -759,6 +759,13 @@
 - **Applied Change / Fix**: Moved `rm -rf` inside bounded 30-attempt `pg_basebackup` loops and escaped `primary_conninfo` via `esc_lp`/`esc_guc`; aligned `DB_ROOT_PASSWORD`-first order in `citus`/`yt-cluster`.
 - **Result & Non-Regression Test**: Verified `docker compose config -q`, `bash -n`, Win/WSL `unittest`, `go test -count=1 ./...`, and `tests/test_config.sh`.
 
+### RCA-103 -- Duplicate `mdb` Container Switch, `pickContainerName`, and Hardcoded `mongo8` Setup (`#433`)
+- **Date / Linked Action**: `2026-11-22` (`ACT-121` / Issue `#433`)
+- **Observed Symptom**: `cmd/mdb/main.go` kept a 45-line `defaultContainer` switch (missing standalone IDs and defaulting to `mariadb-11.8`), `pickContainerName`/`resolveContainer` duplicated `Client.ResolveContainer`, and `cmd/mdb/commands_lint.go` hardcoded `mongo8` `SetupArgs`/`SetupEnv`.
+- **Root Cause Analysis**: CLI helpers predated `pkg/catalog` SSOT fields (`SetupArgs`, `SetupEnv`, standalone `Container` entries) and `docker.Client.ResolveContainer`.
+- **Applied Change / Fix**: Delegated `defaultContainer` to `activeCatalog().Lookup` (fallback `mariadb-11.4`), deleted `pickContainerName`/`resolveContainer`, wired `resolveEnvContainer` to `client.ResolveContainer`, read `SetupArgs`/`SetupEnv` from `pkg/catalog` in `planSetup`/`runTestCmd`, and added unit checks in `cmd/mdb/main_test.go`.
+- **Result & Non-Regression Test**: Verified zero callers via `git grep`, `go test -count=1 ./...` (`11/11`), `go vet ./...`, `go run ./cmd/mdb lint` (`70 shell scripts + 21 Compose files`), and `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` skipped).
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
