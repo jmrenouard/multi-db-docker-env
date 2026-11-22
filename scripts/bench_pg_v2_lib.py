@@ -5,7 +5,7 @@ import csv, io, re, subprocess as sp, time
 from pathlib import Path
 
 from bench_pg_lib import (
-    B, COLS, bc, bctl, conv_chk, init_ds, mk_scripts, pb_run, pq, reset_ds, row, sh, wcnt, wlog,
+    B, COLS, bc, bctl, conv_chk, init_ds, mk_scripts, pb_run, pq, reset_ds, row, sh, upsert_csv, wcnt, wlog,
 )
 
 SINGLE_PRIMARY = {"pg17-async-streaming", "pg17-sync-streaming", "pg17-logical"}
@@ -206,20 +206,20 @@ def run_wan_netem(t, delay_ms, dur, hs, pt, u, pw, sc, netem, img, logf=None):
 
 
 def append_summary_preserving(path: Path, topo: str, new_rows: list[dict]) -> None:
-    """Append new topology rows without altering existing rows."""
-    kept = [ln for ln in path.read_text(encoding="utf-8").splitlines() if ln and ln.split(",", 1)[0] != topo]
+    """Append new topology rows atomically without altering existing rows."""
+    header = ",".join(COLS)
+    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+    kept = [ln for ln in lines if ln and ln.split(",", 1)[0] != topo] if lines else [header]
+    if not kept or kept[0] != header:
+        kept.insert(0, header)
     buf = io.StringIO()
     csv.DictWriter(buf, fieldnames=COLS, lineterminator="\n").writerows(new_rows)
-    path.write_text("\n".join(kept) + "\n" + buf.getvalue(), encoding="utf-8", newline="\n")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".csv.tmp")
+    tmp.write_text("\n".join(kept) + "\n" + buf.getvalue(), encoding="utf-8", newline="\n")
+    tmp.replace(path)
 
 
 def upsert_modular_csv(path: Path, topo: str, new_rows: list[dict], topo_order: list[str], suite_order: list[str]) -> None:
     """Upsert rows for one topology preserving canonical order."""
-    cur = list(csv.DictReader(path.open(encoding="utf-8", newline=""))) if path.is_file() else []
-    merged = [r for r in cur if r["topology"] != topo] + new_rows
-    ti, si = {k: i for i, k in enumerate(topo_order)}, {k: i for i, k in enumerate(suite_order)}
-    merged.sort(key=lambda r: (ti.get(r["topology"], 999), si.get(r["suite"], 999)))
-    with path.open("w", encoding="utf-8", newline="\n") as fh:
-        w = csv.DictWriter(fh, fieldnames=COLS, lineterminator="\n")
-        w.writeheader()
-        w.writerows(merged)
+    upsert_csv(path, topo, new_rows, topo_order, suite_order)

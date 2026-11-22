@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-108 -- Missing V2 CSV Header, Atomic Closed CSV I/O, `wcnt` Timeout & `YT_RETRY_PY` Hardening (`#420`)
+- **Timestamp / Issue / Branch**: `2026-11-22T00:58Z` | Issue `#420` | `fix/issue-420-csv-atomic-wcnt-yt-retry`
+- **Request**: Fix missing CSV `FileNotFoundError` in `append_summary_preserving`, close/atomize CSV I/O in V2/PG18 libs, raise `RuntimeError` on `wcnt` timeout, and add shared `YT_RETRY_PY` (kwargs connect + guarded `rollback()`/reconnect) and `write_csv_atomic`/`upsert_csv` to `scripts/bench_pg_lib.py`.
+- **Changes**: Updated `scripts/bench_pg_lib.py`, `scripts/bench_pg_v2_lib.py`, and `scripts/bench_pg18_lib.py`; logged `RCA-090`.
+- **Result**: Verified Windows + WSL Python `unittest` (`0` ResourceWarnings), `go test -count=1 ./...`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-107 -- Benchmark Runner `.env` Sourcing, `BENCH_OUT_DIR` Parity & Windows Temp Fix (`#418`)
 - **Timestamp / Issue / Branch**: `2026-11-22T00:54Z` | Issue `#418` | `fix/issue-418-bench-env-csv-retry`
 - **Request**: Fix `.env` sourcing across V1/V2/PG18/YT/extended runners, honor `BENCH_OUT_DIR` in V1 and optimized runners, close/atomize V1 CSV I/O, and fix Windows `TemporaryDirectory` cleanup error.
