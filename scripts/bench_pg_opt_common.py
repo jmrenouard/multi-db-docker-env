@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import csv
-import re
 import subprocess as sp
-import time
 from pathlib import Path
 
-from bench_pg_lib import B, COLS, YT_RETRY_PY, bc, mk_scripts, pq, row, sh, upsert_csv, wcnt, wlog
+from bench_pg_lib import (
+    B, COLS, YT_RETRY_PY, assert_zero_containers, bc, conv_chk, mk_scripts,
+    pb_run, pq, ref_sub as _ref_sub, row, sh, upsert_csv, wcnt, wlog,
+)
 
 TOPO_ORDER = [
     "pg17-standalone", "pg17-async-streaming", "pg17-sync-streaming", "pg17-logical",
@@ -68,10 +69,7 @@ def expected_suites(topo: str) -> list[str]:
 
 def assert_zero_opt_containers() -> None:
     """Verify no lab or benchmark containers remain."""
-    out = sh(["docker", "ps", "-a", "--format", "{{.Names}}"]).stdout
-    left = [n.strip() for n in out.splitlines() if n.strip() and (n.strip() in ("yt1", "yt2", "yt3") or n.strip().startswith(OPT_PFX))]
-    if left:
-        raise RuntimeError(f"Residual lab containers: {left}")
+    assert_zero_containers(OPT_PFX, ("yt1", "yt2", "yt3"), "Residual lab containers", sh_fn=sh)
 
 
 def wcnt_opt(h: str, pt: int, u: str, pw: str, tbl: str, exp: int, to_s: int = 180) -> None:
@@ -89,67 +87,17 @@ def mk_scripts_opt() -> None:
 
 def ref_sub(h: str, pt: int, u: str, pw: str, sub: str, cp: str = "false") -> None:
     """Refresh logical replication subscription publication."""
-    pq(h, pt, u, pw, f"ALTER SUBSCRIPTION {sub} REFRESH PUBLICATION WITH (copy_data={cp});")
+    _ref_sub(h, pt, u, pw, sub, cp, pq_fn=pq)
 
 
 def pb_run_opt(t: str, su: str, m: int, c: int, j: int, d: int, a1: str, a2: str, hs: list[str], pt: int, u: str, pw: str, logf=None):
     """Run pgbench -M prepared with 200 retries and parse throughput and latency."""
-    bc(["bash", "-c", "rm -f /tmp/pb_*.out /tmp/pbl_*"])
-    base = f"pgbench -U {u} -d labdb -n -M prepared -c {c} -j {j} -T {d} -r --max-tries=200 --failures-detailed"
-    if m == 1:
-        bc(["bash", "-c", f"{base} -h '{hs[0]}' -p {pt} -l --log-prefix=/tmp/pbl_s {a1} >/tmp/pb_1.out 2>&1||true"], pw)
-        if logf is not None:
-            wlog(logf, bc(["cat", "/tmp/pb_1.out"], chk=False).stdout)
-    else:
-        h2 = hs[0] if (len(hs) < 2 or (t in SINGLE_PRIMARY and su != "C_multinode_ro")) else hs[1]
-        bc(["bash", "-c", f"{base} -h '{hs[0]}' -p {pt} -l --log-prefix=/tmp/pbl_1 {a1} >/tmp/pb_1.out 2>&1 & {base} -h '{h2}' -p {pt} -l --log-prefix=/tmp/pbl_2 {a2} >/tmp/pb_2.out 2>&1 & wait||true"], pw)
-        if logf is not None:
-            wlog(logf, bc(["cat", "/tmp/pb_1.out", "/tmp/pb_2.out"], chk=False).stdout)
-    py = (
-        'import glob,math,re\nt=ok=fl=rt=0.0;av=[];lt=[]\n'
-        'for f in sorted(glob.glob("/tmp/pb_*.out")):\n'
-        ' s=open(f,errors="ignore").read()\n'
-        ' if m:=re.search(r"tps = ([0-9.]+)",s):t+=float(m.group(1))\n'
-        ' if m:=re.search(r"actually processed:\\s*(\\d+)",s):ok+=int(m.group(1))\n'
-        ' if m:=re.search(r"failed transactions:\\s*(\\d+)",s):fl+=int(m.group(1))\n'
-        ' if m:=re.search(r"total number of retries:\\s*(\\d+)",s):rt+=int(m.group(1))\n'
-        ' if m:=re.search(r"latency average = ([0-9.]+) ms",s):av.append(float(m.group(1)))\n'
-        'for lf in sorted(glob.glob("/tmp/pbl_*")):\n'
-        ' for ln in open(lf):\n'
-        '  z=ln.split()\n'
-        '  if len(z)>=3 and z[2].isdigit():lt.append(int(z[2])/1000.0)\n'
-        'if lt:lt.sort();n=len(lts:=lt);a=sum(lts)/n;sd=math.sqrt(sum((x-a)**2 for x in lts)/n);p95=lts[min(n-1,int(0.95*n))]\n'
-        'else:a=sum(av)/len(av) if av else 0;sd=p95=0\n'
-        'print(f"{t:.2f}|{a:.3f}|{sd:.3f}|{p95:.3f}|{int(ok)}|{int(fl)}|{int(rt)}")'
-    )
-    p = bc(["python3", "-c", py]).stdout.strip().split("|")
-    bc(["bash", "-c", "rm -f /tmp/pb_*.out /tmp/pbl_*"], chk=False)
-    return float(p[0]), float(p[1]), float(p[2]), float(p[3]), int(p[4]), int(p[5]), int(p[6])
+    return pb_run(t, su, m, c, j, d, a1, a2, hs, pt, u, pw, logf, prepared=True, max_tries=200, single_primary=SINGLE_PRIMARY, bc_fn=bc)
 
 
 def conv_chk_opt(t: str, ok: int, hs: list[str], pt: int, u: str, pw: str) -> tuple[str, int, str]:
     """Wait for cross-node catch-up and compute balance drift status."""
-    if t == "bucardo":
-        sh(["docker", "exec", "bucardo_daemon", "bucardo", "kick", "sync_pgbench", "5"], False)
-    if len(hs) > 1:
-        for _ in range(45):
-            hcs = [int(pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;") or -1) for h in hs]
-            if len(set(hcs)) == 1 and hcs[0] >= ok:
-                break
-            time.sleep(1)
-    exp = int(pq(hs[0], pt, u, pw, f"SELECT COALESCE(SUM(delta),0) FROM {B}history;"))
-    accs = [int(pq(h, pt, u, pw, f"SELECT COALESCE(SUM(abalance),0) FROM {B}accounts;")) for h in hs]
-    hcs = [int(pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;")) for h in hs]
-    dr = accs[0] - exp
-    if len(set(accs)) > 1:
-        st = "EXPECTED_LIMITATION_DIVERGED"
-    elif dr:
-        st = "EXPECTED_LIMITATION_LOST_UPDATE"
-    elif t in SINGLE_PRIMARY:
-        st = "PASS_SINGLE_PRIMARY"
-    else:
-        st = "PASS_CONVERGED"
-    return st, dr, f"d={exp} acc={'/'.join(map(str, accs))} h={'/'.join(map(str, hcs))}"
+    return conv_chk(t, ok, hs, pt, u, pw, single_primary=SINGLE_PRIMARY, wait_s=45, short_notes=True, pq_fn=pq, sh_fn=sh)
 
 
 def completed_topologies(path: Path) -> set[str]:

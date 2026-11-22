@@ -123,6 +123,24 @@ def init_ds(t, hs, pt, u, pw, sc, na):
             wcnt(n, pt, u, pw, f"{B}accounts", na)
 
 
+def assert_zero_containers(prefixes, exact=(), label="Residual PoC containers", sh_fn=None):
+    """Verify no lab or benchmark containers matching prefixes or names remain."""
+    out = (sh_fn or sh)(["docker", "ps", "-a", "--format", "{{.Names}}"]).stdout
+    left = [n.strip() for n in out.splitlines() if n.strip() and (n.strip() in exact or n.strip().startswith(prefixes))]
+    if left:
+        raise RuntimeError(f"{label}: {left}")
+
+
+def tc_netem(pc, img, args, chk=True, sh_fn=None):
+    """Run tc qdisc inside a container network namespace."""
+    (sh_fn or sh)(["docker", "run", "--rm", "--network", f"container:{pc}", "--cap-add", "NET_ADMIN", img, "tc", "qdisc", *args], chk)
+
+
+def ref_sub(h, pt, u, pw, sub, cp="false", pq_fn=None):
+    """Refresh logical replication subscription publication."""
+    (pq_fn or pq)(h, pt, u, pw, f"ALTER SUBSCRIPTION {sub} REFRESH PUBLICATION WITH (copy_data={cp});")
+
+
 def reset_ds(t, hs, pt, u, pw):
     """Reset pgbench balances and history between suites."""
     rst = f"UPDATE {B}accounts SET abalance=0 WHERE abalance<>0;UPDATE {B}branches SET bbalance=0;UPDATE {B}tellers SET tbalance=0;TRUNCATE {B}history"
@@ -133,17 +151,17 @@ def reset_ds(t, hs, pt, u, pw):
             pq(h, pt, u, pw, sql)
         bctl("start")
         return
-    if t in ("pg-birep", "pgedge") and len(hs) > 1:
+    if t in ("pg-birep", "pg18-birep", "pgedge") and len(hs) > 1:
         for _ in range(30):
             cnts = [int(pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;") or -1) for h in hs]
             if len(set(cnts)) == 1:
                 break
             time.sleep(1)
     pq(hs[0], pt, u, pw, rst + ";")
-    if t in ("pg-birep", "pgedge") and len(hs) > 1:
+    if t in ("pg-birep", "pg18-birep", "pgedge") and len(hs) > 1:
         time.sleep(2)
         wcnt(hs[1], pt, u, pw, f"{B}history", 0)
-        if t == "pg-birep":
+        if t in ("pg-birep", "pg18-birep"):
             bal_rst = f"UPDATE {B}accounts SET abalance=0 WHERE abalance<>0;UPDATE {B}branches SET bbalance=0;UPDATE {B}tellers SET tbalance=0;"
             for n in hs[1:]:
                 pq(n, pt, u, pw, bal_rst)
@@ -217,27 +235,37 @@ def pb_run(t, su, m, c, j, d, a1, a2, hs, pt, u, pw, logf=None, prepared=False, 
         run_bc(["bash", "-c", "rm -f /tmp/pb_*.out /tmp/pbl_*"], chk=False)
 
 
-def conv_chk(t, ok, hs, pt, u, pw):
+def conv_chk(t, ok, hs, pt, u, pw, single_primary=None, wait_s=25, short_notes=False, pq_fn=None, sh_fn=None):
     """Verify cross-node convergence and detect lost-update balance drift."""
-    if t == "pg17-sync-streaming":
+    run_pq = pq_fn or pq
+    run_sh = sh_fn or sh
+    if t == "pg17-sync-streaming" and not short_notes:
         time.sleep(1)
     if t == "bucardo":
-        sh(["docker", "exec", "bucardo_daemon", "bucardo", "kick", "sync_pgbench", "5"], False)
-    if t in ("pg-birep", "pgedge", "bucardo"):
-        for _ in range(25):
-            hcs = [int(pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;") or -1) for h in hs]
+        run_sh(["docker", "exec", "bucardo_daemon", "bucardo", "kick", "sync_pgbench", "5"], False)
+    if (short_notes and len(hs) > 1) or t in ("pg-birep", "pgedge", "bucardo"):
+        for _ in range(wait_s):
+            hcs = [int(run_pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;") or -1) for h in hs]
             if len(set(hcs)) == 1 and hcs[0] >= ok:
                 break
             time.sleep(1)
-    exp = int(pq(hs[0], pt, u, pw, f"SELECT COALESCE(SUM(delta),0) FROM {B}history;"))
-    accs, ns = [], []
+    exp = int(run_pq(hs[0], pt, u, pw, f"SELECT COALESCE(SUM(delta),0) FROM {B}history;"))
+    accs, ns, hcs = [], [], []
     for h in hs:
-        sa, sb, hc = [int(pq(h, pt, u, pw, f"SELECT {ex} FROM {B}{tb};")) for ex, tb in (("COALESCE(SUM(abalance),0)", "accounts"), ("COALESCE(SUM(bbalance),0)", "branches"), ("count(*)", "history"))]
-        accs.append(sa)
-        ns.append(f"{h}:acc={sa}/br={sb}/hist={hc}")
+        if short_notes:
+            sa = int(run_pq(h, pt, u, pw, f"SELECT COALESCE(SUM(abalance),0) FROM {B}accounts;"))
+            hc = int(run_pq(h, pt, u, pw, f"SELECT count(*) FROM {B}history;"))
+            accs.append(sa)
+            hcs.append(hc)
+        else:
+            sa, sb, hc = [int(run_pq(h, pt, u, pw, f"SELECT {ex} FROM {B}{tb};")) for ex, tb in (("COALESCE(SUM(abalance),0)", "accounts"), ("COALESCE(SUM(bbalance),0)", "branches"), ("count(*)", "history"))]
+            accs.append(sa)
+            ns.append(f"{h}:acc={sa}/br={sb}/hist={hc}")
     dr = accs[0] - exp
-    st = "EXPECTED_LIMITATION_DIVERGED" if len(set(accs)) > 1 else ("EXPECTED_LIMITATION_LOST_UPDATE" if dr else ("PASS_SINGLE_PRIMARY" if "pg17-" in t else "PASS_CONVERGED"))
-    return st, dr, f"exp_delta={exp} " + " ".join(ns)
+    is_sp = (t in single_primary) if single_primary is not None else ("pg17-" in t)
+    st = "EXPECTED_LIMITATION_DIVERGED" if len(set(accs)) > 1 else ("EXPECTED_LIMITATION_LOST_UPDATE" if dr else ("PASS_SINGLE_PRIMARY" if is_sp else "PASS_CONVERGED"))
+    note = f"d={exp} acc={'/'.join(map(str, accs))} h={'/'.join(map(str, hcs))}" if short_notes else (f"exp_delta={exp} " + " ".join(ns))
+    return st, dr, note
 
 
 def run_sb(t, h1, pt, u, pw, sc, logf):
