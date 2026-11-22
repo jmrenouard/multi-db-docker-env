@@ -829,6 +829,13 @@
 - **Applied Change / Fix**: Extended `test_pg_compose_durable_tunings_and_haproxy_ram_caps` across all 5 HAProxy PG stacks and Citus/YT files; benchmark library unit test expansion follows in PR 9B (`< 14,800` B).
 - **Result & Non-Regression Test**: Verified Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, and `tests/test_config.sh`.
 
+### RCA-113 -- Missing Unit Coverage for Runners, `pb_run` Aborts, `reset_ds`, `YT_RETRY_PY` & PG18
+- **Date / Linked Action**: `2026-11-22` (`ACT-131` / Issue `#460`)
+- **Observed Symptom**: Only 1 of 6 benchmark/extended runners had `.env` sourcing tests, `bench_pg18_lib` lacked sysbench/WAN netem coverage, and `pb_run`, `wcnt`/`wait_*`, `reset_ds`, `append_summary_preserving` (missing file), and `YT_RETRY_PY` lacked deterministic regression tests.
+- **Root Cause Analysis**: Initial benchmark test suite covered happy-path CSV/parsing helpers before bugfixes landed across all 5 harnesses.
+- **Applied Change / Fix**: Added deterministic unit tests for all 6 runners, `pb_run`/`pb_run_opt`, `wcnt`/`wait_sub_ready`/`wait_wal_replay`, `reset_ds`/`reset_ds_opt`, missing-file V2 upsert, in-process `YT_RETRY_PY` socket drops, `run_append_only_opt`, and `bench_pg18_lib`, completing `#191.16`.
+- **Result & Non-Regression Test**: Verified Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, and `tests/test_config.sh`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
