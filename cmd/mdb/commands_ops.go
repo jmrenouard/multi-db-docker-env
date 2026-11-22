@@ -69,12 +69,7 @@ func resolveEnvContainer(ctx context.Context, client *docker.Client, cat *catalo
 	if ok && env.Container != "" {
 		base = env.Container
 	}
-	if client != nil {
-		if names, err := client.PS(ctx, "name="+base); err == nil && len(names) > 0 {
-			return pickContainerName(base, names), env, ok
-		}
-	}
-	return base, env, ok
+	return client.ResolveContainer(ctx, base), env, ok
 }
 
 func runClientCmd(ctx context.Context, client *docker.Client, cat *catalog.Catalog, args []string, stderr io.Writer) error {

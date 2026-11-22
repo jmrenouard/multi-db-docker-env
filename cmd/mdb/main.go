@@ -240,70 +240,8 @@ func loadPassword() string {
 }
 
 func defaultContainer(topo string) string {
-	switch strings.ToLower(topo) {
-	case "galera":
-		return "galera_01"
-	case "repli":
-		return "mariadb_02"
-	case "innodb":
-		return "mysql_node1"
-	case "patroni":
-		return "node1"
-	case "pgpool":
-		return "pgpool"
-	case "mongo":
-		return "mongo1"
-	case "mongo8":
-		return "mongo8_n1"
-	case "pg17-baseline":
-		return "pg17_standalone"
-	case "pg-streaming":
-		return "pg_stream_primary"
-	case "pg-logical":
-		return "pg_logical_pub"
-	case "pg-birep":
-		return "pg_birep_node1"
-	case "pg18-streaming":
-		return "pg18_stream_primary"
-	case "pg18-logical":
-		return "pg18_logical_pub"
-	case "pg18-birep":
-		return "pg18_birep_node1"
-	case "pgedge":
-		return "pgedge_node1"
-	case "bucardo":
-		return "bucardo_node1"
-	case "citus":
-		return "citus_coord"
-	case "cockroach":
-		return "crdb_node1"
-	case "yugabyte":
-		return "yb_node1"
-	case "yt-cluster":
-		return "yt1"
-	default:
-		return "mariadb-11.8"
+	if env, ok := activeCatalog().Lookup(topo); ok && env.Container != "" {
+		return env.Container
 	}
-}
-
-func pickContainerName(base string, names []string) string {
-	for _, n := range names {
-		if n == base {
-			return n
-		}
-	}
-	if len(names) > 0 {
-		return names[0]
-	}
-	return base
-}
-
-func resolveContainer(ctx context.Context, client *docker.Client, topo string) string {
-	base := defaultContainer(topo)
-	if client != nil {
-		if names, err := client.PS(ctx, "name="+base); err == nil && len(names) > 0 {
-			return pickContainerName(base, names)
-		}
-	}
-	return base
+	return "mariadb-11.4"
 }

@@ -27,36 +27,34 @@ func TestDefaultAndResolveContainer(t *testing.T) {
 		"pg18-logical": "pg18_logical_pub", "pg18-birep": "pg18_birep_node1",
 		"pgedge": "pgedge_node1", "bucardo": "bucardo_node1",
 		"citus": "citus_coord", "cockroach": "crdb_node1", "yugabyte": "yb_node1",
-		"yt-cluster": "yt1",
-		"x":          "mariadb-11.8",
+		"yt-cluster": "yt1", "mysql97": "mysql-9.7",
+		"x":          "mariadb-11.4",
 	}
 	for topo, want := range cases {
 		if got := defaultContainer(topo); got != want {
 			t.Fatalf("%s: got %s, want %s", topo, got, want)
 		}
 	}
+	cat := activeCatalog()
 	c := docker.NewClientWithRunner(&docker.MockCommandRunner{Output: []byte("mdb-galera_01-1\n")})
-	if got := resolveContainer(context.Background(), c, "galera"); got != "mdb-galera_01-1" {
-		t.Fatalf("resolve: %s", got)
+	if got, _, ok := resolveEnvContainer(context.Background(), c, cat, "galera"); !ok || got != "mdb-galera_01-1" {
+		t.Fatalf("resolve: %s ok=%v", got, ok)
 	}
 	pgC := docker.NewClientWithRunner(&docker.MockCommandRunner{Output: []byte("haproxy_pgpool\npgpool\n")})
-	if got := resolveContainer(context.Background(), pgC, "pgpool"); got != "pgpool" {
-		t.Fatalf("exact pgpool match failed: %s", got)
-	}
-	if got, _, _ := resolveEnvContainer(context.Background(), pgC, activeCatalog(), "pgpool"); got != "pgpool" {
-		t.Fatalf("exact env pgpool match failed: %s", got)
+	if got, _, ok := resolveEnvContainer(context.Background(), pgC, cat, "pgpool"); !ok || got != "pgpool" {
+		t.Fatalf("exact env pgpool match failed: %s ok=%v", got, ok)
 	}
 	// Fallbacks: nil client, empty PS output, runner error
-	if got := resolveContainer(context.Background(), nil, "patroni"); got != "node1" {
-		t.Fatalf("nil client fallback: %s", got)
+	if got, _, ok := resolveEnvContainer(context.Background(), nil, cat, "patroni"); !ok || got != "node1" {
+		t.Fatalf("nil client fallback: %s ok=%v", got, ok)
 	}
 	emptyC := docker.NewClientWithRunner(&docker.MockCommandRunner{Output: []byte("")})
-	if got := resolveContainer(context.Background(), emptyC, "mongo"); got != "mongo1" {
-		t.Fatalf("empty output fallback: %s", got)
+	if got, _, ok := resolveEnvContainer(context.Background(), emptyC, cat, "mongo"); !ok || got != "mongo1" {
+		t.Fatalf("empty output fallback: %s ok=%v", got, ok)
 	}
 	errC := docker.NewClientWithRunner(&docker.MockCommandRunner{Err: errors.New("daemon down")})
-	if got := resolveContainer(context.Background(), errC, "citus"); got != "citus_coord" {
-		t.Fatalf("error fallback: %s", got)
+	if got, _, ok := resolveEnvContainer(context.Background(), errC, cat, "citus"); !ok || got != "citus_coord" {
+		t.Fatalf("error fallback: %s ok=%v", got, ok)
 	}
 }
 
@@ -538,7 +536,7 @@ func TestBenchRouting(t *testing.T) {
 func TestSetupLintAndTestSuite(t *testing.T) {
 	cat, wd, tmp := activeCatalog(), "", t.TempDir()
 	wd, _ = os.Getwd()
-	for _, rel := range []string{"scripts/yt_cluster/setup_yt_cluster.sh", "tests/test_yt_cluster.sh", ".env.example", "docker-compose-pg17-baseline.yml"} {
+	for _, rel := range []string{"scripts/yt_cluster/setup_yt_cluster.sh", "tests/test_yt_cluster.sh", "conf/mongo-rs/setup_rs.sh", "tests/test_mongo_rs.sh", ".env.example", "docker-compose-pg17-baseline.yml"} {
 		p := filepath.Join(tmp, rel)
 		_ = os.MkdirAll(filepath.Dir(p), 0755)
 		_ = os.WriteFile(p, []byte("ok\n"), 0644)
@@ -559,11 +557,18 @@ func TestSetupLintAndTestSuite(t *testing.T) {
 	if err := runSetupCmd(context.Background(), cat, []string{"yt-cluster"}, &out, &errBuf, fx); err != nil || ran[0][2] != "scripts/yt_cluster/setup_yt_cluster.sh" || !strings.Contains(ran[0][0], "DB_ROOT_PASSWORD=rootpass") {
 		t.Fatalf("yt setup: %v %v", err, ran)
 	}
+	ran = nil
+	if err := runSetupCmd(context.Background(), cat, []string{"mongo8"}, &out, &errBuf, fx); err != nil || len(ran) != 1 || strings.Join(ran[0][2:], " ") != "conf/mongo-rs/setup_rs.sh mongo8_n1 mongo8_n2 mongo8_n3" || !strings.Contains(ran[0][0], "MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3") {
+		t.Fatalf("mongo8 setup: %v %v", err, ran)
+	}
 	if err := runSetupCmd(context.Background(), cat, []string{"mysql80"}, &out, &errBuf, fx); err == nil {
 		t.Fatal("expected EOL")
 	}
 
-	mock := &docker.MockCommandRunner{Custom: func(_ context.Context, _ string, _ ...string) ([]byte, []byte, int, error) {
+	mock := &docker.MockCommandRunner{Custom: func(_ context.Context, _ string, a ...string) ([]byte, []byte, int, error) {
+		if strings.Contains(strings.Join(a, " "), "rs.status()") {
+			return []byte(`{"members":[{"health":1,"state":1,"stateStr":"PRIMARY"},{"health":1,"state":2},{"health":1,"state":2}]}`), nil, 0, nil
+		}
 		return []byte("1\n"), nil, 0, nil
 	}}
 	client := docker.NewClientWithRunner(mock)
@@ -579,6 +584,10 @@ func TestSetupLintAndTestSuite(t *testing.T) {
 	ran = nil
 	if err := runTestCmd(context.Background(), client, cat, []string{"yt-cluster", "--suite"}, &out, &errBuf, fx); err != nil || !strings.Contains(out.String(), `"HEALTHY"`) || ran[0][2] != "tests/test_yt_cluster.sh" || !strings.Contains(ran[0][0], "DB_ROOT_PASSWORD=rootpass") {
 		t.Fatalf("test --suite: %v %s %v", err, out.String(), ran)
+	}
+	ran = nil
+	if err := runTestCmd(context.Background(), client, cat, []string{"mongo8", "--suite"}, &out, &errBuf, fx); err != nil || len(ran) != 1 || strings.Join(ran[0][2:], " ") != "tests/test_mongo_rs.sh mongo8_n1 mongo8_n2 mongo8_n3" || !strings.Contains(ran[0][0], "MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3") {
+		t.Fatalf("mongo8 test --suite: %v %v", err, ran)
 	}
 	if err := runTestCmd(context.Background(), client, cat, []string{"pg17-baseline", "--suite"}, &out, &errBuf, fx); err == nil {
 		t.Fatal("expected missing suite")
