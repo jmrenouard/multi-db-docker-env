@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-156 -- Align `pg_multimaster_fr.md` Part 3 (YT Cluster and `v2.6.0`) with ASD-STE100 (`#510`)
+- **Timestamp / Issue / Branch**: `2026-11-23T00:22Z` | Issue `#510` | `docs/issue-510-pg-multimaster-fr-part3`
+- **Request**: Bring `YT Cluster 1.21.3` and `Piles durcies` (`v2.6.0`) in `documentation/pg_multimaster_fr.md` to `0` STE errors and `0` `via`/weak modals.
+- **Changes**: Split YT Cluster, RAM caps, HAProxy, and engine bullets into `<= 20`-word French sentences without semicolons or `via`; logged `RCA-137`.
+- **Result**: Verified full-file `0 errors, 0 warnings` (`ste_check.py`), Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, diff `< 14,800` B.
+
 ### ACT-155 -- Align `pg_multimaster_fr.md` Part 2 (V2 Matrix and PG 18.6) with ASD-STE100 (`#508`)
 - **Timestamp / Issue / Branch**: `2026-11-23T00:18Z` | Issue `#508` | `docs/issue-508-pg-multimaster-fr-part2`
 - **Request**: Refactor `Matrice etendue V2` + `bench-pg-v2` and `Topologies natives PostgreSQL 18.6` in `documentation/pg_multimaster_fr.md` into `<= 20`-word French STE sentences without semicolons (`YT Cluster` + `v2.6.0` follow in Part 3).
