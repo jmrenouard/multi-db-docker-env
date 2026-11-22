@@ -68,7 +68,7 @@ Bienvenue dans la documentation de Multi-DB Docker Environment. Cet index fourni
 
 | Document | Description |
 | --- | --- |
-| **[Environnements Standalone](tests_fr.md#-00-matrice-standalone-niveau-t2)** | Aperçu des moteurs standalone supportés (MySQL, MariaDB, Percona, PostgreSQL). |
+| **[Environnements Standalone](tests_fr.md#00-matrice-standalone-niveau-t2)** | Aperçu des moteurs standalone supportés (MySQL, MariaDB, Percona, PostgreSQL). |
 
 ## 🛠️ Gestion & Automatisation
 

@@ -125,7 +125,7 @@ To start a specific database instance, use the `make <database_version>` command
 | `make postgres15` | 🐘   | Starts PostgreSQL 15   |
 
 > [!NOTE]
-> **End-of-Life (EOL) Decommissioning**: MySQL 5.7, MySQL 8.0, MySQL 9.6, MariaDB 10.6, Percona Server 8.0, Traefik v2.11, and HAProxy 2.9 have reached official community EOL and have been decommissioned. See the full [Supported Products & Decommissioned EOL Matrix](documentation/supported_products.md#decommissioned-versions-end-of-life) for official EOL dates and recommended replacements.
+> **End-of-Life (EOL) Decommissioning**: MySQL 5.7, MySQL 8.0, MySQL 9.6, MariaDB 10.6, Percona Server 8.0, Traefik v2.11, and HAProxy 2.9 have reached official community EOL and have been decommissioned. See the full [Supported Products & Decommissioned EOL Matrix](documentation/supported_products.md#-decommissioned-versions-end-of-life) for official EOL dates and recommended replacements.
 
 ## 🏗️ Technical Environment
 

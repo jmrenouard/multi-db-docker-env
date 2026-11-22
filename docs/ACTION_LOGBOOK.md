@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-136 -- Repair 9 Broken GFM Anchors and Move `tests*.md` H2 Icons (`#470`)
+- **Timestamp / Issue / Branch**: `2026-11-22T22:40Z` | Issue `#470` | `docs/issue-470-fix-gfm-anchors`
+- **Request**: Fix all 9 broken GFM anchors (`README.md:128`, `README_fr.md:129`, `architecture.md:128`, `makefile.md:89`, `makefile_fr.md:51`, `INDEX.md:22,23,92`, `INDEX_fr.md:71`), remove raw `<img>` tags from `tests.md`/`tests_fr.md` H2 titles, and drop the `sourcery_ai_audit.md` index link prior to M3 deletion.
+- **Changes**: Moved 4 engine icons below H2 headings in `documentation/tests.md` and `tests_fr.md`; stripped `U+FE0F` selectors and removed `sourcery_ai_audit.md` row in `documentation/INDEX.md`; updated all 9 `#anchor` targets to exact GFM slugs; logged `RCA-118`.
+- **Result**: Verified 0 broken relative links/anchors, Windows + WSL `-W error::ResourceWarning` `unittest` (73 tests OK, 6 skipped), `go test -count=1 ./...`, `tests/test_config.sh`, `./mdb lint`, and diff `< 14,800` B.
+
 ### ACT-135 -- Remove Stale Audit/Plan Docs, Clean `tests/README.md`, and Fix `ACT-001` Link (`#468`)
 - **Timestamp / Issue / Branch**: `2026-11-22T22:34Z` | Issue `#468` | `docs/issue-468-fix-stale-docs-and-gfm-anchors`
 - **Request**: Fix audit #2/#9 stale file and path items: delete `audit_report.md` and `INTEGRAL_TEST_PLAN.md`, clean `tests/README.md`, and fix `ACT-001` `.agents/rules/` link (9 GFM anchors split to next PR).
