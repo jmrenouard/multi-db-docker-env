@@ -892,6 +892,13 @@
 - **Applied Change / Fix**: Replaced HTML `<p>` logo/badge blocks with Markdown table/badges, split >20-word sentences, removed semicolons and `via`, and synced `v2.6.2`.
 - **Result & Non-Regression Test**: Verified 0 STE errors/warnings (`ste_check.py`), Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-122 -- Incomplete `documentation/makefile_fr.md` Sections and Missing `ATTENTION` Safety Block
+- **Date / Linked Action**: `2026-11-22` (`ACT-141` / Issue `#480`)
+- **Observed Symptom**: `documentation/makefile_fr.md` documented only 6 of 13 sections from `documentation/makefile.md` (missing Data Injection, Troubleshooting, Patroni, PgPool-II, InnoDB, MongoDB, MySQLTuner) and lacked an ASD-STE100 `ATTENTION :` data-loss block for `clean-data`/`clean-galera`/`clean-repli`.
+- **Root Cause Analysis**: French Makefile reference trailed multi-engine HA expansions in `makefile.md`.
+- **Applied Change / Fix**: Expanded `documentation/makefile_fr.md` to all 13 sections, added Rule 7.1-7.3 `ATTENTION :` block, and kept sentences `<= 20` words without `via` or French weak modals.
+- **Result & Non-Regression Test**: Verified 0 STE errors/warnings (`ste_check.py`), valid `Makefile` target names, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
