@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-117 -- Consolidate `run_wan_netem`, Quote V2 `sysbench` & Enforce WAL Drain (`#434`)
+- **Timestamp / Issue / Branch**: `2026-11-22T01:36Z` | Issue `#434` | `fix/issue-434-v2-pg18-drain-dedup`
+- **Request**: Consolidate `run_wan_netem`, `drop_sb_sub`, `ref_sub`, and `assert_zero_containers`; pass V2 sysbench `pw` via `PGPASSWORD` + `shlex.quote` and enforce WAL replay drain + `srsubstate='r'` timeout.
+- **Changes**: Added `run_wan_netem` to `bench_pg_lib.py`; updated `bench_pg_opt_workloads.py` and `bench_pg_v2_lib.py`; logged `RCA-099`.
+- **Result**: Verified Windows + WSL Python `unittest` (`-W error::ResourceWarning`), `go test -count=1 ./...`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-116 -- Add Catalog `SetupArgs`/`SetupEnv`/`DefaultDB` SSOT Fields & Wire `ResolveContainer` in `interactive` (`#415`)
 - **Timestamp / Issue / Branch**: `2026-11-22T01:33Z` | Issue `#415` | `refactor/issue-415-catalog-ssot-dead-code`
 - **Request**: Consolidate `DefaultDB`, `SetupArgs`, and `SetupEnv` into `pkg/catalog` as SSOT and replace inline `client.PS` resolution in `pkg/interactive/steps.go` with `client.ResolveContainer` (Slice 4A of 3-PR split `#415` -> `#432` -> `#433` to stay `< 15,000` diff bytes).

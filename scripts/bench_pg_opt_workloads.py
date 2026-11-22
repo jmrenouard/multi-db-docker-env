@@ -7,7 +7,7 @@ import subprocess as sp
 import time
 
 from bench_pg_lib import (
-    B, bc, bctl, de, drop_sb_sub, pq, row, sh, tc_netem,
+    B, bc, bctl, de, drop_sb_sub, pq, row, run_wan_netem, sh, tc_netem,
     wait_sub_ready, wait_wal_replay, wlog,
 )
 from bench_pg_opt_common import LOGICAL_SUB, MULTI_WRITER, SINGLE_PRIMARY, pb_run_opt, ref_sub, wcnt_opt
@@ -206,18 +206,4 @@ def run_wan_netem_opt(
     t: str, delay_ms: int, d: int, hs: list[str], pt: int, u: str, pw: str, sc: int, netem: list[str], img: str, warm_s: int = 5, logf=None, chk_hs: list[str] | None = None
 ) -> dict:
     """Inject tc netem delay on peers, warm up if configured, measure RW, and clean qdisc."""
-    vhs = chk_hs or hs
-    reset_ds_opt(t, vhs, pt, u, pw)
-    for pc in netem:
-        _tc(pc, img, ["replace", "dev", "eth0", "root", "netem", "delay", f"{delay_ms}ms"])
-    time.sleep(1)
-    try:
-        if warm_s > 0:
-            pb_run_opt(t, f"F_wan_netem_{delay_ms}ms", 1, 8, 4, warm_s, f"-D scale={sc}", "", hs, pt, u, pw, None)
-            reset_ds_opt(t, vhs, pt, u, pw)
-        tps, avg, sdv, p95, ok, fl, rt = pb_run_opt(t, f"F_wan_netem_{delay_ms}ms", 1, 8, 4, d, f"-D scale={sc}", "", hs, pt, u, pw, logf)
-    finally:
-        for pc in netem:
-            _tc(pc, img, ["del", "dev", "eth0", "root"], False)
-        time.sleep(1)
-    return row(t, f"F_wan_netem_{delay_ms}ms", sc, 8, d, tps, "N/A", avg, sdv, p95, ok, fl, rt, f"PASS_NETEM_{delay_ms}MS", 0, f"tc netem {delay_ms}ms ({','.join(netem)})")
+    return run_wan_netem(t, delay_ms, d, hs, pt, u, pw, sc, netem, img, pb_run_opt, reset_ds_opt, logf=logf, warm_s=warm_s, chk_hs=chk_hs, tc_fn=_tc)
