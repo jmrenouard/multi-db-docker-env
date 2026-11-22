@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-113 -- Close V2 Runner Log Handle via `with` & Add PG 18 / `ResourceWarning` Tests (`#413`)
+- **Timestamp / Issue / Branch**: `2026-11-22T00:21Z` | Issue `#413` | `fix/issue-413-python-file-leaks`
+- **Request**: Replace remaining unclosed `.open(...)` handles in benchmark runners with context managers and add unit, `ResourceWarning`, and static `.open(` regression tests in `tests/test_pg_libs.py`.
+- **Changes**: Updated `scripts/bench_pg_v2_runner.sh` to wrap `run_topo(topo, logf)` in `with ((LOGD / f"{topo}.log").open(...) if topo in NEW_CORE else nullcontext()) as logf:` (removing manual `logf.close()`; `bench_pg_multimaster.sh`, `bench_pg_v2_lib.py`, `bench_pg18_lib.py`, and `bench_yt_runner.sh` were already resolved on `main` via PRs #419/#421/#423); added `TestBenchPg18Lib` and `TestBenchResourceHygiene` to `tests/test_pg_libs.py`; logged `RCA-095`.
+- **Result**: Verified `python -W error::ResourceWarning -m unittest discover -s tests -v` (`67` ran: `61` OK, `6` live-DB skipped in `test_lab.py`), `go test -count=1 ./...` (`11/11` packages PASS), `go run ./cmd/mdb lint` (`70` scripts + `21` compose files OK), and PR diff `< 15,000` chars.
+
 ### ACT-112 -- Compose Env via `RunWithEnv` & `Client.ResolveContainer` (`#412`)
 - **Timestamp / Issue / Branch**: `2026-11-21T23:40Z` | `#412` | `refactor/issue-412-compose-env-resolve`
 - **Request**: Pass Compose env via `RunWithEnv`, add `wsl`/`wsl.exe` to `WSLENV`, add `ResolveContainer`.
