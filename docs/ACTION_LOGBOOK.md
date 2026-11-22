@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-131 -- Expand Unit Tests for All Runners, `pb_run`, `reset_ds`, `YT_RETRY_PY` & PG18 (`#460`)
+- **Timestamp / Issue / Branch**: `2026-11-22T02:47Z` | Issue `#460` | `test/issue-460-pg-libs-runner-coverage`
+- **Request**: Expand `tests/test_pg_libs.py` across `.env`/`BENCH_OUT_DIR` handling on all 6 runners, `pb_run`/`pb_run_opt` crash/sampling-rate detection, `wcnt`/`wait_sub_ready`/`wait_wal_replay` timeouts, bidirectional `reset_ds`/`reset_ds_opt`, missing-file V2 CSV upsert, `YT_RETRY_PY` socket-drop recovery, and PG 18 sysbench/netem wrappers (`#191.16` part 2).
+- **Changes**: Added unit tests across `TestBenchPgLib`, `TestBenchPgV2Lib`, `TestBenchPgOptimizedLib`, and `TestBenchPg18Lib` in `tests/test_pg_libs.py`; logged `RCA-113`.
+- **Result**: Verified Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and diff `< 14,800` B.
+
 ### ACT-130 -- Expand Static Guard for HAProxy L7/Resolvers & Compose Health Parity (`#458`)
 - **Timestamp / Issue / Branch**: `2026-11-22T02:43Z` | Issue `#458` | `test/issue-458-static-haproxy-compose-parity`
 - **Request**: Extend `tests/test_repo_static.py` to cover all 5 `scripts/*/haproxy.cfg` L7/resolver rules, Compose HAProxy/`:8404` healthchecks, `yb_node3` & `crdb_node1..3` readiness healthchecks, `15459:8404` on `haproxy_pgedge`, and Citus/YT `DB_ROOT_PASSWORD`-first order (`#191.16` part 1).

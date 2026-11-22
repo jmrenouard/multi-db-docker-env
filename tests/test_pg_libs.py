@@ -8,8 +8,10 @@ import shutil
 import subprocess as sp
 import sys
 import tempfile
+import types
 import unittest
 import warnings
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -120,6 +122,37 @@ class TestBenchPgLib(unittest.TestCase):
         self.assertEqual(r["lat_p95_ms"], 210.5)
         self.assertIn("--db-ps-mode=disable", r["notes"])
 
+    def test_pb_run_abort_sampling_cleanup_and_dual_rc(self):
+        cmds = []
+        cp = sp.CompletedProcess
+        def fake_bc(a, pw="", chk=True):
+            cmds.append(" ".join(a))
+            return cp(a, 0, "450.00|2.100|0.300|3.500|900|0|1" if a[:1] == ["python3"] else "tps = 450.0\n", "")
+        with patch.object(b1, "bc", side_effect=fake_bc):
+            self.assertEqual(b1.pb_run("pg-birep", "C_multinode_ro", 2, 4, 2, 10, "", "", ["n1", "n2"], 5432, "u", "p$1")[0], 450.0)
+        self.assertTrue(any("--sampling-rate=0.05" in c and 'r1=0; wait "$p1"' in c for c in cmds))
+        self.assertEqual(cmds.count("bash -c rm -f /tmp/pb_*.out /tmp/pbl_*"), 2)
+        for out_txt, rc in (("Run was aborted\n", 1), ("", 0)):
+            with patch.object(b1, "bc", side_effect=[cp([], 0, "", ""), cp([], rc, "", ""), cp([], 0, out_txt, ""), cp([], 0, "0.00|0|0|0|0|0|0", ""), cp([], 0, "", "")]):
+                with self.assertRaises(RuntimeError):
+                    b1.pb_run("citus", "A_single_rw", 1, 4, 2, 5, "", "", ["n1"], 5432, "u", "pw")
+
+    def test_wcnt_wait_sub_wal_replay_and_reset_ds(self):
+        with patch.object(b1, "pq", return_value="0"), patch.object(b1.time, "sleep"):
+            with self.assertRaises(RuntimeError): b1.wcnt("n1", 5432, "u", "pw", "pgbench_accounts", 10, to_s=2)
+            with self.assertRaises(RuntimeError): b1.wait_sub_ready("n2", 5432, "u", "pw", "sub_x", to_s=2)
+        with patch.object(b1, "pq", side_effect=["0/100", "1", "0"]), patch.object(b1.time, "sleep"):
+            b1.wait_wal_replay("n1", 5432, "u", "pw", to_s=3)
+        with patch.object(b1, "pq", side_effect=["0/100", "1", "1"]), patch.object(b1.time, "sleep"):
+            with self.assertRaises(RuntimeError): b1.wait_wal_replay("n1", 5432, "u", "pw", to_s=2)
+        seen = []
+        with patch.object(b1, "pq", side_effect=lambda *a: (seen.append((a[0], a[4])), "1")[1]), patch.object(b1, "wcnt"), patch.object(b1.time, "sleep"):
+            b1.reset_ds("pg-birep", ["n1", "n2"], 5432, "u", "pw")
+            self.assertTrue(any(h == "n2" and "UPDATE pgbench_accounts" in q for h, q in seen))
+            seen.clear()
+            b1.reset_ds("pgedge", ["n1", "n2"], 5432, "u", "pw")
+            self.assertFalse(any(h == "n2" and "UPDATE pgbench_accounts" in q for h, q in seen))
+
 
 class TestBenchPgV2Lib(unittest.TestCase):
     def test_assert_zero_poc_containers(self):
@@ -154,6 +187,16 @@ class TestBenchPgV2Lib(unittest.TestCase):
             with p.open(encoding="utf-8") as fh:
                 rows2 = list(csv.DictReader(fh))
             self.assertEqual([(r["topology"], r["suite"]) for r in rows2], [("topoA", "S1"), ("topoB", "S1")])
+
+    def test_append_summary_preserving_missing_file_writes_header(self):
+        r1 = b1.row("pg17-async-streaming", "A_single_rw", 2, 8, 20, 310, "N/A", 1.5, 0.2, 2.5, 6000, 0, 0, "PASS_SINGLE_PRIMARY", 0, "ok")
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            p = Path(tmp) / "missing" / "benchmark_summary.csv"
+            b2.append_summary_preserving(p, "pg17-async-streaming", [r1])
+            with p.open(encoding="utf-8", newline="") as fh:
+                rows = list(csv.DictReader(fh))
+            self.assertEqual([r["topology"] for r in rows], ["pg17-async-streaming"])
+            self.assertFalse(p.with_suffix(".csv.tmp").exists())
 
 
 class TestPgExtendedLib(unittest.TestCase):
@@ -334,6 +377,76 @@ class TestBenchPgOptimizedLib(unittest.TestCase):
             res = sp.run(["bash", "../scripts/env_probe.sh"], cwd=root / "sub", env=env, capture_output=True, text=True, check=True)
             self.assertEqual(res.stdout, "dotenv_secret_check|dotenv_secret_check|dotenv_secret_check")
 
+    def test_all_runners_source_dotenv_and_honor_bench_out_dir(self):
+        sdir = Path(__file__).resolve().parent.parent / "scripts"
+        runners = (
+            ("bench_pg_multimaster.sh", "PG_PASS", True),
+            ("bench_pg_v2_runner.sh", "PG_PASS", True),
+            ("bench_pg18_runner.sh", "PG_PASS", True),
+            ("bench_yt_runner.sh", "PG_PASS", False),
+            ("bench_pg_optimized_runner.sh", "PG_PASS", True),
+            ("test_pg_extended_matrix.sh", "PG_LAB_PASSWORD", False),
+        )
+        self.assertNotIn("--env-file .env.example", (sdir / "bench_pg_multimaster.sh").read_text(encoding="utf-8"))
+        if not shutil.which("bash"):
+            return
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+            root = Path(tmp)
+            (root / "scripts").mkdir()
+            (root / ".env").write_text("DB_ROOT_PASSWORD=from_dotenv_99\n", encoding="utf-8", newline="\n")
+            env = {k: v for k, v in os.environ.items() if k not in ("DB_ROOT_PASSWORD", "PG_LAB_PASSWORD", "PG_PASS", "BENCH_OUT_DIR", "BENCH_OUT_CSV", "BENCH_LOG_DIR")}
+            for name, pw_var, has_out in runners:
+                with self.subTest(runner=name):
+                    src = (sdir / name).read_text(encoding="utf-8")
+                    if has_out:
+                        self.assertIn("BENCH_OUT_DIR", src)
+                    probe = root / "scripts" / f"p_{name}"
+                    probe.write_text(src[: src.index("\nexec python3 -")] + f'\nprintf "%s|%s|%s" "${pw_var}" "$DB_ROOT_PASSWORD" "${{BENCH_OUT_DIR:-}}"\n', encoding="utf-8", newline="\n")
+                    res = sp.run(["bash", "-c", f"env -u DB_ROOT_PASSWORD -u PG_PASS -u BENCH_OUT_CSV -u BENCH_LOG_DIR PG_LAB_PASSWORD=stale_override BENCH_OUT_DIR=/custom/out_dir bash ./scripts/p_{name}"], cwd=root, env=env, capture_output=True, text=True, check=True)
+                    self.assertEqual(res.stdout, "from_dotenv_99|from_dotenv_99|/custom/out_dir")
+
+    def test_pb_run_opt_abort_reset_birep_append_only_and_yt_retry_socket_drop(self):
+        with patch.object(boc, "bc", side_effect=[
+            sp.CompletedProcess([], 0, "", ""), sp.CompletedProcess([], 0, "", ""),
+            sp.CompletedProcess([], 0, "Run was aborted\n", ""), sp.CompletedProcess([], 0, "", ""),
+        ]):
+            with self.assertRaises(RuntimeError):
+                boc.pb_run_opt("pg18-birep", "A_single_rw", 1, 4, 2, 5, "", "", ["n1"], 5432, "u", "pw")
+        seen = []
+        with patch.object(bow, "pq", side_effect=lambda *a: (seen.append((a[0], a[4])), "2")[1]), \
+             patch.object(bow, "wcnt_opt"), patch.object(bow, "time"):
+            bow.reset_ds_opt("pg18-birep", ["n1", "n2"], 5432, "postgres", "pw")
+        self.assertTrue(any(h == "n2" and "UPDATE pgbench_accounts" in q for h, q in seen))
+        with patch.object(bow, "pq", return_value="10"), patch.object(bow, "ref_sub"), patch.object(bow, "time"), \
+             patch.object(bow, "pb_run_opt", return_value=(120.0, 2.0, 0.2, 3.0, 10, 0, 0)):
+            self.assertEqual(bow.run_append_only_opt("pg18-birep", ["n1", "n2"], 5432, "postgres", "pw", 20)["convergence_status"], "PASS_CONVERGED")
+        with patch.object(boc, "pq", side_effect=["20", "20", "20", "2", "20", "2"]):
+            self.assertEqual(boc.conv_chk_opt("pg18-standalone", 2, ["n1"], 5432, "postgres", "pw")[:2], ("PASS_SINGLE_PRIMARY", 0))
+
+        class FakeErr(Exception): sqlstate = ""
+        class FakeOpErr(FakeErr): pass
+        st = {"c": 0, "m": 0}
+        class FakeConn:
+            def __init__(self):
+                st["c"] += 1; self.id = st["c"]; self.closed = self.broken = False
+            def cursor(self): return types.SimpleNamespace(execute=lambda *_a: None)
+            def commit(self):
+                if self.id == 1: self.broken = True; raise FakeOpErr("drop")
+            def rollback(self): raise FakeErr("dead")
+            def close(self): self.closed = True
+        fake_pg = types.SimpleNamespace(Error=FakeErr, OperationalError=FakeOpErr, connect=lambda **_kw: FakeConn())
+        def fake_mono():
+            st["m"] += 1; return 0.0 if st["m"] <= 80 else 5.0
+        buf = io.StringIO()
+        with patch.dict(sys.modules, {"psycopg": fake_pg}), \
+             patch.object(sys, "argv", ["yt_retry.py", "rw", "1", "2", "100", "p$1", "yt1,yt2"]), \
+             patch("time.monotonic", side_effect=fake_mono), redirect_stdout(buf):
+            exec(compile(b1.YT_RETRY_PY, "YT_RETRY_PY", "exec"), {"__name__": "__main__"})
+        parts = buf.getvalue().strip().split("|")
+        self.assertEqual(len(parts), 9)
+        self.assertGreaterEqual(int(parts[5]), 1)
+        self.assertGreaterEqual(int(parts[4]), 1)
+
 
 class TestBenchPg18Lib(unittest.TestCase):
     def test_assert_zero_pg18_containers(self):
@@ -379,6 +492,23 @@ class TestBenchPg18Lib(unittest.TestCase):
                     ("pg18-birep", "S2", "b2"),
                 ],
             )
+
+    def test_run_sysbench_pg18_quoting_and_wan_netem_cleanup(self):
+        cmds, tc_ops = [], []
+        sb_out = "transactions: 100 (10.00 per sec.)\nqueries: 2000 (200.00 per sec.)\nignored errors: 0 (0.00 per sec.)\navg: 5.0\n95th percentile: 9.0\n"
+        def fake_bc(a, pw="", chk=True):
+            cmds.append(" ".join(a))
+            return sp.CompletedProcess(a, 0, sb_out if a == ["cat", "/tmp/sb_r.out"] else "", "")
+        with patch.object(b18, "bc", side_effect=fake_bc), patch.object(b18, "de", return_value=sp.CompletedProcess([], 0, "", "")), \
+             patch.object(b18.sp, "run"), patch.object(b18, "pq", return_value="1"), patch.object(b18, "wait_sub_ready"), \
+             patch.object(b18, "wait_wal_replay"), patch.object(b18, "_drop_sb_sub") as m_drop:
+            res = b18.run_sysbench_pg18("pg18-birep", ["n1", "n2"], 5432, "u", "p$1", 2, [("E_sysbench_oltp_rw", "oltp_read_write", 8, 20, False)])
+        self.assertEqual((res["E_sysbench_oltp_rw"]["tps"], m_drop.call_count), (10.0, 2))
+        self.assertTrue(any('--pgsql-password="$PGPASSWORD"' in c for c in cmds))
+        with patch.object(b18, "reset_ds_pg18"), patch.object(b18, "_tc", side_effect=lambda pc, img, args, chk=True: tc_ops.append((pc, args[0]))), \
+             patch.object(b18, "pb_run_pg18", return_value=(50.0, 2.0, 0.1, 3.0, 100, 0, 0)), patch("bench_pg_lib.time.sleep"):
+            self.assertEqual(b18.run_wan_netem_pg18("pg18-birep", 10, 10, ["n1", "n2"], 5432, "u", "pw", 2, ["n2"], "img")["convergence_status"], "PASS_NETEM_10MS")
+        self.assertEqual(tc_ops, [("n2", "replace"), ("n2", "del")])
 
 
 class TestBenchResourceHygiene(unittest.TestCase):
