@@ -23,6 +23,10 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Run Python Unit & Documentation Hygiene Tests
+        run: |
+          python3 -W error::ResourceWarning -m unittest discover -s tests -v
+
       - name: Generate and Check TLS Certificates
         run: |
           make gen-ssl-all

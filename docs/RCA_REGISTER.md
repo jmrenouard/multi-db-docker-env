@@ -1004,6 +1004,13 @@
 - **Applied Change / Fix**: Split into `<= 20`-word French sentences without semicolons, replaced `via` (`avec`), and kept all metrics verbatim.
 - **Result & Non-Regression Test**: Verified full-file `0 errors, 0 warnings`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-138 -- Missing Automated Documentation Hygiene Gate in Unit Suite and GitHub CI
+- **Date / Linked Action**: `2026-11-23` (`ACT-157` / Issue `#512`)
+- **Observed Symptom**: Neither `tests/` nor `.github/workflows/ci.yml` validated Markdown links, GFM anchors, `Makefile` targets, `CAUTION`/`ATTENTION` warnings, or STE rules automatically on PRs.
+- **Root Cause Analysis**: Documentation checks relied solely on manual inspection and `test_project_governance_rules.py` rule presence assertions.
+- **Applied Change / Fix**: Added stdlib `tests/test_docs_hygiene.py` and integrated `python3 -W error::ResourceWarning -m unittest discover -s tests -v` in `.github/workflows/ci.yml`.
+- **Result & Non-Regression Test**: Verified all `TestDocsHygiene` tests passing non-skipped on Windows and WSL alongside `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
