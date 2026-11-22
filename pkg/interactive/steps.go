@@ -156,12 +156,7 @@ func verifierType(env catalog.Environment) string {
 
 // VerifyEnvironment runs real dbclient.NewVerifier connectivity checks for env.
 func VerifyEnvironment(ctx context.Context, env catalog.Environment, client *docker.Client) (string, error) {
-	ctr := env.Container
-	if client != nil && ctr != "" {
-		if names, err := client.PS(ctx, "name="+ctr); err == nil && len(names) > 0 {
-			ctr = names[0]
-		}
-	}
+	ctr := client.ResolveContainer(ctx, env.Container)
 	pass := config.DefaultConfig().RootPassword
 	if cfg, err := config.Load(""); err == nil && cfg != nil {
 		pass = cfg.RootPassword

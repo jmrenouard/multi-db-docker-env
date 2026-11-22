@@ -3,6 +3,7 @@ package catalog
 import (
 	"encoding/json"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -77,6 +78,25 @@ func TestDefaultCatalog_FilterLookupRender(t *testing.T) {
 	e.ComposeFiles[0] = "x.yml"
 	if again, _ := c.Lookup("galera"); again.ComposeFiles[0] != "docker-compose-galera.yml" {
 		t.Fatal("mutated")
+	}
+	m8, ok := c.Lookup("mongo8")
+	wantArgs, wantEnv := []string{"mongo8_n1", "mongo8_n2", "mongo8_n3"}, []string{"MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3"}
+	if !ok || !slices.Equal(m8.SetupArgs, wantArgs) || !slices.Equal(m8.SetupEnv, wantEnv) {
+		t.Fatalf("mongo8 setup: %+v", m8)
+	}
+	m8.SetupArgs[0], m8.SetupEnv[0] = "x", "y"
+	if m8Again, _ := c.Lookup("mongo8"); !slices.Equal(m8Again.SetupArgs, wantArgs) || !slices.Equal(m8Again.SetupEnv, wantEnv) {
+		t.Fatal("mongo8 setup mutated")
+	}
+	for _, id := range strings.Fields("pg17-baseline pg-streaming pg-logical pg-birep pg18-streaming pg18-logical pg18-birep pgedge bucardo yt-cluster") {
+		if e, ok := c.Lookup(id); !ok || e.DefaultDB != "labdb" {
+			t.Fatalf("%s DefaultDB=%q", id, e.DefaultDB)
+		}
+	}
+	for _, id := range strings.Fields("postgres15 postgres16 postgres17 postgres18 citus patroni pgpool") {
+		if e, ok := c.Lookup(id); !ok || e.DefaultDB != "" {
+			t.Fatalf("%s DefaultDB=%q want empty", id, e.DefaultDB)
+		}
 	}
 	if _, ok := Lookup("unknown"); ok {
 		t.Fatal("expected false")
