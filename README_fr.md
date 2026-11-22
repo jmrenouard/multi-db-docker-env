@@ -1,24 +1,16 @@
 ![multi-db-docker-env](logo.png)
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="60" height="60">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="60" height="60">
-  <img src="https://static.cdnlogo.com/logos/p/6/percona.svg" alt="Percona" width="60" height="60">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="60" height="60">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mongodb/mongodb-original.svg" alt="MongoDB" width="60" height="60">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefikproxy/traefikproxy-original.svg" alt="Traefik" width="60" height="60">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" width="60" height="60">
-</p>
+| MariaDB | MySQL | Percona | PostgreSQL | MongoDB | Traefik | Docker |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mariadb/mariadb-original.svg" alt="MariaDB" width="60" height="60"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg" alt="MySQL" width="60" height="60"> | <img src="https://static.cdnlogo.com/logos/p/6/percona.svg" alt="Percona" width="60" height="60"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" alt="PostgreSQL" width="60" height="60"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/mongodb/mongodb-original.svg" alt="MongoDB" width="60" height="60"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefikproxy/traefikproxy-original.svg" alt="Traefik" width="60" height="60"> | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" alt="Docker" width="60" height="60"> |
 
 [!["Buy Us A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jmrenouard)
 
-<p align="center">
-  <a href="https://github.com/jmrenouard/multi-db-docker-env/releases/latest"><img src="https://img.shields.io/github/v/release/jmrenouard/multi-db-docker-env?style=flat-square&logo=github" alt="GitHub Release"></a>
-  <a href="https://hub.docker.com/r/jmrenouard/multi-db-docker-env"><img src="https://img.shields.io/docker/v/jmrenouard/multi-db-docker-env?sort=semver&style=flat-square&logo=docker&logoColor=white" alt="Docker Image Version"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square" alt="License"></a>
-</p>
+[![GitHub Release](https://img.shields.io/github/v/release/jmrenouard/multi-db-docker-env?style=flat-square&logo=github)](https://github.com/jmrenouard/multi-db-docker-env/releases/latest)
+[![Docker Image Version](https://img.shields.io/docker/v/jmrenouard/multi-db-docker-env?sort=semver&style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/jmrenouard/multi-db-docker-env)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
 
-Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que toutes les instances de base de données sont accessibles via des ports stables sur votre machine hôte (`localhost:3306` pour MySQL/MariaDB et `localhost:5432` pour PostgreSQL), quelle que soit la version spécifique de la base de données que vous choisissez d'exécuter.
+Le **proxy inverse Traefik** route les connexions vers l'instance active. Connectez vos clients sur `localhost:3306` (MySQL/MariaDB) ou `localhost:5432` (PostgreSQL).
 
 > [!IMPORTANT]
 > **Politique d'Anglais Uniquement** : Tous les commentaires techniques dans le code, les fichiers de configuration et la documentation de ce projet DOIVENT être en anglais UNIQUEMENT.
@@ -28,17 +20,17 @@ Une fonctionnalité clé est le **proxy inverse Traefik**, qui garantit que tout
 | Niveau | Nom du Niveau | Dernière Vérification | État |
 | :--- | :--- | :--- | :--- |
 | **T2** | **Matrice Standalone** | 2026-11-21 | ✅ 11/11 Profils Actifs Vérifiés E2E |
-| **T3** | **Cluster, HA & Multi-Maître (`v2.6.1`)** | 2026-11-21 | ✅ 20/20 Clusters Actifs Vérifiés E2E (31/31 Total, Patroni Autonome) |
-| **IMG** | **Inventaire Images Docker E2E** | 2026-11-21 | ✅ 31/31 Images (`7` Custom + `24` Upstream) via `./mdb images check` |
+| **T3** | **Cluster, HA & Multi-Maître (`v2.6.2`)** | 2026-11-21 | ✅ 20/20 Clusters Actifs Vérifiés E2E (31/31 Total, Patroni Autonome) |
+| **IMG** | **Inventaire Images Docker E2E** | 2026-11-21 | ✅ 31/31 Images (`7` Custom + `24` Upstream) avec `./mdb images check` |
 
 ## 📋 Prérequis
 
 Exécutez `./mdb doctor` (`mdb.cmd doctor` sous Windows) pour vérifier vos prérequis :
 
 * [Docker](https://docs.docker.com/get-docker/) & [Docker Compose v2](https://docs.docker.com/compose/install/) (Docker Desktop sous Windows/macOS)
-* `./mdb` (`mdb.cmd` sous Windows) : exécute `bin/mdb` si compilé, ou bascule automatiquement vers [Go](https://go.dev/) (`>= 1.22`) via `go run ./cmd/mdb`
+* `./mdb` (`mdb.cmd` sous Windows) : exécute `bin/mdb` si compilé, ou bascule vers [Go](https://go.dev/) (`>= 1.22`) avec `go run ./cmd/mdb`
 * **macOS** : Docker Desktop + outils Homebrew (`brew install go bash openssl git python`)
-* **Windows** : exécutez `mdb.cmd` nativement dans PowerShell/CMD ; utilisez **WSL2** ou **Git Bash** (ou `choco install make`) pour les wrappers `make` et les tests bash
+* **Windows** : exécutez `mdb.cmd` nativement dans PowerShell/CMD. Utilisez **WSL2**, **Git Bash** ou `choco install make` pour les wrappers `make` et les tests bash.
 * Liste complète multi-OS : voir [`PREREQUISITES.txt`](PREREQUISITES.txt).
 
 ## ⚙️ Configuration Initiale
@@ -213,9 +205,9 @@ Architecture MongoDB avec ReplicaSet et routage HAProxy.
 > [!NOTE]
 > MongoDB 7.0 utilise le port 27100 (HAProxy), stats 8408, accès direct 27411-27413 (`10.10.0.0/24`). MongoDB 8.0 utilise le port 27200 (HAProxy), stats 8409, accès direct 27511-27513 (`10.11.0.0/24`). Les deux imposent TLS (`requireTLS`).
 
-### PostgreSQL Réplication, Multi-Maître & SQL Distribué (13 Piles Compose, `v2.1.0`–`v2.5.0`)
+### PostgreSQL Réplication, Multi-Maître & SQL Distribué (13 Piles Compose, `v2.1.0`–`v2.6.2`)
 
-Les 13 piles PostgreSQL Compose (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) exposent `./mdb up|setup|test|down <pile>`, `make up-<pile>|setup-<pile>|test-<pile>|down-<pile>`, `<pile>-{up,down,status,logs,ps,test}`, `make lint`, `make test`, `make test-pg-extended` (T11–T18), `make bench-pg-v2`, `make bench-pg18` et `make bench-yt-cluster`. Pour `yt-cluster` ([`dbinvent/yt:1.21.3`](https://hub.docker.com/r/dbinvent/yt), [Présentation](https://dbinvent.com/30p), [`agent.md`](https://dbinvent.com/agent.md)), notez la séparation de licence MIT ([`DBinvent/yt-cluster-lite`](https://github.com/DBinvent/yt-cluster-lite) nœud mono-BDD) vs PolyForm Noncommercial 1.0.0 / Commercial (`ytserv` + `ytctl`) et le [rapport Jepsen](https://dbinvent.com/cluster/articles/jepsen) (`cursor-stability`, `51` initial -> `49/49` retestées). Voir [pg_multimaster_fr.md](documentation/pg_multimaster_fr.md).
+Les 13 piles PostgreSQL Compose (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) exposent `./mdb up|setup|test|down <pile>`, `make up-<pile>|setup-<pile>|test-<pile>|down-<pile>`, `<pile>-{up,down,status,logs,ps,test}`, `make lint`, `make test`, `make test-pg-extended` (T11–T18), `make bench-pg-v2`, `make bench-pg18` et `make bench-yt-cluster`. Pour `yt-cluster` ([`dbinvent/yt:1.21.3`](https://hub.docker.com/r/dbinvent/yt), [Présentation](https://dbinvent.com/30p), [`agent.md`](https://dbinvent.com/agent.md)), notez la séparation MIT ([`DBinvent/yt-cluster-lite`](https://github.com/DBinvent/yt-cluster-lite)) vs PolyForm Noncommercial 1.0.0 / Commercial (`ytserv`, `ytctl`). Consultez le [rapport Jepsen](https://dbinvent.com/cluster/articles/jepsen) (`cursor-stability`, `51` initial -> `49/49` retestées) et [pg_multimaster_fr.md](documentation/pg_multimaster_fr.md).
 
 **Exemple : Changer de Base de Données**
 
@@ -227,7 +219,7 @@ Les 13 piles PostgreSQL Compose (`pg17-baseline`, `pg-streaming`, `pg-logical`, 
 
 ## 🏛️ Architecture
 
-Le système utilise un **proxy inverse Traefik** comme routeur intelligent. C'est le seul service exposé sur le port `3306` de votre hôte et il redirige automatiquement le trafic vers l'instance de base de données active.
+Traefik agit comme proxy inverse sur les ports hôtes `3306` et `5432`. Il redirige le trafic vers l'instance active.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/traefik/traefik-original.svg" alt="Traefik" width="100">
@@ -317,19 +309,23 @@ graph TD
 
 1. **Choisissez et démarrez une version** : `./mdb catalog` puis `./mdb up mysql84` (ou `mdb.cmd up mysql84` sous Windows).
 2. **(Optionnel) Générez votre `~/.my.cnf`** (avec sauvegarde `.bak` `0600`) : `./mdb mycnf`.
-3. **Connectez-vous via le shell adaptatif** : `./mdb client` (`mariadb`, `psql`, `mongosh`, `cockroach` ou `ysqlsh`).
+3. **Connectez-vous avec le shell adaptatif** : `./mdb client` (`mariadb`, `psql`, `mongosh`, `cockroach` ou `ysqlsh`).
 4. **Vérifiez les logs ou changez de moteur** : `./mdb logs`, `./mdb status` ou `./mdb up mariadb114`.
 5. **Arrêtez tout** : `./mdb down` (ou `make stop`).
 
 ## 🚀 Pipeline de Release (GitHub Actions)
 
-Les releases sont automatisées via [`.github/workflows/release.yml`](.github/workflows/release.yml) sur push de tag `v*.*.*` ou `workflow_dispatch` (mode dry-run par défaut ; `publish=true` pour publier) : validation `VERSION`/`Changelog` ([`scripts/release_notes.py`](scripts/release_notes.py)), tests Python/Go/config, cross-compilation de `cmd/mdb` (6 cibles + `SHA256SUMS.txt`), publication GitHub Release et push Docker Hub multi-arch conditionné aux secrets.
+Les releases utilisent [`.github/workflows/release.yml`](.github/workflows/release.yml) sur push de tag `v*.*.*` ou `workflow_dispatch`. Le mode dry-run reste actif par défaut (`publish=true` pour publier).
+
+1. **Valider** : vérifie `VERSION` et `Changelog` avec [`scripts/release_notes.py`](scripts/release_notes.py), puis exécute les tests Python, Go et config.
+2. **Construire** : compile `cmd/mdb` (6 cibles) et génère `SHA256SUMS.txt`.
+3. **Publier** : crée la GitHub Release et pousse les images Docker Hub multi-arch si les secrets existent.
 
 ## 🔧 Dépannage & Notes de Performance
 
 ### Avertissement et repli `io_uring` EPERM
 
-Lors du démarrage des conteneurs MySQL ou MariaDB sur des hôtes Linux avec des profils de sécurité noyau restreints (`kernel.io_uring_disabled=2`), les logs peuvent afficher :
+Si un hôte Linux active `kernel.io_uring_disabled=2`, les logs MySQL ou MariaDB affichent :
 
 ```text
 io_uring_queue_init() failed with EPERM — kernel has io_uring_disabled=2.
