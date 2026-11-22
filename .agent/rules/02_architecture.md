@@ -7,15 +7,15 @@ category: governance
 
 ## 🧠 Rationale
 
-A well-defined architecture ensures infrastructure stability and reproducibility. This project relies on a custom MariaDB 11.8 stack orchestrated via Docker Compose and controlled by a robust Makefile.
+A well-defined architecture ensures infrastructure stability and reproducibility. This project provides a multi-engine database catalog orchestrated via Docker Compose, the `./mdb` CLI, and `Makefile` compatibility wrappers.
 
 ## 🛠️ Implementation
 
 ### Technology Stack
 
-- **Language**: Bash (Shell Scripts), Python, Makefile.
-- **DBMS**: MariaDB 11.8 (Custom Docker Images).
-- **Orchestration**: Docker, Docker Compose.
+- **Language**: Go (`./mdb` CLI), Bash (Shell Scripts), Python, Makefile.
+- **DBMS**: Multi-engine catalog (MySQL 8.4/9.7 LTS, MariaDB 10.11/11.4/11.8/12.3 LTS, Percona Server 8.4 LTS, PostgreSQL 15-18, MongoDB 7.0/8.0, CockroachDB v25.4, YugabyteDB 2026.1.3).
+- **Orchestration**: `./mdb` CLI, Docker, Docker Compose, Traefik, HAProxy.
 
 ### Component Map ($$IMMUTABLE$$)
 
@@ -29,4 +29,4 @@ A well-defined architecture ensures infrastructure stability and reproducibility
 
 - Validate `Makefile` entry points.
 - Verify `scripts/` directory existence and permissions.
-- Run `make check-env` (if available) to validate runtime requirements.
+- Run `./mdb doctor` and `make test-config` to validate runtime requirements.

@@ -7,7 +7,7 @@ These rules apply **without exception** to every session and every agent working
 ## 1. Core Architecture & PR Diff Constraints
 
 1. **Modular Multi-Database Laboratory**:
-   - Provide a reproducible, isolated platform for testing standalone databases (MySQL 8.0/8.4/9.6, MariaDB 10.6/10.11/11.4/11.8, Percona Server, PostgreSQL 15/16/17) and high-availability topologies (Galera, InnoDB Cluster, MongoDB ReplicaSet, Patroni, PgPool-II).
+   - Provide a reproducible, isolated platform for testing standalone databases (MySQL 8.4/9.7 LTS, MariaDB 10.11/11.4/11.8/12.3 LTS, Percona Server 8.4 LTS, PostgreSQL 15/16/17/18) and high-availability/distributed topologies (Galera, InnoDB Cluster, MongoDB ReplicaSet 7.0/8.0, Patroni, PgPool-II, plus 13 PG replication/multi-master/distributed SQL stacks).
    - `./mdb` (`mdb.cmd` on Windows) is the **single unified CLI entry point** for all operations (`./mdb catalog`, `./mdb up <env>`, `./mdb setup <env>`, `./mdb down`, `./mdb status`, `./mdb info`, `./mdb logs`, `./mdb client`, `./mdb mycnf`, `./mdb interactive`, `./mdb lint`, `./mdb test <env>`, `./mdb bench <env>`, `./mdb doctor`); `Makefile` targets remain thin compatibility wrappers delegating to `./mdb`.
    - Reverse proxy routing passes through Traefik for single-port access (`3306` for MySQL/MariaDB, `5432` for PostgreSQL).
 2. **Strict Pull Request Diff Size Limit (`< 15,000` characters)**:

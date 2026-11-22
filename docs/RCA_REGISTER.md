@@ -850,6 +850,13 @@
 - **Applied Change / Fix**: Removed root `03_execution_rules.md` and `04_best_practices.md`, updated `tests/test_project_governance_rules.py` to point to `.agent/rules/`, and removed dead root hyperlinks in `ACT-001`.
 - **Result & Non-Regression Test**: Verified Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and `./mdb lint`.
 
+### RCA-116 -- Broken `file://` Local Workflow Links, Nonexistent Targets/Scripts, and EOL/CLI Drift
+- **Date / Linked Action**: `2026-11-22` (`ACT-134` / Issue `#466`)
+- **Observed Symptom**: `.agent/workflows/doc-sync.md` used 15 local `file://` workstation paths plus nonexistent filenames (`README.fr.md`, `architecture_fr.md`, `galera_bootstrap_fr.md`, `scripts_fr.md`), while `.agent/` workflows/rules and `AGENTS.md` cited `make clean`, `make check-env`, `scripts/test_runner.sh`, `scripts/verify_data.sh`, MariaDB-11.8-only stack, `Makefile`-exclusive orchestration, and EOL DBMS versions (`MySQL 8.0/9.6`, `MariaDB 10.6`).
+- **Root Cause Analysis**: Legacy `.agent/` specs predated `./mdb` CLI unification (`v2.5.0`) and EOL decommissioning (`PR #278`).
+- **Applied Change / Fix**: Converted `doc-sync.md` links to relative `../../` paths matching live EN/FR docs and aligned `.agent/` rules, workflows, and `AGENTS.md` with `./mdb`, `make clean-reports`, `./mdb doctor`, existing scripts, and active DBMS versions.
+- **Result & Non-Regression Test**: Verified zero `file://` links, resolved `doc-sync.md` targets, Windows + WSL `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

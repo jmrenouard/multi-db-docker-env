@@ -15,7 +15,7 @@ To ensure consistency, reliability, security, and smooth code review across all 
 - Code must not be committed until tests pass locally.
 
 ### 2. Naming Conventions & Orchestration
-- Orchestration: `Makefile` is the exclusive entry point (`make up-*`, `make down-*`, `make test-*`).
+- Orchestration: `./mdb` (`mdb.cmd` on Windows) is the primary unified CLI entry point; `Makefile` targets act as thin compatibility wrappers (`make up-*`, `make down-*`, `make test-*`).
 - Compose files: `docker-compose-<topology>.yml` (e.g., `docker-compose-galera.yml`, `docker-compose-patroni.yml`).
 - Test scripts: `tests/test_<topology>.sh` and `tests/test_*.py`.
 - Documentation: English ONLY across all technical documents, comments, issues, and PRs.
