@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-137 -- Remove Unreferenced 6,190-Line `documentation/sourcery_ai_audit.md` (`#472`)
+- **Timestamp / Issue / Branch**: `2026-11-22T22:44Z` | Issue `#472` | `docs/issue-472-remove-sourcery-audit-log`
+- **Request**: Fix documentation audit finding #8 by deleting the unreferenced 6,190-line (-374 KB) `documentation/sourcery_ai_audit.md` bot log and documenting the single-file deletion exception to the 15K PR diff limit.
+- **Changes**: Removed `documentation/sourcery_ai_audit.md` via `git rm` (-6,190 lines, 0 repo links remaining after PR `#471`); logged `APP-031` in `docs/RCA_REGISTER.md`.
+- **Result**: Verified 0 dangling references, `non_ascii_added` = 0 in governance, Windows + WSL `-W error::ResourceWarning` `unittest` (73 tests OK, 6 skipped), `go test -count=1 ./...`, `tests/test_config.sh`, and `./mdb lint`.
+
 ### ACT-136 -- Repair 9 Broken GFM Anchors and Move `tests*.md` H2 Icons (`#470`)
 - **Timestamp / Issue / Branch**: `2026-11-22T22:40Z` | Issue `#470` | `docs/issue-470-fix-gfm-anchors`
 - **Request**: Fix all 9 broken GFM anchors (`README.md:128`, `README_fr.md:129`, `architecture.md:128`, `makefile.md:89`, `makefile_fr.md:51`, `INDEX.md:22,23,92`, `INDEX_fr.md:71`), remove raw `<img>` tags from `tests.md`/`tests_fr.md` H2 titles, and drop the `sourcery_ai_audit.md` index link prior to M3 deletion.
