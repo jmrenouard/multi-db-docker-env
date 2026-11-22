@@ -51,8 +51,8 @@
 | `make build-image` | Build the base `mariadb_ssh:004` image. |
 | `make install-client` | Install MariaDB client on the host (Ubuntu/Debian). |
 | `make gen-ssl` | Generate SSL certificates in `ssl/` directory. |
-| `make renew-ssl-galera` | **Zero-downtime rotation** Galera: Regenerate and reload SSL via `FLUSH SSL`. |
-| `make renew-ssl-repli` | **Zero-downtime rotation** Replication: Regenerate and reload SSL via `FLUSH SSL`. |
+| `make renew-ssl-galera` | **Zero-downtime rotation** Galera: Regenerate and reload SSL with `FLUSH SSL`. |
+| `make renew-ssl-repli` | **Zero-downtime rotation** Replication: Regenerate and reload SSL with `FLUSH SSL`. |
 | `make clean-ssl` | Remove generated certificates. |
 | `make clean-reports` | Purge all test reports (`.md` and `.html`) from the `reports/` directory. |
 | `make gen-profiles` | Generate shell profiles for quick container access. |
@@ -63,11 +63,13 @@
 | `make test-config` | 🧪 Validate orchestration configuration, SSL, and profiles. |
 | `make full-repli` | Full orchestration for Replication: Clean, Start, Setup, and Test. |
 | `make full-galera` | Full orchestration for Galera: Clean, Start (Bootstrap), and Test. |
-| `make clean-data` | **DANGER**: Remove ALL data, backup, and SSL directories. |
+| `make clean-data` | **CAUTION**: Remove ALL data, backup, and SSL directories. |
 | `make inject` | 💉 Alias for `inject-employees` with auto-detection. |
 | `make inject-employees` | 💉 Inject `employees` database with auto-detection. |
 | `make inject-sakila` | 💉 Inject `sakila` database with auto-detection. |
 | `make sync-test-db` | 🔄 Synchronize the `test_db` submodule. |
+
+CAUTION: Save required backups before you run `make clean-data`, `make clean-galera`, or `make clean-repli`. These commands delete all database data, backups, and local SSL directories permanently.
 
 ## 🐬 Standalone Database Commands
 
@@ -93,15 +95,15 @@
 | Command | Description |
 | :--- | :--- |
 | `make up-galera` / `make galera-up` | Start the Galera cluster nodes and HAProxy. |
-| `make bootstrap-galera`| Sequentially bootstrap a new cluster (ensures node 1 is primary). |
+| `make bootstrap-galera`| Sequentially bootstrap a new cluster (sets node 1 as primary). |
 | `make emergency-galera`| Emergency start of a single Galera node (Usage: `make emergency-galera NODE=1`). |
 | `make down-galera` / `make galera-down` | Stop and remove the Galera cluster. |
 | `make galera-status` / `make check-galera` | Inspect Galera cluster health and WSREP status. |
 | `make logs-galera` / `make galera-logs` | View real-time logs for the Galera cluster. |
 | `make test-galera` | Run the advanced Galera test suite (Replication, DDL, Audit, SSL). |
 | `make test-lb-galera` | Run the HAProxy validation suite (Performance, Failover, Reports). |
-| `make backup-galera` | Perform a logical SQL backup. |
-| `make backup-phys-galera`| Perform a physical (MariaBackup) backup. |
+| `make backup-galera` | Run a logical SQL backup. |
+| `make backup-phys-galera`| Run a physical (MariaBackup) backup. |
 | `make restore-galera` | Restore a logical SQL backup. |
 | `make restore-phys-galera`| Restore a physical (MariaBackup) backup. |
 | `make test-perf-galera`| Run Sysbench benchmarks (Usage: `make test-perf-galera PROFILE=light ACTION=run`). |
@@ -131,15 +133,15 @@ These commands automate the deployment of a clean Galera cluster followed by the
 | `make repli-status` / `make check-repli` | Inspect Replication cluster health and GTID slave status. |
 | `make logs-repli` / `make repli-logs` | View real-time logs for the Replication cluster. |
 | `make test-repli` | Run the Replication functional test suite. |
-| `make backup-repli` | Perform a logical SQL backup (on a slave). |
-| `make backup-phys-repli`| Perform a physical (MariaBackup) backup. |
+| `make backup-repli` | Run a logical SQL backup (on a slave). |
+| `make backup-phys-repli`| Run a physical (MariaBackup) backup. |
 | `make restore-repli` | Restore a logical SQL backup. |
 | `make restore-phys-repli`| Restore a physical (MariaBackup) backup. |
 | `make test-perf-repli` | Run Sysbench benchmarks (Usage: `make test-perf-repli PROFILE=light ACTION=run`). |
 
 ## 🔍 Troubleshooting & Logs
 
-These commands allow targeted access to logs within nodes without using `docker compose logs`.
+Run these commands to read node logs directly without `docker compose logs`.
 
 | Command | Description |
 | :--- | :--- |
@@ -160,7 +162,7 @@ These commands allow targeted access to logs within nodes without using `docker 
 | :--- | :--- |
 | `make patroni-up` | Start 3-node PostgreSQL 17 + ETCD + HAProxy cluster. |
 | `make patroni-down` | Stop Patroni cluster and remove volumes. |
-| `make patroni-status` | Display Patroni node status via `patronictl`. |
+| `make patroni-status` | Display Patroni node status with `patronictl`. |
 | `make patroni-logs` | Follow real-time logs for Patroni cluster. |
 | `make patroni-ps` | List running Patroni containers. |
 | `make test-patroni` | Run Patroni functional test suite. |
@@ -171,7 +173,7 @@ These commands allow targeted access to logs within nodes without using `docker 
 | :--- | :--- |
 | `make pgpool-up` | Start PostgreSQL 17 + PgPool-II load balancer cluster. |
 | `make pgpool-down` | Stop PgPool-II cluster and remove volumes. |
-| `make pgpool-status` | Show PgPool-II node status via `SHOW pool_nodes`. |
+| `make pgpool-status` | Show PgPool-II node status with `SHOW pool_nodes`. |
 | `make pgpool-logs` | Follow real-time logs for PgPool-II cluster. |
 | `make pgpool-ps` | List running PgPool-II containers. |
 | `make test-pgpool` | Run PgPool-II functional test suite. |
@@ -212,7 +214,7 @@ These commands allow targeted access to logs within nodes without using `docker 
 
 ## 🐘 PostgreSQL Replication, Multi-Master & Distributed SQL (13 Compose Stacks)
 
-Each stack `<stack>` across all 13 PostgreSQL Compose topologies (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`) provides both `<stack>-*` and uniform `up-`/`setup-`/`test-`/`down-` wrapper targets:
+The 13 PostgreSQL Compose stacks provide `<stack>-*` targets and `up-`, `setup-`, `test-`, and `down-` wrappers. Stacks include `pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, and `yt-cluster`.
 
 | Command Pattern | Description |
 | :--- | :--- |

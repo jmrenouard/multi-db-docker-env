@@ -83,6 +83,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-139 -- Add STE `CAUTION` Block to `makefile.md` and Sync `ROADMAP`/`README` Tags (`#476`)
+- **Timestamp / Issue / Branch**: `2026-11-22T22:58Z` | Issue `#476` | `docs/issue-476-makefile-caution-and-version-sync`
+- **Request**: Replace `**DANGER**` with ASD-STE100 Rule 7.1-7.3 `CAUTION:` block in `documentation/makefile.md`, achieve 0 STE errors/forbidden words in `makefile.md`, sync `ROADMAP.md` and `README.md:215` to `v2.6.2`, and remove `via` in `README_fr.md:148,183,197`.
+- **Changes**: Added `CAUTION:` block for `make clean-data`/`clean-galera`/`clean-repli` and fixed STE wording in `documentation/makefile.md`; synced `ROADMAP.md` and `README.md:215` to `v2.6.2`; updated `README_fr.md` `via` prepositions; logged `RCA-120`.
+- **Result**: Verified `ste_check.py --mode procedural --lang en --no-vocab documentation/makefile.md ROADMAP.md README.md` (0 errors), Windows + WSL `unittest` (73 OK, 6 skipped), `go test`, `test_config.sh`, `./mdb lint`, and diff `< 14,800` B.
+
 ### ACT-138 -- Align `README.md` with ASD-STE100 (0 Errors) (`#474`)
 - **Timestamp / Issue / Branch**: `2026-11-22T22:50Z` | Issue `#474` | `docs/issue-474-ste-readme-and-version-sync`
 - **Request**: Resolve STE procedural violations (`<= 20` words, 0 semicolons, active voice, 0 `may`/`ensure`/`via`) and version tags in `README.md`.

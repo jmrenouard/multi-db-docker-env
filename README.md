@@ -206,7 +206,7 @@ MongoDB architecture with ReplicaSet and HAProxy routing.
 > [!NOTE]
 > MongoDB 7.0 uses port 27100 (HAProxy), stats 8408, direct 27411-27413 (`10.10.0.0/24`). MongoDB 8.0 uses port 27200 (HAProxy), stats 8409, direct 27511-27513 (`10.11.0.0/24`). Both enforce TLS (`requireTLS`).
 
-**PostgreSQL Replication, Multi-Master & Distributed SQL (13 Compose Stacks, `v2.1.0`–`v2.5.0`)**
+**PostgreSQL Replication, Multi-Master & Distributed SQL (13 Compose Stacks, `v2.1.0`–`v2.6.2`)**
 
 All 13 PostgreSQL Compose topologies (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) expose `./mdb up|setup|test|down <stack>`, `make up-<stack>|setup-<stack>|test-<stack>|down-<stack>`, `<stack>-{up,down,status,logs,ps,test}`, `make lint`, `make test`, `make test-pg-extended` (T11–T18), `make bench-pg-v2`, `make bench-pg18`, and `make bench-yt-cluster`. For `yt-cluster` ([`dbinvent/yt:1.21.3`](https://hub.docker.com/r/dbinvent/yt), [Overview](https://dbinvent.com/30p), [`agent.md`](https://dbinvent.com/agent.md)), note the MIT ([`DBinvent/yt-cluster-lite`](https://github.com/DBinvent/yt-cluster-lite) single-DB leaf) vs PolyForm Noncommercial 1.0.0 / Commercial (`ytserv` + `ytctl`) license split and the [Jepsen report](https://dbinvent.com/cluster/articles/jepsen) (`cursor-stability`, `51` initial -> `49/49` retested). See [pg_multimaster.md](documentation/pg_multimaster.md).
 

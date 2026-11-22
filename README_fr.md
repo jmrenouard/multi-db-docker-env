@@ -145,7 +145,7 @@ Ces plages sont cohérentes entre les configurations `docker-compose` et les scr
 
 ### 🔐 Identifiants
 
-Les identifiants par défaut sont centralisés dans le fichier `.env` via `DB_ROOT_PASSWORD`.
+Les identifiants par défaut sont centralisés dans `.env` avec `DB_ROOT_PASSWORD`.
 
 * **Utilisateur par défaut** : `root`
 * **Base de données par défaut** : `employees` (après injection)
@@ -180,7 +180,7 @@ Architectures PostgreSQL avancées avec failover automatique ou pooling de conne
 | `make pgpool-down`   | 🛑   | Arrête le cluster PgPool-II                             |
 
 > [!NOTE]
-> Patroni construit ses images autonomes non-root depuis `scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}` (construction auto via `./mdb up patroni` ou `./mdb images build patroni`) et utilise les ports 5000 (RW) / 5001 (RO) / 7000 (Stats HTTPS) / 8008 (REST API mTLS) / 2379 (etcd mTLS). PgPool-II utilise les ports 5100 (RW) / 5101 (RO) / 8406 (Stats).
+> Patroni construit ses images autonomes non-root depuis `scripts/patroni/Dockerfile.{etcd,postgresql,haproxy}` (construction auto avec `./mdb up patroni` ou `./mdb images build patroni`) et utilise les ports 5000 (RW) / 5001 (RO) / 7000 (Stats HTTPS) / 8008 (REST API mTLS) / 2379 (etcd mTLS). PgPool-II utilise les ports 5100 (RW) / 5101 (RO) / 8406 (Stats).
 
 ### MySQL InnoDB Cluster (Group Replication & HAProxy)
 
@@ -194,7 +194,7 @@ Architecture MySQL avancée avec Group Replication et routage transparent.
 | `make innodb-down`   | 🛑   | Arrête InnoDB Cluster                                   |
 
 > [!NOTE]
-> InnoDB Cluster utilise les ports 6446 (RW) / 6447 (RO) via HAProxy. Stats : 8407. Accès direct : 4411-4413.
+> InnoDB Cluster utilise les ports HAProxy 6446 (RW) et 6447 (RO). Stats : 8407. Accès direct : 4411-4413.
 
 ### MongoDB ReplicaSet
 

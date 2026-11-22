@@ -878,6 +878,13 @@
 - **Applied Change / Fix**: Moved logos into table, shortened sentences (`<= 20` words), removed semicolons and non-STE terms, and synced `v2.6.2`.
 - **Result & Non-Regression Test**: Verified 0 STE errors, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-120 -- Missing ASD-STE100 `CAUTION` Block in `makefile.md` and Remaining `v2.5.0`/`v2.6.0` Tags
+- **Date / Linked Action**: `2026-11-22` (`ACT-139` / Issue `#476`)
+- **Observed Symptom**: `documentation/makefile.md` used `**DANGER**` on `make clean-data` without Rule 7.1-7.3 `CAUTION:` phrasing and failed STE (`par4` 21 words, `via`/`ensures`/`Perform`/`using`); `ROADMAP.md` and `README.md:215` referenced `v2.6.0`/`v2.5.0`.
+- **Root Cause Analysis**: Cleanup target warnings predated ASD-STE100 safety block adoption (`README_fr.md` full STE and `makefile_fr.md` 13-section parity follow in next atomic PRs).
+- **Applied Change / Fix**: Replaced `**DANGER**` with `CAUTION:` block covering `clean-data`/`clean-galera`/`clean-repli`, fixed STE wording (`0 errors, 0 warnings`), synced `v2.6.2` tags, and removed `via` at `README_fr.md:148,183,197`.
+- **Result & Non-Regression Test**: Verified 0 STE errors/forbidden words on `makefile.md`/`ROADMAP.md`/`README.md`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
