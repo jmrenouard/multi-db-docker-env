@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jmrenouard/multi-db-docker-env/pkg/catalog"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/config"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/docker"
 	"github.com/jmrenouard/multi-db-docker-env/pkg/pki"
@@ -43,34 +44,6 @@ type BaseTopology struct {
 	requiredCerts []string
 }
 
-var setupScripts = map[string]string{
-	"repli":          "scripts/setup_repli.sh",
-	"innodb":         "conf/innodb-cluster/setup_cluster.sh",
-	"pgpool":         "scripts/pgpool/setup_replication.sh",
-	"mongo":          "conf/mongo-rs/setup_rs.sh",
-	"mongo8":         "conf/mongo-rs/setup_rs.sh",
-	"pg-streaming":   "scripts/pg_streaming/setup_pg_streaming.sh",
-	"pg-logical":     "scripts/pg_logical/setup_pg_logical.sh",
-	"pg-birep":       "scripts/pg_birep/setup_birep.sh",
-	"pg18-streaming": "scripts/pg18_streaming/setup_pg18_streaming.sh",
-	"pg18-logical":   "scripts/pg18_logical/setup_pg18_logical.sh",
-	"pg18-birep":     "scripts/pg18_birep/setup_pg18_birep.sh",
-	"pgedge":         "scripts/pgedge/setup_pgedge.sh",
-	"bucardo":        "scripts/bucardo/setup_bucardo.sh",
-	"citus":          "scripts/citus/setup_citus.sh",
-	"cockroach":      "scripts/cockroach/setup_cockroach.sh",
-	"yugabyte":       "scripts/yugabyte/setup_yugabyte.sh",
-	"yt-cluster":     "scripts/yt_cluster/setup_yt_cluster.sh",
-}
-
-var setupScriptArgs = map[string][]string{
-	"mongo8": {"mongo8_n1", "mongo8_n2", "mongo8_n3"},
-}
-
-var setupScriptEnv = map[string][]string{
-	"mongo8": {"MONGO_NODES=mongo8_n1 mongo8_n2 mongo8_n3"},
-}
-
 var certFileChecks = map[string][]string{
 	"mariadb": {"ssl/ca-cert.pem", "ssl/server-cert.pem", "ssl/client-cert.pem"},
 	"innodb":  {"ssl/innodb/ca-cert.pem", "ssl/innodb/server-cert.pem"},
@@ -102,14 +75,14 @@ func (b *BaseTopology) Up(ctx context.Context, client *docker.Client) error {
 	if err := b.waitBeforeSetup(ctx, client); err != nil {
 		return err
 	}
-	if s := setupScripts[b.name]; s != "" {
-		args := append([]string{s}, setupScriptArgs[b.name]...)
-		if stdout, stderr, code, err := client.RunWithEnv(ctx, defaultScriptEnv(setupScriptEnv[b.name]), "bash", args...); err != nil || code != 0 {
+	if env, ok := catalog.DefaultCatalog().Lookup(b.name); ok && env.SetupScript != "" {
+		args := append([]string{env.SetupScript}, env.SetupArgs...)
+		if stdout, stderr, code, err := client.RunWithEnv(ctx, defaultScriptEnv(env.SetupEnv), "bash", args...); err != nil || code != 0 {
 			msg := strings.TrimSpace(string(stderr))
 			if msg == "" {
 				msg = strings.TrimSpace(string(stdout))
 			}
-			return fmt.Errorf("topology %s setup %s failed (%d): %s: %w", b.name, s, code, msg, err)
+			return fmt.Errorf("topology %s setup %s failed (%d): %s: %w", b.name, env.SetupScript, code, msg, err)
 		}
 	}
 	return b.waitAfterSetup(ctx, client)
@@ -300,23 +273,11 @@ func (b *BaseTopology) EnsureCerts(ctx context.Context, client *docker.Client) e
 	return pki.NewPKIEngine("ssl").GenerateTopologyCerts(pkiTarget)
 }
 
-func resolveNodeContainer(ctx context.Context, client *docker.Client, node string) string {
-	if names, err := client.PS(ctx, "name="+node); err == nil && len(names) > 0 {
-		for _, n := range names {
-			if n == node {
-				return n
-			}
-		}
-		return names[0]
-	}
-	return node
-}
-
 func (b *BaseTopology) waitBeforeSetup(ctx context.Context, client *docker.Client) error {
 	sqlEnv := []string{"MYSQL_PWD=" + rootPassword()}
 	sqlProbe := func(bin string) func(string) (bool, error) {
 		return func(node string) (bool, error) {
-			out, err := client.Exec(ctx, resolveNodeContainer(ctx, client, node), sqlEnv, bin, "-uroot", "-sN", "-e", "SELECT 1")
+			out, err := client.Exec(ctx, client.ResolveContainer(ctx, node), sqlEnv, bin, "-uroot", "-sN", "-e", "SELECT 1")
 			return err == nil && strings.Contains(out, "1"), err
 		}
 	}
