@@ -843,6 +843,13 @@
 - **Applied Change / Fix**: Bumped `VERSION`, `cmd/mdb/main.go`, and `cmd/mdb/main_test.go` to `2.6.2`, prepended the prioritized `2.6.2 2026-11-22` block, and trimmed `1.0.8`-`1.0.14` tail entries cleanly so `Changelog` remains `<= 600` lines.
 - **Result & Non-Regression Test**: Verified `python3 scripts/release_notes.py --tag v2.6.2 --check`, `go test -count=1 ./...`, Windows + WSL `-W error::ResourceWarning` `unittest`, and `tests/test_config.sh`.
 
+### RCA-115 -- Duplicate Root Governance Rule Files (`03_execution_rules.md`, `04_best_practices.md`)
+- **Date / Linked Action**: `2026-11-22` (`ACT-133` / Issue `#464`)
+- **Observed Symptom**: Root `03_execution_rules.md` and `04_best_practices.md` existed as exact duplicates of `.agent/rules/03_execution_rules.md` and `.agent/rules/04_best_practices.md`, while `tests/test_project_governance_rules.py` asserted the root paths.
+- **Root Cause Analysis**: Early governance templates were placed at repository root alongside `.agent/rules/`, causing dual maintenance risk; remaining `.agent/` link and rule-drift fixes split to a follow-up atomic PR (`< 14,800` B limit).
+- **Applied Change / Fix**: Removed root `03_execution_rules.md` and `04_best_practices.md`, updated `tests/test_project_governance_rules.py` to point to `.agent/rules/`, and removed dead root hyperlinks in `ACT-001`.
+- **Result & Non-Regression Test**: Verified Windows + WSL `-W error::ResourceWarning` `unittest`, `go test -count=1 ./...`, `tests/test_config.sh`, and `./mdb lint`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
