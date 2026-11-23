@@ -1018,6 +1018,13 @@
 - **Applied Change / Fix**: Bumped version references to `2.6.3`, added priority-ordered `2.6.3 2026-11-22` notes to `Changelog` (`<= 600` lines), and added Phase 17 summary to `docs/ACTION_LOGBOOK.md`.
 - **Result & Non-Regression Test**: Verified `release_notes.py --tag v2.6.3 --check`, `go run ./cmd/mdb --version`, Windows + WSL `unittest`, `go test`, `test_config.sh`, and `./mdb lint`.
 
+### RCA-140 -- PR 4a Runbook CLI Scope Fixes and Diff-Cap Split (`#525`)
+- **Date / Linked Action**: `2026-11-23` (`ACT-163` / Issue `#525`)
+- **Observed Symptom**: Initial PR 4 (`21,828` chars) exceeded 15K; draft guides routed standalone engines to `--suite` and Raft/Mongo8 to `test_failover.sh`.
+- **Root Cause Analysis**: `--suite` requires `tests/test_<env>.sh`; `test_failover.sh` only handles `galera|patroni|mongo|all`; `repli` uses `renew-ssl-repli`.
+- **Applied Change / Fix**: Split `03-reference/*` to PR 4b, routed standalone/Raft/Mongo8 to `./mdb test`, added `renew-ssl-repli` + `certs_patroni/` rollback.
+- **Result & Non-Regression Test**: 0 STE errors, `unittest` 79 OK (6 skipped), `/ponytail-review` `APPROVE`, diff `< 14,500` B.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
