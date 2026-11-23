@@ -9,6 +9,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/jmrenouard/multi-db-docker-env?style=flat-square&logo=github)](https://github.com/jmrenouard/multi-db-docker-env/releases/latest)
 [![Docker Image Version](https://img.shields.io/docker/v/jmrenouard/multi-db-docker-env?sort=semver&style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/jmrenouard/multi-db-docker-env)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-multi--db--docker--env.lightpath.fr-0088cc?style=flat-square)](https://multi-db-docker-env.lightpath.fr/)
 
 Le **proxy inverse Traefik** route les connexions vers l'instance active. Connectez vos clients sur `localhost:3306` (MySQL/MariaDB) ou `localhost:5432` (PostgreSQL).
 
@@ -268,6 +269,13 @@ graph TD
 ```
 
 ## 📚 Documentation
+
+Consultez la documentation sur [multi-db-docker-env.lightpath.fr](https://multi-db-docker-env.lightpath.fr/) ou ouvrez le [Portail Diataxis](docs/index.md) :
+
+* **[Tutoriels](docs/01-tutorials/index.md)** : Suivez les laboratoires guidés.
+* **[Guides Pratiques](docs/02-how-to-guides/index.md)** : Exécutez les procédures opérationnelles et de sécurité.
+* **[Référence](docs/03-reference/index.md)** : Consultez les ports, variables `.env`, options CLI et erreurs.
+* **[Explications](docs/04-explanation/index.md)** : Lisez l'architecture, les ADR et les compromis.
 
 Pour des informations détaillées, veuillez vous référer aux guides suivants :
 

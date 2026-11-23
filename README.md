@@ -9,6 +9,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/jmrenouard/multi-db-docker-env?style=flat-square&logo=github)](https://github.com/jmrenouard/multi-db-docker-env/releases/latest)
 [![Docker Image Version](https://img.shields.io/docker/v/jmrenouard/multi-db-docker-env?sort=semver&style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/jmrenouard/multi-db-docker-env)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat-square)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-multi--db--docker--env.lightpath.fr-0088cc?style=flat-square)](https://multi-db-docker-env.lightpath.fr/)
 
 
 The **Traefik reverse proxy** routes traffic to the active database container. Connect through stable host ports: `localhost:3306` (MySQL and MariaDB) or `localhost:5432` (PostgreSQL).
@@ -276,6 +277,13 @@ graph TD
 ```
 
 ## 📚 Documentation
+
+Read the published documentation at [multi-db-docker-env.lightpath.fr](https://multi-db-docker-env.lightpath.fr/) or browse the local [Diataxis Portal](docs/index.md):
+
+* **[Tutorials](docs/01-tutorials/index.md)**: Follow guided sandbox labs.
+* **[How-To Guides](docs/02-how-to-guides/index.md)**: Run operational and security procedures.
+* **[Reference](docs/03-reference/index.md)**: Check ports, `.env` keys, CLI flags, and errors.
+* **[Explanation](docs/04-explanation/index.md)**: Read architecture notes, ADRs, and trade-offs.
 
 For detailed information on specific components, please refer to the following guides:
 

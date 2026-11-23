@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-170 -- Add Diataxis Portal Index and README Portal Links (`#535`)
+- **Timestamp / Issue / Branch**: `2026-11-23T20:25Z` | Issue `#535` | `docs/issue-535-diataxis-portal`
+- **Request**: Add `docs/index.md` portal landing page and link the live Diataxis portal (`multi-db-docker-env.lightpath.fr`) from `README.md` and `README_fr.md` with 0 STE errors.
+- **Changes**: Added `docs/index.md` and updated `README.md` and `README_fr.md` with Docs badges and Diataxis links.
+- **Result**: `diataxis_check.py --strict --check-ste` (`0` errors, `22` files), `mkdocs build --strict` (`52` pages OK), `unittest` 79 OK, `/ponytail-review` `APPROVE`, diff `< 11,500` B.
+
 ### ACT-169 -- Add Multi-Version MkDocs Material Builder for IONOS (`#531`)
 - **Timestamp / Issue / Branch**: `2026-11-23T20:23Z` | Issue `#531` | `feat/issue-531-versioned-docs-builder`
 - **Request**: Add `scripts/build_versioned_docs.py` building `main` + semver tags `>= v2.3.0`, `versions.json`, `.htaccess`, redirects, and zip/secret guards.
