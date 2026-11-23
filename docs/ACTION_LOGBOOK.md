@@ -84,6 +84,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-159 -- Add Bilingual TDE and Data-at-Rest Encryption Reference Guides (`#516`)
+- **Timestamp / Issue / Branch**: `2026-11-23T18:52Z` | Issue `#516` | `docs/issue-516-tde-encryption-guide`
+- **Request**: Author EN/FR TDE and data-at-rest guides covering layers, MySQL, MariaDB, Percona, PostgreSQL (`pg_tde` 2.1, Distributed SQL), and MongoDB with 0 STE errors and register them in `tests/test_docs_hygiene.py`.
+- **Changes**: Created `documentation/tde_encryption.md` and `documentation/tde_encryption_fr.md` and registered both in `MIXED_STE_DOCS` inside `tests/test_docs_hygiene.py`.
+- **Result**: Verified 0 STE errors (`ste_check.py --mode mixed --no-vocab`), Windows + WSL `unittest`, `test_config.sh`, `go test`, `./mdb lint`, and diff `< 14,800` B.
+
 ### ACT-158 -- Prepare Release `v2.6.3` Documentation Audit, STE Parity, and CI Gate (`#514`)
 - **Timestamp / Issue / Branch**: `2026-11-23T00:34Z` | Issue `#514` | `chore/issue-514-release-v2-6-3`
 - **Request**: Synchronize `v2.6.3` release metadata across `VERSION`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, `README.md`, `README_fr.md`, `ROADMAP.md`, prepend `2.6.3 2026-11-22` to `Changelog` (`<= 600` lines FIFO), and finalize Phase 17 registers.
