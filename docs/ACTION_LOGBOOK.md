@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-168 -- Add Diataxis Sandbox Tutorials & Environment TLS Matrix (`#534`)
+- **Timestamp / Issue / Branch**: `2026-11-23T20:17Z` | Issue `#534` | `docs/issue-534-diataxis-tutorials`
+- **Request**: Add 3 `01-tutorials/` labs (`01-local-sandbox-setup.md`, `02-first-ha-failover-lab.md`, `03-postgres-multimaster-lab.md`) + `03-reference/configuration/environment-and-tls-matrix.md` and update indexes.
+- **Changes**: Added all 4 pages (with `"HEALTHY"` casing fix in `03-postgres-multimaster-lab.md`) and updated `01-tutorials/index.md` + `03-reference/index.md`.
+- **Result**: 0 STE errors (`ste_check.py`), `unittest` 79 OK (6 skipped) on system + venv Python, `/ponytail-review` `APPROVE`, diff `< 13,000` B.
+
 ### ACT-167 -- Add MkDocs Material Build Hooks for Virtual Docs & Link Rewriting (`#528`)
 - **Timestamp / Issue / Branch**: `2026-11-23T20:16Z` | Issue `#528` | `feat/issue-528-mkdocs-hooks`
 - **Request**: Add lazy-imported `scripts/mkdocs_hooks.py` for virtual docs, `documentation/*.md` injection, GFM slugs/alerts, link rewriting, and nav pruning.
