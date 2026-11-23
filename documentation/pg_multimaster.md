@@ -6,6 +6,8 @@ Use all 13 PostgreSQL Compose stacks in `multi-db-docker-env` (`v2.6.2`). Stacks
 
 *Version française : [pg_multimaster_fr.md](pg_multimaster_fr.md).*
 
+- **Data-at-Rest TDE**: Default Compose stacks run without an external KMS on plain Docker volumes. Read [tde_encryption.md](tde_encryption.md) for `pg_tde` 2.1, YugabyteDB, and CockroachDB TDE.
+
 ## Architecture Matrix
 
 | Topology | Engine / Image | Nodes & Routing | CAP / PACELC | Localhost Ports |
