@@ -20,7 +20,7 @@ Le **proxy inverse Traefik** route les connexions vers l'instance active. Connec
 | Niveau | Nom du Niveau | Dernière Vérification | État |
 | :--- | :--- | :--- | :--- |
 | **T2** | **Matrice Standalone** | 2026-11-21 | ✅ 11/11 Profils Actifs Vérifiés E2E |
-| **T3** | **Cluster, HA & Multi-Maître (`v2.6.3`)** | 2026-11-22 | ✅ 20/20 Clusters Actifs Vérifiés E2E (31/31 Total, Patroni Autonome) |
+| **T3** | **Cluster, HA & Multi-Maître (`v2.6.4`)** | 2026-11-22 | ✅ 20/20 Clusters Actifs Vérifiés E2E (31/31 Total, Patroni Autonome) |
 | **IMG** | **Inventaire Images Docker E2E** | 2026-11-21 | ✅ 31/31 Images (`7` Custom + `24` Upstream) avec `./mdb images check` |
 
 ## 📋 Prérequis
@@ -205,7 +205,7 @@ Architecture MongoDB avec ReplicaSet et routage HAProxy.
 > [!NOTE]
 > MongoDB 7.0 utilise le port 27100 (HAProxy), stats 8408, accès direct 27411-27413 (`10.10.0.0/24`). MongoDB 8.0 utilise le port 27200 (HAProxy), stats 8409, accès direct 27511-27513 (`10.11.0.0/24`). Les deux imposent TLS (`requireTLS`).
 
-### PostgreSQL Réplication, Multi-Maître & SQL Distribué (13 Piles Compose, `v2.1.0`–`v2.6.3`)
+### PostgreSQL Réplication, Multi-Maître & SQL Distribué (13 Piles Compose, `v2.1.0`–`v2.6.4`)
 
 Les 13 piles PostgreSQL Compose (`pg17-baseline`, `pg-streaming`, `pg-logical`, `pg-birep`, `pg18-streaming`, `pg18-logical`, `pg18-birep`, `yt-cluster`, `pgedge`, `bucardo`, `citus`, `cockroach`, `yugabyte`) exposent `./mdb up|setup|test|down <pile>`, `make up-<pile>|setup-<pile>|test-<pile>|down-<pile>`, `<pile>-{up,down,status,logs,ps,test}`, `make lint`, `make test`, `make test-pg-extended` (T11–T18), `make bench-pg-v2`, `make bench-pg18` et `make bench-yt-cluster`. Pour `yt-cluster` ([`dbinvent/yt:1.21.3`](https://hub.docker.com/r/dbinvent/yt), [Présentation](https://dbinvent.com/30p), [`agent.md`](https://dbinvent.com/agent.md)), notez la séparation MIT ([`DBinvent/yt-cluster-lite`](https://github.com/DBinvent/yt-cluster-lite)) vs PolyForm Noncommercial 1.0.0 / Commercial (`ytserv`, `ytctl`). Consultez le [rapport Jepsen](https://dbinvent.com/cluster/articles/jepsen) (`cursor-stability`, `51` initial -> `49/49` retestées) et [pg_multimaster_fr.md](documentation/pg_multimaster_fr.md).
 
@@ -285,6 +285,7 @@ Pour des informations détaillées, veuillez vous référer aux guides suivants 
 * **[Produits Supportés](documentation/supported_products_fr.md)** : Matrice complète des moteurs, versions et ports.
 * **[Bootstrap Galera](documentation/galera_bootstrap.md)** : Étapes détaillées pour Galera.
 * **[Setup Réplication](documentation/replication_setup.md)** : Guide de configuration Maître/Esclave.
+* **[Guide TDE & Données au Repos](documentation/tde_encryption_fr.md)** : Couches de chiffrement stockage et matrice KMS des cinq familles.
 * **[Gouvernance & Registres](AGENTS.md)** : Règles du projet, [Action Logbook](docs/ACTION_LOGBOOK.md) et [RCA Register](docs/RCA_REGISTER.md).
 
 ## 💡 Flux de Travail Typique

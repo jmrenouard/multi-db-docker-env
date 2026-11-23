@@ -21,7 +21,7 @@ import (
 	"github.com/jmrenouard/multi-db-docker-env/pkg/topology"
 )
 
-var version = "2.6.3"
+var version = "2.6.4"
 
 func resolveVersion() string {
 	if data, err := os.ReadFile("VERSION"); err == nil {
