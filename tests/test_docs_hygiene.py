@@ -14,6 +14,8 @@ MIXED_STE_DOCS = {
     "documentation/INDEX.md": "en",
     "documentation/INDEX_fr.md": "fr",
     "documentation/architecture.md": "en",
+    "documentation/tde_encryption.md": "en",
+    "documentation/tde_encryption_fr.md": "fr",
 }
 
 PROCEDURAL_STE_DOCS = {
