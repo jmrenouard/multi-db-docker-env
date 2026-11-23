@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-163 -- Add Diataxis Quadrant Indexes and 4 STE How-To Guides (`#525`)
+- **Timestamp / Issue / Branch**: `2026-11-23T19:52Z` | Issue `#525` | `docs/issue-525-diataxis-guides`
+- **Request**: Add 4 Diataxis quadrant `index.md` stubs and 4 ASD-STE100 How-To guides (`03-reference/*` split to PR 4b).
+- **Changes**: Added `docs/0{1-tutorials,2-how-to-guides,3-reference,4-explanation}/index.md`, 4 `docs/02-how-to-guides/*/*.md` guides, and `RCA-140`.
+- **Result**: 0 STE errors (`ste_check.py`), `unittest` 79 OK (6 skipped), `/ponytail-review` `APPROVE`, diff `< 14,500` B.
+
 ### ACT-162 -- Prepare Release `v2.6.4` TDE Documentation Parity (`#522`)
 - **Timestamp / Issue / Branch**: `2026-11-23T19:07Z` | Issue `#522` | `chore/issue-522-release-v2-6-4`
 - **Request**: Synchronize `v2.6.4` release metadata across `VERSION`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, `README.md`, `README_fr.md`, `ROADMAP.md`, prepend `2.6.4 2026-11-23` to `Changelog` (`<= 600` lines FIFO), and record Phase 18.
