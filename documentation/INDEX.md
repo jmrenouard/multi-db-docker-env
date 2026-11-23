@@ -58,6 +58,7 @@ Consult these lookup tables, CLI mappings, test specifications, and governance r
 | **[Utility Scripts](scripts.md)** | Reference for backup, restore, PKI, Go CLI, and test helper scripts. |
 | **[Test Cases](tests.md)** | Automated functional test descriptions, expected results, and reporting details. |
 | **[Supported Products](supported_products.md)** | Verified matrix of all active DB engines, EOL versions, ports, and subnets. |
+| **[TDE & Data-at-Rest Guide](tde_encryption.md)** | Storage encryption layers, Keyring Components, `pg_tde` 2.1, and KMS matrix across all engines. |
 | **[Project Rules (AGENTS.md)](../AGENTS.md)** | Repository architecture, PR diff limits (<15K chars), and mandatory 9-step GitHub workflow. |
 | **[Action Logbook & Roadmap](../docs/ACTION_LOGBOOK.md)** | Living record of ongoing and completed actions (`ACT-XXX`). |
 | **[RCA Register](../docs/RCA_REGISTER.md)** | Living register of RCAs, dead-ends (`IMP`), approximations (`APP`), and ideas (`IDEA`). |

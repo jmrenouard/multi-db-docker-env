@@ -57,3 +57,12 @@ make test-pgpool
 make test-mongo
 make test-patroni
 ```
+
+---
+
+## 🔒 Transport TLS vs Storage TDE
+
+TLS certificates encrypt network traffic between clients and cluster nodes. Transparent Data Encryption (TDE) encrypts tablespaces, WAL or redo logs, and backups on disk.
+
+- **Current Lab Scope**: Default Compose stacks enable local TLS only without an external KMS.
+- **Engine Reference**: Read [tde_encryption.md](tde_encryption.md) for MySQL, MariaDB, Percona, PostgreSQL (`pg_tde` 2.1), and MongoDB TDE options.

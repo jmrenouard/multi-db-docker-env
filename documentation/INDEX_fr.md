@@ -59,6 +59,7 @@ Consultez ces tables de commandes, matrices de versions, suites de tests et règ
 | **[Référence CLI & Makefile](makefile_fr.md)** | Commandes unifiées `./mdb` (`catalog`, `up`, `setup`, `lint`, `interactive`, `doctor`) et cibles `Makefile`. |
 | **[Cas de Test](tests_fr.md)** | Descriptions des suites de tests, résultats attendus et rapports. |
 | **[Produits Supportés](supported_products_fr.md)** | Matrice complète des moteurs BDD actifs, versions EOL, ports et sous-réseaux. |
+| **[Guide TDE & Données au Repos](tde_encryption_fr.md)** | Couches de chiffrement, Keyring Components, `pg_tde` 2.1 et matrice KMS par moteur. |
 | **[Scripts Utilitaires](scripts.md)** `[en anglais]` | Référence des scripts de sauvegarde, restauration, PKI, Go CLI et tests. |
 | **[Règles du Projet (AGENTS.md)](../AGENTS.md)** `[en anglais]` | Architecture, limite de diff PR (< 15K caractères) et workflow GitHub obligatoire. |
 | **[Action Logbook & Roadmap](../docs/ACTION_LOGBOOK.md)** `[en anglais]` | Registre vivant des actions en cours et terminées (`ACT-XXX`). |
