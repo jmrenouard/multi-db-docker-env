@@ -1,9 +1,11 @@
 # Reference
 
-Neutral technical specifications, port matrices, CLI flags, and error codes.
+Ports, CLI flags, and error matrices.
 
-- [Supported Products and Ports](../../documentation/supported_products.md)
-- [Unified CLI and Makefile Reference](../../documentation/makefile.md)
-- [TDE and Data-at-Rest Reference](../../documentation/tde_encryption.md)
+| Area | Document | Contents |
+|---|---|---|
+| Architecture | [Topology and Port Matrix](architecture-specs/topology-and-port-matrix.md) | 31 envs, ports, subnets, EOL list. |
+| CLI & Scripts | [MDB CLI and Makefile Reference](cli-and-scripts/mdb-cli-and-makefile-reference.md) | `./mdb` flags, targets, exit codes. |
+| Troubleshooting | [Error and Alert Matrix](troubleshooting-codes/error-and-alert-matrix.md) | Errors and remediation links. |
 
-See [How-To Guides](../02-how-to-guides/index.md) and [Explanation](../04-explanation/index.md).
+Legacy: [Supported Products](../../documentation/supported_products.md), [TDE](../../documentation/tde_encryption.md).

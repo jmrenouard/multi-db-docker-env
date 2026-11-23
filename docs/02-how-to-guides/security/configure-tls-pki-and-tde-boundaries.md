@@ -1,6 +1,6 @@
 # Configure TLS PKI and TDE Boundaries
 
-Refer to [Reference](../../03-reference/index.md) and [TDE Guide](../../../documentation/tde_encryption.md) for encryption scope.
+Refer to the [Error and Alert Matrix](../../03-reference/troubleshooting-codes/error-and-alert-matrix.md) and [TDE Guide](../../../documentation/tde_encryption.md) for encryption scope.
 
 ## Preconditions
 
@@ -70,5 +70,5 @@ Run `make renew-ssl-galera`, `make renew-ssl-repli`, or `./mdb down <env> && ./m
 
 ## Related Documentation
 
-- Reference: [TLS Architecture](../../../documentation/tls_setup.md)
+- Reference: [MDB CLI and Makefile Reference](../../03-reference/cli-and-scripts/mdb-cli-and-makefile-reference.md)
 - Explanation: [Architecture Overview](../../04-explanation/index.md)

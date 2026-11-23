@@ -1,6 +1,6 @@
 # Deploy Standalone Engines and Clusters
 
-Refer to [Reference](../../03-reference/index.md) for ports and environment identifiers.
+Refer to the [Topology and Port Matrix](../../03-reference/architecture-specs/topology-and-port-matrix.md) for ports and environment identifiers.
 
 ## Preconditions
 
@@ -84,5 +84,5 @@ If containers stay active, stop all stacks:
 
 ## Related Documentation
 
-- Reference: [Supported Products and Ports](../../../documentation/supported_products.md)
+- Reference: [MDB CLI and Makefile Reference](../../03-reference/cli-and-scripts/mdb-cli-and-makefile-reference.md)
 - Explanation: [Architecture Overview](../../04-explanation/index.md)
