@@ -1,6 +1,6 @@
 # Back Up, Restore, and Switch Engines
 
-Refer to [Reference](../../03-reference/index.md) for backup and clean options.
+Refer to the [MDB CLI and Makefile Reference](../../03-reference/cli-and-scripts/mdb-cli-and-makefile-reference.md) for backup and clean options.
 
 ## Preconditions
 
@@ -69,5 +69,5 @@ Restore a previous verified archive or reset test data with `make clean-data`.
 
 ## Related Documentation
 
-- Reference: [Unified CLI and Makefile Reference](../../../documentation/makefile.md)
+- Reference: [Topology and Port Matrix](../../03-reference/architecture-specs/topology-and-port-matrix.md)
 - Explanation: [Architecture Overview](../../04-explanation/index.md)

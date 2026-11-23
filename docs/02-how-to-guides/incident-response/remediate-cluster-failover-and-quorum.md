@@ -1,6 +1,6 @@
 # Remediate Cluster Failover and Quorum Loss
 
-Refer to [Reference](../../03-reference/index.md) before you start cluster recovery.
+Refer to the [Error and Alert Matrix](../../03-reference/troubleshooting-codes/error-and-alert-matrix.md) before you start cluster recovery.
 
 ## Preconditions
 
@@ -71,5 +71,5 @@ Start a clean topology with `./mdb up <env>` and restore the last verified backu
 
 ## Related Documentation
 
-- Reference: [Galera Bootstrap](../../../documentation/galera_bootstrap.md)
+- Reference: [Topology and Port Matrix](../../03-reference/architecture-specs/topology-and-port-matrix.md)
 - Explanation: [Architecture Overview](../../04-explanation/index.md)

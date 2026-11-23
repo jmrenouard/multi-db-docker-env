@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-165 -- Add Diataxis Reference Architecture, CLI & Error Matrices (`#529`)
+- **Timestamp / Issue / Branch**: `2026-11-23T20:01Z` | Issue `#529` | `docs/issue-529-diataxis-reference`
+- **Request**: Add 3 Diataxis Reference pages (`topology-and-port-matrix.md`, `mdb-cli-and-makefile-reference.md`, `error-and-alert-matrix.md`) and wire links from `03-reference/index.md` and `02-how-to-guides/`.
+- **Changes**: Added the 3 Reference specs and updated `docs/03-reference/index.md` + 4 How-To guide Reference footers.
+- **Result**: 0 STE errors (`ste_check.py`), `unittest` 79 OK (6 skipped) on system + venv Python, `/ponytail-review` `APPROVE`, diff `< 14,000` B.
+
 ### ACT-164 -- Add MkDocs Material Config, Docs-as-Code Linters & Portal Assets (`#524`)
 - **Timestamp / Issue / Branch**: `2026-11-23T19:54Z` | Issue `#524` | `feat/issue-524-mkdocs-config`
 - **Request**: Configure 5 IONOS GitHub Secrets and add `mkdocs.yml`, `requirements-docs.txt`, `.vale.ini`, `.markdownlint.json`, `.gitignore`, KaTeX/CSS, and SVGs.
