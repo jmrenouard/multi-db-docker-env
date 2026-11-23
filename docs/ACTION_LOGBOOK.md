@@ -84,6 +84,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-160 -- Add TDE Matrix to `supported_products.md`, TLS Layer Note & Index Links (`#518`)
+- **Timestamp / Issue / Branch**: `2026-11-23T18:59Z` | Issue `#518` | `docs/issue-518-tde-matrices-and-index`
+- **Request**: Add `TDE` column to `documentation/supported_products.md`, add transport-vs-TDE section to `documentation/tls_setup.md`, and register `tde_encryption*.md` in `documentation/INDEX.md` and `INDEX_fr.md` (`supported_products_fr.md`, `pg_multimaster*.md`, and `RCA_REGISTER.md` follow in the next atomic PR to keep diff `< 14,800` B).
+- **Changes**: Updated `documentation/supported_products.md`, `documentation/tls_setup.md`, `documentation/INDEX.md`, and `documentation/INDEX_fr.md`.
+- **Result**: Verified 0 STE errors (`ste_check.py --no-vocab`), Windows + WSL `unittest`, `test_config.sh`, `go test`, `./mdb lint`, and diff `< 14,800` B.
+
 ### ACT-159 -- Add Bilingual TDE and Data-at-Rest Encryption Reference Guides (`#516`)
 - **Timestamp / Issue / Branch**: `2026-11-23T18:52Z` | Issue `#516` | `docs/issue-516-tde-encryption-guide`
 - **Request**: Author EN/FR TDE and data-at-rest guides covering layers, MySQL, MariaDB, Percona, PostgreSQL (`pg_tde` 2.1, Distributed SQL), and MongoDB with 0 STE errors and register them in `tests/test_docs_hygiene.py`.
