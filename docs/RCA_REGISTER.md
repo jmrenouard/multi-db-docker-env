@@ -1039,6 +1039,13 @@
 - **Applied Change / Fix**: Extracted `_QUOTE_PFX_RE` outside f-string formatting and unnested f-string interpolation in `_rw()`.
 - **Result & Non-Regression Test**: `test_mkdocs_publishing.py` passes locally (`94` OK / venv `7/7` OK) with zero PEP 701 f-string backslashes or nested f-strings.
 
+### RCA-143 -- IONOS `multi-db-docker-env.lightpath.fr` Parking Page on Smoke Check (`#548`)
+- **Date / Linked Action**: `2026-11-23` (`ACT-175` / Issue `#548`)
+- **Observed Symptom**: `Publish Documentation` (`45268191290`) SFTP upload succeeded, then `Live smoke checks` failed (`versions.json` returned `605,912`-B IONOS parking HTML; `:443` raised `TLSV1_ALERT_INTERNAL_ERROR`).
+- **Root Cause Analysis**: DNS resolves to IONOS parking (`217.160.0.89`), and `217.160.0.252` lacks subdomain vhost/SSL binding to SFTP folder `multi-db-docker-env.ligthpath.fr`.
+- **Applied Change / Fix**: Verified all 9 versions, `versions.json`, and `.htaccess` (`26` lines) via SFTP; kept strict smoke checks and escalated IONOS panel binding to operator.
+- **Result & Non-Regression Test**: `Documentation CI` (`45268197240`) and `CI/CD Pipeline` (`45268191298`) passed; re-running `docs-publish.yml` after IONOS binding validates live HTTP/HTTPS.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
@@ -1282,6 +1289,11 @@
 - **Target Files**: `docker-compose*.yml`, `documentation/tde_encryption.md`, `documentation/tls_setup.md`
 - **Nature & Justification**: Active Compose stacks protect transport traffic with local OpenSSL PKI (`make gen-ssl-all`) and mount unencrypted local Docker volumes without an external KMS container (`OpenBao`, `KMIP`, cloud KMS) to preserve single-host lab simplicity and reproducible benchmarks.
 - **Removal Condition**: Introduce optional opt-in TDE Compose profiles backed by an ephemeral `OpenBao` or `KMIP` service for MySQL/Percona/MariaDB/MongoDB/PG `pg_tde` testing.
+
+### APP-033 -- IONOS Remote Directory Spelling & `--no-enforce-https` Fallback
+- **Target Files**: `.github/workflows/docs-publish.yml`, `scripts/build_versioned_docs.py`
+- **Nature & Justification**: IONOS SFTP folder uses `multi-db-docker-env.ligthpath.fr` while public URL is `multi-db-docker-env.lightpath.fr`; `docs-publish.yml` uses `--no-enforce-https` until IONOS TLS is active.
+- **Removal Condition**: Automatic HTTPS `301` redirect activates once IONOS vhost/SSL are bound and `docs-publish.yml` re-runs.
 
 ---
 

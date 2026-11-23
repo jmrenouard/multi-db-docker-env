@@ -32,6 +32,7 @@
 | **Phase 16** | Self-Contained Patroni Images, `mdb images` CLI & 31/31 Live E2E Parity (`v2.6.1`) | 3 non-root Patroni Dockerfiles + `Dockerfile.bench`, `mdb images` CLI (`31/31` images), Patroni 4.x/mTLS live E2E, EN/FR docs & governance | ✅ Complete | `./mdb images check`, `./mdb test patroni --suite`, `go test ./...`, `python -m unittest` |
 | **Phase 17** | Documentation Audit Remediation, ASD-STE100 Parity, Diataxis Indexing & Hygiene Gate (`v2.6.3`) | Fix links/anchors/rules, remove dead audit logs, achieve 0 STE errors across 21 EN/FR docs, Diataxis `INDEX*`, add `test_docs_hygiene.py` & CI step, release `v2.6.3` | Complete | `python -W error::ResourceWarning -m unittest discover -s tests -v`, `release_notes.py --tag v2.6.3 --check` |
 | **Phase 18** | Transparent Data Encryption (TDE) Documentation Parity & `v2.6.4` Release | EN/FR `tde_encryption*.md` guides, `TDE` product matrices, TLS layer note, `INDEX*` & `pg_multimaster*` links, `APP-032`/`IDEA-015`, release `v2.6.4` | Complete | `ste_check.py --no-vocab`, `python -W error::ResourceWarning -m unittest discover -s tests -v`, `release_notes.py --tag v2.6.4 --check` |
+| **Phase 19** | Diataxis Documentation Portal, Versioned MkDocs Material & IONOS CI/CD | MkDocs Material config/hooks, `v2.3.0+` builder, 4-quadrant Diataxis docs (`docs/index.md` + 01..04), 2 unittest suites (`95` tests), `docs-ci`/`docs-publish` workflows, `RCA-143` | Complete | `unittest discover`, `diataxis_check.py --strict --check-ste`, `mkdocs build --strict`, `docs-ci.yml` |
 
 ---
 
@@ -84,6 +85,12 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-175 -- Record Phase 19 Milestone, IONOS SFTP Check & Cleanup (`#548`)
+- **Timestamp / Issue / Branch**: `2026-11-23T21:31Z` | Issue `#548` | `docs/issue-548-phase19-governance`
+- **Request**: Verify IONOS SFTP artifacts, remove `.worktrees/*`, add `Phase 19`, and log `RCA-143`/`APP-033`.
+- **Changes**: Added `Phase 19` + `ACT-175`, logged `RCA-143`/`APP-033`, and pruned `.worktrees/*`.
+- **Result**: SFTP confirmed `.htaccess`, `versions.json`, `main`, `v2.3.0..v2.6.4` on IONOS; `unittest` `95` OK.
 
 ### ACT-174 -- Add Docs-as-Code CI & Versioned IONOS Publish Workflows (`#542`)
 - **Timestamp / Issue / Branch**: `2026-11-23T21:14Z` | Issue `#542` | `ci/issue-542-docs-workflows`
