@@ -83,7 +83,6 @@ mysql -h 127.0.0.1 -P 4411 -uroot -p"$DB_ROOT_PASSWORD"
 | `enforce-gtid-consistency` | ON |
 | `binlog-format` | ROW |
 | `group-replication-group-seeds` | `mysql_node1:33061,mysql_node2:33061,mysql_node3:33061` |
-| `transaction-write-set-extraction` | XXHASH64 |
 
 ## Tests Automatisés
 

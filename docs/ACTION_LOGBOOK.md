@@ -89,8 +89,8 @@
 ### ACT-176 -- Convert PostgreSQL Diagrams to Mermaid & Align Cluster Docs (`#550`)
 - **Timestamp / Issue / Branch**: `2026-11-24T00:30Z` | Issue `#550` | `docs/issue-550-diataxis-i18n-mermaid`
 - **Request**: Convert Unicode box diagrams to Mermaid, fix broken Patroni Mermaid syntax, align stale InnoDB/PgPool versions, and clean README tree links (`< 15K` PR 1 of multi-PR Diataxis i18n series).
-- **Changes**: Updated `documentation/postgresql_support*.md` (Mermaid), `documentation/patroni_cluster.md` (quoted labels), `documentation/innodb_cluster*.md` (`mysql:8.4`), `documentation/pgpool_cluster.md` (`4.4.3`), `README*.md`, and logged `RCA-144`.
-- **Result**: Pending PR `#` review; `audit_helpers.py` (`18` Mermaid blocks, `0` ASCII, `0` `mmdc` failures), `unittest`, `go test`, and `mkdocs build --strict` verified.
+- **Changes**: Updated `documentation/postgresql_support*.md` (Mermaid), `documentation/patroni_cluster.md` (quoted labels), `documentation/innodb_cluster*.md` (`mysql:8.4`, dropped removed `transaction-write-set-extraction`), `documentation/pgpool_cluster.md` (`4.4.3`), `README*.md`, and logged `RCA-144`.
+- **Result**: PR `#551`; `audit_helpers.py` (`18` Mermaid blocks, `0` ASCII, `0` `mmdc` failures), `unittest`, `go test`, and `mkdocs build --strict` verified.
 
 ### ACT-175 -- Record Phase 19 Milestone, IONOS SFTP Check & Cleanup (`#548`)
 - **Timestamp / Issue / Branch**: `2026-11-23T21:31Z` | Issue `#548` | `docs/issue-548-phase19-governance`
