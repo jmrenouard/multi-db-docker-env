@@ -1025,6 +1025,13 @@
 - **Applied Change / Fix**: Split `03-reference/*` to PR 4b, routed standalone/Raft/Mongo8 to `./mdb test`, added `renew-ssl-repli` + `certs_patroni/` rollback.
 - **Result & Non-Regression Test**: 0 STE errors, `unittest` 79 OK (6 skipped), `/ponytail-review` `APPROVE`, diff `< 14,500` B.
 
+### RCA-141 -- KaTeX Auto-Render Undefined on Initial Load in PR 1 (`#524`)
+- **Date / Linked Action**: `2026-11-23` (`ACT-164` / Issue `#524`)
+- **Observed Symptom**: Initial `docs/javascripts/katex.js` bound `DOMContentLoaded` directly to `renderMathInElement` before `auto-render.min.js` loaded.
+- **Root Cause Analysis**: `mkdocs.yml` listed `katex.js` first in `extra_javascript` and passed `renderMathInElement` directly (receiving `Event` instead of `document.body`).
+- **Applied Change / Fix**: Reordered `extra_javascript` after `auto-render.min.js`, bound `renderMdbMath`, and added `readyState` fallback.
+- **Result & Non-Regression Test**: Valid YAML/JSON/SVG XML, `unittest` 79 OK (6 skipped), `/ponytail-review` `APPROVE`, diff `< 14,500` B.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
