@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-172 -- Add MkDocs Hooks & Multi-Version Builder Test Suite (`#539`)
+- **Timestamp / Issue / Branch**: `2026-11-23T20:57Z` | Issue `#539` | `test/issue-539-mkdocs-publishing`
+- **Request**: Add `tests/test_mkdocs_publishing.py` (`unittest` + bare-CI fallback) covering `mkdocs.yml`, `mkdocs_hooks.py`, `build_versioned_docs.py`, and live E2E build.
+- **Changes**: Added `tests/test_mkdocs_publishing.py` (`188` lines).
+- **Result**: `unittest` `94` OK (6 skipped) on system + venv Python (live E2E unskipped in venv), bare CI `7` OK (1 skipped), `/ponytail-review` `APPROVE`, diff `< 14,000` B.
+
 ### ACT-171 -- Add Diataxis 4-Quadrant, Cross-Link & STE Test Suite (`#538`)
 - **Timestamp / Issue / Branch**: `2026-11-23T20:45Z` | Issue `#538` | `test/issue-538-diataxis-suite`
 - **Request**: Add `tests/test_diataxis_documentation.py` (`unittest` + bare-CI YAML fallback) checking quadrants, links, genre rules, STE, `mkdocs.yml`, and READMEs.
