@@ -9,7 +9,7 @@ graph TD
     Client_W[Write Client] -->|Port 5100| LB[HAProxy LB<br/>10.8.0.100]
     Client_R[Read Client] -->|Port 5101| LB
     
-    LB -->|HAProxy Routing| Pool[PgPool-II 4.6<br/>10.8.0.20:9999]
+    LB -->|HAProxy Routing| Pool[PgPool-II 4.4.3<br/>10.8.0.20:9999]
     
     subgraph PG_Streaming_Replication [PG Cluster: 10.8.0.0/24]
         Pool -->|Writes| N1["pg_node1 (Primary)<br/>10.8.0.11:5432"]

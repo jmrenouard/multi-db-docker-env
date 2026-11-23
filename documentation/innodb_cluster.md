@@ -1,6 +1,6 @@
 # MySQL InnoDB Cluster
 
-MySQL 8.0 cluster with Group Replication and HAProxy for transparent connection routing.
+MySQL 8.4 LTS cluster with Group Replication and HAProxy for transparent connection routing.
 
 ## Architecture
 
@@ -24,9 +24,9 @@ graph TD
 
 | Component | Image | IP | Role |
 | :--- | :--- | :--- | :--- |
-| `mysql_node1` | `mysql:8.0` | `10.9.0.11` | Primary (read/write) |
-| `mysql_node2` | `mysql:8.0` | `10.9.0.12` | Secondary (read-only) |
-| `mysql_node3` | `mysql:8.0` | `10.9.0.13` | Secondary (read-only) |
+| `mysql_node1` | `mysql:8.4` | `10.9.0.11` | Primary (read/write) |
+| `mysql_node2` | `mysql:8.4` | `10.9.0.12` | Secondary (read-only) |
+| `mysql_node3` | `mysql:8.4` | `10.9.0.13` | Secondary (read-only) |
 | `haproxy_innodb` | `haproxy:lts` | `10.9.0.20` | Connection routing (RW/RO) |
 
 ## Quick Start
@@ -38,7 +38,7 @@ make innodb-up
 ```
 
 This command:
-- Starts 3 MySQL 8.0 nodes + HAProxy
+- Starts 3 MySQL 8.4 LTS nodes + HAProxy
 - Waits for all nodes to initialize
 - Configures Group Replication (creates replication user, bootstraps primary, joins secondaries)
 - HAProxy auto-bootstraps against the cluster

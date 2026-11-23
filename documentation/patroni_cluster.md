@@ -10,9 +10,9 @@ graph TD
     Client_R[Read Client] -->|Port 5001| LB
     
     subgraph Patroni_PostgreSQL_Cluster [Patroni PG Cluster]
-        LB -->|Writes (Leader)| N1["node1 (Leader)<br/>PostgreSQL"]
-        LB -->|Read RR (Replicas)| N2["node2 (Replica)<br/>PostgreSQL"]
-        LB -->|Read RR (Replicas)| N3["node3 (Replica)<br/>PostgreSQL"]
+        LB -->|"Writes (Leader)"| N1["node1 (Leader)<br/>PostgreSQL"]
+        LB -->|"Read RR (Replicas)"| N2["node2 (Replica)<br/>PostgreSQL"]
+        LB -->|"Read RR (Replicas)"| N3["node3 (Replica)<br/>PostgreSQL"]
         
         N1 --"Streaming Replication"--> N2
         N1 --"Streaming Replication"--> N3

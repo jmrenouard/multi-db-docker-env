@@ -11,21 +11,11 @@ PostgreSQL is supported in the multi-db-docker-env project as standalone instanc
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    PostgreSQL Architectures                     │
-├──────────────────┬──────────────────────┬───────────────────────┤
-│   Standalone     │   Patroni + ETCD     │   PgPool-II + HAProxy │
-│   (Single Node)  │   (HA Cluster)       │   (Pool + LB)         │
-├──────────────────┼──────────────────────┼───────────────────────┤
-│ postgres15       │ 3 ETCD nodes         │ 3 PostgreSQL 17 nodes │
-│ postgres16       │ 3 PostgreSQL 17      │ PgPool-II 4.6         │
-│ postgres17       │ HAProxy LTS (RW/RO)  │ HAProxy LTS (RW/RO)   │
-│ postgres18       │ Supervisord          │ Streaming Replication │
-├──────────────────┼──────────────────────┼───────────────────────┤
-│ make postgres18  │ make patroni-up      │ make pgpool-up        │
-│ make test-all    │ make patroni-test    │ make test-pgpool      │
-└──────────────────┴──────────────────────┴───────────────────────┘
+```mermaid
+flowchart TB
+    PG["PostgreSQL Architectures"] --> S["Standalone (Traefik :5432)<br/>postgres15..18 | make postgres18"]
+    PG --> P["Patroni + ETCD (HA Cluster)<br/>3 PG 17 + 3 ETCD + HAProxy | make patroni-up"]
+    PG --> G["PgPool-II + HAProxy (Pool + LB)<br/>3 PG 17 + PgPool 4.4.3 + HAProxy | make pgpool-up"]
 ```
 
 ---
