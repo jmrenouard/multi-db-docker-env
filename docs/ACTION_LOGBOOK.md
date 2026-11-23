@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-167 -- Add MkDocs Material Build Hooks for Virtual Docs & Link Rewriting (`#528`)
+- **Timestamp / Issue / Branch**: `2026-11-23T20:16Z` | Issue `#528` | `feat/issue-528-mkdocs-hooks`
+- **Request**: Add lazy-imported `scripts/mkdocs_hooks.py` for virtual docs, `documentation/*.md` injection, GFM slugs/alerts, link rewriting, and nav pruning.
+- **Changes**: Added `scripts/mkdocs_hooks.py` (`237` lines).
+- **Result**: Bare import OK; `mkdocs build --strict` (47 pages) + `v2.3.0..v2.6.4` builds OK; `unittest` 79 OK; `/ponytail-review` `APPROVE`; diff `< 14,000` B.
+
 ### ACT-166 -- Add Diataxis Explanation Architecture Overview, ADRs & Deep Dive (`#532`)
 - **Timestamp / Issue / Branch**: `2026-11-23T20:08Z` | Issue `#532` | `docs/issue-532-diataxis-explanation`
 - **Request**: Add 4 `04-explanation/` pages (`global-topology-and-routing.md`, `adr-001`, `adr-002`, `quorum-replication-and-tls.md`) matching `mkdocs.yml` paths and wire links.
