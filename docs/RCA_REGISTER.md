@@ -1046,6 +1046,13 @@
 - **Applied Change / Fix**: Verified all 9 versions, `versions.json`, and `.htaccess` (`26` lines) via SFTP; kept strict smoke checks and escalated IONOS panel binding to operator.
 - **Result & Non-Regression Test**: `Documentation CI` (`45268197240`) and `CI/CD Pipeline` (`45268191298`) passed; re-running `docs-publish.yml` after IONOS binding validates live HTTP/HTTPS.
 
+### RCA-144 -- Unquoted Patroni Mermaid Labels, PostgreSQL Box Diagrams & Stale InnoDB/PgPool Versions (`#550`)
+- **Date / Linked Action**: `2026-11-24` (`ACT-176` / Issue `#550`)
+- **Observed Symptom**: `documentation/patroni_cluster.md` failed `mmdc` compilation (`Parse error` on unquoted `|Writes (Leader)|` parentheses); `documentation/postgresql_support*.md` used fixed-width Unicode box diagrams; `documentation/innodb_cluster*.md` still listed EOL `mysql:8.0` instead of `mysql:8.4`; `documentation/pgpool_cluster.md` mixed `4.6` vs `4.4.3`; `README*.md` had Markdown link syntax inside the tree code block.
+- **Root Cause Analysis**: Mermaid labels with parentheses require quotes, and cluster documentation lagged behind `docker-compose-innodb-cluster.yml` (`mysql:8.4`) and `docker-compose-pgpool.yml` (`4.4.3`).
+- **Applied Change / Fix**: Quoted edge labels in `patroni_cluster.md`, converted `postgresql_support*.md` boxes to Mermaid, aligned `innodb_cluster*.md` (`mysql:8.4`) and `pgpool_cluster.md` (`4.4.3`), and cleaned `README*.md` tree paths.
+- **Result & Non-Regression Test**: `audit_helpers.py` passed (`18` Mermaid blocks, `0` ASCII box diagrams, `0` `mmdc` failures); `unittest`, `go test`, and `mkdocs build --strict` pass.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

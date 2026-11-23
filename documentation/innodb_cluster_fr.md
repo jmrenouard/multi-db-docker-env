@@ -1,6 +1,6 @@
 # MySQL InnoDB Cluster
 
-Cluster MySQL 8.0 avec Group Replication et HAProxy pour le routage transparent des connexions.
+Cluster MySQL 8.4 LTS avec Group Replication et HAProxy pour le routage transparent des connexions.
 
 ## Architecture
 
@@ -24,9 +24,9 @@ graph TD
 
 | Composant | Image | IP | Rôle |
 | :--- | :--- | :--- | :--- |
-| `mysql_node1` | `mysql:8.0` | `10.9.0.11` | Primaire (lecture/écriture) |
-| `mysql_node2` | `mysql:8.0` | `10.9.0.12` | Secondaire (lecture seule) |
-| `mysql_node3` | `mysql:8.0` | `10.9.0.13` | Secondaire (lecture seule) |
+| `mysql_node1` | `mysql:8.4` | `10.9.0.11` | Primaire (lecture/écriture) |
+| `mysql_node2` | `mysql:8.4` | `10.9.0.12` | Secondaire (lecture seule) |
+| `mysql_node3` | `mysql:8.4` | `10.9.0.13` | Secondaire (lecture seule) |
 | `haproxy_innodb` | `haproxy:lts` | `10.9.0.20` | Routage des connexions (RW/RO) |
 
 ## Démarrage Rapide
@@ -38,7 +38,7 @@ make innodb-up
 ```
 
 Cette commande :
-- Démarre 3 nœuds MySQL 8.0 + HAProxy
+- Démarre 3 nœuds MySQL 8.4 LTS + HAProxy
 - Attend l'initialisation de tous les nœuds
 - Configure Group Replication (crée l'utilisateur de réplication, amorce le primaire, joint les secondaires)
 - HAProxy s'amorce automatiquement contre le cluster
@@ -83,7 +83,6 @@ mysql -h 127.0.0.1 -P 4411 -uroot -p"$DB_ROOT_PASSWORD"
 | `enforce-gtid-consistency` | ON |
 | `binlog-format` | ROW |
 | `group-replication-group-seeds` | `mysql_node1:33061,mysql_node2:33061,mysql_node3:33061` |
-| `transaction-write-set-extraction` | XXHASH64 |
 
 ## Tests Automatisés
 

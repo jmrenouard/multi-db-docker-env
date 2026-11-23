@@ -11,21 +11,11 @@ Ce document décrit l'intégration de PostgreSQL dans l'environnement multi-db-d
 
 ## Vue d'Ensemble des Architectures
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   Architectures PostgreSQL                      │
-├──────────────────┬──────────────────────┬───────────────────────┤
-│   Standalone     │  Patroni + ETCD      │  PgPool-II + HAProxy  │
-│   (Noeud Unique) │  (Cluster HA)        │  (Pool + LB)          │
-├──────────────────┼──────────────────────┼───────────────────────┤
-│ postgres15       │ 3 noeuds ETCD        │ 3 noeuds PostgreSQL   │
-│ postgres16       │ 3 noeuds PostgreSQL  │ PgPool-II 4.6         │
-│ postgres17       │ HAProxy LTS (RW/RO)  │ HAProxy LTS (RW/RO)   │
-│ postgres18       │                      │                       │
-├──────────────────┼──────────────────────┼───────────────────────┤
-│ make postgres18  │ make patroni-up      │ make pgpool-up        │
-│ make test-all    │ make test-patroni    │ make test-pgpool      │
-└──────────────────┴──────────────────────┴───────────────────────┘
+```mermaid
+flowchart TB
+    PG["Architectures PostgreSQL"] --> S["Standalone (Traefik :5432)<br/>postgres15..18 | make postgres18"]
+    PG --> P["Patroni + ETCD (Cluster HA)<br/>3 PG 17 + 3 ETCD + HAProxy | make patroni-up"]
+    PG --> G["PgPool-II + HAProxy (Pool + LB)<br/>3 PG 17 + PgPool 4.4.3 + HAProxy | make pgpool-up"]
 ```
 
 ---

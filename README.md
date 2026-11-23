@@ -271,7 +271,7 @@ graph TD
 ├── 🛠️ Makefile             # Thin compatibility wrapper delegating to `./mdb` (plus CI/test targets)
 ├── 📂 documentation/      # Detailed guides for clusters and scripts
 ├── 📂 reports/            # Performance and test reports
-├── 📚 [INDEX.md](documentation/INDEX.md) # Documentation Index
+├── 📚 documentation/INDEX.md # Documentation Index
 ├── 📖 README.md           # This file (English documentation)
 └── 📖 README_fr.md        # French version of this file
 ```

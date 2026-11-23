@@ -263,7 +263,7 @@ graph TD
 ├── 🛠️ Makefile             # Wrapper de compatibilité déléguant à `./mdb` (plus cibles CI/tests)
 ├── 📂 documentation/      # Guides détaillés pour les clusters et scripts
 ├── 📂 reports/            # Rapports de performance et de tests
-├── 📚 [INDEX.md](documentation/INDEX.md) # Index de la documentation
+├── 📚 documentation/INDEX_fr.md # Index de la documentation
 ├── 📖 README.md           # Ce fichier (Documentation en anglais)
 └── 📖 README_fr.md        # Version française de ce fichier
 ```
