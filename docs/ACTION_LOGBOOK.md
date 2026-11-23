@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-164 -- Add MkDocs Material Config, Docs-as-Code Linters & Portal Assets (`#524`)
+- **Timestamp / Issue / Branch**: `2026-11-23T19:54Z` | Issue `#524` | `feat/issue-524-mkdocs-config`
+- **Request**: Configure 5 IONOS GitHub Secrets and add `mkdocs.yml`, `requirements-docs.txt`, `.vale.ini`, `.markdownlint.json`, `.gitignore`, KaTeX/CSS, and SVGs.
+- **Changes**: Added PR 1 config/assets (`#524`), fixed KaTeX load order (`RCA-141`), and provisioned 5 `IONOS_*` GitHub Secrets.
+- **Result**: `unittest` 79 OK (6 skipped) on system + venv Python, `/ponytail-review` `APPROVE`, diff `< 14,500` B.
+
 ### ACT-163 -- Add Diataxis Quadrant Indexes and 4 STE How-To Guides (`#525`)
 - **Timestamp / Issue / Branch**: `2026-11-23T19:52Z` | Issue `#525` | `docs/issue-525-diataxis-guides`
 - **Request**: Add 4 Diataxis quadrant `index.md` stubs and 4 ASD-STE100 How-To guides (`03-reference/*` split to PR 4b).

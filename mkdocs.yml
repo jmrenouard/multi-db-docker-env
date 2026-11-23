@@ -1,0 +1,114 @@
+site_name: Multi-DB Docker Environment Documentation
+site_description: Modular Docker DB lab for MySQL, MariaDB, Percona, PostgreSQL, MongoDB, and HA
+site_url: https://multi-db-docker-env.lightpath.fr/
+repo_name: jmrenouard/multi-db-docker-env
+repo_url: https://github.com/jmrenouard/multi-db-docker-env
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2026 Jean-Marie Renouard &middot; LightPath
+docs_dir: docs
+exclude_docs: |
+  *.kdbx
+  *.keyx
+  *.pem
+  *.key
+  *.crt
+  *.log
+  .env
+  .env.*
+  ssl/
+  certs_patroni/
+  datadir_*
+  backups_*
+  reports/
+hooks: [scripts/mkdocs_hooks.py]
+theme:
+  name: material
+  language: en
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  features: [navigation.tabs, navigation.tabs.sticky, navigation.sections, navigation.indexes, navigation.top, navigation.tracking, navigation.footer, search.suggest, search.highlight, search.share, content.code.copy, content.code.annotate, content.tabs.link]
+  palette:
+    - { media: "(prefers-color-scheme: light)", scheme: default, primary: indigo, accent: cyan, toggle: { icon: material/brightness-7, name: Switch to dark mode } }
+    - { media: "(prefers-color-scheme: dark)", scheme: slate, primary: indigo, accent: cyan, toggle: { icon: material/brightness-4, name: Switch to light mode } }
+plugins: [search]
+extra:
+  version: { provider: mike, default: latest }
+  social:
+    - { icon: fontawesome/brands/github, link: https://github.com/jmrenouard/multi-db-docker-env, name: GitHub }
+    - { icon: fontawesome/brands/docker, link: https://hub.docker.com/r/jmrenouard/multi-db-docker-env, name: Docker Hub }
+    - { icon: fontawesome/solid/globe, link: https://www.lightpath.fr, name: LightPath }
+extra_css: [https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css, stylesheets/extra.css]
+extra_javascript: [https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js, https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js, javascripts/katex.js]
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc: { permalink: true }
+  - pymdownx.arithmatex: { generic: true }
+  - pymdownx.details
+  - pymdownx.highlight: { anchor_linenums: true, line_spans: __span, pygments_lang_class: true }
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences: { custom_fences: [{ name: mermaid, class: mermaid, format: !!python/name:pymdownx.superfences.fence_code_format }] }
+  - pymdownx.tabbed: { alternate_style: true }
+  - pymdownx.tasklist: { custom_checkbox: true }
+nav:
+  - Home: index.md
+  - Tutorials:
+    - 01-tutorials/index.md
+    - 01-tutorials/01-local-sandbox-setup.md
+    - 01-tutorials/02-first-ha-failover-lab.md
+    - 01-tutorials/03-postgres-multimaster-lab.md
+    - Indexes: [documentation/INDEX.md, documentation/INDEX_fr.md]
+  - How-To Guides:
+    - 02-how-to-guides/index.md
+    - Deployment: [02-how-to-guides/deployment/deploy-standalone-and-clusters.md]
+    - Operations: [02-how-to-guides/operations/backup-restore-and-switch-engines.md]
+    - Incidents: [02-how-to-guides/incident-response/remediate-cluster-failover-and-quorum.md]
+    - Security: [02-how-to-guides/security/configure-tls-pki-and-tde-boundaries.md]
+    - Guides:
+      - documentation/galera_bootstrap.md
+      - documentation/replication_setup.md
+      - documentation/replication_ssl.md
+      - documentation/tls_setup.md
+      - documentation/patroni_cluster.md
+      - documentation/pgpool_cluster.md
+      - documentation/innodb_cluster.md
+      - documentation/innodb_cluster_fr.md
+      - documentation/mongo_replicaset.md
+      - documentation/mongo_replicaset_fr.md
+      - documentation/postgresql_support.md
+      - documentation/postgresql_support_fr.md
+      - documentation/pg_multimaster.md
+      - documentation/pg_multimaster_fr.md
+  - Reference:
+    - 03-reference/index.md
+    - Specs: [03-reference/architecture-specs/topology-and-port-matrix.md]
+    - Configuration: [03-reference/configuration/environment-and-tls-matrix.md]
+    - CLI: [03-reference/cli-and-scripts/mdb-cli-and-makefile-reference.md]
+    - Troubleshooting: [03-reference/troubleshooting-codes/error-and-alert-matrix.md]
+    - Guides:
+      - documentation/makefile.md
+      - documentation/makefile_fr.md
+      - documentation/scripts.md
+      - documentation/tests.md
+      - documentation/tests_fr.md
+      - documentation/supported_products.md
+      - documentation/supported_products_fr.md
+      - documentation/tde_encryption.md
+      - documentation/tde_encryption_fr.md
+  - Explanation:
+    - 04-explanation/index.md
+    - Architecture: [04-explanation/architecture-overview/global-topology-and-routing.md, documentation/architecture.md]
+    - Decisions: [04-explanation/design-decisions/adr-001-unified-mdb-cli.md, 04-explanation/design-decisions/adr-002-diataxis-versioned-mkdocs.md]
+    - Deep Dives: [04-explanation/deep-dives/quorum-replication-and-tls.md]
+    - Overviews:
+      - Overview (EN): overview-en.md
+      - Aperçu (FR): overview-fr.md
+  - Releases & Governance:
+    - Changelog: CHANGELOG.md
+    - Action Logbook: ACTION_LOGBOOK.md
+    - RCA Register: RCA_REGISTER.md

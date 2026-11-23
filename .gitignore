@@ -31,3 +31,8 @@ htmlcov/
 *.code-workspace
 certs_patroni/**
 pgcopydb/
+
+# Documentation & Worktrees
+site/
+site_dist/
+.worktrees/
