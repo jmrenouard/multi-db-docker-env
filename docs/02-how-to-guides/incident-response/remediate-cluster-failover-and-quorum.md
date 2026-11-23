@@ -72,4 +72,4 @@ Start a clean topology with `./mdb up <env>` and restore the last verified backu
 ## Related Documentation
 
 - Reference: [Topology and Port Matrix](../../03-reference/architecture-specs/topology-and-port-matrix.md)
-- Explanation: [Architecture Overview](../../04-explanation/index.md)
+- Explanation: [Quorum, Replication, and TLS](../../04-explanation/deep-dives/quorum-replication-and-tls.md)

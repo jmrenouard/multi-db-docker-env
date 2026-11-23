@@ -85,4 +85,4 @@ If containers stay active, stop all stacks:
 ## Related Documentation
 
 - Reference: [MDB CLI and Makefile Reference](../../03-reference/cli-and-scripts/mdb-cli-and-makefile-reference.md)
-- Explanation: [Architecture Overview](../../04-explanation/index.md)
+- Explanation: [Global Topology and Routing](../../04-explanation/architecture-overview/global-topology-and-routing.md)

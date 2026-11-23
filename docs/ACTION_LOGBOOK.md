@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-166 -- Add Diataxis Explanation Architecture Overview, ADRs & Deep Dive (`#532`)
+- **Timestamp / Issue / Branch**: `2026-11-23T20:08Z` | Issue `#532` | `docs/issue-532-diataxis-explanation`
+- **Request**: Add 4 `04-explanation/` pages (`global-topology-and-routing.md`, `adr-001`, `adr-002`, `quorum-replication-and-tls.md`) matching `mkdocs.yml` paths and wire links.
+- **Changes**: Added the 4 Explanation pages (with `26` file count fix in `adr-002`) and updated `04-explanation/index.md` + 4 How-To Explanation links.
+- **Result**: 0 STE errors (`ste_check.py`), `unittest` 79 OK (6 skipped) on system + venv Python, `/ponytail-review` `APPROVE`, diff `< 14,000` B.
+
 ### ACT-165 -- Add Diataxis Reference Architecture, CLI & Error Matrices (`#529`)
 - **Timestamp / Issue / Branch**: `2026-11-23T20:01Z` | Issue `#529` | `docs/issue-529-diataxis-reference`
 - **Request**: Add 3 Diataxis Reference pages (`topology-and-port-matrix.md`, `mdb-cli-and-makefile-reference.md`, `error-and-alert-matrix.md`) and wire links from `03-reference/index.md` and `02-how-to-guides/`.
