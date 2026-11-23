@@ -70,4 +70,4 @@ Restore a previous verified archive or reset test data with `make clean-data`.
 ## Related Documentation
 
 - Reference: [Topology and Port Matrix](../../03-reference/architecture-specs/topology-and-port-matrix.md)
-- Explanation: [Architecture Overview](../../04-explanation/index.md)
+- Explanation: [ADR-001: Unified MDB CLI](../../04-explanation/design-decisions/adr-001-unified-mdb-cli.md)

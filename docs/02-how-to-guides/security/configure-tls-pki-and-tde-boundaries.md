@@ -71,4 +71,4 @@ Run `make renew-ssl-galera`, `make renew-ssl-repli`, or `./mdb down <env> && ./m
 ## Related Documentation
 
 - Reference: [MDB CLI and Makefile Reference](../../03-reference/cli-and-scripts/mdb-cli-and-makefile-reference.md)
-- Explanation: [Architecture Overview](../../04-explanation/index.md)
+- Explanation: [Quorum, Replication, and TLS](../../04-explanation/deep-dives/quorum-replication-and-tls.md)

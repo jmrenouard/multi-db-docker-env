@@ -1,9 +1,12 @@
 # Explanation
 
-Architecture decisions, design trade-offs, and system internals.
+Architecture decisions, trade-offs, and system internals.
 
-> Architecture overviews and ADRs are planned in the next documentation increment.
+| Area | Document | Scope |
+|---|---|---|
+| Architecture | [Global Topology and Routing](architecture-overview/global-topology-and-routing.md) | Traefik vs HAProxy TCP routing. |
+| Decisions | [ADR-001: Unified `./mdb` CLI](design-decisions/adr-001-unified-mdb-cli.md) | Go CLI and isolated stacks. |
+| Decisions | [ADR-002: Diataxis and Versioned MkDocs](design-decisions/adr-002-diataxis-versioned-mkdocs.md) | Quadrants, virtual docs, IONOS SFTP. |
+| Deep Dives | [Quorum, Replication, and TLS](deep-dives/quorum-replication-and-tls.md) | `RPO=0` trade-offs and TDE/KMS limits. |
 
-- Read [Global Architecture](../../documentation/architecture.md) for Traefik and HAProxy diagrams.
-- Read [TDE and Data-at-Rest](../../documentation/tde_encryption.md) for encryption boundaries.
-- Browse [How-To Guides](../02-how-to-guides/index.md) and [Reference](../03-reference/index.md).
+Legacy: [Global Architecture](../../documentation/architecture.md), [TDE Guide](../../documentation/tde_encryption.md).
