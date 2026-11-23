@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-171 -- Add Diataxis 4-Quadrant, Cross-Link & STE Test Suite (`#538`)
+- **Timestamp / Issue / Branch**: `2026-11-23T20:45Z` | Issue `#538` | `test/issue-538-diataxis-suite`
+- **Request**: Add `tests/test_diataxis_documentation.py` (`unittest` + bare-CI YAML fallback) checking quadrants, links, genre rules, STE, `mkdocs.yml`, and READMEs.
+- **Changes**: Added `tests/test_diataxis_documentation.py` (`225` lines).
+- **Result**: `unittest` `87` OK (6 skipped) on system + venv Python, bare `yaml=None` `8/8` OK, `/ponytail-review` `APPROVE`, diff `< 14,000` B.
+
 ### ACT-170 -- Add Diataxis Portal Index and README Portal Links (`#535`)
 - **Timestamp / Issue / Branch**: `2026-11-23T20:25Z` | Issue `#535` | `docs/issue-535-diataxis-portal`
 - **Request**: Add `docs/index.md` portal landing page and link the live Diataxis portal (`multi-db-docker-env.lightpath.fr`) from `README.md` and `README_fr.md` with 0 STE errors.
