@@ -86,6 +86,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-177 -- Isolate English `mkdocs.yml` & Make `mkdocs_hooks.py` Language-Aware (`#552`)
+- **Timestamp / Issue / Branch**: `2026-11-24T00:48Z` | Issue `#552` | `docs/issue-552-mkdocs-en-split`
+- **Request**: Keep `mkdocs.yml` 100% EN (`exclude_docs`, `extra.alternate`) and make `scripts/mkdocs_hooks.py` language-aware.
+- **Changes**: Updated `mkdocs.yml`, `scripts/mkdocs_hooks.py`, and logged `RCA-145`.
+- **Result**: `audit_helpers.py` (`language_mix=0`), `unittest` `95 OK`, and `mkdocs build --strict` exit `0`.
+
 ### ACT-176 -- Convert PostgreSQL Diagrams to Mermaid & Align Cluster Docs (`#550`)
 - **Timestamp / Issue / Branch**: `2026-11-24T00:30Z` | Issue `#550` | `docs/issue-550-diataxis-i18n-mermaid`
 - **Request**: Convert Unicode box diagrams to Mermaid, fix broken Patroni Mermaid syntax, align stale InnoDB/PgPool versions, and clean README tree links (`< 15K` PR 1 of multi-PR Diataxis i18n series).

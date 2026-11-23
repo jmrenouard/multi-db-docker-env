@@ -1053,6 +1053,13 @@
 - **Applied Change / Fix**: Quoted edge labels in `patroni_cluster.md`, converted `postgresql_support*.md` boxes to Mermaid, aligned `innodb_cluster*.md` (`mysql:8.4`) and `pgpool_cluster.md` (`4.4.3`), and cleaned `README*.md` tree paths.
 - **Result & Non-Regression Test**: `audit_helpers.py` passed (`18` Mermaid blocks, `0` ASCII box diagrams, `0` `mmdc` failures); `unittest`, `go test`, and `mkdocs build --strict` pass.
 
+### RCA-145 -- Mixed FR/EN Navigation and Unfiltered `on_files` Injection (`#552`)
+- **Date / Linked Action**: `2026-11-24` (`ACT-177` / Issue `#552`)
+- **Observed Symptom**: `mkdocs.yml` mixed 10 FR pages (`language_mix=10`), and `mkdocs_hooks.py` failed FR detection (`Theme` requires mapping `.get`).
+- **Root Cause Analysis**: `on_files()` injected all languages unconditionally, and `Theme.language` attribute lookup returned `None`.
+- **Applied Change / Fix**: Excluded FR pages and added `extra.alternate` in `mkdocs.yml`; made `scripts/mkdocs_hooks.py` language-aware (`_lang`, `on_config`, `on_files`, `_resolve`).
+- **Result & Non-Regression Test**: `audit_helpers.py` `language_mix=0`, `unittest` `95 OK`, `mkdocs build --strict` exit `0`.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

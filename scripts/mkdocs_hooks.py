@@ -8,6 +8,7 @@ import re
 import unicodedata
 from pathlib import Path
 from typing import Any, Iterable
+from urllib.parse import urlsplit
 
 DEFAULT_REPO_URL = "https://github.com/jmrenouard/multi-db-docker-env"
 VIRTUAL_DOCS = {"overview-en.md": ("README.md", ""), "overview-fr.md": ("README_fr.md", ""), "CHANGELOG.md": ("Changelog", "")}
@@ -88,7 +89,13 @@ def _delim(t: str, s: int, op: str, cl: str, code: bool) -> int | None:
     return None
 
 
-def _resolve(url: str, src: str, pfx: str, ref: str, repo_url: str, rdocs: frozenset[str], dd: Path | None) -> tuple[str | None, bool]:
+def _lang(config: Any) -> str:
+    th = config.get("theme") if isinstance(config, dict) else getattr(config, "theme", None)
+    v = (th.get("language") if hasattr(th, "get") else getattr(th, "language", None)) if th is not None else None
+    return "fr" if str(v or "en").lower().startswith("fr") else "en"
+
+
+def _resolve(url: str, src: str, pfx: str, ref: str, repo_url: str, rdocs: frozenset[str], dd: Path | None, inc: frozenset[str] | None = None, lang: str = "en") -> tuple[str | None, bool]:
     if url.lower().startswith("file:"):
         if "/multi-db-docker-env/" not in url:
             return None, True
@@ -115,6 +122,8 @@ def _resolve(url: str, src: str, pfx: str, ref: str, repo_url: str, rdocs: froze
         return virt(_REPO_TO_VIRTUAL[rel], rel, an), False
     if rel.startswith("docs/"):
         sub = rel[5:]
+        if lang == "fr" and sub == "index_fr.md" and inc is not None and "index.md" in inc:
+            return f"{pfx}index.md{an}", False
         if sub in VIRTUAL_DOCS and (not dd or not (dd / sub).is_file()):
             return virt(sub, VIRTUAL_DOCS[sub][0], an), False
         if dd:
@@ -124,9 +133,12 @@ def _resolve(url: str, src: str, pfx: str, ref: str, repo_url: str, rdocs: froze
             if norm == "index.md" and not (dd / "01-tutorials").is_dir() and not (dd / sub).exists() and sub not in rdocs:
                 return ov, False
             if (dd / sub / "index.md").is_file():
-                return f"{pfx}{sub.rstrip('/')}/index.md{an}", False
-        return f"{pfx}{sub}{tl}{an}", False
+                cand = f"{sub.rstrip('/')}/index.md"
+                return (f"{pfx}{cand}{an}" if inc is None or cand in inc else f"{repo}/blob/{ref}/docs/{sub}{tl}{an}"), False
+        return (f"{repo}/blob/{ref}/docs/{sub}{tl}{an}" if inc is not None and sub not in inc else f"{pfx}{sub}{tl}{an}"), False
     if rel.startswith("documentation/"):
+        if inc is not None and rel not in inc and (not root or (root / rel).is_file()):
+            return f"{repo}/blob/{ref}/{rel}{an}", False
         if not root or (root / rel).is_file():
             return f"{pfx}{rel}{an}", False
         return (f"{pfx}documentation/INDEX.md" if (root / "documentation/INDEX.md").is_file() else ov), False
@@ -167,14 +179,15 @@ def _rw(t: str, html_fn: Any, res_fn: Any) -> str:
     return "".join(out) + (html_fn(t[ps:n]) if n > ps else "")
 
 
-def rewrite_relative_links(markdown: str, page_src_path: str, ref: str = "main", repo_url: str = DEFAULT_REPO_URL, docs_dir: Path | None = None, use_directory_urls: bool = True, available_root_docs: Iterable[str] | None = None) -> str:
+def rewrite_relative_links(markdown: str, page_src_path: str, ref: str = "main", repo_url: str = DEFAULT_REPO_URL, docs_dir: Path | None = None, use_directory_urls: bool = True, available_root_docs: Iterable[str] | None = None, included_docs: Iterable[str] | None = None, lang: str = "en") -> str:
     """Rewrite repository-relative Markdown and HTML links."""
     norm = page_src_path.replace("\\", "/").lstrip("/")
     md_d = norm.count("/")
     hp = "../" * (md_d + (0 if not use_directory_urls or norm == "index.md" or norm.endswith("/index.md") else 1))
     mp, rf, dd = "../" * md_d, _ref(ref), (Path(docs_dir) if docs_dir else None)
     rdocs = frozenset(VIRTUAL_DOCS) if available_root_docs is None else frozenset(available_root_docs)
-    res_fn = lambda u, p=mp: _resolve(u, norm, p, rf, repo_url, rdocs, dd)
+    inc = frozenset(included_docs) if included_docs is not None else None
+    res_fn = lambda u, p=mp: _resolve(u, norm, p, rf, repo_url, rdocs, dd, inc, lang)
     html_fn = lambda s: _HTML_ATTR_RE.sub(lambda m: f"{m.group(1)}{m.group(2)}{'#' if (r := res_fn(m.group(3), hp))[1] else r[0]}{m.group(2)}", s)
     return "".join(c if f else _rw(c, html_fn, res_fn) for f, c in _fences(markdown))
 
@@ -199,6 +212,13 @@ def on_config(config: Any) -> Any:
     if url := os.environ.get("MDB_DOCS_SITE_URL", "").strip():
         config.site_url = url.rstrip("/") + "/"
     config.edit_uri = "edit/main/docs/" if _ref() == "main" else ""
+    if isinstance(ex := getattr(config, "extra", None), dict) and isinstance(alt := ex.get("alternate"), list):
+        bp = urlsplit(str(getattr(config, "site_url", "") or "")).path.rstrip("/")
+        bp = bp[:-3] if bp.endswith("/fr") else bp
+        if bp:
+            for item in alt:
+                if isinstance(item, dict) and item.get("lang") in {"en", "fr"}:
+                    item["link"] = f"{bp}/fr/" if item["lang"] == "fr" else f"{bp}/"
     if isinstance(mdx := getattr(config, "mdx_configs", None), dict) and isinstance(toc := mdx.setdefault("toc", {}), dict) and not toc.get("slugify"):
         toc["slugify"] = gfm_slugify
     if getattr(config, "nav", None):
@@ -210,21 +230,30 @@ def on_files(files: Any, config: Any) -> Any:
     """Exclude private files and inject virtual docs and guides."""
     from mkdocs.structure.files import File, Files, InclusionLevel
 
+    lang, dd = _lang(config), Path(config.docs_dir)
+    root = dd.parent
+    fr_idx = (dd / "index_fr.md") if (dd / "index_fr.md").is_file() else (root / "README_fr.md")
     kept = []
     for f in list(files):
         if _EXCLUDED_RE.search(f.src_uri):
             f.inclusion = InclusionLevel.EXCLUDED
+        elif lang == "fr" and f.src_uri == "index.md" and fr_idx.is_file():
+            continue
         else:
             kept.append(f)
     if len(kept) != len(files):
         files = Files(kept)
-    root = Path(config.docs_dir).parent
+    allowed = {"overview-fr.md"} if lang == "fr" else {"overview-en.md", "CHANGELOG.md"}
     for uri, (rel, _) in VIRTUAL_DOCS.items():
-        if (p := root / rel).is_file() and files.get_file_from_path(uri) is None:
+        if uri in allowed and (p := root / rel).is_file() and files.get_file_from_path(uri) is None:
             kw = {"content": r if (r := p.read_text(encoding="utf-8")).lstrip().startswith("# ") else f"# Changelog\n\n{r}"} if uri == "CHANGELOG.md" else {"abs_src_path": str(p)}
             files.append(File.generated(config, uri, **kw))
+    if lang == "fr" and fr_idx.is_file() and files.get_file_from_path("index.md") is None:
+        idx_f = File.generated(config, "index.md", abs_src_path=str(fr_idx))
+        idx_f.inclusion = InclusionLevel.INCLUDED
+        files.append(idx_f)
     for p in sorted((root / "documentation").glob("*.md")):
-        if p.is_file() and files.get_file_from_path(u := f"documentation/{p.name}") is None:
+        if p.is_file() and p.name.endswith(("_fr.md", "-fr.md")) == (lang == "fr") and files.get_file_from_path(u := f"documentation/{p.name}") is None:
             files.append(File.generated(config, u, abs_src_path=str(p)))
     return files
 
@@ -236,5 +265,8 @@ def on_page_markdown(markdown: str, page: Any, config: Any, files: Any) -> str:
     dd = Path(rd) if (rd := getattr(config, "docs_dir", None) or (config.get("docs_dir") if isinstance(config, dict) else None)) else None
     if ed := VIRTUAL_DOCS[src][0] if src in VIRTUAL_DOCS else (src if src.startswith("documentation/") and dd and (dd.parent / src).is_file() else None):
         page.edit_url = f"{repo}/edit/main/{ed}" if rf == "main" else None
+    if (lang := _lang(config)) == "fr" and src == "index.md" and dd:
+        page.edit_url = f"{repo}/edit/main/{'docs/index_fr.md' if (dd / 'index_fr.md').is_file() else 'README_fr.md'}" if rf == "main" else None
     avail = [k for k in VIRTUAL_DOCS if files.get_file_from_path(k) is not None] if files is not None else None
-    return rewrite_relative_links(convert_github_alerts(markdown), src, rf, repo, dd, bool(getattr(config, "use_directory_urls", True)), avail)
+    inc = [f.src_uri for f in files if getattr(f.inclusion, "is_included", lambda: True)()] if files is not None else None
+    return rewrite_relative_links(convert_github_alerts(markdown), src, rf, repo, dd, bool(getattr(config, "use_directory_urls", True)), avail, inc, lang)

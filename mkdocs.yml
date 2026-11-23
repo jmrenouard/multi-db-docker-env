@@ -20,6 +20,13 @@ exclude_docs: |
   datadir_*
   backups_*
   reports/
+  *_fr.md
+  *-fr.md
+  fr/
+  overview-fr.md
+  01-tutoriels/
+  02-guides-pratiques/
+  index_fr.md
 hooks: [scripts/mkdocs_hooks.py]
 theme:
   name: material
@@ -33,6 +40,9 @@ theme:
 plugins: [search]
 extra:
   version: { provider: mike, default: latest }
+  alternate:
+    - { name: English, link: ./, lang: en }
+    - { name: Français, link: ./fr/, lang: fr }
   social:
     - { icon: fontawesome/brands/github, link: https://github.com/jmrenouard/multi-db-docker-env, name: GitHub }
     - { icon: fontawesome/brands/docker, link: https://hub.docker.com/r/jmrenouard/multi-db-docker-env, name: Docker Hub }
@@ -62,7 +72,7 @@ nav:
     - 01-tutorials/01-local-sandbox-setup.md
     - 01-tutorials/02-first-ha-failover-lab.md
     - 01-tutorials/03-postgres-multimaster-lab.md
-    - Indexes: [documentation/INDEX.md, documentation/INDEX_fr.md]
+    - Indexes: [documentation/INDEX.md]
   - How-To Guides:
     - 02-how-to-guides/index.md
     - Deployment: [02-how-to-guides/deployment/deploy-standalone-and-clusters.md]
@@ -77,13 +87,9 @@ nav:
       - documentation/patroni_cluster.md
       - documentation/pgpool_cluster.md
       - documentation/innodb_cluster.md
-      - documentation/innodb_cluster_fr.md
       - documentation/mongo_replicaset.md
-      - documentation/mongo_replicaset_fr.md
       - documentation/postgresql_support.md
-      - documentation/postgresql_support_fr.md
       - documentation/pg_multimaster.md
-      - documentation/pg_multimaster_fr.md
   - Reference:
     - 03-reference/index.md
     - Specs: [03-reference/architecture-specs/topology-and-port-matrix.md]
@@ -92,14 +98,10 @@ nav:
     - Troubleshooting: [03-reference/troubleshooting-codes/error-and-alert-matrix.md]
     - Guides:
       - documentation/makefile.md
-      - documentation/makefile_fr.md
       - documentation/scripts.md
       - documentation/tests.md
-      - documentation/tests_fr.md
       - documentation/supported_products.md
-      - documentation/supported_products_fr.md
       - documentation/tde_encryption.md
-      - documentation/tde_encryption_fr.md
   - Explanation:
     - 04-explanation/index.md
     - Architecture: [04-explanation/architecture-overview/global-topology-and-routing.md, documentation/architecture.md]
@@ -107,7 +109,6 @@ nav:
     - Deep Dives: [04-explanation/deep-dives/quorum-replication-and-tls.md]
     - Overviews:
       - Overview (EN): overview-en.md
-      - Aperçu (FR): overview-fr.md
   - Releases & Governance:
     - Changelog: CHANGELOG.md
     - Action Logbook: ACTION_LOGBOOK.md
