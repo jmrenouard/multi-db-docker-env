@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-173 -- Fix Python 3.11 F-String Compatibility in `mkdocs_hooks.py` (`#545`)
+- **Timestamp / Issue / Branch**: `2026-11-23T21:00Z` | Issue `#545` | `fix/issue-545-py311-hooks`
+- **Request**: Fix Python 3.11 CI `SyntaxError` on PEP 701 f-string backslash in `scripts/mkdocs_hooks.py:57` exposed by PR `#544` (`CI/CD Pipeline`).
+- **Changes**: Extracted `_QUOTE_PFX_RE` outside f-string in `convert_github_alerts()`, unnested f-string in `_rw()`, and logged `RCA-142`.
+- **Result**: `unittest` `94` OK (system, `skipped=7`) + `7/7` OK (venv `test_mkdocs_publishing`), diff `< 5,000` B.
+
 ### ACT-172 -- Add MkDocs Hooks & Multi-Version Builder Test Suite (`#539`)
 - **Timestamp / Issue / Branch**: `2026-11-23T20:57Z` | Issue `#539` | `test/issue-539-mkdocs-publishing`
 - **Request**: Add `tests/test_mkdocs_publishing.py` (`unittest` + bare-CI fallback) covering `mkdocs.yml`, `mkdocs_hooks.py`, `build_versioned_docs.py`, and live E2E build.

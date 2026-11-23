@@ -1032,6 +1032,13 @@
 - **Applied Change / Fix**: Reordered `extra_javascript` after `auto-render.min.js`, bound `renderMdbMath`, and added `readyState` fallback.
 - **Result & Non-Regression Test**: Valid YAML/JSON/SVG XML, `unittest` 79 OK (6 skipped), `/ponytail-review` `APPROVE`, diff `< 14,500` B.
 
+### RCA-142 -- Python 3.12+ PEP 701 F-String Backslash Failure on Python 3.11 CI (`#545`)
+- **Date / Linked Action**: `2026-11-23` (`ACT-173` / Issue `#545`)
+- **Observed Symptom**: `CI/CD Pipeline` (`python3` 3.11.18) failed on PR `#544` (`SyntaxError: f-string expression part cannot include a backslash` at `scripts/mkdocs_hooks.py:57`), while local Python 3.14 passed.
+- **Root Cause Analysis**: `convert_github_alerts()` placed `re.sub(r'^[ \t]*>[ \t]?', '', l)` inside an f-string expression (PEP 701 requires Python >= 3.12).
+- **Applied Change / Fix**: Extracted `_QUOTE_PFX_RE` outside f-string formatting and unnested f-string interpolation in `_rw()`.
+- **Result & Non-Regression Test**: `test_mkdocs_publishing.py` passes locally (`94` OK / venv `7/7` OK) with zero PEP 701 f-string backslashes or nested f-strings.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
