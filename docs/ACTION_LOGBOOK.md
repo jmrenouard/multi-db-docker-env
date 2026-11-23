@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-169 -- Add Multi-Version MkDocs Material Builder for IONOS (`#531`)
+- **Timestamp / Issue / Branch**: `2026-11-23T20:23Z` | Issue `#531` | `feat/issue-531-versioned-docs-builder`
+- **Request**: Add `scripts/build_versioned_docs.py` building `main` + semver tags `>= v2.3.0`, `versions.json`, `.htaccess`, redirects, and zip/secret guards.
+- **Changes**: Added `scripts/build_versioned_docs.py` (`211` lines).
+- **Result**: Multi-version build (`main`, `v2.6.4`, `v2.3.0`) OK; security guards OK; `unittest` 79 OK; `/ponytail-review` `APPROVE`; diff `< 14,000` B.
+
 ### ACT-168 -- Add Diataxis Sandbox Tutorials & Environment TLS Matrix (`#534`)
 - **Timestamp / Issue / Branch**: `2026-11-23T20:17Z` | Issue `#534` | `docs/issue-534-diataxis-tutorials`
 - **Request**: Add 3 `01-tutorials/` labs (`01-local-sandbox-setup.md`, `02-first-ha-failover-lab.md`, `03-postgres-multimaster-lab.md`) + `03-reference/configuration/environment-and-tls-matrix.md` and update indexes.
