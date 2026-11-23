@@ -16,6 +16,7 @@ QUADRANT_HISTORICAL_FALLBACKS = {"01-tutorials": "overview-en.md", "02-how-to-gu
 ALERT_MAP = {"NOTE": "note", "TIP": "tip", "IMPORTANT": "info", "WARNING": "warning", "CAUTION": "danger"}
 _FENCE_RE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 _ALERT_RE = re.compile(r"(?m)^([ \t]*)>[ \t]*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*([^\r\n]*)\r?\n((?:[ \t]*>.*(?:\r?\n|$))*)")
+_QUOTE_PFX_RE = re.compile(r"^[ \t]*>[ \t]?")
 _SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
 _EXCLUDED_RE = re.compile(r"(?i)(?:^|/)(?:\.env(?!\.example$)(?:\.[^/]+)?|id_rsa(?:\.[^/]+)?)$|\.(?:kdbx|keyx|pem|key|crt)$")
 _HTML_ATTR_RE = re.compile(r"""(<(?:img|a|source)\b[^>]*?\b(?:src|href)\s*=\s*)(["'])([^"']+)\2""", re.I)
@@ -54,7 +55,8 @@ def convert_github_alerts(markdown: str) -> str:
     """Convert GitHub alerts to Material admonitions."""
     def _fmt(m: re.Match[str]) -> str:
         ws, k, t = m.group(1), ALERT_MAP[m.group(2).upper()], m.group(3).strip()
-        body = "".join(f"{ws}    {re.sub(r'^[ \t]*>[ \t]?', '', l)}\n" if l.strip().lstrip(">").strip() else "\n" for l in m.group(4).splitlines())
+        lines = [_QUOTE_PFX_RE.sub("", ln) if ln.strip().lstrip(">").strip() else None for ln in m.group(4).splitlines()]
+        body = "".join(f"{ws}    {ln}\n" if ln is not None else "\n" for ln in lines)
         return (f'{ws}!!! {k} "{t}"\n' if t else f"{ws}!!! {k}\n") + body
     return "".join(c if f else _ALERT_RE.sub(_fmt, c) for f, c in _fences(markdown))
 
@@ -159,7 +161,8 @@ def _rw(t: str, html_fn: Any, res_fn: Any) -> str:
         ang = rd.startswith("<") and (ae := rd.find(">")) != -1
         url, ts = (rd[1:ae].strip(), rd[ae + 1:]) if ang else ((rd[:m.start()], rd[m.start():]) if (m := re.search(r"\s", rd)) else (rd, ""))
         r, neut = res_fn(url)
-        out.append(("" if img else lbl) if neut else f"{'!' if img else ''}[{lbl}]({f'<{r}>' if ang else r}{ts})")
+        img_pfx, target = ("!" if img else ""), (f"<{r}>" if ang else r)
+        out.append(("" if img else lbl) if neut else f"{img_pfx}[{lbl}]({target}{ts})")
         i = ps = pe + 1
     return "".join(out) + (html_fn(t[ps:n]) if n > ps else "")
 
