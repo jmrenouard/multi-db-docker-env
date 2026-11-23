@@ -31,6 +31,7 @@
 | **Phase 15** | Durable Production-Tuned PG Compose Stacks & Unified 18-Topology Benchmark Harness (`v2.6.0`) | Tuned 13 PG Compose stacks (`fsync`/`RPO=0` preserved), YB/CRDB HAProxy LBs, `bench_pg_optimized_*` (`PG_SCALE=20`, `--resume`), unit/static tests, EN/FR docs, `v2.6.0` tag | ✅ Complete | `make bench-pg-optimized`, `bash ./tests/test_config.sh`, `python -m unittest`, `go test ./...` |
 | **Phase 16** | Self-Contained Patroni Images, `mdb images` CLI & 31/31 Live E2E Parity (`v2.6.1`) | 3 non-root Patroni Dockerfiles + `Dockerfile.bench`, `mdb images` CLI (`31/31` images), Patroni 4.x/mTLS live E2E, EN/FR docs & governance | ✅ Complete | `./mdb images check`, `./mdb test patroni --suite`, `go test ./...`, `python -m unittest` |
 | **Phase 17** | Documentation Audit Remediation, ASD-STE100 Parity, Diataxis Indexing & Hygiene Gate (`v2.6.3`) | Fix links/anchors/rules, remove dead audit logs, achieve 0 STE errors across 21 EN/FR docs, Diataxis `INDEX*`, add `test_docs_hygiene.py` & CI step, release `v2.6.3` | Complete | `python -W error::ResourceWarning -m unittest discover -s tests -v`, `release_notes.py --tag v2.6.3 --check` |
+| **Phase 18** | Transparent Data Encryption (TDE) Documentation Parity & `v2.6.4` Release | EN/FR `tde_encryption*.md` guides, `TDE` product matrices, TLS layer note, `INDEX*` & `pg_multimaster*` links, `APP-032`/`IDEA-015`, release `v2.6.4` | Complete | `ste_check.py --no-vocab`, `python -W error::ResourceWarning -m unittest discover -s tests -v`, `release_notes.py --tag v2.6.4 --check` |
 
 ---
 
@@ -83,6 +84,12 @@
 | *None* | — | — | — | All current actions are completed and archived below. |
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-162 -- Prepare Release `v2.6.4` TDE Documentation Parity (`#522`)
+- **Timestamp / Issue / Branch**: `2026-11-23T19:07Z` | Issue `#522` | `chore/issue-522-release-v2-6-4`
+- **Request**: Synchronize `v2.6.4` release metadata across `VERSION`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, `README.md`, `README_fr.md`, `ROADMAP.md`, prepend `2.6.4 2026-11-23` to `Changelog` (`<= 600` lines FIFO), and record Phase 18.
+- **Changes**: Bumped `2.6.3` -> `2.6.4` in `VERSION`, Go CLI/tests, EN/FR READMEs, and `ROADMAP.md`; linked `tde_encryption*.md` in READMEs; prepended ordered `2.6.4 2026-11-23` notes to `Changelog`; recorded Phase 18 milestone.
+- **Result**: Verified `python3 scripts/release_notes.py --tag v2.6.4 --check`, `go run ./cmd/mdb --version`, Windows + WSL `unittest`, `test_config.sh`, `go test`, `./mdb lint`, and diff `< 14,800` B.
 
 ### ACT-161 -- Add TDE Matrix to `supported_products_fr.md`, PG Multi-Master Notes & RCA Entries (`#520`)
 - **Timestamp / Issue / Branch**: `2026-11-23T19:03Z` | Issue `#520` | `docs/issue-520-tde-matrices-fr-and-pg`

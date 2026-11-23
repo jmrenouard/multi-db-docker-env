@@ -1,3 +1,8 @@
+2.6.4 2026-11-23
+- doc: add bilingual TDE & Data-at-Rest guides (`documentation/tde_encryption.md`, `tde_encryption_fr.md`), add `TDE` columns in `supported_products*.md`, cross-link `tls_setup.md`/`INDEX*.md`/`pg_multimaster*.md`, and record `APP-032`/`IDEA-015` (Closes #516, #518, #520).
+- test: register `documentation/tde_encryption.md` and `tde_encryption_fr.md` in `tests/test_docs_hygiene.py` (`MIXED_STE_DOCS`) with `0` STE/STF errors (Closes #516).
+- chore: synchronize `v2.6.4` release metadata across `VERSION`, `cmd/mdb/main.go`, `cmd/mdb/main_test.go`, `README*.md`, `ROADMAP.md`, and `Changelog` (Closes #522).
+
 2.6.3 2026-11-22
 - fix: remove duplicate root rule files, replace 15 file:/// links, drop nonexistent script/file references, fix 9 GFM anchors, remove stale audit/plan logs, and resolve version drift across README/ROADMAP/workflows (Closes #464, #466, #468, #470, #472).
 - doc: bring 21 bilingual documentation files to 0 ASD-STE100 structural errors, add Rule 7.1-7.3 CAUTION/ATTENTION safety blocks for clean-data/clean-galera/clean-repli, restore 13/8-section FR parity in makefile_fr.md and tests_fr.md, and organize INDEX.md/INDEX_fr.md into the 4 Diataxis quadrants (Closes #474, #476, #478, #480, #482, #484, #486, #488, #490, #492, #494, #496, #498, #500, #502, #504, #506, #508, #510).
