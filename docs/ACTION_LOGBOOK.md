@@ -85,6 +85,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-174 -- Add Docs-as-Code CI & Versioned IONOS Publish Workflows (`#542`)
+- **Timestamp / Issue / Branch**: `2026-11-23T21:14Z` | Issue `#542` | `ci/issue-542-docs-workflows`
+- **Request**: Add SHA-pinned `.github/workflows/docs-ci.yml` and `docs-publish.yml` plus workflow governance tests in `tests/test_mkdocs_publishing.py`.
+- **Changes**: Added `docs-ci.yml` (`40` lines), `docs-publish.yml` (`133` lines), and `test_docs_ci_and_publish_workflows` (`33` lines).
+- **Result**: `unittest` `95` OK on Python 3.11 (`skipped=7`), system 3.14, and venv (`skipped=6`), `mkdocs build --strict` OK, `/ponytail-review` `APPROVE`, diff `< 14,000` B.
+
 ### ACT-173 -- Fix Python 3.11 F-String Compatibility in `mkdocs_hooks.py` (`#545`)
 - **Timestamp / Issue / Branch**: `2026-11-23T21:00Z` | Issue `#545` | `fix/issue-545-py311-hooks`
 - **Request**: Fix Python 3.11 CI `SyntaxError` on PEP 701 f-string backslash in `scripts/mkdocs_hooks.py:57` exposed by PR `#544` (`CI/CD Pipeline`).

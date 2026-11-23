@@ -1,0 +1,133 @@
+name: Publish Documentation (MkDocs Material)
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["docs/**", "documentation/**", "mkdocs.yml", "README.md", "README_fr.md", "Changelog", "requirements-docs.txt", ".vale.ini", ".markdownlint.json", "scripts/mkdocs_hooks.py", "scripts/build_versioned_docs.py", ".github/workflows/docs-ci.yml", ".github/workflows/docs-publish.yml", "tests/test_diataxis_documentation.py", "tests/test_mkdocs_publishing.py", "tests/test_docs_hygiene.py"]
+  pull_request:
+    branches: ["main"]
+    paths: ["docs/**", "documentation/**", "mkdocs.yml", "README.md", "README_fr.md", "Changelog", "requirements-docs.txt", ".vale.ini", ".markdownlint.json", "scripts/mkdocs_hooks.py", "scripts/build_versioned_docs.py", ".github/workflows/docs-ci.yml", ".github/workflows/docs-publish.yml", "tests/test_diataxis_documentation.py", "tests/test_mkdocs_publishing.py", "tests/test_docs_hygiene.py"]
+  release:
+    types: [published]
+  workflow_run:
+    workflows: ["Release & Distribution"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy built documentation to IONOS"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-publish-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify-and-build:
+    name: Verify and Build Versioned Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'v'))
+    outputs:
+      https_ready: ${{ steps.tls.outputs.https_ready }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "requirements-docs.txt"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-docs.txt pyyaml
+      - name: Run documentation tests
+        run: python -W error::ResourceWarning -m unittest tests/test_docs_hygiene.py tests/test_diataxis_documentation.py tests/test_mkdocs_publishing.py -v
+      - name: Probe TLS readiness
+        id: tls
+        run: |
+          if curl -fsSIL --connect-timeout 5 --max-time 10 https://multi-db-docker-env.lightpath.fr/ >/dev/null 2>&1; then
+            echo "https_ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "https_ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::HTTPS endpoint unreachable; building .htaccess with --no-enforce-https."
+          fi
+      - name: Build versioned site
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HTTPS_READY: ${{ steps.tls.outputs.https_ready }}
+        run: |
+          MAIN_REF="WORKTREE"
+          HTTPS_FLAG="--no-enforce-https"
+          if [ "$EVENT_NAME" = "release" ] || [ "$EVENT_NAME" = "workflow_run" ]; then MAIN_REF="origin/main"; fi
+          if [ "$HTTPS_READY" = "true" ]; then HTTPS_FLAG="--enforce-https"; fi
+          python scripts/build_versioned_docs.py --output site_dist --base-url https://multi-db-docker-env.lightpath.fr --main-ref "$MAIN_REF" "$HTTPS_FLAG"
+      - name: Verify site files and privacy exclusions
+        run: |
+          for f in site_dist/versions.json site_dist/index.html site_dist/.htaccess site_dist/main/index.html site_dist/latest/index.html; do
+            [ -f "$f" ] || { echo "Missing $f" >&2; exit 1; }
+          done
+          LEAKED=$(find site_dist \( -iname ".env*" -o -iname "*.kdbx" -o -iname "*.keyx" -o -iname "*.pem" -o -iname "*.key" -o -iname "id_rsa*" \) -print)
+          [ -z "$LEAKED" ] || { echo "Forbidden files: $LEAKED" >&2; exit 1; }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: mkdocs-site-dist
+          path: site_dist/
+          include-hidden-files: true
+          retention-days: 7
+
+  deploy-ionos:
+    name: Deploy Documentation to IONOS
+    needs: verify-and-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'release' || github.event_name == 'workflow_run' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.deploy == true)
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: mkdocs-site-dist
+          path: .
+      - name: Verify .htaccess and versions.json
+        run: |
+          [ -f .htaccess ] && [ -f versions.json ] || { echo "Missing .htaccess or versions.json" >&2; exit 1; }
+      - name: Upload site via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@a5ccb9c6211a94cc59404f0fdb2a9936a6dfee64 # v1.2.6
+        with:
+          server: ${{ secrets.IONOS_FTP_SERVER }}
+          username: ${{ secrets.IONOS_FTP_USERNAME }}
+          password: ${{ secrets.IONOS_FTP_PASSWORD }}
+          sftp_only: true
+          port: ${{ secrets.IONOS_FTP_PORT || '22' }}
+          local_path: ./
+          remote_path: ${{ secrets.IONOS_REMOTE_PATH }}/
+          sftpArgs: '-o ConnectTimeout=10'
+      - name: Explicitly upload .htaccess via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@a5ccb9c6211a94cc59404f0fdb2a9936a6dfee64 # v1.2.6
+        with:
+          server: ${{ secrets.IONOS_FTP_SERVER }}
+          username: ${{ secrets.IONOS_FTP_USERNAME }}
+          password: ${{ secrets.IONOS_FTP_PASSWORD }}
+          sftp_only: true
+          port: ${{ secrets.IONOS_FTP_PORT || '22' }}
+          local_path: .htaccess
+          remote_path: ${{ secrets.IONOS_REMOTE_PATH }}/
+          sftpArgs: '-o ConnectTimeout=10'
+      - name: Live smoke checks
+        env:
+          HTTPS_READY: ${{ needs.verify-and-build.outputs.https_ready }}
+        run: |
+          SCHEME="https"
+          if [ "$HTTPS_READY" != "true" ]; then
+            echo "::warning::HTTPS not ready; falling back to HTTP smoke checks."
+            SCHEME="http"
+          fi
+          curl -fsSL "${SCHEME}://multi-db-docker-env.lightpath.fr/versions.json" | grep -q '"version"'
+          curl -fsSLI "${SCHEME}://multi-db-docker-env.lightpath.fr/latest/"
+          curl -fsSLI "${SCHEME}://multi-db-docker-env.lightpath.fr/main/"
