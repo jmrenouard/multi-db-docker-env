@@ -84,6 +84,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-161 -- Add TDE Matrix to `supported_products_fr.md`, PG Multi-Master Notes & RCA Entries (`#520`)
+- **Timestamp / Issue / Branch**: `2026-11-23T19:03Z` | Issue `#520` | `docs/issue-520-tde-matrices-fr-and-pg`
+- **Request**: Complete Part 2 of TDE cross-linking: add `TDE` column to `documentation/supported_products_fr.md`, add TDE note to `documentation/pg_multimaster.md` and `pg_multimaster_fr.md`, and add `APP-032`/`IDEA-015` to `docs/RCA_REGISTER.md` (`< 14,800` B).
+- **Changes**: Updated `documentation/supported_products_fr.md`, `documentation/pg_multimaster.md`, `documentation/pg_multimaster_fr.md`, and logged `APP-032`/`IDEA-015` in `docs/RCA_REGISTER.md`.
+- **Result**: Verified 0 STE errors (`ste_check.py --mode procedural --no-vocab`), Windows + WSL `unittest`, `test_config.sh`, `go test`, `./mdb lint`, and diff `< 14,800` B.
+
 ### ACT-160 -- Add TDE Matrix to `supported_products.md`, TLS Layer Note & Index Links (`#518`)
 - **Timestamp / Issue / Branch**: `2026-11-23T18:59Z` | Issue `#518` | `docs/issue-518-tde-matrices-and-index`
 - **Request**: Add `TDE` column to `documentation/supported_products.md`, add transport-vs-TDE section to `documentation/tls_setup.md`, and register `tde_encryption*.md` in `documentation/INDEX.md` and `INDEX_fr.md` (`supported_products_fr.md`, `pg_multimaster*.md`, and `RCA_REGISTER.md` follow in the next atomic PR to keep diff `< 14,800` B).

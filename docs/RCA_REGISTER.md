@@ -1257,6 +1257,11 @@
 - **Nature & Justification**: Deleting the unreferenced 6,190-line (-374 KB) historical Sourcery AI dump produces a `-374 KB` patch on a single dead file while adding zero code complexity (`POTENTIAL_ISSUES.md` and `docs/RCA_REGISTER.md` already hold all consolidated findings). Splitting a single `git rm` file deletion into line-chunked PRs adds churn with no review benefit, so this atomic deletion is explicitly exempted from the `< 15,000` char diff cap while keeping added governance lines minimal (`< 1,500` B).
 - **Removal Condition**: One-time cleanup complete upon merge of the PR closing Issue `#472`; strict `< 15,000` char diff limit remains enforced on all subsequent PRs.
 
+### APP-032 -- Default Compose Stacks Run Without External KMS or Storage TDE
+- **Target Files**: `docker-compose*.yml`, `documentation/tde_encryption.md`, `documentation/tls_setup.md`
+- **Nature & Justification**: Active Compose stacks protect transport traffic with local OpenSSL PKI (`make gen-ssl-all`) and mount unencrypted local Docker volumes without an external KMS container (`OpenBao`, `KMIP`, cloud KMS) to preserve single-host lab simplicity and reproducible benchmarks.
+- **Removal Condition**: Introduce optional opt-in TDE Compose profiles backed by an ephemeral `OpenBao` or `KMIP` service for MySQL/Percona/MariaDB/MongoDB/PG `pg_tde` testing.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
@@ -1316,6 +1321,10 @@
 ### IDEA-014 -- Automated `PG_SCALE=20` Optimized vs Baseline Comparative Report Generator
 - **Priority / Target**: `Medium` | `scripts/bench_pg_optimized_runner.sh`, `reports/`
 - **Description**: Aggregate `reports/benchmark_optimized.csv` (`318` rows across 18 topologies) into comparative before/after delta tables and charts alongside `make bench-pg-v2` / `bench-pg18` / `bench-yt-cluster` baselines.
+
+### IDEA-015 -- Optional TDE Compose Profile with Ephemeral `OpenBao` / `KMIP` KMS
+- **Priority / Target**: `Medium` | `docker-compose.yml`, `documentation/tde_encryption.md`
+- **Description**: Add an opt-in TDE lab profile pairing Percona Server for MySQL (`component_keyring_kmip`), MariaDB (`file_key_management`), Percona Server for PostgreSQL (`pg_tde` 2.1 + `pg_tde.wal_encrypt`), and Percona Server for MongoDB with an ephemeral `OpenBao` or `KMIP` container for storage-at-rest benchmarking.
 
 
 

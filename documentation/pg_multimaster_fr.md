@@ -6,6 +6,8 @@ Utilisez les 13 piles PostgreSQL Compose dans `multi-db-docker-env` (`v2.6.2`). 
 
 *English version: [pg_multimaster.md](pg_multimaster.md).*
 
+- **TDE au repos** : Les piles Compose par défaut utilisent des volumes non chiffrés sans KMS externe. Consultez [tde_encryption_fr.md](tde_encryption_fr.md) pour `pg_tde` 2.1, YugabyteDB et CockroachDB.
+
 ## Matrice d'architecture
 
 | Topologie | Moteur / Image | Nœuds et routage | CAP / PACELC | Ports localhost |
