@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 DEFAULT_REPO_URL = "https://github.com/jmrenouard/multi-db-docker-env"
 VIRTUAL_DOCS = {"overview-en.md": ("README.md", ""), "overview-fr.md": ("README_fr.md", ""), "CHANGELOG.md": ("Changelog", "")}
 _REPO_TO_VIRTUAL = {s: u for u, (s, _) in VIRTUAL_DOCS.items()}
-QUADRANT_HISTORICAL_FALLBACKS = {"01-tutorials": "overview-en.md", "02-how-to-guides": "documentation/INDEX.md", "03-reference": "documentation/supported_products.md", "04-explanation": "documentation/architecture.md"}
+QUADRANT_HISTORICAL_FALLBACKS = {"01-tutorials": "overview-en.md", "02-how-to-guides": "documentation/INDEX.md", "03-reference": "documentation/supported_products.md", "04-explanation": "documentation/architecture.md", "01-tutoriels": "overview-fr.md", "02-guides-pratiques": "documentation/INDEX_fr.md"}
 ALERT_MAP = {"NOTE": "note", "TIP": "tip", "IMPORTANT": "info", "WARNING": "warning", "CAUTION": "danger"}
 _FENCE_RE = re.compile(r"^[ \t]*(`{3,}|~{3,})")
 _ALERT_RE = re.compile(r"(?m)^([ \t]*)>[ \t]*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*([^\r\n]*)\r?\n((?:[ \t]*>.*(?:\r?\n|$))*)")
@@ -113,7 +113,8 @@ def _resolve(url: str, src: str, pfx: str, ref: str, repo_url: str, rdocs: froze
 
     repo, root = repo_url.rstrip("/"), (dd.parent if dd else None)
     virt = lambda u, s, a="": f"{pfx}{u}{a}" if u in rdocs else f"{repo}/blob/{ref}/{s}{a}"
-    ov = virt("overview-en.md", "README.md")
+    ov = virt("overview-fr.md", "README_fr.md") if lang == "fr" else virt("overview-en.md", "README.md")
+    idx_doc = "documentation/INDEX_fr.md" if lang == "fr" else "documentation/INDEX.md"
     tl = "/" if sl and not rel.endswith("/") else ""
 
     if rel == "logo.png":
@@ -129,8 +130,8 @@ def _resolve(url: str, src: str, pfx: str, ref: str, repo_url: str, rdocs: froze
         if dd:
             top = sub.split("/", 1)[0]
             if (fb := QUADRANT_HISTORICAL_FALLBACKS.get(top)) and not (dd / top).is_dir():
-                return (f"{pfx}{fb}" if (dd / fb).is_file() or (root and (root / fb).is_file()) or fb in rdocs else ov), False
-            if norm == "index.md" and not (dd / "01-tutorials").is_dir() and not (dd / sub).exists() and sub not in rdocs:
+                return (f"{pfx}{fb}" if (((dd / fb).is_file() or (root and (root / fb).is_file())) and (inc is None or fb in inc)) or fb in rdocs else ov), False
+            if norm == "index.md" and not (dd / ("01-tutoriels" if lang == "fr" else "01-tutorials")).is_dir() and not (dd / sub).exists() and sub not in rdocs:
                 return ov, False
             if (dd / sub / "index.md").is_file():
                 cand = f"{sub.rstrip('/')}/index.md"
@@ -141,7 +142,7 @@ def _resolve(url: str, src: str, pfx: str, ref: str, repo_url: str, rdocs: froze
             return f"{repo}/blob/{ref}/{rel}{an}", False
         if not root or (root / rel).is_file():
             return f"{pfx}{rel}{an}", False
-        return (f"{pfx}documentation/INDEX.md" if (root / "documentation/INDEX.md").is_file() else ov), False
+        return (f"{pfx}{idx_doc}" if root and (root / idx_doc).is_file() and (inc is None or idx_doc in inc) else ov), False
     if rel in (".", "..") or rel.startswith("../"):
         return repo, False
     return f"{repo}/{'tree' if sl or (root and (root / rel).is_dir()) else 'blob'}/{ref}/{rel}{tl}{an}", False
