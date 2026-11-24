@@ -78,6 +78,11 @@ nav:
     - 01-tutoriels/03-lab-postgres-multimaster.md
     - Index: [documentation/INDEX_fr.md]
   - Guides pratiques:
+    - 02-guides-pratiques/index.md
+    - Déploiement: [02-guides-pratiques/deploiement/deployer-standalone-et-clusters.md]
+    - Exploitation: [02-guides-pratiques/exploitation/sauvegarder-restaurer-et-changer-moteur.md]
+    - Incidents: [02-guides-pratiques/gestion-incidents/remedier-bascule-et-quorum.md]
+    - Sécurité: [02-guides-pratiques/securite/configurer-tls-pki-et-limites-tde.md]
     - Guides:
       - documentation/postgresql_support_fr.md
       - documentation/pg_multimaster_fr.md

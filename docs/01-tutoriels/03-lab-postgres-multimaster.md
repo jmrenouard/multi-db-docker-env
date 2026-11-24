@@ -35,4 +35,4 @@ Sortie attendue : `./mdb bench` gère le cycle de vie complet et affiche latence
 
 ## Prochaine étape
 
-Lisez la fiche [réplication multimaître](../../documentation/pg_multimaster_fr.md) ou [l'index des guides](../../documentation/INDEX_fr.md).
+Lisez la fiche [réplication multimaître](../../documentation/pg_multimaster_fr.md) ou le [guide d'exploitation](../02-guides-pratiques/exploitation/sauvegarder-restaurer-et-changer-moteur.md).

@@ -86,6 +86,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-180 -- Add French ASD-STF100 Procedural How-To Guides (`#558`)
+- **Timestamp / Issue / Branch**: `2026-11-24T01:44Z` | Issue `#558` | `docs/issue-558-french-stf100-guides`
+- **Request**: Add French ASD-STF100 procedural guides (`docs/02-guides-pratiques/`) and cross-link from `docs/index_fr.md`, `docs/01-tutoriels/`, and `mkdocs.fr.yml`.
+- **Changes**: Added 5 pages under `docs/02-guides-pratiques/` and wired cross-links and `mkdocs.fr.yml` navigation.
+- **Result**: `stf_check.py --mode procedural` `0` errors / `0` warnings, `diataxis_check.py` `0` errors, `mkdocs build --strict` EN/FR OK, `audit_helpers.py` PASS, `unittest` `95 OK`.
+
 ### ACT-179 -- Add French Diátaxis Portal, Tutorials & Hook Fallbacks (`#556`)
 - **Timestamp / Issue / Branch**: `2026-11-24T01:26Z` | Issue `#556` | `docs/issue-556-french-diataxis-stf100`
 - **Request**: Create French Diátaxis portal (`docs/index_fr.md`), guided tutorials (`docs/01-tutoriels/`), and French historical hook fallbacks in `scripts/mkdocs_hooks.py`, and wire them into `mkdocs.fr.yml`.
