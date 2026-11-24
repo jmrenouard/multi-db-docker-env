@@ -36,4 +36,4 @@ Sortie attendue : promotion validée sans erreur (`Passed`).
 
 ## Prochaine étape
 
-Passez au [tutoriel PostgreSQL multimaître](03-lab-postgres-multimaster.md) ou à la [documentation PostgreSQL](../../documentation/postgresql_support_fr.md).
+Passez au [tutoriel PostgreSQL multimaître](03-lab-postgres-multimaster.md) ou au [guide incident HA](../02-guides-pratiques/gestion-incidents/remedier-bascule-et-quorum.md).

@@ -35,4 +35,4 @@ Sortie attendue : `mysql84` passe à `Up (healthy)`.
 
 ## Prochaine étape
 
-Passez au [tutoriel Patroni HA](02-premier-lab-bascule-ha.md) ou à [l'index des guides](../../documentation/INDEX_fr.md).
+Passez au [tutoriel Patroni HA](02-premier-lab-bascule-ha.md) ou au [guide de déploiement](../02-guides-pratiques/deploiement/deployer-standalone-et-clusters.md).

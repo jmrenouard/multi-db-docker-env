@@ -7,7 +7,7 @@
 | Quadrant | Objectif | Point d'entrée |
 | :--- | :--- | :--- |
 | **Tutoriels** | Apprendre pas à pas en lab isolé | [Tutoriels guidés](01-tutoriels/index.md) |
-| **Guides pratiques** | Procédures d'exploitation et d'astreinte | [Index des guides](../documentation/INDEX_fr.md) |
+| **Guides pratiques** | Procédures d'exploitation et d'astreinte | [Guides pratiques](02-guides-pratiques/index.md) |
 | **Référence** | Matrices produits, Makefile et tests | [Produits supportés](../documentation/supported_products_fr.md) |
 | **Présentation** | Vue d'ensemble et scripts | [Aperçu du projet](../README_fr.md) |
 

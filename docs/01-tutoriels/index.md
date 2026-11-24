@@ -8,4 +8,4 @@ Suivez ces trois laboratoires pour maîtriser l'environnement local et la haute 
 | 2 | [Premier lab de bascule HA](02-premier-lab-bascule-ha.md) | Cluster Patroni et test de bascule `test_failover.sh`. |
 | 3 | [Lab PostgreSQL multimaître](03-lab-postgres-multimaster.md) | Réplication PG18 `pg18-birep`, suite et benchmark. |
 
-Pour l'exploitation courante, ouvrez [l'index des guides](../../documentation/INDEX_fr.md).
+Pour l'exploitation courante, ouvrez les [guides pratiques](../02-guides-pratiques/index.md).
