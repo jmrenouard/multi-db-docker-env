@@ -86,6 +86,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-179 -- Add French Diátaxis Portal, Tutorials & Hook Fallbacks (`#556`)
+- **Timestamp / Issue / Branch**: `2026-11-24T01:26Z` | Issue `#556` | `docs/issue-556-french-diataxis-stf100`
+- **Request**: Create French Diátaxis portal (`docs/index_fr.md`), guided tutorials (`docs/01-tutoriels/`), and French historical hook fallbacks in `scripts/mkdocs_hooks.py`, and wire them into `mkdocs.fr.yml`.
+- **Changes**: Added `docs/index_fr.md` and 4 tutorial pages under `docs/01-tutoriels/`, updated `scripts/mkdocs_hooks.py` for FR historical tag fallbacks, and updated `mkdocs.fr.yml`.
+- **Result**: `diataxis_check.py --strict --check-ste --lang en` `0` errors, `mkdocs build --strict` EN/FR OK, `audit_helpers.py` PASS (`19/19` `mmdc`), `unittest` `95 OK`.
+
 ### ACT-178 -- Add `mkdocs.fr.yml`, Versioned FR Builder & Bilingual Tests (`#554`)
 - **Timestamp / Issue / Branch**: `2026-11-24T00:58Z` | Issue `#554` | `docs/issue-554-mkdocs-fr-versioned`
 - **Request**: Add 100% French `mkdocs.fr.yml`, build `<ver>/fr/` alongside `<ver>/` in `build_versioned_docs.py`, and add EN/FR E2E tests (respecting `IMP-008` OAuth workflow scope).

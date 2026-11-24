@@ -28,6 +28,7 @@ exclude_docs: |
   02-how-to-guides/
   03-reference/
   04-explanation/
+  index_fr.md
   ACTION_LOGBOOK.md
   RCA_REGISTER.md
 hooks: [scripts/mkdocs_hooks.py]
@@ -71,12 +72,17 @@ markdown_extensions:
 nav:
   - Accueil: index.md
   - Tutoriels:
-    - Index: documentation/INDEX_fr.md
+    - 01-tutoriels/index.md
+    - 01-tutoriels/01-bac-a-sable-local.md
+    - 01-tutoriels/02-premier-lab-bascule-ha.md
+    - 01-tutoriels/03-lab-postgres-multimaster.md
+    - Index: [documentation/INDEX_fr.md]
   - Guides pratiques:
-    - documentation/postgresql_support_fr.md
-    - documentation/pg_multimaster_fr.md
-    - documentation/innodb_cluster_fr.md
-    - documentation/mongo_replicaset_fr.md
+    - Guides:
+      - documentation/postgresql_support_fr.md
+      - documentation/pg_multimaster_fr.md
+      - documentation/innodb_cluster_fr.md
+      - documentation/mongo_replicaset_fr.md
   - Référence:
     - documentation/supported_products_fr.md
     - documentation/makefile_fr.md
