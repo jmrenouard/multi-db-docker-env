@@ -15,20 +15,23 @@ Exécutez une topologie PostgreSQL 18 bidirectionnelle (`pg18-birep`) et sa suit
 ./mdb status all
 ```
 
-2. Exécutez la suite de tests puis un benchmark court.
+2. Exécutez la suite de tests puis arrêtez la pile avant le benchmark.
 
 ```bash
 ./mdb test pg18-birep --suite
-./mdb bench pg18-birep
-```
-
-Sortie attendue : réplication bidirectionnelle valide puis mesure de latence et débit.
-
-3. Arrêtez l'environnement.
-
-```bash
 ./mdb down pg18-birep
 ```
+
+Sortie attendue : la réplication bidirectionnelle réussit avant l'arrêt des nœuds.
+
+3. Lancez le benchmark isolé puis vérifiez l'absence de conteneur résiduel.
+
+```bash
+./mdb bench pg18-birep
+./mdb status all
+```
+
+Sortie attendue : `./mdb bench` gère le cycle de vie complet et affiche latence et débit.
 
 ## Prochaine étape
 

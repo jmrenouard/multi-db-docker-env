@@ -1,6 +1,6 @@
 # Tutoriel 2 : Premier lab de bascule HA
 
-Déployez un cluster PostgreSQL Patroni à trois nœuds et observez la bascule automatique.
+Déployez un cluster PostgreSQL Patroni à trois nœuds et examinez la bascule automatique.
 
 ```mermaid
 flowchart LR
@@ -20,7 +20,7 @@ flowchart LR
 ```bash
 ./mdb up patroni
 ./mdb status patroni
-docker exec node1 patronictl -c /etc/patroni/patroni.yml list
+docker exec node1 patronictl -c /etc/patroni.yml list
 ```
 
 Sortie attendue : un nœud `Leader` et deux nœuds `Replica` (`streaming`).
