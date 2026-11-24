@@ -20,14 +20,14 @@
 docker exec node1 patronictl -c /etc/patroni.yml list
 ```
 
-3. Si le quorum Galera disparaît, vérifiez le numéro de séquence puis réamorcez le cluster.
+3. Si le quorum Galera disparaît, vérifiez le numéro de séquence sur chaque nœud puis réamorcez le nœud choisi.
 
 ```bash
-make bootstrap-galera
+make emergency-galera NODE=1
 ```
 
 > [!CAUTION]
-> Identifiez le nœud Galera le plus récent avant tout amorçage. Un amorçage sur un autre nœud supprime les dernières transactions locales.
+> Remplacez `NODE=1` par le numéro du nœud Galera qui possède la séquence la plus élevée. Un amorçage sur un autre nœud supprime les dernières transactions locales.
 
 ## Vérification
 

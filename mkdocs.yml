@@ -26,6 +26,7 @@ exclude_docs: |
   overview-fr.md
   01-tutoriels/
   02-guides-pratiques/
+  04-explications/
   index_fr.md
 hooks: [scripts/mkdocs_hooks.py]
 theme:

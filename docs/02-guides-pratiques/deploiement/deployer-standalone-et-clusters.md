@@ -27,10 +27,11 @@
 ./mdb down mariadb114
 ```
 
-4. Démarrez un cluster HA (`docker-compose-patroni.yml`, `docker-compose-galera.yml`).
+4. Démarrez soit le cluster Patroni (`docker-compose-patroni.yml`), soit le cluster Galera (`docker-compose-galera.yml`).
 
 ```bash
 ./mdb up patroni
+./mdb down patroni
 make bootstrap-galera
 ```
 

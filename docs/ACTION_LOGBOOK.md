@@ -87,10 +87,10 @@
 ## 2. Completed Actions (`COMPLETED`)
 
 ### ACT-180 -- Add French ASD-STF100 Procedural How-To Guides (`#558`)
-- **Timestamp / Issue / Branch**: `2026-11-24T01:44Z` | Issue `#558` | `docs/issue-558-french-stf100-guides`
-- **Request**: Add French ASD-STF100 procedural guides (`docs/02-guides-pratiques/`) and cross-link from `docs/index_fr.md`, `docs/01-tutoriels/`, and `mkdocs.fr.yml`.
-- **Changes**: Added 5 pages under `docs/02-guides-pratiques/` and wired cross-links and `mkdocs.fr.yml` navigation.
-- **Result**: `stf_check.py --mode procedural` `0` errors / `0` warnings, `diataxis_check.py` `0` errors, `mkdocs build --strict` EN/FR OK, `audit_helpers.py` PASS, `unittest` `95 OK`.
+- **Timestamp / Issue / Branch**: `2026-11-24T01:55Z` | Issue `#558` | `docs/issue-558-french-stf100-guides`
+- **Request**: Add French ASD-STF100 procedural guides (`docs/02-guides-pratiques/`) and `docs/04-explications/index.md`, and wire them into `docs/index_fr.md`, `docs/01-tutoriels/`, `mkdocs.yml`, and `mkdocs.fr.yml`.
+- **Changes**: Added 5 STF100 pages under `docs/02-guides-pratiques/` (`./mdb backup galera`, `make emergency-galera NODE=1`, non-overlapping HA cluster examples) plus `docs/04-explications/index.md` (`04-explications/` excluded from EN `mkdocs.yml`), and wired navigation.
+- **Result**: `diataxis_check_fr.py docs --strict --check-stf` `0` errors / `0` warnings, `stf_check.py --mode procedural` `0` errors / `0` warnings, `diataxis_check.py` `0` errors, `mkdocs build --strict` EN/FR OK, `audit_helpers.py` PASS, `unittest` `95 OK`.
 
 ### ACT-179 -- Add French Diátaxis Portal, Tutorials & Hook Fallbacks (`#556`)
 - **Timestamp / Issue / Branch**: `2026-11-24T01:26Z` | Issue `#556` | `docs/issue-556-french-diataxis-stf100`
