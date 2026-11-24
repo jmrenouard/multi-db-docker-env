@@ -1,0 +1,86 @@
+site_name: Documentation Multi-DB Docker Environment
+site_description: Laboratoire Docker modulaire pour MySQL, MariaDB, Percona, PostgreSQL, MongoDB et clusters HA
+site_url: https://multi-db-docker-env.lightpath.fr/fr/
+repo_name: jmrenouard/multi-db-docker-env
+repo_url: https://github.com/jmrenouard/multi-db-docker-env
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2026 Jean-Marie Renouard &middot; LightPath
+docs_dir: docs
+exclude_docs: |
+  *.kdbx
+  *.keyx
+  *.pem
+  *.key
+  *.crt
+  *.log
+  .env
+  .env.*
+  ssl/
+  certs_patroni/
+  datadir_*
+  backups_*
+  reports/
+  *_en.md
+  *-en.md
+  en/
+  overview-en.md
+  01-tutorials/
+  02-how-to-guides/
+  03-reference/
+  04-explanation/
+  ACTION_LOGBOOK.md
+  RCA_REGISTER.md
+hooks: [scripts/mkdocs_hooks.py]
+theme:
+  name: material
+  language: fr
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  features: [navigation.tabs, navigation.tabs.sticky, navigation.sections, navigation.indexes, navigation.top, navigation.tracking, navigation.footer, search.suggest, search.highlight, search.share, content.code.copy, content.code.annotate, content.tabs.link]
+  palette:
+    - { media: "(prefers-color-scheme: light)", scheme: default, primary: indigo, accent: cyan, toggle: { icon: material/brightness-7, name: Passer en mode sombre } }
+    - { media: "(prefers-color-scheme: dark)", scheme: slate, primary: indigo, accent: cyan, toggle: { icon: material/brightness-4, name: Passer en mode clair } }
+plugins: [search]
+extra:
+  version: { provider: mike, default: latest }
+  alternate:
+    - { name: English, link: ../, lang: en }
+    - { name: Français, link: ./, lang: fr }
+  social:
+    - { icon: fontawesome/brands/github, link: https://github.com/jmrenouard/multi-db-docker-env, name: GitHub }
+    - { icon: fontawesome/brands/docker, link: https://hub.docker.com/r/jmrenouard/multi-db-docker-env, name: Docker Hub }
+    - { icon: fontawesome/solid/globe, link: https://www.lightpath.fr, name: LightPath }
+extra_css: [https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css, stylesheets/extra.css]
+extra_javascript: [https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js, https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js, javascripts/katex.js]
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc: { permalink: true }
+  - pymdownx.arithmatex: { generic: true }
+  - pymdownx.details
+  - pymdownx.highlight: { anchor_linenums: true, line_spans: __span, pygments_lang_class: true }
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences: { custom_fences: [{ name: mermaid, class: mermaid, format: !!python/name:pymdownx.superfences.fence_code_format }] }
+  - pymdownx.tabbed: { alternate_style: true }
+  - pymdownx.tasklist: { custom_checkbox: true }
+nav:
+  - Accueil: index.md
+  - Tutoriels:
+    - Index: documentation/INDEX_fr.md
+  - Guides pratiques:
+    - documentation/postgresql_support_fr.md
+    - documentation/pg_multimaster_fr.md
+    - documentation/innodb_cluster_fr.md
+    - documentation/mongo_replicaset_fr.md
+  - Référence:
+    - documentation/supported_products_fr.md
+    - documentation/makefile_fr.md
+    - documentation/tests_fr.md
+    - documentation/tde_encryption_fr.md
+  - Présentation:
+    - Aperçu du projet: overview-fr.md

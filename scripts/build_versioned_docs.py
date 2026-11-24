@@ -19,8 +19,8 @@ _SAFE_REF_RE = re.compile(r"^[A-Za-z0-9._/\-]+$")
 _PRIVATE_RE = re.compile(r"(?i)(?:^|/)(?:\.env[^/]*|id_rsa[^/]*)$|\.(?:kdbx|keyx|pem|key)$")
 _PROTECTED = (".git", ".github", ".agent", ".agents", "docs", "documentation", "scripts", "tests", "pkg", "cmd", "conf", "initdb")
 
-ALWAYS_OVERLAY_FILES: tuple[str, ...] = ("mkdocs.yml", "scripts/mkdocs_hooks.py", "docs/stylesheets/extra.css", "docs/javascripts/katex.js")
-FALLBACK_OVERLAY_FILES: tuple[str, ...] = ("docs/index.md", "docs/assets/logo.svg", "docs/assets/header-banner.svg")
+ALWAYS_OVERLAY_FILES: tuple[str, ...] = ("mkdocs.yml", "mkdocs.fr.yml", "scripts/mkdocs_hooks.py", "docs/stylesheets/extra.css", "docs/javascripts/katex.js")
+FALLBACK_OVERLAY_FILES: tuple[str, ...] = ("docs/index.md", "docs/index_fr.md", "docs/assets/logo.svg", "docs/assets/header-banner.svg")
 
 
 def parse_semver_tag(tag: str) -> tuple[int, int, int] | None:
@@ -124,10 +124,14 @@ def assert_no_private_files(output_dir: Path) -> None:
 
 
 def _run_mkdocs_build(project_dir: Path, site_out: Path, git_ref: str, slug: str, base_url: str, strict: bool) -> None:
-    """Invoke `python -m mkdocs build` for one version directory."""
-    env = {**os.environ, "PYTHONUTF8": "1", "MDB_DOCS_REF": "main" if git_ref in {"WORKTREE", "origin/main", "main", "HEAD"} else git_ref, "MDB_DOCS_SITE_URL": f"{base_url.rstrip('/')}/{slug}/"}
-    cmd = [sys.executable, "-m", "mkdocs", "build", "-f", str(project_dir / "mkdocs.yml"), "-d", str(site_out), *(["--strict"] if strict else [])]
-    subprocess.run(cmd, cwd=str(project_dir), env=env, check=True)  # nosec B603
+    """Invoke `python -m mkdocs build` for English (`<ver>/`) and French (`<ver>/fr/`)."""
+    ref = "main" if git_ref in {"WORKTREE", "origin/main", "main", "HEAD"} else git_ref
+    for cfg, out, p_slug in (("mkdocs.yml", site_out, slug), ("mkdocs.fr.yml", site_out / "fr", f"{slug}/fr")):
+        if not (project_dir / cfg).is_file():
+            continue
+        env = {**os.environ, "PYTHONUTF8": "1", "MDB_DOCS_REF": ref, "MDB_DOCS_SITE_URL": f"{base_url.rstrip('/')}/{p_slug}/"}
+        cmd = [sys.executable, "-m", "mkdocs", "build", "-f", str(project_dir / cfg), "-d", str(out), *(["--strict"] if strict else [])]
+        subprocess.run(cmd, cwd=str(project_dir), env=env, check=True)  # nosec B603
 
 
 def build_single_version(repo_root: Path, git_ref: str, version_slug: str, output_dir: Path, base_url: str, strict: bool = True) -> Path:

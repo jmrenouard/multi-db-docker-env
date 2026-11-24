@@ -1309,6 +1309,11 @@
 - **Nature & Justification**: IONOS SFTP folder uses `multi-db-docker-env.ligthpath.fr` while public URL is `multi-db-docker-env.lightpath.fr`; `docs-publish.yml` uses `--no-enforce-https` until IONOS TLS is active.
 - **Removal Condition**: Automatic HTTPS `301` redirect activates once IONOS vhost/SSL are bound and `docs-publish.yml` re-runs.
 
+### APP-034 -- Dual Versioned EN (`<ver>/`) & FR (`<ver>/fr/`) Output Layout
+- **Target Files**: `mkdocs.fr.yml`, `scripts/build_versioned_docs.py`, `tests/test_mkdocs_publishing.py`
+- **Nature & Justification**: `build_versioned_docs.py` builds EN at `<ver>/` and FR at `<ver>/fr/` using `mkdocs.fr.yml` (`extra.alternate` links rewritten dynamically from `MDB_DOCS_SITE_URL`), while `test_mkdocs_publishing.py` enforces strict FR/EN CI validation without touching `.github/workflows/*.yml` (`IMP-008`).
+- **Removal Condition**: Permanent bilingual static hosting pattern; optionally add `mkdocs.fr.yml` to `docs-*.yml` `paths:` with a `workflow`-scoped token.
+
 ---
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
