@@ -86,6 +86,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-178 -- Add `mkdocs.fr.yml`, Versioned FR Builder & Bilingual Tests (`#554`)
+- **Timestamp / Issue / Branch**: `2026-11-24T00:58Z` | Issue `#554` | `docs/issue-554-mkdocs-fr-versioned`
+- **Request**: Add 100% French `mkdocs.fr.yml`, build `<ver>/fr/` alongside `<ver>/` in `build_versioned_docs.py`, and add EN/FR E2E tests (respecting `IMP-008` OAuth workflow scope).
+- **Changes**: Added `mkdocs.fr.yml`, updated `scripts/build_versioned_docs.py` and `tests/test_mkdocs_publishing.py`, and logged `APP-034`.
+- **Result**: `mkdocs build --strict` (EN + FR) OK, `audit_helpers.py` PASS (`0` `language_mix`, `alternate_valid=True`), `unittest` `95 OK`.
+
 ### ACT-177 -- Isolate English `mkdocs.yml` & Make `mkdocs_hooks.py` Language-Aware (`#552`)
 - **Timestamp / Issue / Branch**: `2026-11-24T00:48Z` | Issue `#552` | `docs/issue-552-mkdocs-en-split`
 - **Request**: Keep `mkdocs.yml` 100% EN (`exclude_docs`, `extra.alternate`) and make `scripts/mkdocs_hooks.py` language-aware.

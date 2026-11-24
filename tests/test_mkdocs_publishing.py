@@ -39,6 +39,10 @@ class TestMkdocsPublishing(unittest.TestCase):
             self.assertIn(tok, raw)
         for tab in TABS:
             self.assertRegex(raw, rf"(?m)^  -\s+{re.escape(tab)}:")
+        self.assertNotRegex(raw.split("\nnav:", 1)[1], r"(?:_fr\.md|overview-fr)")
+        fr_raw = (ROOT / "mkdocs.fr.yml").read_text(encoding="utf-8")
+        self.assertIn("language: fr", fr_raw)
+        self.assertIn("*_en.md", fr_raw)
         if yaml is not None:
             class _L(yaml.SafeLoader):
                 pass
@@ -46,10 +50,15 @@ class TestMkdocsPublishing(unittest.TestCase):
             c = yaml.load(raw, Loader=_L)
             self.assertEqual((c["site_name"], c["edit_uri"], c["site_url"], c["repo_name"]), ("Multi-DB Docker Environment Documentation", "edit/main/docs/", "https://multi-db-docker-env.lightpath.fr/", "jmrenouard/multi-db-docker-env"))
             self.assertEqual(c["extra"]["version"], {"provider": "mike", "default": "latest"})
+            self.assertEqual({x["lang"] for x in c["extra"]["alternate"]}, {"en", "fr"})
             self.assertIn("scripts/mkdocs_hooks.py", c["hooks"])
             self.assertEqual([next(iter(x)) for x in c["nav"]], TABS)
             sf = next(e["pymdownx.superfences"] for e in c["markdown_extensions"] if isinstance(e, dict) and "pymdownx.superfences" in e)
             self.assertTrue(any(f.get("name") == "mermaid" for f in sf["custom_fences"]))
+            fr_c = yaml.load(fr_raw, Loader=_L)
+            self.assertEqual(fr_c["theme"]["language"], "fr")
+            self.assertEqual({x["lang"] for x in fr_c["extra"]["alternate"]}, {"en", "fr"})
+            self.assertNotRegex(json.dumps(fr_c["nav"]), r"(?:_en\.md|01-tutorials|02-how-to-guides|overview-en)")
         for rel in ("stylesheets/extra.css", "javascripts/katex.js", "assets/logo.svg", "assets/header-banner.svg"):
             p = ROOT / "docs" / rel
             self.assertTrue(p.is_file() and p.stat().st_size > 0, rel)
@@ -72,6 +81,10 @@ class TestMkdocsPublishing(unittest.TestCase):
             with patch.dict(os.environ, {"MDB_DOCS_SITE_URL": "https://d.ex", "MDB_DOCS_REF": "main"}):
                 hk.on_config(cfg)
             self.assertEqual((cfg.site_url, cfg.edit_uri, cfg.nav), ("https://d.ex/", "edit/main/docs/", [{"Home": "index.md"}]))
+            fr_cfg = SimpleNamespace(site_url="https://x/fr/", docs_dir=str(td / "docs"), mdx_configs={}, nav=[{"Accueil": "index.md"}], theme={"language": "fr"}, extra={"alternate": [{"lang": "en", "link": "../"}, {"lang": "fr", "link": "./"}]})
+            with patch.dict(os.environ, {"MDB_DOCS_SITE_URL": "https://d.ex/v2.6.4/fr", "MDB_DOCS_REF": "main"}):
+                hk.on_config(fr_cfg)
+            self.assertEqual((hk._lang(fr_cfg), fr_cfg.extra["alternate"]), ("fr", [{"lang": "en", "link": "/v2.6.4/"}, {"lang": "fr", "link": "/v2.6.4/fr/"}]))
             self.assertIs(cfg.mdx_configs["toc"]["slugify"], hk.gfm_slugify)
             with patch.dict(os.environ, {"MDB_DOCS_REF": "v2.6.4"}):
                 hk.on_config(cfg)
@@ -126,6 +139,8 @@ class TestMkdocsPublishing(unittest.TestCase):
             dd_h.mkdir()
             self.assertEqual(hk.rewrite_relative_links("[R](03-reference/old.md) [X](m/p.md)", "index.md", "v2.3.0", docs_dir=dd_h), "[R](documentation/supported_products.md) [X](overview-en.md)")
             self.assertEqual(hk.rewrite_relative_links("[R](docs/01-tutorials/old.md)", "overview-en.md", "v2.3.0", docs_dir=dd_h), "[R](overview-en.md)")
+            fr_rw = hk.rewrite_relative_links("[H](../docs/index_fr.md) [Ex](../documentation/INDEX.md)", "documentation/INDEX_fr.md", "main", docs_dir=dd, included_docs={"index.md", "documentation/INDEX_fr.md"}, lang="fr")
+            self.assertEqual(fr_rw, "[H](../index.md) [Ex](https://github.com/jmrenouard/multi-db-docker-env/blob/main/documentation/INDEX.md)")
 
     def test_build_versioned_docs_helpers(self):
         """Verify semver parsing, manifest, .htaccess, and redirect HTML."""
@@ -172,7 +187,7 @@ class TestMkdocsPublishing(unittest.TestCase):
 
     @unittest.skipIf(importlib.util.find_spec("mkdocs") is None, "mkdocs not installed")
     def test_live_versioned_mkdocs_e2e(self):
-        """Run multi-version build (WORKTREE + v2.6.4 + v2.3.0) with MkDocs."""
+        """Run multi-version EN+FR build (WORKTREE + v2.6.4 + v2.3.0) with MkDocs."""
         bvd = _load_mod("_bvd_test", BUILD_PATH)
         with tempfile.TemporaryDirectory() as tmp:
             dist = Path(tmp) / "site_dist"
@@ -181,6 +196,16 @@ class TestMkdocsPublishing(unittest.TestCase):
             self.assertEqual([e["version"] for e in man], ["v2.6.4", "v2.3.0", "main"])
             for rel in ("versions.json", "index.html", ".htaccess", "latest/index.html", "dev/index.html", "main/index.html", "v2.6.4/index.html", "v2.3.0/index.html", "main/documentation/INDEX/index.html"):
                 self.assertTrue((dist / rel).is_file(), rel)
+            for rel in ("main/fr/index.html", "v2.6.4/fr/index.html", "v2.3.0/fr/index.html", "main/fr/documentation/INDEX_fr/index.html"):
+                self.assertTrue((dist / rel).is_file(), rel)
+            self.assertFalse((dist / "main/documentation/INDEX_fr/index.html").exists())
+            self.assertFalse((dist / "main/fr/documentation/INDEX/index.html").exists())
+            en_h = (dist / "main/index.html").read_text(encoding="utf-8")
+            fr_h = (dist / "main/fr/index.html").read_text(encoding="utf-8")
+            self.assertIn('<html lang="en"', en_h)
+            self.assertIn('href="fr/" hreflang="fr"', en_h)
+            self.assertIn('<html lang="fr"', fr_h)
+            self.assertIn('hreflang="en"', fr_h)
             bvd.assert_no_private_files(dist)
 
     def test_docs_ci_and_publish_workflows(self):
