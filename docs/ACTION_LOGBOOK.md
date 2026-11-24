@@ -86,6 +86,12 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-181 -- Add Executable Tutorial, How-To, Mermaid & STF Doc Tests (`#560`)
+- **Timestamp / Issue / Branch**: `2026-11-24T02:02Z` | Issue `#560` | `test/issue-560-docs-executable-suite`
+- **Request**: Add executable doc validation for EN/FR tutorials, STF100/STE100 guides, Mermaid/ASCII hygiene, and FR/EN MkDocs isolation inside `tests/test_diataxis_documentation.py`.
+- **Changes**: Added `_load_mkdocs_yaml`, `_iter_fenced_blocks`, and `TestDocsExecutableAndI18n` in `tests/test_diataxis_documentation.py` (verifying FR/EN Diataxis + STF100 + MkDocs split, 0 ASCII box diagrams, column-0 Mermaid, `docker-compose*.yml` YAML, `bash -n`, `make -n`, and `./mdb --help`/`catalog --json`; executed by both `ci.yml` and `docs-ci.yml`).
+- **Result**: `unittest` `98 OK` (`6` live DB skipped), WSL Linux `make -n`/`bash -n`/`go run` `11/11 OK`, `go test ./...` `11/11 OK`, `diataxis_check.py`/`diataxis_check_fr.py`/`stf_check.py` `0` errors / `0` warnings, EN+FR `mkdocs build --strict` exit `0`, `audit_helpers.py` PASS (`19/19` `mmdc`).
+
 ### ACT-180 -- Add French ASD-STF100 Procedural How-To Guides (`#558`)
 - **Timestamp / Issue / Branch**: `2026-11-24T01:55Z` | Issue `#558` | `docs/issue-558-french-stf100-guides`
 - **Request**: Add French ASD-STF100 procedural guides (`docs/02-guides-pratiques/`) and `docs/04-explications/index.md`, and wire them into `docs/index_fr.md`, `docs/01-tutoriels/`, `mkdocs.yml`, and `mkdocs.fr.yml`.
